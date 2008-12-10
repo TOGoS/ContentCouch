@@ -1,5 +1,7 @@
 package contentcouch.metadata;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -8,10 +10,20 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class RDF {
-	static Map standardPrefixes = new HashMap();
+	public static String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+	public static String DC_NS  = "http://purl.org/dc/elements/1.1/";
+	
+	public static String RDF_ABOUT       = RDF_NS + "about";
+	public static String RDF_RESOURCE    = RDF_NS + "resource";
+	public static String RDF_DESCRIPTION = RDF_NS + "Description";
+	
+	public static String DC_CREATOR = DC_NS + "creator";	
+	
+	static Map standardNsAbbreviations = new HashMap();
 	static {
-		standardPrefixes.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-		standardPrefixes.put("dc", "http://purl.org/dc/elements/1.1/");
+		standardNsAbbreviations.put("rdf", RDF_NS);
+		standardNsAbbreviations.put("dc", DC_NS);
+		standardNsAbbreviations.put("xmlns", "http://www.w3.org/2000/xmlns/");
 	}
 	
 	static class Ref {
@@ -40,21 +52,21 @@ public class RDF {
 		return text.replace("&","&amp").replace("\"","&quot;").replace("<", "&lt;").replace(">","&gt;");
 	}
 
-	public static String longToShort( String name, Map prefixes, Map usedPrefixes ) {
-		for( Iterator i=usedPrefixes.keySet().iterator(); i.hasNext(); ) {
+	public static String longToShort( String name, Map availableNsAbbreviations, Map usedNsAbbreviations ) {
+		for( Iterator i=usedNsAbbreviations.keySet().iterator(); i.hasNext(); ) {
 			String nsShort = (String)i.next();
-			String nsLong = (String)usedPrefixes.get(nsShort);
-			if( name.startsWith(nsLong) ) {
+			String nsLong = (String)usedNsAbbreviations.get(nsShort);
+			if( name.length() > nsLong.length() && name.startsWith(nsLong) ) {
 				String postfix = name.substring(nsLong.length());
 				return nsShort + ":" + postfix;
 			}
 		}
-		for( Iterator i=prefixes.keySet().iterator(); i.hasNext(); ) {
+		for( Iterator i=availableNsAbbreviations.keySet().iterator(); i.hasNext(); ) {
 			String nsShort = (String)i.next();
-			String nsLong = (String)prefixes.get(nsShort);
-			if( name.startsWith(nsLong) ) {
+			String nsLong = (String)availableNsAbbreviations.get(nsShort);
+			if( name.length() > nsLong.length() && name.startsWith(nsLong) ) {
 				String postfix = name.substring(nsLong.length());
-				usedPrefixes.put(nsShort,nsLong);
+				usedNsAbbreviations.put(nsShort,nsLong);
 				return nsShort + ":" + postfix;
 			}
 		}
@@ -68,54 +80,64 @@ public class RDF {
 		String postfix = name.substring(lo+1);
 		int nsShortPostfix = 0;
 		String nsShort;
-		while( usedPrefixes.containsKey(nsShort = "a"+nsShortPostfix) ) {
+		while( usedNsAbbreviations.containsKey(nsShort = "a"+nsShortPostfix) ) {
 			nsShortPostfix += 1;
 		}
-		usedPrefixes.put(nsShort, nsLong);
+		usedNsAbbreviations.put(nsShort, nsLong);
 		return nsShort + ":" + postfix;
 	}
 	
-	public static String shortToLong( String name, Map prefixes ) {
+	public static String shortToLong( String name, Map nsAbbreviations ) {
 		int lo = name.indexOf(':');
-		if( lo < 1 || lo == name.length()-1 ) {
+		String nsShort, subName;
+		if( lo == -1 ) {
+			nsShort = "";
+			subName = name;
+		} else if( lo < 1 || lo == name.length()-1 ) {
 			throw new RuntimeException("Can't parse '" + name + "' as namespace name + postfix");
+		} else {
+			nsShort = name.substring(0,lo);
+			subName = name.substring(lo+1);
 		}
-		String nsShort = name.substring(0,lo);
-		String nsLong = (String)prefixes.get(nsShort);
+		String nsLong = (String)nsAbbreviations.get(nsShort);
 		if( nsLong == null ) {
-			throw new RuntimeException("Unknown namespace name '" + nsShort + "'");
+			if( "".equals(nsShort) ) {
+				throw new RuntimeException("No default namespace for '" + name + "'");
+			} else {
+				throw new RuntimeException("Unknown namespace name '" + nsShort + "'");
+			}
 		}
-		return nsLong + name.substring(lo+1);
+		return nsLong + subName;
 	}
 	
-	public static void writeRdfProperties( Writer w, Map properties, String padding, Map usedPrefixes )
+	public static void writeRdfProperties( Writer w, Map properties, String padding, Map usednsAbbreviations )
 		throws IOException
 	{
 		for( Iterator propIter = properties.keySet().iterator(); propIter.hasNext(); ) {
 			String propName = (String)propIter.next();
 			Object value = properties.get(propName);
-			String propNodeName = longToShort(propName, standardPrefixes, usedPrefixes);
+			String propNodeName = longToShort(propName, standardNsAbbreviations, usednsAbbreviations);
 			if( value instanceof Ref ) {
 				w.write(padding + "<" + propNodeName + " rdf:resource=\"" + xmlEscapeAttributeValue(((Ref)value).targetUri) + "\"/>\n");
 			} else if( value instanceof String ) {
 				w.write(padding + "<" + propNodeName + ">" + xmlEscapeText((String)value) + "</" + propNodeName + ">\n");
 			} else if( value instanceof Map ) {
 				w.write(padding + "<" + propNodeName + ">\n");
-				usedPrefixes.put("rdf", standardPrefixes.get("rdf"));
+				usednsAbbreviations.put("rdf", standardNsAbbreviations.get("rdf"));
 				w.write(padding + "\t<rdf:Description>\n");
-				writeRdfProperties( w, (Map)value, padding + "\t\t", usedPrefixes);
+				writeRdfProperties( w, (Map)value, padding + "\t\t", usednsAbbreviations);
 				w.write(padding + "\t</rdf:Description>\n");
 				w.write(padding + "</" + propNodeName + ">\n");
 			}
 		}
 	}
 	
-	public static void writeXmlns( Writer w, Map prefixes )
+	public static void writeXmlns( Writer w, Map nsAbbreviations )
 		throws IOException
 	{
-		for( Iterator i=prefixes.keySet().iterator(); i.hasNext(); ) {
+		for( Iterator i=nsAbbreviations.keySet().iterator(); i.hasNext(); ) {
 			String nsShort = (String)i.next();
-			String nsLong = (String)prefixes.get(nsShort);
+			String nsLong = (String)nsAbbreviations.get(nsShort);
 			w.write(" xmlns:" + nsShort + "=\"" + xmlEscapeAttributeValue(nsLong) + "\"");
 		}
 	}
@@ -127,11 +149,11 @@ public class RDF {
 				
 				Writer outerWriter = new StringWriter();
 				Writer subWriter = new StringWriter();
-				Map usedPrefixes = new HashMap();
-				usedPrefixes.put("rdf", standardPrefixes.get("rdf"));
-				writeRdfProperties( subWriter, desc, "\t", usedPrefixes );
+				Map usednsAbbreviations = new HashMap();
+				usednsAbbreviations.put("rdf", standardNsAbbreviations.get("rdf"));
+				writeRdfProperties( subWriter, desc, "\t", usednsAbbreviations );
 				outerWriter.write( "<rdf:Description" );
-				writeXmlns( outerWriter, usedPrefixes );
+				writeXmlns( outerWriter, usednsAbbreviations );
 				if( desc.about != null ) {
 					outerWriter.write(" rdf:about=\"" + xmlEscapeAttributeValue(desc.about.targetUri) + "\"");
 				}
@@ -299,7 +321,46 @@ public class RDF {
 		return new ParseResult(null, offset);
 	}
 	
-	public static ParseResult parseRdf( char[] chars, int offset, Map namespaces ) {
+	public static Map updateNamespaces( Object xmlPart, Map previousNsAbbreviations ) {
+		if( !(xmlPart instanceof XmlOpenTag) ) return previousNsAbbreviations;
+		XmlOpenTag openTag = (XmlOpenTag)xmlPart;
+		Map newNsAbbreviations = previousNsAbbreviations;
+		for( Iterator i=openTag.attributes.keySet().iterator(); i.hasNext(); ) {
+			String attrKey = (String)i.next();
+			String attrValue = (String)openTag.attributes.get(attrKey);
+			if( "xmlns".equals(attrKey) ) {
+				if( newNsAbbreviations == previousNsAbbreviations ) newNsAbbreviations = new HashMap(previousNsAbbreviations); 
+				newNsAbbreviations.put( "", attrValue );
+			} else	if( attrKey.startsWith("xmlns:") ) {
+				if( newNsAbbreviations == previousNsAbbreviations ) newNsAbbreviations = new HashMap(previousNsAbbreviations);
+				newNsAbbreviations.put( attrKey.substring(6), attrValue );
+			}
+		}
+		return newNsAbbreviations; 
+	}
+	
+	public static Object namespaceXmlPart( Object xmlPart, Map nsAbbreviations ) {
+		if( xmlPart instanceof XmlCloseTag ) {
+			return new XmlCloseTag(shortToLong(((XmlCloseTag)xmlPart).name, nsAbbreviations));
+		} else if( xmlPart instanceof XmlOpenTag ) {
+			XmlOpenTag oldOpenTag = (XmlOpenTag)xmlPart;
+			Map attributes;
+			if( oldOpenTag.attributes.size() > 0 ) {
+				attributes = new HashMap();
+				for( Iterator i=oldOpenTag.attributes.keySet().iterator(); i.hasNext(); ) {
+					String name = (String)i.next();
+					attributes.put( shortToLong(name, nsAbbreviations), oldOpenTag.attributes.get(name));
+				}
+			} else {
+				attributes = oldOpenTag.attributes; 
+			}
+			return new XmlOpenTag( shortToLong(oldOpenTag.name, nsAbbreviations), oldOpenTag.closed, attributes );
+		} else {
+			return xmlPart;
+		}
+	}
+	
+	public static ParseResult parseRdf( char[] chars, int offset, Map nsAbbreviations ) {
 		ParseResult xmlParseResult = parseXmlPart(chars, offset);
 		Object xmlPart = xmlParseResult.value;
 		
@@ -307,54 +368,54 @@ public class RDF {
 			offset = xmlParseResult.newOffset;
 			Description desc = new Description();
 			
-			XmlOpenTag openTag = (XmlOpenTag)xmlPart;
-			for( Iterator i=openTag.attributes.keySet().iterator(); i.hasNext(); ) {
-				String attrKey = (String)i.next();
-				String attrValue = (String)openTag.attributes.get(attrKey);
-				if( attrKey.startsWith("xmlns:") ) {
-					namespaces.put( attrKey.substring(6), attrValue );
-				} else if( "rdf:about".equals(attrKey) ) {
-					desc.about = new Ref(attrValue);
-				} else {
-					// somehow report unrecognised attr?
-				}
+			XmlOpenTag descOpenTag = (XmlOpenTag)xmlPart;
+			Map descNsAbbreviatios = updateNamespaces( descOpenTag, nsAbbreviations );
+			descOpenTag = (XmlOpenTag)namespaceXmlPart(descOpenTag, descNsAbbreviatios);
+			
+			if( !RDF_DESCRIPTION.equals(descOpenTag.name) ) {
+				throw new RuntimeException("Can't parse + '" + descOpenTag.name + "' as RDF");
 			}
-			if( openTag.closed ) {
+			
+			if( descOpenTag.closed ) {
 				return new ParseResult( desc, offset );
 			}
+			
 			while( true ) {
 				xmlParseResult = parseXmlPart(chars, offset);
 				xmlPart = xmlParseResult.value;
+				Map predicateNsAbbreviations = updateNamespaces(xmlPart, descNsAbbreviatios);
+				xmlPart = namespaceXmlPart(xmlPart, predicateNsAbbreviations);
+				
 				if( xmlPart instanceof XmlCloseTag ) {
-					if( !openTag.name.equals(((XmlCloseTag)xmlPart).name) ) {
-						throw new RuntimeException("Start and end tags do not match: " + openTag.name + " != " + ((XmlCloseTag)xmlPart).name);
+					if( !descOpenTag.name.equals(((XmlCloseTag)xmlPart).name) ) {
+						throw new RuntimeException("Start and end tags do not match: " + descOpenTag.name + " != " + ((XmlCloseTag)xmlPart).name);
 					}
 					return new ParseResult( desc, xmlParseResult.newOffset );
 				} else if( xmlPart instanceof XmlOpenTag ) {
 					XmlOpenTag predicateOpenTag = (XmlOpenTag)xmlPart;
-					String predicate = shortToLong( predicateOpenTag.name, namespaces );
 					offset = xmlParseResult.newOffset;
 					
 					String resourceUri = (String)predicateOpenTag.attributes.get("rdf:resource");
 					if( resourceUri != null ) {
-						desc.put(predicate, new Ref(resourceUri));
+						desc.put(predicateOpenTag.name, new Ref(resourceUri));
 					}
 					
 					if( !predicateOpenTag.closed ) {					
 						while( true ) {
-							ParseResult rdfValueParseResult = parseRdf(chars, offset, namespaces);
+							ParseResult rdfValueParseResult = parseRdf(chars, offset, predicateNsAbbreviations);
 							offset = rdfValueParseResult.newOffset;
 							if( rdfValueParseResult.value == null ) {
 								break;
 							}
 							Object value = rdfValueParseResult.value;
-							desc.put(predicate, value);
+							desc.put(predicateOpenTag.name, value);
 						}
 						ParseResult predicateCloseTagParseResult = parseXmlPart(chars, offset);
 						if( !(predicateCloseTagParseResult.value instanceof XmlCloseTag) ) {
 							throw new RuntimeException("Expected XML close tag but found " + predicateCloseTagParseResult.value.getClass().getName() );
 						}
 						XmlCloseTag predicateCloseTag = (XmlCloseTag)predicateCloseTagParseResult.value;
+						predicateCloseTag = (XmlCloseTag)namespaceXmlPart(predicateCloseTag, predicateNsAbbreviations);
 						if( !predicateCloseTag.name.equals(predicateOpenTag.name) ) {
 							throw new RuntimeException("Start and end predicate tags do not match: " + predicateOpenTag.name + " != " + predicateCloseTag.name );
 						}
@@ -375,15 +436,27 @@ public class RDF {
 	public static Object rdfToMap( String rdf ) {
 		char[] chars = new char[rdf.length()];
 		rdf.getChars(0, chars.length, chars, 0);
-		Map namespaces = new HashMap();
-		ParseResult rdfParseResult = parseRdf( chars, 0, namespaces );
+		Map nsAbbreviations = standardNsAbbreviations;
+		ParseResult rdfParseResult = parseRdf( chars, 0, nsAbbreviations );
 		return rdfParseResult.value;
 	}
 	
-	public static String RDF_ABOUT = "http://www.w3.org/1999/02/22-rdf-syntax-ns#about";
-	public static String DC_CREATOR = "http://purl.org/dc/elements/1.1/creator";
+	public static byte[] readFile( String filename )
+		throws IOException
+	{
+		File file = new File(filename);
+		FileInputStream fis = new FileInputStream(file);
+		int read = 0;
+		int length = (int)file.length();
+		byte[] content = new byte[length];
+		while( read < length ) {
+			read += fis.read(content, read, length-read );
+		}
+		return content;
+	}
 	
 	public static void main( String[] args ) {
+		/*		
 		Description props = new Description();
 		props.about = new Ref("http://www.nuke24.net/about");
 		props.put(DC_CREATOR, "TOGoS");
@@ -392,11 +465,19 @@ public class RDF {
 		props.put("junk/has-more-props", subProps);
 		props.put("junk/part-of-site", new Ref("http://www.nuke24.net/"));
 		String rdf = RDF.xmlEncodeRdf(props);
-		System.out.println(rdf);
-		
+		*/
+
+		String rdf;
+		try {
+			rdf = new String(readFile("junk/parser-test.rdf"));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+		System.out.println("Input: " + rdf);
 		
 		Object parsed = rdfToMap(rdf);
 		rdf = RDF.xmlEncodeRdf(parsed);
-		System.out.println("Parsed: " + rdf);
+		System.out.println("Output: " + rdf);
 	}
 }
