@@ -11,32 +11,50 @@ import java.util.Map;
 
 public class RDF {
 	public static String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
-	public static String DC_NS  = "http://purl.org/dc/elements/1.1/";
+	public static String DC_NS  = "http://purl.org/dc/terms/";
+	public static String CCOUCH_NS = "http://www.nuke24.net/project/ContentCouch/ns/";
 	
 	public static String RDF_ABOUT       = RDF_NS + "about";
 	public static String RDF_RESOURCE    = RDF_NS + "resource";
 	public static String RDF_DESCRIPTION = RDF_NS + "Description";
 	
-	public static String DC_CREATOR = DC_NS + "creator";	
+	public static String DC_CREATOR = DC_NS + "creator";
+	public static String DC_CREATED = DC_NS + "created";
+	public static String DC_MODIFIED = DC_NS + "modified";
+	public static String DC_FORMAT = DC_NS + "format";
+	
+	public static String CCOUCH_NAME = CCOUCH_NS + "name";
+	public static String CCOUCH_TAG = CCOUCH_NS + "tag";
+	public static String CCOUCH_COLLECTOR = CCOUCH_NS + "collector";
+	public static String CCOUCH_IMPORTEDDATE = CCOUCH_NS + "importedDate";
+	public static String CCOUCH_IMPORTEDFROM = CCOUCH_NS + "importedFrom";
 	
 	static Map standardNsAbbreviations = new HashMap();
 	static {
 		standardNsAbbreviations.put("rdf", RDF_NS);
 		standardNsAbbreviations.put("dc", DC_NS);
+		standardNsAbbreviations.put("ccouch", CCOUCH_NS);
 		standardNsAbbreviations.put("xmlns", "http://www.w3.org/2000/xmlns/");
 	}
 	
-	static class Ref {
+	public static class Ref {
 		public String targetUri;
 		public Ref(String targetUri) {
 			this.targetUri = targetUri;
 		}
 	}
 	
-	static class Description extends HashMap {
+	public static class Description extends HashMap {
 		public Ref about;
 		public Description() {
 			super();
+		}
+		public Description(Map copyThis) {
+			super(copyThis);
+		}
+		public Description(Ref about, Map copyThis) {
+			super(copyThis);
+			this.about = about;
 		}
 	}
 	

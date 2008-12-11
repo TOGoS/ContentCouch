@@ -23,8 +23,12 @@ public class Sha1BlobStore implements BlobSource, BlobSink {
 	}
 	
 	protected String getFilenameForSha1( byte[] sha1 ) {
+		/*
 		char[] hex = DigestUtil.bytesToLowerHex(sha1);
 		return new String(hex,0,2) + "/" + new String(hex);
+		*/
+		String base32 = Base32.encode(sha1);
+		return new String( base32.substring(0,2) + "/" + base32.substring(2));
 	}
 	
 	public String push( Blob blob ) {

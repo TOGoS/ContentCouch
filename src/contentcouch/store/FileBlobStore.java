@@ -6,7 +6,6 @@ import java.io.IOException;
 
 import contentcouch.data.Blob;
 import contentcouch.data.FileBlob;
-import contentcouch.digest.DigestUtil;
 
 public class FileBlobStore implements BlobSource, BlobStore {
 	protected String filenamePrefix;
@@ -17,11 +16,6 @@ public class FileBlobStore implements BlobSource, BlobStore {
 	
 	protected File getFile( String filename ) {
 		return new File(filenamePrefix + filename);
-	}
-	
-	protected File getFileForSha1( byte[] sha1 ) {
-		char[] hex = DigestUtil.bytesToLowerHex(sha1);
-		return getFile( new String(hex,0,2) + "/" + new String(hex));
 	}
 	
 	public void put( String filename, Blob blob ) {
@@ -37,7 +31,8 @@ public class FileBlobStore implements BlobSource, BlobStore {
 					long length = blob.getLength();
 					int chunkLength = 1024*1024;
 					while( written < length ) {
-						fos.write(blob.getData(written, chunkLength));
+						int thisChunkLength = (length - written) > chunkLength ? chunkLength : (int)(length - written);
+						fos.write(blob.getData(written, thisChunkLength));
 						written += chunkLength;
 					}
 				} finally {
