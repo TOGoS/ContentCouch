@@ -80,10 +80,16 @@ public class RDF {
 	public static String DC_FORMAT = DC_NS + "format";
 	
 	public static String CCOUCH_NAME = CCOUCH_NS + "name";
-	public static String CCOUCH_TAG = CCOUCH_NS + "tag";
-	public static String CCOUCH_COLLECTOR = CCOUCH_NS + "collector";
+	public static String CCOUCH_TAG  = CCOUCH_NS + "tag";
+	public static String CCOUCH_COLLECTOR    = CCOUCH_NS + "collector";
 	public static String CCOUCH_IMPORTEDDATE = CCOUCH_NS + "importedDate";
 	public static String CCOUCH_IMPORTEDFROM = CCOUCH_NS + "importedFrom";
+	public static String CCOUCH_ENTRIES  = CCOUCH_NS + "entries";
+	public static String CCOUCH_FILETYPE = CCOUCH_NS + "fileType";
+	public static String CCOUCH_CONTENT  = CCOUCH_NS + "content"; // For use when fileType = 'File'
+	public static String CCOUCH_LISTING  = CCOUCH_NS + "listing"; // For use when fileType = 'Directory'
+	public static String CCOUCH_DIRECTORYLISTING = CCOUCH_NS + "DirectoryListing";
+	public static String CCOUCH_DIRECTORYENTRY = CCOUCH_NS + "DirectoryEntry";
 	
 	static Map standardNsAbbreviations = new HashMap();
 	static {
@@ -163,7 +169,7 @@ public class RDF {
 		}
 	}
 	
-	public static String xmlEncodeRdf( Object value ) {
+	public static String xmlEncodeRdf( Object value, String defaultNamespace ) {
 		try {
 			if( value instanceof RdfNode ) {
 				RdfNode desc = (RdfNode)value;
@@ -171,6 +177,9 @@ public class RDF {
 				Writer subWriter = new StringWriter();
 				Map usedNsAbbreviations = new HashMap();
 				usedNsAbbreviations.put("rdf", standardNsAbbreviations.get("rdf"));
+				if( defaultNamespace != null ) {
+					usedNsAbbreviations.put("", defaultNamespace);
+				}
 				writeRdfProperties( subWriter, desc, "\t", usedNsAbbreviations );
 
 				String nodeName = XML.longToShort(desc.typeName, standardNsAbbreviations, usedNsAbbreviations);
@@ -190,7 +199,11 @@ public class RDF {
 		} catch( IOException e ) {
 			throw new RuntimeException( "Error while generating xml", e );
 		}
-	}	
+	}
+	
+	public static String xmlEncodeRdf( Object value ) {
+		return xmlEncodeRdf( value, null );
+	}
 	
 	public static XML.ParseResult parseRdf( char[] chars, int offset, Map nsAbbreviations ) {
 		XML.ParseResult xmlParseResult = XML.parseXmlPart(chars, offset);

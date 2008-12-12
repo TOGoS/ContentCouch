@@ -25,7 +25,7 @@ public class XML {
 			String nsLong = (String)usedNsAbbreviations.get(nsShort);
 			if( name.length() > nsLong.length() && name.startsWith(nsLong) ) {
 				String postfix = name.substring(nsLong.length());
-				return nsShort + ":" + postfix;
+				return nsShort.length() == 0 ? postfix : nsShort + ":" + postfix;
 			}
 		}
 		for( Iterator i=availableNsAbbreviations.keySet().iterator(); i.hasNext(); ) {
@@ -34,7 +34,7 @@ public class XML {
 			if( name.length() > nsLong.length() && name.startsWith(nsLong) ) {
 				String postfix = name.substring(nsLong.length());
 				usedNsAbbreviations.put(nsShort,nsLong);
-				return nsShort + ":" + postfix;
+				return nsShort.length() == 0 ? postfix : nsShort + ":" + postfix;
 			}
 		}
 		// Otherwise, we need to make one up!
@@ -79,13 +79,13 @@ public class XML {
 	
 	public static void writeXmlns( Writer w, Map nsAbbreviations )
 	throws IOException
-{
-	for( Iterator i=nsAbbreviations.keySet().iterator(); i.hasNext(); ) {
-		String nsShort = (String)i.next();
-		String nsLong = (String)nsAbbreviations.get(nsShort);
-		w.write(" xmlns:" + nsShort + "=\"" + xmlEscapeAttributeValue(nsLong) + "\"");
+	{
+		for( Iterator i=nsAbbreviations.keySet().iterator(); i.hasNext(); ) {
+			String nsShort = (String)i.next();
+			String nsLong = (String)nsAbbreviations.get(nsShort);
+			w.write((nsShort.length() == 0 ? " xmlns" : " xmlns:" + nsShort) + "=\"" + xmlEscapeAttributeValue(nsLong) + "\"");
+		}
 	}
-}
 
 	static final class ParseResult {
 		public Object value;

@@ -4,14 +4,17 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import contentcouch.data.Blob;
 import contentcouch.data.ByteArrayBlob;
 import contentcouch.data.FileBlob;
 import contentcouch.xml.RDF;
+import contentcouch.xml.RDF.RdfNode;
 
 public class Importer {
 	Datastore datastore;
@@ -84,15 +87,23 @@ public class Importer {
 		return metametadata;
 	}
 
-	protected Blob createMetadataBlob( RDF.Description desc ) {
-		return new ByteArrayBlob(RDF.xmlEncodeRdf(desc).getBytes());
+	protected Blob createMetadataBlob( RDF.RdfNode desc, String defaultNamespace ) {
+		return new ByteArrayBlob(RDF.xmlEncodeRdf(desc, defaultNamespace).getBytes());
 	}
 	
 	protected Blob createMetadataBlob( String aboutUri, Map properties ) {
 		RDF.Description desc = new RDF.Description();
 		desc.importValues(properties);
 		desc.about = new RDF.Ref(aboutUri);
-		return createMetadataBlob(desc);
+		return createMetadataBlob(desc, null);
+	}
+	
+	public String importContent( Blob b ) {
+		return datastore.push( "data", b );
+	}
+	
+	public String importFileContent(File file) {
+		return importContent( new FileBlob(file) );
 	}
 	
 	public void importFile(File file) {
@@ -107,7 +118,7 @@ public class Importer {
 		datastore.push("metametadata", createMetadataBlob(metadataUri, metametadata));
 	}
 	
-	public void recursivelyImport(File dir) {
+	public void recursivelyImportFiles(File dir) {
 		if( dir.isFile() ) {
 			importFile(dir);
 		} else {
@@ -115,16 +126,51 @@ public class Importer {
 			for( int i=0; i<subNames.length; ++i ) {
 				String subName = subNames[i];
 				if( subName.startsWith(".") ) continue;
-				recursivelyImport(new File(dir + "/" + subName));
+				recursivelyImportFiles(new File(dir + "/" + subName));
 			}
 		}
 	}
+	
+	public RdfNode importDirectoryEntry( File file ) {
+		RdfNode n = new RdfNode();
+		n.typeName = RDF.CCOUCH_DIRECTORYENTRY;
+		if( file.isDirectory() ) {
+			n.add(RDF.CCOUCH_FILETYPE, "Directory");
+			n.add(RDF.CCOUCH_NAME, file.getName());
+			n.add(RDF.CCOUCH_LISTING, new RDF.Ref(importDirectory(file)));
+		} else {
+			n.add(RDF.CCOUCH_FILETYPE, "File");
+			n.add(RDF.CCOUCH_NAME, file.getName());
+			n.add(RDF.CCOUCH_CONTENT, new RDF.Ref(importFileContent(file)));
+		}
+		return n;
+	}
+	
+	public String importDirectory(File dir) {
+		if( !dir.isDirectory() ) {
+			throw new RuntimeException("Cannot import a plain file with importDir!");
+		}
+		RdfNode n = new RdfNode();
+		n.typeName = RDF.CCOUCH_DIRECTORYLISTING;
+		List entries = new ArrayList();
+		File[] subFiles = dir.listFiles();
+		for( int i=0; i<subFiles.length; ++i ) {
+			File subFile = subFiles[i];
+			if( subFile.getName().startsWith(".") ) continue;
+			entries.add( importDirectoryEntry(subFile) );
+		}
+		n.add(RDF.CCOUCH_ENTRIES, entries);
+		return importContent(createMetadataBlob(n, RDF.CCOUCH_NS));
+	}
 
 	public static void main(String[] argc) {
-		String dirname = "junk/import";
+		String filename = "junk/import";
 		
-		File f = new File(dirname);
+		File file = new File(filename);
 		Importer importer = new Importer(new Datastore("junk-datastore"));
-		importer.recursivelyImport(f);
+		//importer.recursivelyImportFiles(file);
+		
+		String ref = importer.importDirectory(file);
+		System.out.println(ref);
 	}
 }
