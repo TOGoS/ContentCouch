@@ -11,7 +11,7 @@ import java.util.Map;
 import contentcouch.data.Blob;
 import contentcouch.data.ByteArrayBlob;
 import contentcouch.data.FileBlob;
-import contentcouch.metadata.RDF;
+import contentcouch.xml.RDF;
 
 public class Importer {
 	Datastore datastore;
@@ -89,7 +89,10 @@ public class Importer {
 	}
 	
 	protected Blob createMetadataBlob( String aboutUri, Map properties ) {
-		return createMetadataBlob(new RDF.Description(new RDF.Ref(aboutUri), properties));
+		RDF.Description desc = new RDF.Description();
+		desc.importValues(properties);
+		desc.about = new RDF.Ref(aboutUri);
+		return createMetadataBlob(desc);
 	}
 	
 	public void importFile(File file) {
@@ -118,7 +121,7 @@ public class Importer {
 	}
 
 	public static void main(String[] argc) {
-		String dirname = "junk";
+		String dirname = "junk/import";
 		
 		File f = new File(dirname);
 		Importer importer = new Importer(new Datastore("junk-datastore"));

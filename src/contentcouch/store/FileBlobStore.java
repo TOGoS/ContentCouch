@@ -22,7 +22,7 @@ public class FileBlobStore implements BlobSource, BlobStore {
 		File file = getFile( filename );
 		if( !file.exists() ) {
 			try {
-				if( !file.getParentFile().mkdirs() ) {
+				if( !file.getParentFile().isDirectory() && !file.getParentFile().mkdirs() ) {
 					throw new IOException("Couln't create directories for " + file.getParentFile().getPath());
 				}
 				FileOutputStream fos = new FileOutputStream(file);
