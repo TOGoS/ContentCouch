@@ -71,6 +71,7 @@ public class RDF {
 	
 	public static String RDF_ABOUT       = RDF_NS + "about";
 	public static String RDF_RESOURCE    = RDF_NS + "resource";
+	public static String RDF_PARSETYPE   = RDF_NS + "parseType";
 	public static String RDF_DESCRIPTION = RDF_NS + "Description";
 	
 	public static String DC_CREATOR = DC_NS + "creator";
@@ -100,9 +101,9 @@ public class RDF {
 		if( value instanceof RdfNode ) {
 			RdfNode desc = (RdfNode)value;
 			String valueNodeName = XML.longToShort(desc.typeName, standardNsAbbreviations, usedNsAbbreviations );
-			w.write(padding + "\t<" + valueNodeName + ">\n");
-			writeRdfProperties( w, desc, padding + "\t\t", usedNsAbbreviations);
-			w.write(padding + "\t</" + valueNodeName + ">\n");
+			w.write(padding + "<" + valueNodeName + ">\n");
+			writeRdfProperties( w, desc, padding + "\t", usedNsAbbreviations);
+			w.write(padding + "</" + valueNodeName + ">\n");
 		} else {
 			throw new RuntimeException("Don't know how to rdf-ify " + value);
 		}
@@ -125,10 +126,10 @@ public class RDF {
 			for( Iterator i = c.iterator(); i.hasNext(); ) {
 				writeRdfValue( w, i.next(), padding + "\t", usedNsAbbreviations );
 			}
-			w.write(padding + "</" + propNodeName + "/>\n");
+			w.write(padding + "</" + propNodeName + ">\n");
 		} else {
 			w.write(padding + "<" + propNodeName + ">\n");
-			writeRdfValue( w, value, padding, usedNsAbbreviations );
+			writeRdfValue( w, value, padding + "\t", usedNsAbbreviations );
 			w.write(padding + "</" + propNodeName + ">\n");
 		}
 	}
@@ -166,20 +167,22 @@ public class RDF {
 		try {
 			if( value instanceof RdfNode ) {
 				RdfNode desc = (RdfNode)value;
-				
-				Writer outerWriter = new StringWriter();
+
 				Writer subWriter = new StringWriter();
-				Map usednsAbbreviations = new HashMap();
-				usednsAbbreviations.put("rdf", standardNsAbbreviations.get("rdf"));
-				writeRdfProperties( subWriter, desc, "\t", usednsAbbreviations );
-				outerWriter.write( "<rdf:Description" );
-				XML.writeXmlns( outerWriter, usednsAbbreviations );
+				Map usedNsAbbreviations = new HashMap();
+				usedNsAbbreviations.put("rdf", standardNsAbbreviations.get("rdf"));
+				writeRdfProperties( subWriter, desc, "\t", usedNsAbbreviations );
+
+				String nodeName = XML.longToShort(desc.typeName, standardNsAbbreviations, usedNsAbbreviations);
+				Writer outerWriter = new StringWriter();
+				outerWriter.write( "<" + nodeName );
+				XML.writeXmlns( outerWriter, usedNsAbbreviations );
 				if( desc instanceof Description && ((Description)desc).about != null ) {
 					outerWriter.write(" rdf:about=\"" + XML.xmlEscapeAttributeValue(((Description)desc).about.targetUri) + "\"");
 				}
 				outerWriter.write( ">\n" );
 				outerWriter.write( subWriter.toString() );
-				outerWriter.write( "</rdf:Description>\n" );
+				outerWriter.write( "</" + nodeName + ">\n" );
 				return outerWriter.toString();
 			} else {
 				return XML.xmlEscapeText(value.toString());
@@ -229,12 +232,17 @@ public class RDF {
 					XML.XmlOpenTag predicateOpenTag = (XML.XmlOpenTag)xmlPart;
 					offset = xmlParseResult.newOffset;
 					
-					String resourceUri = (String)predicateOpenTag.attributes.get("rdf:resource");
+					String resourceUri = (String)predicateOpenTag.attributes.get(RDF_RESOURCE);
 					if( resourceUri != null ) {
 						desc.add(predicateOpenTag.name, new Ref(resourceUri));
 					}
 					
-					if( !predicateOpenTag.closed ) {					
+					if( !predicateOpenTag.closed ) {
+						Collection c = null;
+						if( "Collection".equals(predicateOpenTag.attributes.get(RDF_PARSETYPE)) ) {
+							c = new ArrayList();
+							desc.add(predicateOpenTag.name, c);
+						}
 						while( true ) {
 							XML.ParseResult rdfValueParseResult = parseRdf(chars, offset, predicateNsAbbreviations);
 							offset = rdfValueParseResult.newOffset;
@@ -242,7 +250,11 @@ public class RDF {
 								break;
 							}
 							Object value = rdfValueParseResult.value;
-							desc.add(predicateOpenTag.name, value);
+							if( c != null ) {
+								c.add(value);
+							} else {
+								desc.add(predicateOpenTag.name, value);
+							}
 						}
 						XML.ParseResult predicateCloseTagParseResult = XML.parseXmlPart(chars, offset);
 						if( !(predicateCloseTagParseResult.value instanceof XML.XmlCloseTag) ) {
@@ -290,20 +302,9 @@ public class RDF {
 	}
 	
 	public static void main( String[] args ) {
-		/*		
-		Description props = new Description();
-		props.about = new Ref("http://www.nuke24.net/about");
-		props.put(DC_CREATOR, "TOGoS");
-		Description subProps = new Description();
-		subProps.put("junk/extraprop", "This is an extra property");
-		props.put("junk/has-more-props", subProps);
-		props.put("junk/part-of-site", new Ref("http://www.nuke24.net/"));
-		String rdf = RDF.xmlEncodeRdf(props);
-		*/
-
 		String rdf;
 		try {
-			rdf = new String(readFile("junk/parser-test.rdf"));
+			rdf = new String(readFile("junk/dir-test.rdf"));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
