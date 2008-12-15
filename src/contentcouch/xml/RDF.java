@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +44,14 @@ public class RDF {
 			}
 			i.add(value);
 		}
-		
+
+		public Object getSingle(Object key) {
+			Set i = (Set)get(key);
+			if( i == null ) return null;
+			for( Iterator ii=i.iterator(); ii.hasNext(); ) return ii.next();
+			return null;
+		}
+
 		public void importValues(Map properties) {
 			for( Iterator i = properties.entrySet().iterator(); i.hasNext(); ) {
 				Map.Entry entry = (Map.Entry)i.next();
@@ -64,6 +73,8 @@ public class RDF {
 	}
 	
 	//// Constants ////
+	
+	public static DateFormat CCOUCH_DATEFORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	public static String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	public static String DC_NS  = "http://purl.org/dc/terms/";
@@ -292,7 +303,7 @@ public class RDF {
 		}
 	}
 	
-	public static Object rdfToMap( String rdf ) {
+	public static Object parseRdf( String rdf ) {
 		char[] chars = new char[rdf.length()];
 		rdf.getChars(0, chars.length, chars, 0);
 		Map nsAbbreviations = standardNsAbbreviations;
@@ -324,7 +335,7 @@ public class RDF {
 
 		System.out.println("Input: " + rdf);
 		
-		Object parsed = rdfToMap(rdf);
+		Object parsed = parseRdf(rdf);
 		rdf = RDF.xmlEncodeRdf(parsed);
 		System.out.println("Output: " + rdf);
 	}

@@ -2,8 +2,6 @@ package contentcouch.app;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import contentcouch.data.Blob;
-import contentcouch.data.ByteArrayBlob;
+import contentcouch.data.BlobUtil;
 import contentcouch.data.FileBlob;
 import contentcouch.xml.RDF;
 import contentcouch.xml.RDF.RdfNode;
@@ -23,8 +21,6 @@ public class Importer {
 	public String[] tags;
 	public Map mimeTypesByExt;
 	public String defaultMimeType;
-	
-	public DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	public Importer( Datastore datastore ) {
 		this.datastore = datastore;
@@ -68,7 +64,7 @@ public class Importer {
 		Map metadata = new HashMap();
 		metadata.put(RDF.CCOUCH_COLLECTOR, collector);
 		metadata.put(RDF.CCOUCH_NAME, file.getName());
-		metadata.put(RDF.DC_MODIFIED, dateFormat.format(new Date(file.lastModified())));
+		metadata.put(RDF.DC_MODIFIED, RDF.CCOUCH_DATEFORMAT.format(new Date(file.lastModified())));
 		
 		String mimeType = getMimeType( file );
 		if( mimeType != null ) metadata.put(RDF.DC_FORMAT, mimeType);
@@ -81,14 +77,14 @@ public class Importer {
 	
 	public Map getMetametadata( File file ) {
 		Map metametadata = new HashMap();
-		metametadata.put(RDF.CCOUCH_IMPORTEDDATE, dateFormat.format(new Date()));
+		metametadata.put(RDF.CCOUCH_IMPORTEDDATE, RDF.CCOUCH_DATEFORMAT.format(new Date()));
 		metametadata.put(RDF.CCOUCH_IMPORTEDFROM, getFileUri(file));
 		metametadata.put(RDF.DC_FORMAT, "application/rdf+xml");
 		return metametadata;
 	}
 
 	protected Blob createMetadataBlob( RDF.RdfNode desc, String defaultNamespace ) {
-		return new ByteArrayBlob(RDF.xmlEncodeRdf(desc, defaultNamespace).getBytes());
+		return BlobUtil.getBlob(RDF.xmlEncodeRdf(desc, defaultNamespace));
 	}
 	
 	protected Blob createMetadataBlob( String aboutUri, Map properties ) {
@@ -141,6 +137,7 @@ public class Importer {
 		} else {
 			n.add(RDF.CCOUCH_FILETYPE, "File");
 			n.add(RDF.CCOUCH_NAME, file.getName());
+			n.add(RDF.DC_MODIFIED, RDF.CCOUCH_DATEFORMAT.format(new Date(file.lastModified())));
 			n.add(RDF.CCOUCH_CONTENT, new RDF.Ref(importFileContent(file)));
 		}
 		return n;
