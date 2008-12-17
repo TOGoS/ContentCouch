@@ -1,0 +1,77 @@
+# All ccouch commands are working in the context of a current local
+# repository.  In some cases, it will be a system-wide repository.
+# In other cases, it will be a repository specific to a project.
+# Any local repository may be configured to use the datastore of
+# another, so that all projects can share a system-wide datastore.
+
+
+
+
+
+# Clone variations either creates a new local repository, or, if the
+# repository already exists, will update it with info from the remote
+# repository (similar to an update)
+#
+# If -bare is specified, the target directory will hold the repository.
+# Otherwise, the destination repository will be put in <target>/.ccouch
+# and the specified (or latest) head will be checked out to the target
+# directory.
+
+# This clone the entire repository; -bare must be specified if the repo
+# contains more than one head we can't check out multiple heads at once!
+ccouch clone -repo -barefreenet:SSK@goopypoop/TestRepo/0/TestRepo/ TestRepo
+
+# This will find the latest head in the repository and download that...
+ccouch clone freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/ TestProject
+
+# This will download a specific head within the repository (#23)
+ccouch clone freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/23 TestProject
+
+
+
+
+# Store simply takes a local file or directory, and stores it in the repository's
+# data store.
+
+# Add files to the datastore and output its URN
+ccouch store mahfile.mp3
+ccouch store somedir
+
+
+
+
+
+# Checkout is the opposite of store - it takes a file from the repository,
+# and makes a copy on the filesystem.
+
+# Check out a file
+ccouch checkout urn:sha1:POOPSKOOOP mahdoc.pdf
+
+# Check out a directory (note the '/' on the end of the destination -
+# otherwise would just check out the file describing the directory)
+ccouch checkout urn:sha1:SKOOPERDOOPER mahdir/
+
+
+
+
+# Cache tries to make sure that the specified blobs are stored in the local
+# repository.  If they are not, it will try to download them from any
+# remote sources that are available.
+
+# Cache some files in the repository
+ccouch cache urn:sha1:BLAH
+
+# Cache a bunch of files, listed by...
+ccouch cache @urn-list.txt
+
+
+
+
+# Rcache is just like cache, but will recursively follow directory entries
+# to cache subdirectory listings and file contents.
+
+# Cache a collection or a directory
+ccouch rcache urn:sha1:THISDIRECTORYLISTING
+
+# Rcache can also take a URI of a head and automatically dereference it.
+ccouch rcache freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/

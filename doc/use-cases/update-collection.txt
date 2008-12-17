@@ -1,0 +1,8 @@
+We want to create or update the collection 'yc-photos-ubn'.
+
+Our remotes config says that this collection has a head pointer at freenet:USK@blah/togos-ubn-repos/0/heads.rdf#yc-photos.  
+
+Download that RDF fragment and, if the collection listing URI has changed, create a new entry heads/yc-photos-ubn/27
+(27 being the next available integer in that directory).
+
+Download all files listed in that collection into our local repository that aren't already there.

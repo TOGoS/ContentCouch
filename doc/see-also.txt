@@ -1,0 +1,9 @@
+
+Some guy is trying to keep his home directories, bookmarks, etc organized:
+http://oheric.com/social_media/serving_web_content_flat_files_rdf_git_textile_xhtml
+
+Metalink is a way to communicate checksums, URIs, and possibly other information about files:
+http://en.wikipedia.org/wiki/Metalink#Example_.metalink_file
+
+Magnet URIs are another way to provide URIs and other information about a file:
+http://magnet-uri.sourceforge.net/

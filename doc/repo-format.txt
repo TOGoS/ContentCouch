@@ -1,0 +1,4 @@
+...repo/data/XX/XXXXX                         ; holds all the data. Blobs are named by base32-encoded SHA-1 sum.
+...repo/heads/<project/branch-name>/<version> ; holds heads!
+...repo/urn-res/XX.txt                        ; URN-resolution files (XX is first 2 bytes of base32-encoded SHA1-sum)
+...repo/metadata-cache.bdb                    ; BDB full of metadata (size, last modified date, sha-1 sum, type-specific extracted info) about files in the host filesystem
