@@ -1,8 +1,11 @@
-We want to create or update the collection 'yc-photos-ubn'.
+== Create or update our collection of 'yc-photos' ==
 
-Our remotes config says that this collection has a head pointer at freenet:USK@blah/togos-ubn-repos/0/heads/yc-photos/  
+Command:
 
-Download that head and, if the collection listing URI has changed, create a new entry heads/yc-photos-ubn/27
-(27 being the next available integer in that directory).
+  ccouch clone -merge @freenet:USK@blahblahblah/togos-ubn-repos/0/heads/yc-photos/ yc-photos/ 
 
-Download all files listed in that collection into our local repository that aren't already there.
+This will look to see if the latest head at freenet:USK@blahblahblah/togos-ubn-repos/0/heads/yc-photos/ is
+newer than our latest head, and, if so, and assuming the lates head we have is #22, download the remote
+head to yc-photos/.ccouch/heads/yc-photos/23.
+
+Next...

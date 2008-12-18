@@ -3,12 +3,17 @@
 # In other cases, it will be a repository specific to a project.
 # Any local repository may be configured to use the datastore of
 # another, so that all projects can share a system-wide datastore.
+#
+# In general, an @-sign before a URI means 'the thing described by
+# this resource', which may be a list of resource, a reference to a
+# single resource, or a resource describing a directory or a
+# collection
 
 
 
 
 
-# Clone variations either creates a new local repository, or, if the
+# Clone variations either create a new local repository, or, if the
 # repository already exists, will update it with info from the remote
 # repository (similar to an update)
 #
@@ -27,6 +32,12 @@ ccouch clone freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/ TestPr
 # This will download a specific head within the repository (#23)
 ccouch clone freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/23 TestProject
 
+# This will download the latest head from the repository, and combine its contents
+# with what is already on our filesystem.
+# This should fail if any existing files would be overwritten with different ones. 
+ccouch clone -merge freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/ TestProject
+
+
 
 
 
@@ -42,15 +53,22 @@ ccouch store somedir
 
 
 # Checkout is the opposite of store - it takes a file from the repository,
-# and makes a copy on the filesystem.
+# and makes a copy on the filesystem.  This is different than clone in that
+# it does not set up a new repository.  Checkout is actually the last step
+# of a non-bare clone.
 
-# Check out a file
+# Check out a file - just a glorified copy, really!
 ccouch checkout urn:sha1:POOPSKOOOP mahdoc.pdf
 
-# Check out a directory (note the '/' on the end of the destination -
-# otherwise would just check out the file describing the directory)
-ccouch checkout urn:sha1:SKOOPERDOOPER mahdir/
+# Check out a directory.  The '@' at the beginning of the source URI means
+# 'what is listed at...'.  Using '@', you could also point to a head object,
+# which would act as a redirect to the current version.
+ccouch checkout @urn:sha1:SKOOPERDOOPER mahdir
 
+# Check out a directory, combining it with the files that are already there
+# (add new files, overwrite existing ones, leave existing ones that are not
+# present in the source directory)
+ccouch checkout -merge @urn:sha1:POOPAHSKOOPAH makdir
 
 
 
@@ -64,14 +82,8 @@ ccouch cache urn:sha1:BLAH
 # Cache a bunch of files, listed by...
 ccouch cache @urn-list.txt
 
-
-
-
-# Rcache is just like cache, but will recursively follow directory entries
-# to cache subdirectory listings and file contents.
-
 # Cache a collection or a directory
-ccouch rcache urn:sha1:THISDIRECTORYLISTING
+ccouch cache @urn:sha1:THISDIRECTORYLISTING
 
-# Rcache can also take a URI of a head and automatically dereference it.
-ccouch rcache freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/
+# Ccache the latest version of the files in some repo...
+ccouch cache @freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/
