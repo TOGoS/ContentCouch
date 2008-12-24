@@ -7,7 +7,8 @@
 # In general, an @-sign before a URI means 'the thing described by
 # this resource', which may be a list of resource, a reference to a
 # single resource, or a resource describing a directory or a
-# collection
+# collection.  In some cases this will result in the same resource
+# as tacking a '#' onto the URI.
 
 
 
@@ -82,8 +83,8 @@ ccouch cache urn:sha1:BLAH
 # Cache a bunch of files, listed by...
 ccouch cache @urn-list.txt
 
-# Cache a collection or a directory
+# Cache a collection or a directory and all blobs and subdirectories
 ccouch cache @urn:sha1:THISDIRECTORYLISTING
 
-# Ccache the latest version of the files in some repo...
+# Cache the latest version of all files in some repo...
 ccouch cache @freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/

@@ -1,0 +1,28 @@
+How does ContentCouch interpret URIs?
+
+The general format of a ContentCouch URI is
+
+  cc-uri = <normal uri without fragment>[;<cc-metadata>][#<cc-deref-path>]
+  cc-metadata = <key>=<value>[;<cc-metadata>]
+  cc-path = <path>[;<cc-metadata>][#<cc-deref-path>]
+
+The '#' is taken to mean 'interpret resource named to the left as directory', and
+any path that follows the '#' is relative to that directory.
+
+If the resource is an RDF-encoded ContentCouuch head or git commit, then it is
+automatically dereferenced before any path-following is done.  If no path follows
+'#', then the object as interpreted from the resource is the result.
+
+  urn:sha1:FOOBARBAZ              ; just a blob
+  urn:sha1:FOOBARBAZ#             ; the blob interpreted as a directory
+  urn:sha1:FOOBARBAZ#path         ; a blob or directory 
+
+It should be able to handle git commits, too, though these can only be named
+with git-commit: URIs.
+
+  git-blob:<name>                 ; a specific blob
+  git-blob:<name>;type=text/plain ; a specific blob with some metadata
+  git-commit:<name>               ; a git commit - does not represent a blob!
+  git-commit:<name>#path/to/file  ; a blob or a git tree
+  git-tree:<name>#path/to/file    ; same as above
+  git-tree:<name>#path/to/file    ; same as above
