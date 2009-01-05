@@ -2,89 +2,39 @@
 # repository.  In some cases, it will be a system-wide repository.
 # In other cases, it will be a repository specific to a project.
 # Any local repository may be configured to use the datastore of
-# another, so that all projects can share a system-wide datastore.
+# another, so that all projects can, for example, share a system-wide
+# datastore.
 #
 # In general, an @-sign before a URI means 'the thing described by
 # this resource', which may be a list of resource, a reference to a
 # single resource, or a resource describing a directory or a
-# collection.  In some cases this will result in the same resource
-# as tacking a '#' onto the URI.
+# collection.
 
 
+# Checkout takes a file or directory and exports it to your filesystem
+# Usage: ccouch checkout <remote> <local>
+ccouch checkout urn:sha1:BLOB a-file.txt
+ccouch checkout @urn:sha1:DIRLISTING a-directory
+ccouch checkout @urn:sha1:REDIRECTTOAFILEORDIR something
 
 
-
-# Clone variations either create a new local repository, or, if the
-# repository already exists, will update it with info from the remote
-# repository (similar to an update)
-#
-# If -bare is specified, the target directory will hold the repository.
-# Otherwise, the destination repository will be put in <target>/.ccouch
-# and the specified (or latest) head will be checked out to the target
-# directory.
-
-# This clone the entire repository; -bare must be specified if the repo
-# contains more than one head we can't check out multiple heads at once!
-ccouch clone -repo -barefreenet:SSK@goopypoop/TestRepo/0/TestRepo/ TestRepo
-
-# This will find the latest head in the repository and download that...
-ccouch clone freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/ TestProject
-
-# This will download a specific head within the repository (#23)
-ccouch clone freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/23 TestProject
-
-# This will download the latest head from the repository, and combine its contents
-# with what is already on our filesystem.
-# This should fail if any existing files would be overwritten with different ones. 
-ccouch clone -merge freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/ TestProject
+# Merge updates a local directory by adding files to it from another
+# (possibly remote) directory.
+# Usage: ccouch merge <remote> <local>
+ccouch merge @urn:sha1:REMOTEDIR .
+ccouch merge @http://togos-dyn.ath.cx/directory-list mahdir/
+ccouch merge http://togos-dyn.ath.cx/mahfiles/ mahfiles/
 
 
-
-
-
-# Store simply takes a local file or directory, and stores it in the repository's
-# data store.
-
-# Add files to the datastore and output its URN
+# Store takes local files or directories, imports them into the repository's
+# data store, and outputs the URNs of the stored files/directories.
+# Usage: ccouch store <file1> <file2> ...
 ccouch store mahfile.mp3
 ccouch store somedir
 
 
-
-
-
-# Checkout is the opposite of store - it takes a file from the repository,
-# and makes a copy on the filesystem.  This is different than clone in that
-# it does not set up a new repository.  Checkout is actually the last step
-# of a non-bare clone.
-
-# Check out a file - just a glorified copy, really!
-ccouch checkout urn:sha1:POOPSKOOOP mahdoc.pdf
-
-# Check out a directory.  The '@' at the beginning of the source URI means
-# 'what is listed at...'.  Using '@', you could also point to a head object,
-# which would act as a redirect to the current version.
-ccouch checkout @urn:sha1:SKOOPERDOOPER mahdir
-
-# Check out a directory, combining it with the files that are already there
-# (add new files, overwrite existing ones, leave existing ones that are not
-# present in the source directory)
-ccouch checkout -merge @urn:sha1:POOPAHSKOOPAH makdir
-
-
-
-# Cache tries to make sure that the specified blobs are stored in the local
-# repository.  If they are not, it will try to download them from any
-# remote sources that are available.
-
-# Cache some files in the repository
-ccouch cache urn:sha1:BLAH
-
-# Cache a bunch of files, listed by...
-ccouch cache @urn-list.txt
-
-# Cache a collection or a directory and all blobs and subdirectories
-ccouch cache @urn:sha1:THISDIRECTORYLISTING
-
-# Cache the latest version of all files in some repo...
-ccouch cache @freenet:SSK@goopypoop/TestRepo/0/TestRepo/heads/TestProject/
+# Storify moves files into the store, hardlinks them back to their
+# current position, if possible, and outputs their URNs.
+# Usage: ccouch storify <file1> <file2> ...
+ccouch storify mahfile.mp3
+ccouch storify mahdir

@@ -5,4 +5,4 @@ Head - A pointer to a specific version of a file or directory with some
   Pretty much the same concept as a commit in git terms.
 
 Repository - A directory (local or remote) where a bunch of blobs and/or
-  heads and/or metadata are stored.
+  heads and/or metadata are stored in a standardized format.
