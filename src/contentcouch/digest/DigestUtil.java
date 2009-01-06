@@ -19,14 +19,18 @@ public class DigestUtil {
 	protected static byte[] digestFile( File file, MessageDigest md ) {
 		try {
 			FileInputStream fis = new FileInputStream(file);
-			byte[] buffer = new byte[maxChunkLength];
-			int r;
-			while( (r = fis.read(buffer)) > 0 ) {
-				if( r == buffer.length ) {
-					md.update(buffer);
-				} else {
-					md.update(Arrays.copyOf(buffer, r));
+			try {
+				byte[] buffer = new byte[maxChunkLength];
+				int r;
+				while( (r = fis.read(buffer)) > 0 ) {
+					if( r == buffer.length ) {
+						md.update(buffer);
+					} else {
+						md.update(Arrays.copyOf(buffer, r));
+					}
 				}
+			} finally {
+				fis.close();
 			}
 		} catch( IOException e ) {
 			throw new RuntimeException(e);

@@ -11,6 +11,7 @@ import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
 import contentcouch.data.FileBlob;
 import contentcouch.store.BlobSink;
+import contentcouch.store.FileGetter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 import contentcouch.xml.RDF.RdfNode;
@@ -60,27 +61,39 @@ public class Importer {
 		return blobSink.push( b );
 	}
 	
-	public String importFileContent(File file) {
-		return importContent( new FileBlob(file) );
+	public String importFileContent( File file, FileImportListener fileImportListener ) {
+		String contentUri = importContent( new FileBlob(file) );
+		if( fileImportListener != null ) {
+			fileImportListener.fileImported( file, contentUri );
+		}
+		return contentUri;
 	}
 	
-	public RdfNode getDirectoryEntryRdfNode( File file ) {
+	public File getFile( String uri ) {
+		if( blobSink instanceof FileGetter ) {
+			return ((FileGetter)blobSink).getFile(uri);
+		} else {
+			return null;
+		}
+	}
+	
+	public RdfNode getDirectoryEntryRdfNode( File file, FileImportListener fileImportListener ) {
 		RdfNode n = new RdfNode();
 		n.typeName = RDF.CCOUCH_DIRECTORYENTRY;
 		if( file.isDirectory() ) {
 			n.add(RDF.CCOUCH_FILETYPE, "Directory");
 			n.add(RDF.CCOUCH_NAME, file.getName());
-			n.add(RDF.CCOUCH_LISTING, new RDF.Ref(importDirectory(file)));
+			n.add(RDF.CCOUCH_LISTING, new RDF.Ref(importDirectory(file, fileImportListener)));
 		} else {
 			n.add(RDF.CCOUCH_FILETYPE, "File");
 			n.add(RDF.CCOUCH_NAME, file.getName());
 			n.add(RDF.DC_MODIFIED, RDF.CCOUCH_DATEFORMAT.format(new Date(file.lastModified())));
-			n.add(RDF.CCOUCH_CONTENT, new RDF.Ref(importFileContent(file)));
+			n.add(RDF.CCOUCH_CONTENT, new RDF.Ref(importFileContent(file, fileImportListener)));
 		}
 		return n;
 	}
 
-	public String importDirectory(File dir) {
+	public String importDirectory( File dir, FileImportListener fileImportListener ) {
 		if( !dir.isDirectory() ) {
 			throw new RuntimeException("Cannot import a plain file with importDir!");
 		}
@@ -91,29 +104,33 @@ public class Importer {
 		for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
 			if( subFile.getName().startsWith(".") ) continue;
-			entries.add( getDirectoryEntryRdfNode(subFile) );
+			entries.add( getDirectoryEntryRdfNode(subFile, fileImportListener) );
 		}
 		n.add(RDF.CCOUCH_ENTRIES, entries);
-		return importContent(createMetadataBlob(n, RDF.CCOUCH_NS));
+		String listingUri = importContent(createMetadataBlob(n, RDF.CCOUCH_NS));
+		if( fileImportListener != null ) {
+			fileImportListener.fileImported( dir, "@" + listingUri );
+		}
+		return listingUri;
 	}
 	
-	public String importFileOrDirectory( File file ) {
+	public String importFileOrDirectory( File file, FileImportListener fileImportListener ) {
 		if( file.isDirectory() ) {
-			return "@" + importDirectory(file);
+			return "@" + importDirectory( file, fileImportListener );
 		} else {
-			return importFileContent( file );
+			return importFileContent( file, fileImportListener );
 		}
 	}
 	
-	public void recursivelyImportFiles(File dir) {
+	public void recursivelyImportFiles(File dir, FileImportListener fileImportListener) {
 		if( dir.isFile() ) {
-			importFileContent(dir);
+			importFileContent(dir, fileImportListener);
 		} else {
 			String[] subNames = dir.list();
 			for( int i=0; i<subNames.length; ++i ) {
 				String subName = subNames[i];
 				if( subName.startsWith(".") ) continue;
-				recursivelyImportFiles(new File(dir + "/" + subName));
+				recursivelyImportFiles(new File(dir + "/" + subName), fileImportListener);
 			}
 		}
 	}
@@ -125,7 +142,7 @@ public class Importer {
 		Importer importer = new Importer(new Sha1BlobStore("junk-datastore"));
 		//importer.recursivelyImportFiles(file);
 		
-		String ref = importer.importDirectory(file);
+		String ref = importer.importDirectory(file, null);
 		System.out.println(ref);
 	}
 }

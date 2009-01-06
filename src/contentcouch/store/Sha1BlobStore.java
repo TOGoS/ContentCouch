@@ -1,11 +1,13 @@
 package contentcouch.store;
 
+import java.io.File;
+
 import org.bitpedia.util.Base32;
 
 import contentcouch.data.Blob;
 import contentcouch.digest.DigestUtil;
 
-public class Sha1BlobStore implements BlobStore {
+public class Sha1BlobStore implements BlobStore, FileGetter {
 	protected BlobGetter blobGetter;
 	protected BlobPutter blobPutter;
 	
@@ -39,6 +41,12 @@ public class Sha1BlobStore implements BlobStore {
 		String urn = "urn:sha1:" + Base32.encode(sha1);
 		String filename = getFilenameForSha1( sha1 );
 		blobPutter.put(filename, blob);
+		if( blobPutter instanceof FileGetter ) {
+			File f = ((FileGetter)blobPutter).getFile(filename);
+			if( f != null ) {
+				f.setReadOnly();
+			}
+		}
 		return urn;
 	}
 
@@ -48,6 +56,15 @@ public class Sha1BlobStore implements BlobStore {
 			byte[] sha1 = Base32.decode(urn.substring(9));
 			String filename = getFilenameForSha1( sha1 );
 			return blobGetter.get(filename);
+		}
+		return null;
+	}
+	
+	public File getFile( String urn ) {
+		if( urn.startsWith("urn:sha1:") && (blobGetter instanceof FileGetter) ) {
+			byte[] sha1 = Base32.decode(urn.substring(9));
+			String filename = getFilenameForSha1( sha1 );
+			return ((FileGetter)blobGetter).getFile(filename);
 		}
 		return null;
 	}

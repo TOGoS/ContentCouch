@@ -7,14 +7,14 @@ import java.io.IOException;
 import contentcouch.data.Blob;
 import contentcouch.data.FileBlob;
 
-public class FileBlobMap implements BlobMap {
+public class FileBlobMap implements BlobMap, FileGetter {
 	protected String filenamePrefix;
 	
 	public FileBlobMap( String filenamePrefix ) {
 		this.filenamePrefix = filenamePrefix;
 	}
 	
-	protected File getFile( String filename ) {
+	public File getFile( String filename ) {
 		return new File(filenamePrefix + filename);
 	}
 	
