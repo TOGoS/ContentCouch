@@ -4,34 +4,27 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
 import contentcouch.data.FileBlob;
+import contentcouch.store.BlobSink;
+import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 import contentcouch.xml.RDF.RdfNode;
 
 public class Importer {
-	Datastore datastore;
+	BlobSink blobSink;
 	
-	public String collector;
-	public String[] tags;
-	public Map mimeTypesByExt;
-	public String defaultMimeType;
+	public Importer( BlobSink blobSink ) {
+		this.blobSink = blobSink;
+	}
 	
-	public Importer( Datastore datastore ) {
-		this.datastore = datastore;
-		this.mimeTypesByExt = new HashMap();
-		mimeTypesByExt.put("txt", "text/plain");
-		mimeTypesByExt.put("html", "text/html");
-		mimeTypesByExt.put("jpg", "image/jpeg");
-		mimeTypesByExt.put("png", "image/png");
-		mimeTypesByExt.put("gif", "image/gif");
-		mimeTypesByExt.put("mp3", "audio/mpeg");
-		mimeTypesByExt.put("rdf", "application/rdf+xml");
+	protected String uriEscapePath( String path ) {
+		// TODO
+		return path;
 	}
 	
 	protected String getFileUri(File file ) {
@@ -40,49 +33,18 @@ public class Importer {
 			path = path.replace('\\', '/');
 			if( path.charAt(1) == ':' ) {
 				// Windows path!
-				return "file:///" + path;
-			} else {
+				return "file:///" + uriEscapePath(path);
+			} else if( path.charAt(0) == '/' ) { 
 				// Unix path, leading slash already included!
-				return "file://" + path;				
+				return "file://" + uriEscapePath(path);
+			} else {
+				return "file:" + uriEscapePath(path);
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	protected String getMimeType( File file ) {
-		String nam = file.getName();
-		int lastDot = nam.lastIndexOf('.');
-		if( lastDot == -1 || lastDot == nam.length()-1 ) return null;
-		String ext = nam.substring(lastDot+1).toLowerCase();
-		String mimeType = (String)mimeTypesByExt.get(ext);
-		if( mimeType != null ) return mimeType;
-		return defaultMimeType;
-	}
-	
-	public Map getFileMetadata( File file ) {
-		Map metadata = new HashMap();
-		metadata.put(RDF.CCOUCH_COLLECTOR, collector);
-		metadata.put(RDF.CCOUCH_NAME, file.getName());
-		metadata.put(RDF.DC_MODIFIED, RDF.CCOUCH_DATEFORMAT.format(new Date(file.lastModified())));
-		
-		String mimeType = getMimeType( file );
-		if( mimeType != null ) metadata.put(RDF.DC_FORMAT, mimeType);
-		
-		for( int i=0; tags != null && i<tags.length; ++i ) {
-			metadata.put(RDF.CCOUCH_TAG, tags[i]);
-		}
-		return metadata;
-	}
-	
-	public Map getMetametadata( File file ) {
-		Map metametadata = new HashMap();
-		metametadata.put(RDF.CCOUCH_IMPORTEDDATE, RDF.CCOUCH_DATEFORMAT.format(new Date()));
-		metametadata.put(RDF.CCOUCH_IMPORTEDFROM, getFileUri(file));
-		metametadata.put(RDF.DC_FORMAT, "application/rdf+xml");
-		return metametadata;
-	}
-
 	protected Blob createMetadataBlob( RDF.RdfNode desc, String defaultNamespace ) {
 		return BlobUtil.getBlob(RDF.xmlEncodeRdf(desc, defaultNamespace));
 	}
@@ -95,39 +57,14 @@ public class Importer {
 	}
 	
 	public String importContent( Blob b ) {
-		return datastore.push( "data", b );
+		return blobSink.push( b );
 	}
 	
 	public String importFileContent(File file) {
 		return importContent( new FileBlob(file) );
 	}
 	
-	public void importFile(File file) {
-		String contentUri = datastore.push( "data", new FileBlob(file) );
-		if( contentUri == null ) return;
-		Map metadata = getFileMetadata( file );
-		if( metadata == null || metadata.size() == 0 ) return;
-		String metadataUri = datastore.push( "metadata", createMetadataBlob(contentUri, metadata) );
-		if( metadataUri == null ) return;
-		Map metametadata = getMetametadata( file );
-		if( metametadata == null || metametadata.size() == 0 ) return;
-		datastore.push("metametadata", createMetadataBlob(metadataUri, metametadata));
-	}
-	
-	public void recursivelyImportFiles(File dir) {
-		if( dir.isFile() ) {
-			importFile(dir);
-		} else {
-			String[] subNames = dir.list();
-			for( int i=0; i<subNames.length; ++i ) {
-				String subName = subNames[i];
-				if( subName.startsWith(".") ) continue;
-				recursivelyImportFiles(new File(dir + "/" + subName));
-			}
-		}
-	}
-	
-	public RdfNode importDirectoryEntry( File file ) {
+	public RdfNode getDirectoryEntryRdfNode( File file ) {
 		RdfNode n = new RdfNode();
 		n.typeName = RDF.CCOUCH_DIRECTORYENTRY;
 		if( file.isDirectory() ) {
@@ -142,7 +79,7 @@ public class Importer {
 		}
 		return n;
 	}
-	
+
 	public String importDirectory(File dir) {
 		if( !dir.isDirectory() ) {
 			throw new RuntimeException("Cannot import a plain file with importDir!");
@@ -154,17 +91,38 @@ public class Importer {
 		for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
 			if( subFile.getName().startsWith(".") ) continue;
-			entries.add( importDirectoryEntry(subFile) );
+			entries.add( getDirectoryEntryRdfNode(subFile) );
 		}
 		n.add(RDF.CCOUCH_ENTRIES, entries);
 		return importContent(createMetadataBlob(n, RDF.CCOUCH_NS));
 	}
-
+	
+	public String importFileOrDirectory( File file ) {
+		if( file.isDirectory() ) {
+			return "@" + importDirectory(file);
+		} else {
+			return importFileContent( file );
+		}
+	}
+	
+	public void recursivelyImportFiles(File dir) {
+		if( dir.isFile() ) {
+			importFileContent(dir);
+		} else {
+			String[] subNames = dir.list();
+			for( int i=0; i<subNames.length; ++i ) {
+				String subName = subNames[i];
+				if( subName.startsWith(".") ) continue;
+				recursivelyImportFiles(new File(dir + "/" + subName));
+			}
+		}
+	}
+	
 	public static void main(String[] argc) {
 		String filename = "junk/import";
 		
 		File file = new File(filename);
-		Importer importer = new Importer(new Datastore("junk-datastore"));
+		Importer importer = new Importer(new Sha1BlobStore("junk-datastore"));
 		//importer.recursivelyImportFiles(file);
 		
 		String ref = importer.importDirectory(file);

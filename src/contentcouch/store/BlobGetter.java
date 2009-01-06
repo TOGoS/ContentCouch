@@ -2,6 +2,6 @@ package contentcouch.store;
 
 import contentcouch.data.Blob;
 
-public interface BlobSource {
+public interface BlobGetter {
 	public Blob get( String identifier );
 }

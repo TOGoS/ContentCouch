@@ -3,29 +3,29 @@ package contentcouch.app;
 import java.io.File;
 
 import contentcouch.data.Blob;
+import contentcouch.store.BlobGetter;
+import contentcouch.store.BlobPutter;
 import contentcouch.store.BlobSink;
-import contentcouch.store.BlobSource;
-import contentcouch.store.BlobStore;
-import contentcouch.store.FileBlobStore;
+import contentcouch.store.FileBlobMap;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 
-public class ContentCouchRepository implements BlobSource, BlobSink {
+public class ContentCouchRepository implements BlobGetter, BlobSink {
 	protected String path;
 	
 	// TODO: Allow repo to be accessed remotely (http, freenet, etc) 
-	protected BlobSource dataBlobSource;
+	protected BlobGetter dataBlobSource;
 	protected BlobSink dataBlobSink;
-	protected BlobStore headBlobStore;
-	protected BlobSource headBlobSource;
+	protected BlobPutter headBlobPutter;
+	protected BlobGetter headBlobSource;
 	
 	public ContentCouchRepository( String path ) {
 		this.path = path;
-		Sha1BlobStore bs = new Sha1BlobStore( new FileBlobStore(path + "/data") );
+		Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "/data") );
 		dataBlobSource = bs;
 		dataBlobSink = bs;
-		FileBlobStore hs = new FileBlobStore(path + "/heads");
-		headBlobStore = hs;
+		FileBlobMap hs = new FileBlobMap(path + "/heads");
+		headBlobPutter = hs;
 		headBlobSource = hs;
 	}
 	
@@ -49,7 +49,7 @@ public class ContentCouchRepository implements BlobSource, BlobSink {
 	}
 	
 	public void putHead( String headName, Blob headData ) {
-		headBlobStore.put(headName, headData);
+		headBlobPutter.put(headName, headData);
 	}
 	
 	public void putHead( String headName, RDF.RdfNode headInfo ) {

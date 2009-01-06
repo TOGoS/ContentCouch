@@ -7,20 +7,21 @@ import java.util.Iterator;
 
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
-import contentcouch.store.BlobSource;
+import contentcouch.store.BlobGetter;
+import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 import contentcouch.xml.RDF.RdfNode;
 import contentcouch.xml.RDF.Ref;
 
 public class Exporter {
-	BlobSource blobSource;
+	BlobGetter blobGetter;
 	
-	public Exporter( BlobSource blobSource ) {
-		this.blobSource = blobSource;
+	public Exporter( BlobGetter blobSource ) {
+		this.blobGetter = blobSource;
 	}
 
 	public void exportFile( String fileUri, File destination ) {
-		Blob blob = blobSource.get(fileUri);
+		Blob blob = blobGetter.get(fileUri);
 		if( blob == null ) {
 			throw new RuntimeException("Couldn't find blob: " + fileUri);
 		}
@@ -73,7 +74,7 @@ public class Exporter {
 	}
 	
 	public void exportDirectory( String listingUri, File destination ) {
-		Blob blob = blobSource.get(listingUri);
+		Blob blob = blobGetter.get(listingUri);
 		if( blob == null ) {
 			throw new RuntimeException("Could not find directory listing: " + listingUri);
 		}
@@ -86,7 +87,7 @@ public class Exporter {
 		String filename = "junk/export";
 		
 		File file = new File(filename);
-		Exporter exporter = new Exporter(new Datastore("junk-datastore"));
+		Exporter exporter = new Exporter(new Sha1BlobStore("junk-datastore"));
 		
 		exporter.exportDirectory("urn:sha1:FJOL7CP2VN72G6HOO3MBG4KUEYOCONID", file);
 	}

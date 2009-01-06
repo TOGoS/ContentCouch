@@ -7,10 +7,10 @@ import java.io.IOException;
 import contentcouch.data.Blob;
 import contentcouch.data.FileBlob;
 
-public class FileBlobStore implements BlobSource, BlobStore {
+public class FileBlobMap implements BlobMap {
 	protected String filenamePrefix;
 	
-	public FileBlobStore( String filenamePrefix ) {
+	public FileBlobMap( String filenamePrefix ) {
 		this.filenamePrefix = filenamePrefix;
 	}
 	
