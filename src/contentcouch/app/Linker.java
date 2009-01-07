@@ -1,3 +1,4 @@
+// -*- tab-width:4 -*-
 package contentcouch.app;
 
 import java.io.File;
@@ -41,7 +42,7 @@ public abstract class Linker {
 				Process lnProc = Runtime.getRuntime().exec(new String[] {"ln", target.getCanonicalPath(), link.getPath()});
 				int lnProcReturn = lnProc.waitFor();
 				if( !link.exists() ) {
-					throw new LinkException( link, target, "link does not exist after running 'fsutil hardlink create ...', which returned " + lnProcReturn);
+					throw new LinkException( link, target, "link does not exist after running 'ln ...', which returned " + lnProcReturn);
 				}
 			} catch( InterruptedException e ) {
 				throw new LinkException( link, target, e );

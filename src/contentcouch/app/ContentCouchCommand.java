@@ -1,3 +1,4 @@
+// -*- tab-width:4 -*-
 package contentcouch.app;
 
 import java.io.File;
@@ -25,7 +26,8 @@ public class ContentCouchCommand {
 	public String STORE_USAGE =
 		"Usage: ccouch [general options] store [store options] <file1> <file2> ...\n" +
 		"Store options:\n" +
-		"  -relink            ; relink files to their canonical name\n" +
+		"  -link              ; hardlink files into the store instead of copying\n" +
+		"  -relink            ; hardlink imported files to their stored counterpart\n" +
 		"  -show-sub-mappings ; report every path -> urn mapping";
 
 	protected String repoPath = ".";
@@ -57,7 +59,6 @@ public class ContentCouchCommand {
 		List files = new ArrayList();
 		final Importer importer = getImporter(options);
 		boolean pShowSubMappings = false;
-		boolean pRelink = false;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
@@ -65,8 +66,10 @@ public class ContentCouchCommand {
 				System.exit(1);
 			} else if( "-show-sub-mappings".equals(arg) ) {
 				pShowSubMappings = true;
+			} else if( "-link".equals(arg) ) {
+				importer.shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
-				pRelink = true;
+				importer.shouldRelinkImported = true;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
 				System.out.println(STORE_USAGE);
 				System.exit(0);
@@ -83,21 +86,13 @@ public class ContentCouchCommand {
 			System.err.println(STORE_USAGE);
 			System.exit(0);
 		}
-		Boolean oRelink = (Boolean)options.get("relink");
-		final boolean relink = pRelink || ((oRelink != null) && oRelink.booleanValue());
+
 		final boolean showSubMappings = pShowSubMappings;
 		
 		FileImportListener fileImportListener = new FileImportListener() {
 			public void fileImported(File file, String urn) {
 				if( showSubMappings ) {
 					System.out.println(importer.getFileUri(file) + "\t" + urn);
-				}
-				if( file.isFile() && relink ) {
-					File relinkTo = importer.getFile(urn);
-					if( relinkTo != null ) {
-						//System.err.println( "Relinking " + file + " to " + relinkTo );
-						Linker.getInstance().relink( relinkTo, file );
-					}
 				}
 			}
 		};
@@ -106,7 +101,7 @@ public class ContentCouchCommand {
 			File file = new File((String)i.next());
 			String urn = importer.importFileOrDirectory( file, fileImportListener );
 			if( !showSubMappings ) {
-				// otherwise, this will already have been printed
+				// otherwise, this will already have been printed by our listener
 				System.out.println(importer.getFileUri(file) + "\t" + urn);
 			}
 		}

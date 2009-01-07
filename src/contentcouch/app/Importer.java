@@ -1,3 +1,4 @@
+// -*- tab-width:4 -*-
 package contentcouch.app;
 
 import java.io.File;
@@ -7,17 +8,22 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import contentcouch.app.Linker;
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
 import contentcouch.data.FileBlob;
 import contentcouch.store.BlobSink;
 import contentcouch.store.FileGetter;
+import contentcouch.store.FileForBlobGetter;
+import contentcouch.store.UrnForBlobGetter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 import contentcouch.xml.RDF.RdfNode;
 
 public class Importer {
 	BlobSink blobSink;
+	public boolean shouldLinkStored;
+	public boolean shouldRelinkImported;
 	
 	public Importer( BlobSink blobSink ) {
 		this.blobSink = blobSink;
@@ -58,7 +64,32 @@ public class Importer {
 	}
 	
 	public String importContent( Blob b ) {
-		return blobSink.push( b );
+		String contentUri;
+		if( shouldLinkStored && b instanceof FileBlob && blobSink instanceof FileForBlobGetter && blobSink instanceof UrnForBlobGetter ) {
+			// It may be that this should be part of the blob sink, 
+			// so that Sha1BlobStore can check hashes while importing
+			File importFile = ((FileBlob)b).getFile();
+			File storeFile = ((FileForBlobGetter)blobSink).getFileForBlob(b);
+			if( !storeFile.exists() ) {
+				File parent = storeFile.getParentFile();
+				if( parent != null && !parent.exists() ) parent.mkdirs();
+				Linker.getInstance().link( importFile, storeFile );
+				storeFile.setReadOnly();
+			}
+			contentUri = ((UrnForBlobGetter)blobSink).getUrnForBlob(b);
+		} else {
+			contentUri = blobSink.push( b );
+		}
+
+		if( shouldRelinkImported && b instanceof FileBlob && ((FileBlob)b).getFile().isFile() && blobSink instanceof FileGetter ) {
+			File relinkTo = ((FileGetter)blobSink).getFile(contentUri);
+			if( relinkTo != null ) {
+				//System.err.println( "Relinking " + file + " to " + relinkTo );
+				Linker.getInstance().relink( relinkTo, ((FileBlob)b).getFile() );
+			}
+		}
+
+		return contentUri;
 	}
 	
 	public String importFileContent( File file, FileImportListener fileImportListener ) {
