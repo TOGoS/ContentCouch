@@ -53,47 +53,6 @@ public class ContentCouchCommand {
 		return new Importer(ds);
 	}
 	
-	public void relink( File target, File link ) {
-		if( link.exists() ) {
-			try {
-				String linkParentPath = link.getParent();
-				if( linkParentPath == null || linkParentPath.length() == 0 ) {
-					linkParentPath = ".";
-				} else {
-					linkParentPath += "/.";
-				}
-				File lnTemp = new File(linkParentPath + link.getName() + ".cc-ln-temp");
-				if( lnTemp.exists() ) {
-					lnTemp.delete();
-				}
-				
-				Process lnProc;
-				// Unix:
-				//lnProc = Runtime.getRuntime().exec(new String[] {"ln", target.getCanonicalPath(), lnTemp.getPath()});
-				// Windows:
-				lnProc = Runtime.getRuntime().exec(new String[] {"fsutil", "hardlink", "create", lnTemp.getPath(), target.getCanonicalPath()});
-				int lnProcReturn = lnProc.waitFor();
-				if( !lnTemp.exists() ) {
-					System.err.println("Failed to create hard link from " + link + " to " + target + " (link does not exist after running 'ln', which returned " + lnProcReturn + ")");
-					return;
-				}
-				if( link.exists() && !link.delete() ) {
-					lnTemp.delete();
-					System.err.println("Failed to create hard link from " + link + " to " + target + " (could not delete old file to replace with link)");
-					return;
-				}
-				if( !lnTemp.renameTo(link) ) {
-					System.err.println("Failed to create hard link from " + link + " to " + target + " (could not rename temporary link to final location)");
-					return;				
-				}
-			} catch (InterruptedException e) {
-			} catch (IOException e) {
-				System.err.println("Failed to create hard link from " + link + " to " + target + " (exception)");
-				e.printStackTrace();
-			}
-		}
-	}
-	
 	public void runStoreCmd( String[] args, Map options ) {
 		List files = new ArrayList();
 		final Importer importer = getImporter(options);
@@ -137,7 +96,7 @@ public class ContentCouchCommand {
 					File relinkTo = importer.getFile(urn);
 					if( relinkTo != null ) {
 						//System.err.println( "Relinking " + file + " to " + relinkTo );
-						relink( relinkTo, file );
+						Linker.getInstance().relink( relinkTo, file );
 					}
 				}
 			}
