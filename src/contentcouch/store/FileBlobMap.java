@@ -18,13 +18,21 @@ public class FileBlobMap implements BlobMap, FileGetter {
 		return new File(filenamePrefix + filename);
 	}
 	
+	public void mkdirs( File dir ) {
+		try {
+			if( !dir.isDirectory() && !dir.mkdirs() ) {
+				throw new IOException("Couln't create directory: " + dir.getPath());
+			}
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public void put( String filename, Blob blob ) {
 		File file = getFile( filename );
 		if( !file.exists() ) {
 			try {
-				if( !file.getParentFile().isDirectory() && !file.getParentFile().mkdirs() ) {
-					throw new IOException("Couln't create directories for " + file.getParentFile().getPath());
-				}
+				mkdirs( file.getParentFile() );
 				FileOutputStream fos = new FileOutputStream(file);
 				try {
 					long written = 0;

@@ -8,25 +8,28 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import contentcouch.app.Linker;
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
 import contentcouch.data.FileBlob;
 import contentcouch.store.BlobSink;
-import contentcouch.store.FileGetter;
+import contentcouch.store.FileBlobMap;
 import contentcouch.store.FileForBlobGetter;
-import contentcouch.store.UrnForBlobGetter;
+import contentcouch.store.FileGetter;
 import contentcouch.store.Sha1BlobStore;
+import contentcouch.store.UrnForBlobGetter;
 import contentcouch.xml.RDF;
 import contentcouch.xml.RDF.RdfNode;
+import contentcouch.xml.RDF.Ref;
 
 public class Importer {
 	BlobSink blobSink;
+	FileBlobMap namedStore;
 	public boolean shouldLinkStored;
 	public boolean shouldRelinkImported;
 	
-	public Importer( BlobSink blobSink ) {
+	public Importer( BlobSink blobSink, FileBlobMap namedStore ) {
 		this.blobSink = blobSink;
+		this.namedStore = namedStore;
 	}
 	
 	protected String uriEscapePath( String path ) {
@@ -108,15 +111,46 @@ public class Importer {
 		}
 	}
 	
+	protected void addTarget( RdfNode node, String targetType, String targetUri ) {
+		node.add(RDF.CCOUCH_OBJECTTYPE, targetType);
+		if( RDF.OBJECT_TYPE_DIRECTORY.equals(targetType) || RDF.OBJECT_TYPE_RDF.equals(targetType) ) {
+			node.add(RDF.CCOUCH_LISTING, new Ref(targetUri));
+		} else if( RDF.OBJECT_TYPE_FILE.equals(targetType) ) {
+			node.add(RDF.CCOUCH_CONTENT, new Ref(targetUri));
+		} else {
+			throw new RuntimeException("Don't know how to link to object type " + targetType + " (to " + targetUri + ")");
+		}
+	}
+	
+	public RdfNode getCommitRdfNode( String targetType, String targetUri, Date date, String creator, String description, String[] parentUris ) {
+		RdfNode n = new RdfNode();
+		n.typeName = RDF.CCOUCH_COMMIT;
+		n.add(RDF.DC_CREATED, RDF.CCOUCH_DATEFORMAT.format(date));
+		n.add(RDF.DC_CREATOR, creator);
+		n.add(RDF.DC_DESCRIPTION, description);
+		addTarget( n, targetType, targetUri );
+		if( parentUris != null ) for( int i=0; i<parentUris.length; ++i ) {
+			n.add(RDF.CCOUCH_PARENT, new Ref(parentUris[i]));
+		}
+		return n;
+	}
+	
+	public RdfNode getRedirectRdfNode( String targetType, String targetUri ) {
+		RdfNode n = new RdfNode();
+		n.typeName = RDF.CCOUCH_REDIRECT;
+		addTarget( n, targetType, targetUri );
+		return n;
+	}
+	
 	public RdfNode getDirectoryEntryRdfNode( File file, FileImportListener fileImportListener ) {
 		RdfNode n = new RdfNode();
 		n.typeName = RDF.CCOUCH_DIRECTORYENTRY;
 		if( file.isDirectory() ) {
-			n.add(RDF.CCOUCH_FILETYPE, "Directory");
+			n.add(RDF.CCOUCH_OBJECTTYPE, RDF.OBJECT_TYPE_DIRECTORY);
 			n.add(RDF.CCOUCH_NAME, file.getName());
 			n.add(RDF.CCOUCH_LISTING, new RDF.Ref(importDirectory(file, fileImportListener)));
 		} else {
-			n.add(RDF.CCOUCH_FILETYPE, "File");
+			n.add(RDF.CCOUCH_OBJECTTYPE, RDF.OBJECT_TYPE_FILE);
 			n.add(RDF.CCOUCH_NAME, file.getName());
 			n.add(RDF.DC_MODIFIED, RDF.CCOUCH_DATEFORMAT.format(new Date(file.lastModified())));
 			n.add(RDF.CCOUCH_CONTENT, new RDF.Ref(importFileContent(file, fileImportListener)));
@@ -166,11 +200,75 @@ public class Importer {
 		}
 	}
 	
+	//// Name stuff ////
+
+	public long getHighestNameVersion( String name ) {
+		File nameDir = namedStore.getFile(name);
+		namedStore.mkdirs(nameDir);
+		String[] nums = nameDir.list();
+		long highest = 0;
+		for( int i=0; i<nums.length; ++i ) {
+			if( nums[i].matches("^\\d+") ) {
+				long k = Long.parseLong(nums[i]);
+				if( k > highest ) highest = k;
+			}
+		}
+		return highest;;
+	}
+	
+	public String getNextFilenameForName( String name ) {
+		return name + "/" + (getHighestNameVersion(name)+1);
+	}
+	
+	public void saveRedirect( String name, String targetType, String targetRef ) {
+		RdfNode redirect = getRedirectRdfNode( targetType, targetRef );
+		Blob b = createMetadataBlob(redirect, RDF.CCOUCH_NS);
+		namedStore.put( getNextFilenameForName(name) + "-redirect", b );
+	}
+	
+	/** Attempt to name a stored blob by linking to the store file.
+	 * 
+	 * If hardlinking is turned off or not supported, this should instead
+	 * create a copy of the blob (if the blob is given)
+	 * 
+	 * @param name - under what name this link should be saved
+	 * @param destUri - URI to hardlink to
+	 * @param blob - blob to copy in case a link can't be made
+	 */
+	public void saveLink( String name, String targetUri, Blob blob ) {
+		String filename = getNextFilenameForName(name);
+		
+		if( blobSink instanceof FileGetter ) {
+			File targetFile = ((FileGetter)blobSink).getFile(targetUri);
+			if( targetFile != null ) {
+				Linker.getInstance().link( targetFile, namedStore.getFile(filename) );
+				return;
+			}
+		}
+		// Otherwise it didn't work - copy instead.
+		if( blob != null ) {
+			namedStore.put(filename, blob);
+		}
+		// And if we can't do that, blow up
+		throw new RuntimeException("Could not create hard link to " + targetUri + ", and no blob given to copy");
+	}
+	
+	public String saveHead( String name, String targetType, String targetUri, Date date, String creator, String description, String[] parentUris ) {
+		RdfNode commit = getCommitRdfNode(targetType, targetUri, date, creator, description, parentUris );
+		Blob b = createMetadataBlob(commit, RDF.CCOUCH_NS);
+		String commitUri = blobSink.push(b);
+		if( name != null ) {
+			saveLink( name, commitUri, b );
+		}
+		return commitUri;
+		//saveRedirect( name, RDF.OBJECT_TYPE_RDF, commitUri );
+	}
+	
 	public static void main(String[] argc) {
 		String filename = "junk/import";
 		
 		File file = new File(filename);
-		Importer importer = new Importer(new Sha1BlobStore("junk-datastore"));
+		Importer importer = new Importer(new Sha1BlobStore("junk-datastore"), null);
 		//importer.recursivelyImportFiles(file);
 		
 		String ref = importer.importDirectory(file, null);

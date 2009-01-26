@@ -2,6 +2,8 @@ package contentcouch.xml;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -80,7 +82,9 @@ public class XML {
 	public static void writeXmlns( Writer w, Map nsAbbreviations )
 	throws IOException
 	{
-		for( Iterator i=nsAbbreviations.keySet().iterator(); i.hasNext(); ) {
+		ArrayList keys = new ArrayList(nsAbbreviations.keySet());
+		Collections.sort(keys);
+		for( Iterator i=keys.iterator(); i.hasNext(); ) {
 			String nsShort = (String)i.next();
 			String nsLong = (String)nsAbbreviations.get(nsShort);
 			w.write((nsShort.length() == 0 ? " xmlns" : " xmlns:" + nsShort) + "=\"" + xmlEscapeAttributeValue(nsLong) + "\"");
