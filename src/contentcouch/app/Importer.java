@@ -112,14 +112,24 @@ public class Importer {
 	}
 	
 	protected void addTarget( RdfNode node, String targetType, String targetUri ) {
-		node.add(RDF.CCOUCH_OBJECTTYPE, targetType);
-		if( RDF.OBJECT_TYPE_DIRECTORY.equals(targetType) || RDF.OBJECT_TYPE_RDF.equals(targetType) ) {
-			node.add(RDF.CCOUCH_LISTING, new Ref(targetUri));
-		} else if( RDF.OBJECT_TYPE_FILE.equals(targetType) ) {
-			node.add(RDF.CCOUCH_CONTENT, new Ref(targetUri));
+		node.add(RDF.CCOUCH_TARGETTYPE, targetType);
+		if( targetUri.charAt(0) == '@' ) {
+			node.add(RDF.CCOUCH_TARGETLISTING, new Ref(targetUri.substring(1)));
+		} else {
+			node.add(RDF.CCOUCH_TARGET, new Ref(targetUri));
+		}
+		/*
+		if( RDF.OBJECT_TYPE_DIRECTORY.equals(targetType) ||
+			RDF.OBJECT_TYPE_COMMIT.equals(targetType) ||
+			RDF.OBJECT_TYPE_RDF.equals(targetType)
+		) {
+			node.add(RDF.CCOUCH_TARGETLISTING, new Ref(targetUri));
+		} else if( RDF.OBJECT_TYPE_BLOB.equals(targetType) ) {
+			node.add(RDF.CCOUCH_TARGET, new Ref(targetUri));
 		} else {
 			throw new RuntimeException("Don't know how to link to object type " + targetType + " (to " + targetUri + ")");
 		}
+		*/
 	}
 	
 	public RdfNode getCommitRdfNode( String targetType, String targetUri, Date date, String creator, String description, String[] parentUris ) {
@@ -145,15 +155,12 @@ public class Importer {
 	public RdfNode getDirectoryEntryRdfNode( File file, FileImportListener fileImportListener ) {
 		RdfNode n = new RdfNode();
 		n.typeName = RDF.CCOUCH_DIRECTORYENTRY;
+		n.add(RDF.CCOUCH_NAME, file.getName());
 		if( file.isDirectory() ) {
-			n.add(RDF.CCOUCH_OBJECTTYPE, RDF.OBJECT_TYPE_DIRECTORY);
-			n.add(RDF.CCOUCH_NAME, file.getName());
-			n.add(RDF.CCOUCH_LISTING, new RDF.Ref(importDirectory(file, fileImportListener)));
+			addTarget(n, RDF.OBJECT_TYPE_DIRECTORY, importDirectory(file, fileImportListener));
 		} else {
-			n.add(RDF.CCOUCH_OBJECTTYPE, RDF.OBJECT_TYPE_FILE);
-			n.add(RDF.CCOUCH_NAME, file.getName());
 			n.add(RDF.DC_MODIFIED, RDF.CCOUCH_DATEFORMAT.format(new Date(file.lastModified())));
-			n.add(RDF.CCOUCH_CONTENT, new RDF.Ref(importFileContent(file, fileImportListener)));
+			addTarget(n, RDF.OBJECT_TYPE_BLOB, importFileContent(file, fileImportListener));
 		}
 		return n;
 	}
@@ -163,7 +170,7 @@ public class Importer {
 			throw new RuntimeException("Cannot import a plain file with importDir!");
 		}
 		RdfNode n = new RdfNode();
-		n.typeName = RDF.CCOUCH_DIRECTORYLISTING;
+		n.typeName = RDF.CCOUCH_DIRECTORY;
 		List entries = new ArrayList();
 		File[] subFiles = dir.listFiles();
 		for( int i=0; i<subFiles.length; ++i ) {
@@ -176,12 +183,12 @@ public class Importer {
 		if( fileImportListener != null ) {
 			fileImportListener.fileImported( dir, "@" + listingUri );
 		}
-		return listingUri;
+		return "@" + listingUri;
 	}
 	
 	public String importFileOrDirectory( File file, FileImportListener fileImportListener ) {
 		if( file.isDirectory() ) {
-			return "@" + importDirectory( file, fileImportListener );
+			return importDirectory( file, fileImportListener );
 		} else {
 			return importFileContent( file, fileImportListener );
 		}

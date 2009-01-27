@@ -9,8 +9,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import contentcouch.store.BlobGetter;
+import contentcouch.store.BlobPutter;
 import contentcouch.store.BlobStore;
 import contentcouch.store.FileBlobMap;
+import contentcouch.store.MultiBlobGetter;
+import contentcouch.store.NoopBlobPutter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 
@@ -22,8 +26,9 @@ public class ContentCouchCommand {
 		"General options:\n" +
 		"  -repo <path>   ; specify a local repository to use\n" +
 		"Sub-commands:\n" +
-		"  store <file>\n" +
-		"  checkout <uri> <dest>";
+		"  store <files>         ; store files in the repo\n" +
+		"  checkout <uri> <dest> ; check files out to the filesystem\n" +
+		"  id <files>            ; give URNs for files without storing";
 	
 	public String STORE_USAGE =
 		"Usage: ccouch [general options] store [store options] <file1> <file2> ...\n" +
@@ -33,7 +38,7 @@ public class ContentCouchCommand {
 		"  -n <name>          ; name your commit this\n" +
 		"  -link              ; hardlink files into the store instead of copying\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
-		"  -show-sub-mappings ; report every path -> urn mapping\n" +
+		"  -v                 ; verbose - report every path -> urn mapping\n" +
 		"\n" +
 		"If -m, -a, and/or -n are used, a commit will be created and its URN output.\n" +
 		"\n" +
@@ -55,9 +60,22 @@ public class ContentCouchCommand {
 		String repoPath = (String)options.get("repo-path");
 		if( repoPath == null ) {
 			return null;
-		} else {
-			return new Sha1BlobStore(repoPath + "/data/");
 		}
+		FileBlobMap fbm = new FileBlobMap(repoPath + "/data/");
+		BlobPutter putter;
+		if( Boolean.TRUE.equals(options.get("NoStore")) ) {
+			putter = new NoopBlobPutter();
+		} else {
+			putter = fbm;
+		}
+		return new Sha1BlobStore(fbm, putter);
+	}
+	
+	public BlobGetter getBlobGetter( Map options ) {
+		MultiBlobGetter mbg = new MultiBlobGetter();
+		mbg.addBlobGetter(getDatastore(options));
+		mbg.addBlobGetter(new FileBlobMap(""));
+		return mbg;
 	}
 	
 	public FileBlobMap getNamedStore( Map options ) {
@@ -89,7 +107,7 @@ public class ContentCouchCommand {
 			if( arg.length() == 0 ) {
 				System.err.println(STORE_USAGE);
 				System.exit(1);
-			} else if( "-show-sub-mappings".equals(arg) ) {
+			} else if( "-v".equals(arg) ) {
 				pShowSubMappings = true;
 			} else if( "-link".equals(arg) ) {
 				importer.shouldLinkStored = true;
@@ -149,15 +167,28 @@ public class ContentCouchCommand {
 				String targetType;
 				if( urn.charAt(0) == '@' ) {
 					targetType = RDF.OBJECT_TYPE_DIRECTORY;
-					urn = urn.substring(1);
 				} else {
-					targetType = RDF.OBJECT_TYPE_FILE;
+					targetType = RDF.OBJECT_TYPE_BLOB;
 				}
 				if( name != null ) name = "local/" + name;
 				String commitUri = importer.saveHead(name, targetType, urn, new Date(), author, message, null);
 				System.out.println( "Committed " + commitUri );
 			}
 		}
+	}
+	
+	public void runCheckoutCmd( String[] args, Map options ) {
+		final Exporter exporter = new Exporter(getBlobGetter(options));
+		String urn = args[0];
+		String dest = args[1];
+		File destFile = new File(dest);
+		exporter.exportObject(urn, destFile);
+	}
+	
+	public void runIdCmd( String[] args, Map options ) {
+		options = new HashMap(options);
+		options.put("NoStore", Boolean.TRUE);
+		runStoreCmd(args, options);
 	}
 	
 	public void run( String[] args ) {
@@ -190,6 +221,10 @@ public class ContentCouchCommand {
 		}
 		if( "store".equals(cmd) ) {
 			runStoreCmd( cmdArgs, options );
+		} else if( "checkout".equals(cmd) ) {
+			runCheckoutCmd( cmdArgs, options );
+		} else if( "id".equals(cmd) ) {
+			runIdCmd( cmdArgs, options );
 		} else {
 			System.err.println("ccouch: Unrecognised sub-command: " + cmd);
 			System.err.println(USAGE);

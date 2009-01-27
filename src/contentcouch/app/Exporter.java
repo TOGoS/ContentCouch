@@ -20,19 +20,30 @@ public class Exporter {
 		this.blobGetter = blobSource;
 	}
 
+	public void exportFile( Blob blob, File destination ) {
+		BlobUtil.writeBlobToFile(blob, destination);
+	}
+	
 	public void exportFile( String fileUri, File destination ) {
 		Blob blob = blobGetter.get(fileUri);
 		if( blob == null ) {
 			throw new RuntimeException("Couldn't find blob: " + fileUri);
 		}
-		BlobUtil.writeBlobToFile(blob, destination);
+		exportFile( blob, destination );
 	}
 	
-	protected Object getRdf( Object obj ) {
+	protected Object getRdf( Blob blob, String sourceUri ) {
+		return RDF.parseRdf(BlobUtil.getString(blob), sourceUri);
+	}
+	
+	protected Object getRdf( Object obj, String sourceUri ) {
 		if( obj instanceof Ref ) {
-			Blob blob = blobGetter.get( ((Ref)obj).targetUri );
+			String targetUri = ((Ref)obj).targetUri;
+			Blob blob = blobGetter.get( targetUri );
 			if( blob == null ) throw new RuntimeException("Could not load " + ((Ref)obj).targetUri );
-			return RDF.parseRdf(BlobUtil.getString(blob));
+			return getRdf(blob, targetUri);
+		} else if( obj instanceof Blob ) {
+			return getRdf((Blob)obj, sourceUri);
 		} else if( obj instanceof RdfNode || obj instanceof String ) {
 			return obj;
 		} else if( obj == null ) {
@@ -41,97 +52,110 @@ public class Exporter {
 			throw new RuntimeException("Could not get RdfNode from " + obj.getClass().getName());
 		}
 	}
-	
-	public void exportDirectoryEntry( String entryUri, RdfNode entry, File destDir ) {
-		String fileType = (String)entry.getSingle(RDF.CCOUCH_OBJECTTYPE);
-		String name = (String)entry.getSingle(RDF.CCOUCH_NAME);
-		if( name.contains("/") || name.contains("\\") ) throw new RuntimeException("Invalid characters in directory entry name: " + name);
-		File destination = new File(destDir + "/" + name);
-		if( RDF.OBJECT_TYPE_FILE.equals(fileType) ) {
-			Object content = entry.getSingle(RDF.CCOUCH_CONTENT);
-			String lastModifiedStr = (String)entry.getSingle(RDF.DC_MODIFIED);
-			if( content instanceof Ref ) {
-				exportFile( ((Ref)content).targetUri, destination );
-				if( lastModifiedStr != null ) {
-					try {
-						destination.setLastModified( RDF.CCOUCH_DATEFORMAT.parse(lastModifiedStr).getTime() );
-					} catch (ParseException e) {
-						throw new RuntimeException("Couldn't parse date in " + entryUri + ": " + lastModifiedStr );
-					}
+		
+	protected Object getTarget( RdfNode node ) {
+		String targetType = (String)node.getSingle(RDF.CCOUCH_TARGETTYPE);
+		Object target = node.getSingle(RDF.CCOUCH_TARGET);
+		Object targetListing = node.getSingle(RDF.CCOUCH_TARGETLISTING);
+		
+		// Now, based on target, targetType, and targetListing, we can try to figure
+		// out what this refers to.
+		if( target == null && targetListing == null ) return null;
+		
+		if( targetType == null ) {
+			if( target != null ) {
+				if( target instanceof Ref ) {
+					return blobGetter.get( ((Ref)target).targetUri );
+				} else if( target instanceof RdfNode ) {
+					return target;
+				} else {
+					throw new RuntimeException(node.sourceUri + " gave a target that is a " + target.getClass().getName() + " - only Refs and RdfNodes are allowed");
 				}
 			} else {
-				throw new RuntimeException("File#content must be a ref in " + entryUri + ": " + content);
+				return getRdf( targetListing, node.sourceUri );
 			}
-		} else if( RDF.OBJECT_TYPE_DIRECTORY.equals(fileType) ) {
-			Object listing =  entry.getSingle(RDF.CCOUCH_LISTING);
-			if( listing instanceof Ref ) {
-				exportDirectory(((Ref)listing).targetUri, destination);
-			} else if( listing instanceof RdfNode ) {
-				exportObjectFromRdf( entryUri, (RdfNode)listing, destination );
+		} else if( RDF.OBJECT_TYPE_BLOB.equals(targetType) ) {
+			if( target != null ) {
+				if( target instanceof Ref ) {
+					return blobGetter.get( ((Ref)target).targetUri );
+				} else {
+					return target;
+				}
 			} else {
-				throw new RuntimeException("DirectoryEntry>listing must be a Ref or an RdfNode, but was " + listing);
+				throw new RuntimeException(node.sourceUri + " gave a blob with targetListing - can only use reference blobs by target");
 			}
 		} else {
-			throw new RuntimeException("Invalid directory entry type in " + entryUri + ": " + fileType);
+			if( target == null ) target = targetListing;
+			return getRdf( target, node.sourceUri );
 		}
 	}
 	
-	public void exportObjectFromRdf( String listingUri, RdfNode listing, File destination ) {
+	//// Export functions (lowest-to-highest level) ////
+	
+	public void exportDirectoryEntry( RdfNode entry, File destDir ) {
+		String name = (String)entry.getSingle(RDF.CCOUCH_NAME);
+		if( name.contains("/") || name.contains("\\") ) throw new RuntimeException("Invalid characters in directory entry name: " + name);
+		File destination = new File(destDir + "/" + name);
+		
+		exportObject( getTarget(entry), destination, entry );
+	}
+	
+	public void exportObjectFromRdf( RdfNode listing, File destination ) {
 		if( RDF.CCOUCH_COMMIT.equals(listing.typeName) || RDF.CCOUCH_REDIRECT.equals(listing.typeName) ) {
-			String targetType = (String)listing.getSingle(RDF.CCOUCH_OBJECTTYPE);
-			if( RDF.OBJECT_TYPE_FILE.equals(targetType) ) {
-				Object targetRef = listing.getSingle(RDF.CCOUCH_CONTENT);
-				if( targetRef instanceof Ref ) {
-					String targetUri = ((Ref)targetRef).targetUri;
-					exportFile(targetUri, destination);
-				} else {
-					throw new RuntimeException("Need a ref to export files, but found a " + targetRef.getClass().getName() + " in " + listingUri);
-				}
-			} else if( RDF.OBJECT_TYPE_DIRECTORY.equals(targetType) || RDF.OBJECT_TYPE_RDF.equals(targetType) ) {
-				Object targetRef = listing.getSingle(RDF.CCOUCH_LISTING);
-				Object target = getRdf(targetRef);
-				String targetUri;
-				if( targetRef instanceof Ref ) {
-					targetUri = ((Ref)targetRef).targetUri;
-				} else {
-					targetUri = listingUri;
-				}
-				if( !(target instanceof RdfNode) ) {
-					throw new RuntimeException( listingUri + " pointed to a " + target.getClass().getName() + " - RdfNode is required");
-				}
-				exportObjectFromRdf( targetUri, (RdfNode)target, destination );
-			} else {
-				throw new RuntimeException( "Don't know how to export object type " + targetType + " found in " + listingUri);
-			}
-		} else if( RDF.CCOUCH_DIRECTORYLISTING.equals(listing.typeName) ) {
+			Object target = getTarget( listing );
+			exportObject( target, destination, listing );
+		} else if( RDF.CCOUCH_DIRECTORY.equals(listing.typeName) ) {
 			Collection c = (Collection)listing.getSingle(RDF.CCOUCH_ENTRIES);
 			for( Iterator i=c.iterator(); i.hasNext(); ) {
-				exportDirectoryEntry( listingUri, (RdfNode)i.next(), destination );
+				exportDirectoryEntry( (RdfNode)i.next(), destination );
 			}
 		} else {
-			throw new RuntimeException("The RDF document at " + listingUri + " does not contain a " +
-					RDF.CCOUCH_DIRECTORYLISTING + " or a " +
+			throw new RuntimeException("The RDF document at " + listing.sourceUri + " does not contain a " +
+					RDF.CCOUCH_DIRECTORY + ", a " +
+					RDF.CCOUCH_REDIRECT + ", or a " +
 					RDF.CCOUCH_COMMIT + ", but rather a " +
 					listing.typeName + ", which I don't know how to export" );
 		}
 	}
 	
-	public void exportDirectory( String listingUri, File destination ) {
-		Blob blob = blobGetter.get(listingUri);
-		if( blob == null ) {
-			throw new RuntimeException("Could not find directory listing: " + listingUri);
+	public void exportObject( Object object, File destination, RdfNode entry ) {
+		if( object instanceof Blob ) {
+			exportFile( (Blob)object, destination );
+			if( entry != null ) {
+				String lastModifiedStr = (String)entry.getSingle(RDF.DC_MODIFIED);
+				if( lastModifiedStr != null ) {
+					try {
+						destination.setLastModified( RDF.CCOUCH_DATEFORMAT.parse(lastModifiedStr).getTime() );
+					} catch (ParseException e) {
+						throw new RuntimeException("Couldn't parse date in " + entry.sourceUri + ": " + lastModifiedStr );
+					}
+				}
+			}
+		} else if( object instanceof RdfNode ) {
+			exportObjectFromRdf( (RdfNode)object, destination );
+		} else if( object == null ) {
+			throw new RuntimeException("Can't export null, targetted by " + entry.sourceUri);
+		} else {
+			throw new RuntimeException("Don't know how to export " + object.getClass().getName() + " targeted by " + entry.sourceUri);
 		}
-		Object value = RDF.parseRdf(BlobUtil.getString(blob));
-		if( !(value instanceof RdfNode) ) throw new RuntimeException("The RDF document at " + listingUri + " did not parse as an RDF object");
-		exportObjectFromRdf( listingUri, (RdfNode)value, destination );
+	}
+	
+	public void exportObject( String uri, File destination ) {
+		if( uri.charAt(0) == '@' ) {
+			uri = uri.substring(1);
+			RdfNode rdf = (RdfNode)getRdf(new Ref(uri), "(command-line)");
+			exportObject(rdf, destination, null);
+		} else {
+			exportFile(uri, destination);
+		}
 	}
 	
 	public static void main(String[] args) {
-		String filename = "junk/export";
+		String filename = "junk-export";
 		
 		File file = new File(filename);
-		Exporter exporter = new Exporter(new Sha1BlobStore("junk-datastore"));
+		Exporter exporter = new Exporter(new Sha1BlobStore("F:/datastore/contentcouch/data/"));
 		
-		exporter.exportDirectory("urn:sha1:FJOL7CP2VN72G6HOO3MBG4KUEYOCONID", file);
+		exporter.exportObject("@urn:sha1:C7NV4NWLF77EQMUDYAHKKIEIB3T63WUI", file);
 	}
 }
