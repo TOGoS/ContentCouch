@@ -28,7 +28,8 @@ public class ContentCouchCommand {
 		"Sub-commands:\n" +
 		"  store <files>         ; store files in the repo\n" +
 		"  checkout <uri> <dest> ; check files out to the filesystem\n" +
-		"  id <files>            ; give URNs for files without storing";
+		"  id <files>            ; give URNs for files without storing\n" +
+		"  check                 ; check repo integrity and delete bad files";
 	
 	public String STORE_USAGE =
 		"Usage: ccouch [general options] store [store options] <file1> <file2> ...\n" +
@@ -191,6 +192,15 @@ public class ContentCouchCommand {
 		runStoreCmd(args, options);
 	}
 	
+	public void runCheckCmd( String[] args, Map options ) {
+		String rp = (String)options.get("repo-path");
+		if( rp == null ) {
+			System.err.println("Repository unspecified");
+		}
+		RepoChecker rc = new RepoChecker();
+		rc.checkFiles(new File(rp + "/data"));
+	}
+	
 	public void run( String[] args ) {
 		if( args.length == 0 ) {
 			System.err.println(USAGE);
@@ -223,6 +233,8 @@ public class ContentCouchCommand {
 			runStoreCmd( cmdArgs, options );
 		} else if( "checkout".equals(cmd) ) {
 			runCheckoutCmd( cmdArgs, options );
+		} else if( "check".equals(cmd) ) {
+			runCheckCmd( cmdArgs, options );
 		} else if( "id".equals(cmd) ) {
 			runIdCmd( cmdArgs, options );
 		} else {
