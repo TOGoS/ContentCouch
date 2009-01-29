@@ -220,7 +220,7 @@ public class Importer {
 				if( k > highest ) highest = k;
 			}
 		}
-		return highest;;
+		return highest;
 	}
 	
 	public String getNextFilenameForName( String name ) {

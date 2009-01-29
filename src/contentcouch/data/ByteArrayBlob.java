@@ -23,7 +23,11 @@ public class ByteArrayBlob implements Blob {
 	
 	public byte[] getData(long offset, int length) {
 		if( this.offset == 0 && this.length == bytes.length && offset == 0 & length == this.length ) return bytes;
-		return Arrays.copyOfRange(bytes, (int)offset+this.offset, length);
+		byte[] result = new byte[length];
+		for( int i=0, j=(int)offset; i<length; ++i, ++j ) {
+			result[i] = bytes[j];
+		}
+		return result;
 	}
 	
 	public byte[] getBackingData() { return bytes; }

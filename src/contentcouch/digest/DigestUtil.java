@@ -26,7 +26,9 @@ public class DigestUtil {
 					if( r == buffer.length ) {
 						md.update(buffer);
 					} else {
-						md.update(Arrays.copyOf(buffer, r));
+						byte[] tBuf = new byte[r];
+						for( int i=0; i<r; ++i ) tBuf[i] = buffer[i];
+						md.update(tBuf);
 					}
 				}
 			} finally {
