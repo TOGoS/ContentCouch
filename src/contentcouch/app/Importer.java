@@ -90,6 +90,7 @@ public class Importer {
 				//System.err.println( "Relinking " + file + " to " + relinkTo );
 				Linker.getInstance().relink( relinkTo, ((FileBlob)b).getFile() );
 			}
+			relinkTo.setReadOnly();
 		}
 
 		return contentUri;
