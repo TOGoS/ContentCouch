@@ -57,15 +57,15 @@ public class ContentCouchCommand {
 	}
 	
 	public BlobStore getDatastore( Map options ) {
-		String repoPath = (String)options.get("repo-path");
-		if( repoPath == null ) {
-			return null;
-		}
-		FileBlobMap fbm = new FileBlobMap(repoPath + "/data/");
+		FileBlobMap fbm;
 		BlobPutter putter;
 		if( Boolean.TRUE.equals(options.get("NoStore")) ) {
 			putter = new NoopBlobPutter();
+			fbm = null;
 		} else {
+			String repoPath = (String)options.get("repo-path");
+			if( repoPath == null ) return null;
+			fbm = new FileBlobMap(repoPath + "/data/");
 			putter = fbm;
 		}
 		return new Sha1BlobStore(fbm, putter);
@@ -91,7 +91,6 @@ public class ContentCouchCommand {
 		BlobStore ds = getDatastore(options);
 		if( ds == null ) throw new RuntimeException("Datastore unspecified");
 		FileBlobMap namedStore = getNamedStore(options);
-		if( namedStore == null ) throw new RuntimeException("Named store unspecified");
 		return new Importer(ds, namedStore);
 	}
 	

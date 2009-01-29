@@ -14,7 +14,7 @@ public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, 
 	
 	public Sha1BlobStore( BlobGetter blobSource, BlobPutter blobStore ) {
 		this.blobGetter = blobSource;
-		this.blobPutter  = blobStore;
+		this.blobPutter = blobStore;
 	}
 	
 	public Sha1BlobStore( BlobMap fbs ) {
