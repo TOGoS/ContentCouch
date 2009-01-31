@@ -3,6 +3,7 @@ package contentcouch.digest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -14,6 +15,17 @@ import contentcouch.data.FileBlob;
 
 public class DigestUtil {
 	final static int maxChunkLength = 1024*1024; // 1 megabyte
+	
+	public static byte[] sha1DigestString( String s ) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-1");
+			return md.digest(s.getBytes("UTF-8"));
+		} catch( UnsupportedEncodingException e ) {
+			throw new RuntimeException(e);
+		} catch( NoSuchAlgorithmException e ) {
+			throw new RuntimeException(e);
+		}		
+	}
 	
 	protected static byte[] digestFile( File file, MessageDigest md ) {
 		try {
