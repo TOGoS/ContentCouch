@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class XML {
 	public static String xmlEscapeText( String text ) {
-		return text.replace("&","&amp").replace("<", "&lt;").replace(">","&gt;");
+		return text.replaceAll("&","&amp").replaceAll("<", "&lt;").replaceAll(">","&gt;");
 	}
 	
 	public static String xmlEscapeName( String text ) {
@@ -18,7 +18,7 @@ public class XML {
 	}
 
 	public static String xmlEscapeAttributeValue( String text ) {
-		return text.replace("&","&amp").replace("\"","&quot;").replace("<", "&lt;").replace(">","&gt;");
+		return text.replaceAll("&","&amp").replaceAll("\"","&quot;").replaceAll("<", "&lt;").replaceAll(">","&gt;");
 	}
 
 	public static String longToShort( String name, Map availableNsAbbreviations, Map usedNsAbbreviations ) {
@@ -178,7 +178,7 @@ public class XML {
 		
 	public static ParseResult parseXmlTag( char[] chars, int offset ) {
 		if( chars[offset++] != '<' ) throw new RuntimeException("Cannot parse a tag that doesn't start with ','");
-		StringBuilder nameBuilder = new StringBuilder();
+		StringBuffer nameBuilder = new StringBuffer();
 		
 		boolean isCloseTag = (chars[offset] == '/');
 		if( isCloseTag ) ++offset;

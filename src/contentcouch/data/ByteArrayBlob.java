@@ -1,7 +1,5 @@
 package contentcouch.data;
 
-import java.util.Arrays;
-
 public class ByteArrayBlob implements Blob {
 	byte[] bytes;
 	int offset;

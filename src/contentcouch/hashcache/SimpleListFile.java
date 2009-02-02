@@ -46,28 +46,47 @@ import java.util.Arrays;
  */
 public class SimpleListFile {
 	public static class Chunk {
-		int offset;
-		int prevOffset;
-		int nextOffset;
-		int listPrevOffset;
-		int listNextOffset;
-		int type;
+		int offset = 0;
+		int prevOffset = 0;
+		int nextOffset = 0;
+		int listPrevOffset = 0;
+		int listNextOffset = 0;
+		int type = 0;
 	}
 	
+	protected static char[] hexChars = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+	
+	protected static String intToHex(int i) {
+		return "0x" +
+			hexChars[(i >> 28)&0xF] +
+			hexChars[(i >> 24)&0xF] +
+			hexChars[(i >> 20)&0xF] +
+			hexChars[(i >> 16)&0xF] +
+			hexChars[(i >> 12)&0xF] +
+			hexChars[(i >>  8)&0xF] +
+			hexChars[(i >>  4)&0xF] +
+			hexChars[(i >>  0)&0xF];
+	}
+		
+	
 	public static int HEADER_LENGTH = 128;
-	public static int CHUNK_HEADER_LENGTH = 4*5;
-	public static int CHUNK_PREV_OFFSET = 0;
-	public static int CHUNK_NEXT_OFFSET = 4;
-	public static int CHUNK_LIST_PREV_OFFSET = 8;
-	public static int CHUNK_LIST_NEXT_OFFSET = 12;
-	public static int CHUNK_TYPE_OFFSET = 16;
+	public static int CHUNK_HEADER_LENGTH = 4*6;
+	public static int CHUNK_MAGIC_OFFSET = 0;
+	public static int CHUNK_PREV_OFFSET = 4;
+	public static int CHUNK_NEXT_OFFSET = 8;
+	public static int CHUNK_LIST_PREV_OFFSET = 12;
+	public static int CHUNK_LIST_NEXT_OFFSET = 16;
+	public static int CHUNK_TYPE_OFFSET = 20;
 	
 	public static int INDEX_CHUNK_OFFSET = HEADER_LENGTH;
+	public static int INDEX_SIZE_OFFSET = INDEX_CHUNK_OFFSET + CHUNK_HEADER_LENGTH;
 	public static int INDEX_ITEMS_OFFSET = INDEX_CHUNK_OFFSET + CHUNK_HEADER_LENGTH + 4;
 	public static int RESERVED_INDEX_ITEMS = 15;
 	public static int ENDF_LIST_INDEX = 0;
 	public static int RECL_LIST_INDEX = 1;
 	public static int USER_INDEX_ITEMS_OFFSET = INDEX_ITEMS_OFFSET + RESERVED_INDEX_ITEMS*4;
+	
+	public static int CHUNK_MAGIC = strToInt("CHNK");
 	
 	public static int CHUNK_TYPE_RECL = strToInt("RECL");
 	public static int CHUNK_TYPE_INDX = strToInt("INDX");
@@ -75,15 +94,20 @@ public class SimpleListFile {
 	public static int CHUNK_TYPE_PAIR = strToInt("PAIR");
 	public static int CHUNK_TYPE_ENDF = strToInt("ENDF");
 	
-	RandomAccessFile raf;
+	protected File file;
+	protected RandomAccessFile raf;
 	protected boolean writeMode;
 	protected int indexSize;
 	
 	//// 'life cycle' functions ////
 	
 	public SimpleListFile(File file, String mode) throws IOException {
+		this.file = file;
 		this.raf = new RandomAccessFile(file, mode);
-		writeMode = mode.contains("w");
+		writeMode = (mode.indexOf('w') != -1);
+		if( raf.length() > HEADER_LENGTH ) {
+			this.indexSize = getIntAt(INDEX_SIZE_OFFSET);
+		}
 	}
 	
 	public void clear() throws IOException {
@@ -92,7 +116,7 @@ public class SimpleListFile {
 	}
 	
 	protected byte[] createIndexData(int numEntries) {
-		byte[] dat = new byte[numEntries+4];
+		byte[] dat = new byte[(numEntries+RESERVED_INDEX_ITEMS)*4 + 4];
 		intToBytes(numEntries, dat, 0);
 		return dat;
 	}
@@ -113,6 +137,16 @@ public class SimpleListFile {
 	
 	public void close() throws IOException {
 		this.raf.close();
+	}
+	
+	//// Accessors ////
+	
+	public File getFile() {
+		return file;
+	}
+	
+	public boolean isWritable() {
+		return writeMode;
 	}
 	
 	//// Int r/w functions ////
@@ -155,11 +189,7 @@ public class SimpleListFile {
 	}
 	
 	protected int readInt() throws IOException {
-		byte[] buf = new byte[4];
-		int bytesRead = raf.read(buf);
-		if( bytesRead < 4 ) throw new IOException("Couldn't read integer at " +
-				(raf.getFilePointer() - bytesRead) + "; only " + bytesRead + " of 4 bytes read");
-		return bytesToInt(buf, 0);
+		return bytesToInt(readBytes(4, "readInt"), 0);
 	}
 	
 	protected void writeInt(int value) throws IOException {
@@ -180,8 +210,7 @@ public class SimpleListFile {
 	
 	protected byte[] readBytes(int count, String context) throws IOException {
 		byte[] data = new byte[count];
-		int bytesRead = raf.read(data);
-		if( bytesRead < count ) throw new IOException("Only read " + bytesRead + " of expected " + count + " bytes while reading " + context + " at " + (raf.getFilePointer() - bytesRead));
+		raf.readFully(data);
 		return data;
 	}
 	
@@ -191,9 +220,18 @@ public class SimpleListFile {
 		return getIntAt(INDEX_ITEMS_OFFSET + itemNum*4);
 	}
 	
+	public int getIndexItemOffset(int itemNum) {
+		return INDEX_ITEMS_OFFSET + (RESERVED_INDEX_ITEMS+itemNum)*4;
+	}
+	
 	public int getIndexItem(int itemNum) throws IOException {
 		if( itemNum < 0 || itemNum >= indexSize ) throw new IOException("Index " + itemNum + " out of range: 0..."+indexSize);
 		return getRawIndexItem(itemNum + RESERVED_INDEX_ITEMS);
+	}
+	
+	public int getCheckedIndexItem(int itemNum) throws IOException {
+		int offset = getIndexItem(itemNum);
+		return checkIndexPointer(offset, itemNum);
 	}
 
 	public void setRawIndexItem(int itemNum, int value) throws IOException {
@@ -209,6 +247,26 @@ public class SimpleListFile {
 		setRawIndexItem(ENDF_LIST_INDEX, offset);
 	}
 
+	//// Check / correct pointers ////
+	
+	protected boolean isPointerOk( int pointer ) throws IOException {
+		return pointer >= HEADER_LENGTH && pointer < raf.length() - CHUNK_HEADER_LENGTH;
+	}
+	
+	protected int checkIndexPointer( int pointer, int index ) throws IOException {
+		if( pointer == 0 ) return 0;
+		if( !isPointerOk(pointer) ) {
+			throw new IOException("Bad index pointer at " + intToHex(getIndexItemOffset(index)) +
+					" (index " + index + "): " + intToHex(pointer));
+		}
+		return pointer;
+	}
+	
+	protected void checkPointer( int pointer, int pointerOffset ) throws IOException {
+		if( !isPointerOk(pointer) ) {
+			throw new IOException("Pointer at " + pointerOffset + " is bad, points to " + pointer );
+		}
+	}
 	
 	//// Load chunk ////
 	
@@ -218,6 +276,10 @@ public class SimpleListFile {
 		byte[] header = readBytes(CHUNK_HEADER_LENGTH, "chunk header");
 		Chunk chunk = new Chunk();
 		chunk.offset = offset;
+		int magic = bytesToInt(header, CHUNK_MAGIC_OFFSET); 
+		if( magic != CHUNK_MAGIC ) {
+			throw new IOException("Read malformed chunk at " + intToHex(offset) + " (bad magic: " + intToHex(magic));
+		}
 		chunk.prevOffset     = bytesToInt(header, CHUNK_PREV_OFFSET);
 		chunk.nextOffset     = bytesToInt(header, CHUNK_NEXT_OFFSET);
 		chunk.listPrevOffset = bytesToInt(header, CHUNK_LIST_PREV_OFFSET);
@@ -231,6 +293,7 @@ public class SimpleListFile {
 	protected void writeChunk(Chunk chunk, byte[] data) throws IOException {
 		raf.seek(chunk.offset);
 		byte[] chunkHeader = new byte[CHUNK_HEADER_LENGTH];
+		intToBytes(CHUNK_MAGIC,          chunkHeader, CHUNK_MAGIC_OFFSET);
 		intToBytes(chunk.prevOffset,     chunkHeader, CHUNK_PREV_OFFSET);
 		intToBytes(chunk.nextOffset,     chunkHeader, CHUNK_NEXT_OFFSET);
 		intToBytes(chunk.listPrevOffset, chunkHeader, CHUNK_LIST_PREV_OFFSET);
@@ -387,7 +450,7 @@ public class SimpleListFile {
 	//// Get/set pairs ////
 	
 	public Chunk getPairChunk( int index, byte[] identifier ) throws IOException {
-		int listOffset = getIndexItem(index);
+		int listOffset = getCheckedIndexItem(index);
 		if( listOffset == 0 ) return null;
 		int itemOffset = listOffset;
 		while( itemOffset != 0 ) {
@@ -481,18 +544,26 @@ public class SimpleListFile {
 		put( hash(k)%indexSize, k, v );
 	}
 	
+	public byte[] get( String k ) throws IOException {
+		try {
+			return get( k.getBytes("UTF-8") );
+		} catch( UnsupportedEncodingException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void put( String k, byte[] v ) throws IOException {
+		try {
+			put( k.getBytes("UTF-8"), v );
+		} catch( UnsupportedEncodingException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public static void main(String[] args) {
 		try {
-			File f = new File("junk/test.slf");
-			SimpleListFile slf = new SimpleListFile(f, "rw");
-			slf.clear();
-			slf.init(65536, 1024*1024);
-			slf.put("aa".getBytes("UTF-8"), "Yum yum!".getBytes("UTF-8"));
-			slf.put("ab".getBytes("UTF-8"), "Yum yum!".getBytes("UTF-8"));
-			slf.put("ba".getBytes("UTF-8"), "Yum yum!".getBytes("UTF-8"));
-			slf.close();
-			
-			slf = new SimpleListFile(f, "rw");
+			File f = new File(args[0]);
+			SimpleListFile slf = new SimpleListFile(f, "r");
 			Chunk c = slf.getFirstChunk();
 			while( c != null ) {
 				System.out.println(intToStr(c.type) + " at " + c.offset + ", lnext=" + c.listNextOffset + ", lprev=" + c.listPrevOffset + " (length=" + (c.nextOffset-c.offset) + ")");

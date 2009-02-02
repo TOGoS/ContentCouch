@@ -11,6 +11,7 @@ import java.util.Map;
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
 import contentcouch.data.FileBlob;
+import contentcouch.file.FileUtil;
 import contentcouch.store.BlobSink;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.FileForBlobGetter;
@@ -74,8 +75,7 @@ public class Importer {
 			File importFile = ((FileBlob)b).getFile();
 			File storeFile = ((FileForBlobGetter)blobSink).getFileForBlob(b);
 			if( !storeFile.exists() ) {
-				File parent = storeFile.getParentFile();
-				if( parent != null && !parent.exists() ) parent.mkdirs();
+				FileUtil.mkParentDirs(storeFile);
 				Linker.getInstance().link( importFile, storeFile );
 				storeFile.setReadOnly();
 			}
@@ -212,7 +212,7 @@ public class Importer {
 
 	public long getHighestNameVersion( String name ) {
 		File nameDir = namedStore.getFile(name);
-		namedStore.mkdirs(nameDir);
+		FileUtil.mkdirs(nameDir);
 		String[] nums = nameDir.list();
 		long highest = 0;
 		for( int i=0; i<nums.length; ++i ) {

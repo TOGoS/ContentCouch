@@ -94,7 +94,7 @@ public class Exporter {
 	
 	public void exportDirectoryEntry( RdfNode entry, File destDir ) {
 		String name = (String)entry.getSingle(RDF.CCOUCH_NAME);
-		if( name.contains("/") || name.contains("\\") ) throw new RuntimeException("Invalid characters in directory entry name: " + name);
+		if( (name.indexOf('/') != -1) || (name.indexOf('\\') != -1) ) throw new RuntimeException("Invalid characters in directory entry name: " + name);
 		File destination = new File(destDir + "/" + name);
 		
 		exportObject( getTarget(entry), destination, entry );

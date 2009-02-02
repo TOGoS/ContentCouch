@@ -56,7 +56,7 @@ public abstract class Linker {
 	public static Linker getInstance() {
 		if( instance == null ) {
 			String whichOS = System.getProperty("os.name");
-			if( whichOS.contains("Windows") ) {
+			if( whichOS.indexOf("Windows") != -1 ) {
 				return new WinLinker();
 			} else {
 				return new UnixLinker();

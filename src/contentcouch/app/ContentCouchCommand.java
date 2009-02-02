@@ -2,6 +2,7 @@
 package contentcouch.app;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -9,6 +10,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import contentcouch.file.FileUtil;
+import contentcouch.hashcache.FileHashCache;
+import contentcouch.hashcache.SimpleListFile;
 import contentcouch.store.BlobGetter;
 import contentcouch.store.BlobPutter;
 import contentcouch.store.BlobStore;
@@ -19,6 +23,8 @@ import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 
 public class ContentCouchCommand {
+	public static String OPTION_REPO_PATH = "repo-path";
+	public static String OPTION_DONT_STORE = "dont-store";
 	
 	public String USAGE =
 		"Usage: ccouch [general options] <sub-command> [command-args]\n" +
@@ -60,16 +66,35 @@ public class ContentCouchCommand {
 	public BlobStore getDatastore( Map options ) {
 		FileBlobMap fbm;
 		BlobPutter putter;
-		if( Boolean.TRUE.equals(options.get("NoStore")) ) {
+		String repoPath = (String)options.get(OPTION_REPO_PATH);
+		if( Boolean.TRUE.equals(options.get(OPTION_DONT_STORE)) ) {
 			putter = new NoopBlobPutter();
 			fbm = null;
 		} else {
-			String repoPath = (String)options.get("repo-path");
 			if( repoPath == null ) return null;
 			fbm = new FileBlobMap(repoPath + "/data/");
 			putter = fbm;
 		}
-		return new Sha1BlobStore(fbm, putter);
+		Sha1BlobStore bs = new Sha1BlobStore(fbm, putter);
+		SimpleListFile slf;
+		if( repoPath != null ) {
+			File cf = new File(repoPath + "/cache/file-attrs.slf");
+			try {
+				FileUtil.mkParentDirs(cf);
+				slf = new SimpleListFile(cf, "rw");
+				slf.init(65536, 1024*1024);
+			} catch( IOException e ) {
+				try {
+					System.err.println("Couldn't open " + cf + " in 'rw' mode, trying 'r'");
+					slf = new SimpleListFile(cf, "r");
+					slf.init(65536, 1024*1024);
+				} catch( IOException ee ) {
+					throw new RuntimeException(ee);
+				}
+			}
+			bs.fileHashCache = new FileHashCache(slf);
+		}
+		return bs;
 	}
 	
 	public BlobGetter getBlobGetter( Map options ) {
@@ -80,7 +105,7 @@ public class ContentCouchCommand {
 	}
 	
 	public FileBlobMap getNamedStore( Map options ) {
-		String repoPath = (String)options.get("repo-path");
+		String repoPath = (String)options.get(OPTION_REPO_PATH);
 		if( repoPath == null ) {
 			return null;
 		} else {
@@ -187,12 +212,12 @@ public class ContentCouchCommand {
 	
 	public void runIdCmd( String[] args, Map options ) {
 		options = new HashMap(options);
-		options.put("NoStore", Boolean.TRUE);
+		options.put(OPTION_DONT_STORE, Boolean.TRUE);
 		runStoreCmd(args, options);
 	}
 	
 	public void runCheckCmd( String[] args, Map options ) {
-		String rp = (String)options.get("repo-path");
+		String rp = (String)options.get(OPTION_REPO_PATH);
 		if( rp == null ) {
 			System.err.println("Repository unspecified");
 		}
@@ -213,7 +238,7 @@ public class ContentCouchCommand {
 				System.out.println(USAGE);
 				System.exit(0);
 			} else if( "-repo".equals(args[i]) ) {
-				options.put("repo-path", args[++i]);
+				options.put(OPTION_REPO_PATH, args[++i]);
 			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
 				cmd = args[i++];
 				break;

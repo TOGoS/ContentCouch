@@ -3,6 +3,7 @@ package contentcouch.app;
 import java.io.File;
 
 import contentcouch.data.Blob;
+import contentcouch.file.FileUtil;
 import contentcouch.store.BlobGetter;
 import contentcouch.store.BlobPutter;
 import contentcouch.store.BlobSink;
@@ -29,15 +30,8 @@ public class ContentCouchRepository implements BlobGetter, BlobSink {
 		headBlobSource = hs;
 	}
 	
-	protected void mkdirs(File dir) {
-		if( !dir.exists() ) dir.mkdirs();
-	}
-	protected void mkdirs(String path) {
-		mkdirs(new File(path));
-	}
-
 	public void initialize() {
-		mkdirs( new File(path).getParentFile() );
+		FileUtil.mkParentDirs( new File(path) );
 	}
 	
 	public String push( Blob blob ) {

@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
+import contentcouch.file.FileUtil;
+
 public class BlobUtil {
 	public static byte[] getBytes(Blob blob) {
 		long len = blob.getLength();
@@ -72,12 +74,7 @@ public class BlobUtil {
 	}
 	
 	public static void writeBlobToFile( Blob blob, File f ) {
-		File d = f.getParentFile();
-		if( d != null && !d.exists() ) {
-			if( !d.mkdirs() ) {
-				throw new RuntimeException("Couldn't create parent dirs for " + f);
-			}
-		}
+		FileUtil.mkParentDirs(f);
 		try {
 			FileOutputStream fos = new FileOutputStream(f);
 			writeBlobToOutputStream(blob, fos);
