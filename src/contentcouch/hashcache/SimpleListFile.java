@@ -4,42 +4,31 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
+import java.util.Arrays;
 
 /** Format of this kind of file:
  * 
  * [header]
  * [index chunk]
- * [data and empty chunks]
- * 
+ * [data and reclaimable chunks]
+ * [end-of-file chunk]
  * 
  * header:     [128 bytes of padding]
- * 
  * 
  * chunk:
  *   [4-byte offset of physical prev chunk]
  *   [4-byte offset of physical next chunk]
  *   [4-byte offset of list prev chunk]
  *   [4-byte offset of list next chunk]
- *   [chunk type]
+ *   [4-byte chunk type]
  *   [chunk content]
  *   
  * chunk types:
- *   'RECL' - recycle (it is blank)
+ *   'RECL' - recycle (it is unused)
  *   'INDX' - index
  *   'LIST' - placeholder for first/last item in a list
  *   'PAIR' - dictionary item
  *   'ENDF' - end of file
- * 
- * recycle item chunk content:
- * 
- * dictionary item chunk content:
- *   [4-byte length of name]
- *   [4-byte length of data]
- *   [name]
- *   [data]
- *   
- * data chunk content is like:
  * 
  * index:
  *   [4-byte number of entries (incl. reserved ones)]
@@ -47,9 +36,13 @@ import java.util.HashMap;
  *   [offset to recycle list]
  *   [13 more reserved entries]
  *   [offset to items]
- *  
- * each entry: [4-byte length][n bytes]
- * last entry: [4-byte -1]
+ *
+ * dictionary item chunk content:
+ *   [4-byte length of name]
+ *   [name]
+ *   [4-byte length of data]
+ *   [data]
+ *   [4-byte 0]
  */
 public class SimpleListFile {
 	public static class Chunk {
@@ -71,9 +64,9 @@ public class SimpleListFile {
 	
 	public static int INDEX_CHUNK_OFFSET = HEADER_LENGTH;
 	public static int INDEX_ITEMS_OFFSET = INDEX_CHUNK_OFFSET + CHUNK_HEADER_LENGTH + 4;
-	public static int LAST_CHUNK_OFFSET_OFFSET = INDEX_ITEMS_OFFSET + 0;
-	public static int EMPTY_LIST_OFFSET_OFFSET = INDEX_ITEMS_OFFSET + 4;
 	public static int RESERVED_INDEX_ITEMS = 15;
+	public static int ENDF_LIST_INDEX = 0;
+	public static int RECL_LIST_INDEX = 1;
 	public static int USER_INDEX_ITEMS_OFFSET = INDEX_ITEMS_OFFSET + RESERVED_INDEX_ITEMS*4;
 	
 	public static int CHUNK_TYPE_RECL = strToInt("RECL");
@@ -84,24 +77,45 @@ public class SimpleListFile {
 	
 	RandomAccessFile raf;
 	protected boolean writeMode;
+	protected int indexSize;
+	
+	//// 'life cycle' functions ////
 	
 	public SimpleListFile(File file, String mode) throws IOException {
 		this.raf = new RandomAccessFile(file, mode);
 		writeMode = mode.contains("w");
 	}
 	
-	public void init(int numIndexEntries, int fileSize) throws IOException {
+	public void clear() throws IOException {
+		if( !writeMode ) throw new IOException("Can't clear unless in write mode");
+		this.raf.setLength(0);
+	}
+	
+	protected byte[] createIndexData(int numEntries) {
+		byte[] dat = new byte[numEntries+4];
+		intToBytes(numEntries, dat, 0);
+		return dat;
+	}
+
+	public void init(int indexSize, int fileSize) throws IOException {
 		if( this.raf.length() <= HEADER_LENGTH ) {
+			this.indexSize = indexSize;
 			if( !writeMode ) throw new IOException("Can't initialize unless in write mode");
 			this.raf.setLength(fileSize);
 			Chunk indexChunk = new Chunk();
 			indexChunk.offset = INDEX_CHUNK_OFFSET;
 			indexChunk.type = CHUNK_TYPE_INDX;
-			writeChunk(indexChunk, createIndexData(numIndexEntries+RESERVED_INDEX_ITEMS));
+			writeChunk(indexChunk, createIndexData(indexSize+RESERVED_INDEX_ITEMS));
 			Chunk eofChunk = writeEofChunk(indexChunk.offset);
 			setLastChunkOffset(eofChunk.offset);
 		}
 	}
+	
+	public void close() throws IOException {
+		this.raf.close();
+	}
+	
+	//// Int r/w functions ////
 	
 	static void intToBytes(int i, byte[] b, int offset) {
 		b[offset+0] = (byte)((i >> 24) & 0xFF);
@@ -148,16 +162,20 @@ public class SimpleListFile {
 		return bytesToInt(buf, 0);
 	}
 	
+	protected void writeInt(int value) throws IOException {
+		byte[] b = new byte[4];
+		intToBytes(value, b, 0);
+		raf.write(b);
+	}
+	
 	protected int getIntAt(int offset) throws IOException {
 		raf.seek(offset);
 		return readInt();
 	}
 	
 	protected void setIntAt(int offset, int value) throws IOException {
-		byte[] b = new byte[4];
-		intToBytes(value, b, 0);
 		raf.seek(offset);
-		raf.write(b);
+		writeInt(value);
 	}
 	
 	protected byte[] readBytes(int count, String context) throws IOException {
@@ -167,15 +185,32 @@ public class SimpleListFile {
 		return data;
 	}
 	
-	public int getIndexItem(int itemNum) throws IOException {
-		itemNum += RESERVED_INDEX_ITEMS;
+	//// Edit the index ////
+	
+	public int getRawIndexItem(int itemNum) throws IOException {
 		return getIntAt(INDEX_ITEMS_OFFSET + itemNum*4);
 	}
 	
-	public void setIndexItem(int itemNum, int value) throws IOException {
-		itemNum += RESERVED_INDEX_ITEMS;
+	public int getIndexItem(int itemNum) throws IOException {
+		if( itemNum < 0 || itemNum >= indexSize ) throw new IOException("Index " + itemNum + " out of range: 0..."+indexSize);
+		return getRawIndexItem(itemNum + RESERVED_INDEX_ITEMS);
+	}
+
+	public void setRawIndexItem(int itemNum, int value) throws IOException {
 		setIntAt(INDEX_ITEMS_OFFSET + itemNum*4, value);
 	}
+
+	public void setIndexItem(int itemNum, int value) throws IOException {
+		if( itemNum < 0 || itemNum >= indexSize ) throw new IOException("Index " + itemNum + " out of range: 0..."+indexSize);
+		setRawIndexItem(itemNum + RESERVED_INDEX_ITEMS, value);
+	}
+	
+	protected void setLastChunkOffset(int offset) throws IOException {
+		setRawIndexItem(ENDF_LIST_INDEX, offset);
+	}
+
+	
+	//// Load chunk ////
 	
 	public Chunk getChunk(int offset) throws IOException {
 		if( offset == 0 ) return null;
@@ -191,7 +226,9 @@ public class SimpleListFile {
 		return chunk;
 	}
 
-	public void writeChunk(Chunk chunk, byte[] data) throws IOException {
+	//// Write a brand new chunk ////
+	
+	protected void writeChunk(Chunk chunk, byte[] data) throws IOException {
 		raf.seek(chunk.offset);
 		byte[] chunkHeader = new byte[CHUNK_HEADER_LENGTH];
 		intToBytes(chunk.prevOffset,     chunkHeader, CHUNK_PREV_OFFSET);
@@ -202,6 +239,32 @@ public class SimpleListFile {
 		raf.write(chunkHeader);
 		if( data != null ) raf.write(data);
 	}
+	
+	protected Chunk writeEofChunk(int prevOffset) throws IOException {
+		Chunk eofChunk = new Chunk();
+		eofChunk.offset = (int)raf.getFilePointer();
+		eofChunk.prevOffset = prevOffset;
+		eofChunk.type = CHUNK_TYPE_ENDF;
+		writeChunk(eofChunk, null);
+		if( prevOffset != 0 ) setChunkNext(prevOffset, eofChunk.offset);
+		return eofChunk;
+	}
+	
+	public Chunk addChunkAtEnd(int listPrev, int listNext, int type, byte[] data) throws IOException {
+		Chunk lastChunk = getLastChunk();
+		Chunk newChunk = new Chunk();
+		newChunk.offset = lastChunk.offset;
+		newChunk.prevOffset = lastChunk.prevOffset;
+		newChunk.listPrevOffset = listPrev;
+		newChunk.listNextOffset = listNext;
+		newChunk.type = type;
+		writeChunk(newChunk, data);
+		Chunk eofChunk = writeEofChunk(newChunk.offset);
+		setLastChunkOffset(newChunk.nextOffset = eofChunk.offset);
+		return newChunk;
+	}
+
+	//// In-place chunk editing ////
 	
 	protected void setChunkPrev(int chunkOffset, int value) throws IOException {
 		setIntAt(chunkOffset+CHUNK_PREV_OFFSET, value);
@@ -240,99 +303,199 @@ public class SimpleListFile {
 		chunk.type = value;
 	}
 	
+	//// Find certain chunks ////
+	
 	public Chunk getFirstChunk() throws IOException {
 		if( raf.length() <= HEADER_LENGTH ) return null;
 		return getChunk(HEADER_LENGTH);
 	}
 	
 	public Chunk getLastChunk() throws IOException {
-		return getChunk(getIntAt(LAST_CHUNK_OFFSET_OFFSET));
+		return getChunk(getRawIndexItem(ENDF_LIST_INDEX));
 	}
 	
-	protected void setLastChunkOffset(int offset) throws IOException {
-		setIntAt(LAST_CHUNK_OFFSET_OFFSET, offset);
-	}
-	
-	public Chunk addChunkAtEnd(int listPrev, int listNext, int type, byte[] data) throws IOException {
-		Chunk lastChunk = getLastChunk();
-		Chunk newChunk = new Chunk();
-		newChunk.offset = lastChunk.offset;
-		newChunk.prevOffset = lastChunk.prevOffset;
-		newChunk.listPrevOffset = listPrev;
-		newChunk.listNextOffset = listNext;
-		newChunk.type = type;
-		writeChunk(newChunk, data);
-		Chunk eofChunk = writeEofChunk(newChunk.offset);
-		setLastChunkOffset(newChunk.nextOffset = eofChunk.offset);
-		return newChunk;
-	}
-	
-	protected byte[] createIndexData(int numEntries) {
-		byte[] dat = new byte[numEntries+4];
-		intToBytes(numEntries, dat, 0);
-		return dat;
-	}
-	
-	protected Chunk writeEofChunk(int prevOffset) throws IOException {
-		Chunk eofChunk = new Chunk();
-		eofChunk.offset = (int)raf.getFilePointer();
-		eofChunk.prevOffset = prevOffset;
-		eofChunk.type = CHUNK_TYPE_ENDF;
-		writeChunk(eofChunk, null);
-		if( prevOffset != 0 ) setChunkNext(prevOffset, eofChunk.offset);
-		return eofChunk;
+	public Chunk getRecycleList() throws IOException {
+		return getChunk(getRawIndexItem(RECL_LIST_INDEX));
 	}
 	
 	public Chunk addChunk(int listPrev, int listNext, int type, byte[] data) throws IOException {
-		// Eventually this should try to use the recycle list.
+		Chunk recycleList = getRecycleList();
+		if( recycleList != null ) {
+			int next = recycleList.listNextOffset;
+			while( next != 0 && next != recycleList.offset ) {
+				Chunk c = getChunk(next);
+				next = c.nextOffset;
+				if( next - c.offset - CHUNK_HEADER_LENGTH >= data.length ) {
+					// We can re-use this chunk!
+					removeChunkFromList(c);
+					setChunkType(c, type);
+					raf.write(data);
+					return c;
+				}
+			}
+		}
 		return addChunkAtEnd(listPrev, listNext, type, data);
 	}
 	
-	public Chunk addChunkToList( int prev, int next, int type, byte[] data ) throws IOException {
-		Chunk newChunk = addChunk( prev, next, type, data );
-		if( prev != 0 ) setChunkListNext(prev, newChunk.offset);
-		if( next != 0 ) setChunkListPrev(next, newChunk.offset);
+	public void recycleChunk( Chunk c ) throws IOException {
+		removeChunkFromList(c);
+		setChunkType(c, CHUNK_TYPE_RECL);
+		addChunkToRawIndexList(1, c);
+	}
+	
+	//// List manipulation ////
+	
+	public Chunk createList() throws IOException {
+		Chunk newChunk = addChunk( 0, 0, CHUNK_TYPE_LIST, null );
+		setChunkListNext(newChunk, newChunk.offset);
+		setChunkListPrev(newChunk, newChunk.offset);
 		return newChunk;
 	}
 	
-	public Chunk addChunkToIndexList( int index, int type, byte[] data ) throws IOException {
-		int listOffset = getIndexItem(index);
+	public void addChunkToList( int prev, int next, Chunk c ) throws IOException {
+		setChunkListPrev( c, prev );
+		setChunkListNext( prev, c.offset );
+		setChunkListNext( c, next );
+		setChunkListPrev( next, c.offset );
+	}
+	
+	public void removeChunkFromList( Chunk c ) throws IOException {
+		if( c.listPrevOffset != 0 ) setChunkListNext(c.listPrevOffset, c.listNextOffset);
+		if( c.listNextOffset != 0 ) setChunkListNext(c.listNextOffset, c.listPrevOffset);
+		c.listPrevOffset = 0;
+		c.listNextOffset = 0;
+	}
+	
+	public void addChunkToRawIndexList( int index, Chunk chunk ) throws IOException {
+		int listOffset = getRawIndexItem(index);
 		Chunk listChunk;
 		if( listOffset == 0 ) {
-			listChunk = addChunk(0, 0, CHUNK_TYPE_LIST, null);
-			setChunkPrev(listChunk, listChunk.offset);
-			setChunkNext(listChunk, listChunk.offset);
-			setIndexItem(index, listChunk.offset);
+			listChunk = createList();
+			setRawIndexItem(index, listChunk.offset);
 		} else {
 			listChunk = getChunk(listOffset);
 		}
-		return addChunk(listChunk.offset, listChunk.listNextOffset, type, data);
+		addChunkToList(listChunk.offset, listChunk.listNextOffset, chunk);
 	}
 	
-	public byte[] get( int index, byte[] identifier ) {
+	public Chunk addChunkToIndexList( int index, int type, byte[] data ) throws IOException {
+		Chunk c = addChunk(0, 0, type, data);
+		addChunkToRawIndexList( index+RESERVED_INDEX_ITEMS, c );
+		return c;
+	}
+	
+	//// Get/set pairs ////
+	
+	public Chunk getPairChunk( int index, byte[] identifier ) throws IOException {
+		int listOffset = getIndexItem(index);
+		if( listOffset == 0 ) return null;
+		int itemOffset = listOffset;
+		while( itemOffset != 0 ) {
+			Chunk item = getChunk(itemOffset);
+			if( item.type == CHUNK_TYPE_PAIR ) {
+				byte[] key = getPairKey( itemOffset );
+				if( Arrays.equals(identifier, key) ) return item; 
+			}
+			itemOffset = item.listNextOffset;
+			if( itemOffset == listOffset ) return null;
+		}
 		return null;
 	}
 	
-	public void put( int index, byte[] identifier, byte[] value ) {
-		
+	protected byte[] getPairPart( int pairOffset, int partIndex ) throws IOException {
+		int offset = pairOffset + CHUNK_HEADER_LENGTH;
+		int partLength = getIntAt(offset);
+		if( partLength == 0 ) return null;
+		int pi=0;
+		while( pi<partIndex ) {
+			offset += 4;  offset += partLength;
+			++pi;
+			partLength = getIntAt(offset);
+			if( partLength == 0 ) return null;
+		}
+		return readBytes(partLength, "getPairPart");
+	}
+	protected byte[] getPairKey( int pairOffset ) throws IOException {
+		return getPairPart(pairOffset, 0);
+	}
+	protected byte[] getPairValue( int pairOffset ) throws IOException {
+		return getPairPart(pairOffset, 1);
 	}
 	
-	public void close() throws IOException {
-		this.raf.close();
+	public byte[] get( int index, byte[] identifier ) throws IOException {
+		Chunk pc = getPairChunk( index, identifier );
+		if( pc == null ) return null;
+		return getPairValue( pc.offset );
+	}
+	
+	protected byte[] getPairData(byte[] identifier, byte[] value) {
+		byte[] data = new byte[identifier.length + value.length + 12];
+		intToBytes(identifier.length, data, 0);
+		for( int i=0, j=4; i<identifier.length; ++i, ++j ) {
+			data[j] = identifier[i];
+		}
+		intToBytes(value.length, data, 4 + identifier.length);
+		for( int i=0, j=8+identifier.length; i<value.length; ++i, ++j ) {
+			data[j] = value[i];
+		}
+		intToBytes(0, data, 8 + identifier.length + value.length);
+		return data;
+	}
+	
+	public void put( int index, byte[] identifier, byte[] value ) throws IOException {
+		Chunk pc = getPairChunk( index, identifier );
+		if( pc != null ) {
+			if( Arrays.equals(getPairValue(pc.offset), value) ) return;
+			if( pc.nextOffset != 0 && pc.nextOffset - pc.offset - CHUNK_HEADER_LENGTH - identifier.length - value.length - 12 >= 0 ) {
+				raf.seek(pc.offset + CHUNK_HEADER_LENGTH + identifier.length + 4);
+				writeInt(value.length);
+				raf.write(value);
+				writeInt(0);
+				return;
+			}
+			recycleChunk(pc);
+		}
+		addChunkToIndexList(index, CHUNK_TYPE_PAIR, getPairData(identifier, value));
+	}
+	
+	// A very simple (and not secure) hash function found at
+	// http://www.partow.net/programming/hashfunctions/
+	public int hash( byte[] identifier ) {
+      int b    = 378551;
+      int a    = 63689;
+      int hash = 0;
+
+      for(int i = 0; i < identifier.length; i++) {
+         hash = hash * a + identifier[i];
+         a    = a * b;
+      }
+
+      return hash & 0x7FFFFFFF;
+	}
+	
+	public byte[] get( byte[] k ) throws IOException {
+		return get( hash(k)%indexSize, k );
+	}
+	
+	public void put( byte[] k, byte[] v ) throws IOException {
+		put( hash(k)%indexSize, k, v );
 	}
 	
 	public static void main(String[] args) {
 		try {
 			File f = new File("junk/test.slf");
 			SimpleListFile slf = new SimpleListFile(f, "rw");
+			slf.clear();
 			slf.init(65536, 1024*1024);
-			slf.addChunkAtEnd(0, 0, CHUNK_TYPE_RECL, new byte[8]);
+			slf.put("aa".getBytes("UTF-8"), "Yum yum!".getBytes("UTF-8"));
+			slf.put("ab".getBytes("UTF-8"), "Yum yum!".getBytes("UTF-8"));
+			slf.put("ba".getBytes("UTF-8"), "Yum yum!".getBytes("UTF-8"));
 			slf.close();
 			
 			slf = new SimpleListFile(f, "rw");
 			Chunk c = slf.getFirstChunk();
 			while( c != null ) {
-				System.out.println(intToStr(c.type) + " at " + c.offset + ", next=" + c.nextOffset + ", prev=" + c.prevOffset);
+				System.out.println(intToStr(c.type) + " at " + c.offset + ", lnext=" + c.listNextOffset + ", lprev=" + c.listPrevOffset + " (length=" + (c.nextOffset-c.offset) + ")");
 				c = slf.getChunk(c.nextOffset);
 			}
 			slf.close();
