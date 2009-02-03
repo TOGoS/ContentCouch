@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
+import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.store.Getter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
@@ -15,12 +16,18 @@ import contentcouch.xml.RDF.Ref;
 
 public class Exporter {
 	Getter getter;
+	boolean link = false;
+	boolean verbose = false;
 	
-	public Exporter( Getter blobSource ) {
-		this.getter = blobSource;
+	public Exporter( Getter getter ) {
+		if( !(getter instanceof ParseRdfGetFilter) ) {
+			getter = new ParseRdfGetFilter(getter);
+		}
+		this.getter = getter;
 	}
 
 	public void exportFile( Blob blob, File destination ) {
+		if( verbose ) System.err.println(destination.getPath());
 		BlobUtil.writeBlobToFile(blob, destination);
 	}
 	
@@ -39,9 +46,9 @@ public class Exporter {
 	protected Object getRdf( Object obj, String sourceUri ) {
 		if( obj instanceof Ref ) {
 			String targetUri = ((Ref)obj).targetUri;
-			Blob blob = BlobUtil.getBlob(getter.get( targetUri ));
-			if( blob == null ) throw new RuntimeException("Could not load " + ((Ref)obj).targetUri );
-			return getRdf(blob, targetUri);
+			obj = getter.get(targetUri);
+			if( obj == null ) throw new RuntimeException("Could not load " + ((Ref)obj).targetUri );
+			return getRdf(obj, targetUri);
 		} else if( obj instanceof Blob ) {
 			return getRdf((Blob)obj, sourceUri);
 		} else if( obj instanceof RdfNode || obj instanceof String ) {
@@ -134,20 +141,14 @@ public class Exporter {
 		} else if( object instanceof RdfNode ) {
 			exportObjectFromRdf( (RdfNode)object, destination );
 		} else if( object == null ) {
-			throw new RuntimeException("Can't export null, targetted by " + entry.sourceUri);
+			throw new RuntimeException("Can't export null" + ((entry == null) ? "" : "targetted by " + entry.sourceUri));
 		} else {
 			throw new RuntimeException("Don't know how to export " + object.getClass().getName() + " targeted by " + entry.sourceUri);
 		}
 	}
 	
 	public void exportObject( String uri, File destination ) {
-		if( uri.charAt(0) == '@' ) {
-			uri = uri.substring(1);
-			RdfNode rdf = (RdfNode)getRdf(new Ref(uri), "(command-line)");
-			exportObject(rdf, destination, null);
-		} else {
-			exportFile(uri, destination);
-		}
+		exportObject(getter.get(uri), destination, null);
 	}
 	
 	public static void main(String[] args) {

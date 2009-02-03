@@ -46,12 +46,20 @@ public class ContentCouchCommand {
 		"  -link              ; hardlink files into the store instead of copying\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
+		"  -?                 ; display help and exit\n" +
 		"\n" +
 		"If -m, -a, and/or -n are used, a commit will be created and its URN output.\n" +
 		"\n" +
 		"If -n is specified, a commit will be stored under that name as\n" +
 		"<repo-path>/heads/local/<name>/<version>, where <version> is automatically\n" +
 		"incremented for new commits.";
+	
+	public String CHECKOUT_USAGE =
+		"Usage: ccouch [general options] checkout [checkout options] <source> <dest>\n" +
+		"Checkout options:\n" +
+		"  -link              ; hardlink files from the store instead of copying\n" +
+		"  -v                 ; verbose - report every file exported\n" +
+		"  -?                 ; display help and exit";
 
 	protected String repoPath = ".";
 	protected ContentCouchRepository repositoryCache = null;
@@ -203,11 +211,51 @@ public class ContentCouchCommand {
 	}
 	
 	public void runCheckoutCmd( String[] args, Map options ) {
+		boolean verbose = false;
+		boolean link = false;
+		String source = null;
+		String dest = null;
+		for( int i=0; i < args.length; ++i ) {
+			String arg = args[i];
+			if( arg.length() == 0 ) {
+				System.err.println(CHECKOUT_USAGE);
+				System.exit(1);
+			} else if( "-v".equals(arg) ) {
+				verbose = true;
+			} else if( "-link".equals(arg) ) {
+				link = true;
+			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
+				System.out.println(CHECKOUT_USAGE);
+				System.exit(0);
+			} else if( arg.charAt(0) != '-' ) {
+				if( source == null ) source = arg;
+				else if( dest == null ) dest = arg;
+				else {
+					System.err.println("ccouch checkout: Too many arguments: " + arg);
+					System.err.println(CHECKOUT_USAGE);
+					System.exit(1);
+				}
+			} else {
+				System.err.println("ccouch checkout: Unrecognised argument: " + arg);
+				System.err.println(CHECKOUT_USAGE);
+				System.exit(1);
+			}
+		}
+		if( source == null ) {
+			System.err.println("ccouch checkout: Source unspecified");
+			System.err.println(CHECKOUT_USAGE);
+			System.exit(1);
+		}
+		if( dest == null ) {
+			System.err.println("ccouch checkout: Destination unspecified");
+			System.err.println(CHECKOUT_USAGE);
+			System.exit(1);
+		}
 		final Exporter exporter = new Exporter(getBlobGetter(options));
-		String urn = args[0];
-		String dest = args[1];
+		exporter.link = link;
+		exporter.verbose = verbose;
 		File destFile = new File(dest);
-		exporter.exportObject(urn, destFile);
+		exporter.exportObject(source, destFile);
 	}
 	
 	public void runIdCmd( String[] args, Map options ) {

@@ -114,23 +114,7 @@ public class Importer {
 	
 	protected void addTarget( RdfNode node, String targetType, String targetUri ) {
 		node.add(RDF.CCOUCH_TARGETTYPE, targetType);
-		if( targetUri.charAt(0) == '@' ) {
-			node.add(RDF.CCOUCH_TARGETLISTING, new Ref(targetUri.substring(1)));
-		} else {
-			node.add(RDF.CCOUCH_TARGET, new Ref(targetUri));
-		}
-		/*
-		if( RDF.OBJECT_TYPE_DIRECTORY.equals(targetType) ||
-			RDF.OBJECT_TYPE_COMMIT.equals(targetType) ||
-			RDF.OBJECT_TYPE_RDF.equals(targetType)
-		) {
-			node.add(RDF.CCOUCH_TARGETLISTING, new Ref(targetUri));
-		} else if( RDF.OBJECT_TYPE_BLOB.equals(targetType) ) {
-			node.add(RDF.CCOUCH_TARGET, new Ref(targetUri));
-		} else {
-			throw new RuntimeException("Don't know how to link to object type " + targetType + " (to " + targetUri + ")");
-		}
-		*/
+		node.add(RDF.CCOUCH_TARGET, new Ref(targetUri));
 	}
 	
 	public RdfNode getCommitRdfNode( String targetType, String targetUri, Date date, String creator, String description, String[] parentUris ) {
@@ -180,11 +164,11 @@ public class Importer {
 			entries.add( getDirectoryEntryRdfNode(subFile, fileImportListener) );
 		}
 		n.add(RDF.CCOUCH_ENTRIES, entries);
-		String listingUri = importContent(createMetadataBlob(n, RDF.CCOUCH_NS));
+		String objectUri = RDF.URI_PARSE_PREFIX + importContent(createMetadataBlob(n, RDF.CCOUCH_NS));
 		if( fileImportListener != null ) {
-			fileImportListener.fileImported( dir, "@" + listingUri );
+			fileImportListener.fileImported( dir, objectUri );
 		}
-		return "@" + listingUri;
+		return objectUri;
 	}
 	
 	public String importFileOrDirectory( File file, FileImportListener fileImportListener ) {
