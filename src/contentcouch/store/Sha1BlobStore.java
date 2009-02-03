@@ -6,21 +6,22 @@ import java.io.File;
 import org.bitpedia.util.Base32;
 
 import contentcouch.data.Blob;
+import contentcouch.data.BlobUtil;
 import contentcouch.data.FileBlob;
 import contentcouch.digest.DigestUtil;
 import contentcouch.hashcache.FileHashCache;
 
 public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, UrnForBlobGetter {
-	protected BlobGetter blobGetter;
-	protected BlobPutter blobPutter;
+	protected Getter blobGetter;
+	protected Putter blobPutter;
 	public FileHashCache fileHashCache;
 	
-	public Sha1BlobStore( BlobGetter blobSource, BlobPutter blobStore ) {
+	public Sha1BlobStore( Getter blobSource, Putter blobStore ) {
 		this.blobGetter = blobSource;
 		this.blobPutter = blobStore;
 	}
 	
-	public Sha1BlobStore( BlobMap fbs ) {
+	public Sha1BlobStore( PutterGetter fbs ) {
 		this( fbs, fbs );
 	}
 
@@ -53,10 +54,11 @@ public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, 
 		return getUrnForSha1( getSha1(blob) );
 	}
 	
-	public String push( Blob blob ) {
+	public String push( Object obj ) {
 		if( blobPutter == null ) {
 			throw new RuntimeException("Can't store blob because I lack a blob store");
 		}
+		Blob blob = BlobUtil.getBlob(obj);
 		byte[] sha1 = getSha1(blob);
 		String urn = getUrnForSha1( sha1 );
 		String filename = getFilenameForSha1( sha1 );
@@ -70,7 +72,7 @@ public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, 
 		return urn;
 	}
 
-	public Blob get( String urn ) {
+	public Object get( String urn ) {
 		if( blobGetter == null ) return null;
 		if( urn.startsWith("urn:sha1:") ) {
 			byte[] sha1 = Base32.decode(urn.substring(9));

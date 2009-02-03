@@ -1,4 +1,4 @@
 package contentcouch.store;
 
-public interface BlobStore extends BlobSink, BlobGetter {
+public interface BlobStore extends Pusher, Getter {
 }

@@ -13,12 +13,12 @@ import java.util.Map;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.hashcache.SimpleListFile;
-import contentcouch.store.BlobGetter;
-import contentcouch.store.BlobPutter;
 import contentcouch.store.BlobStore;
 import contentcouch.store.FileBlobMap;
-import contentcouch.store.MultiBlobGetter;
-import contentcouch.store.NoopBlobPutter;
+import contentcouch.store.Getter;
+import contentcouch.store.MultiGetter;
+import contentcouch.store.NoopPutter;
+import contentcouch.store.Putter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 
@@ -65,10 +65,10 @@ public class ContentCouchCommand {
 	
 	public BlobStore getDatastore( Map options ) {
 		FileBlobMap fbm;
-		BlobPutter putter;
+		Putter putter;
 		String repoPath = (String)options.get(OPTION_REPO_PATH);
 		if( Boolean.TRUE.equals(options.get(OPTION_DONT_STORE)) ) {
-			putter = new NoopBlobPutter();
+			putter = new NoopPutter();
 			fbm = null;
 		} else {
 			if( repoPath == null ) return null;
@@ -97,8 +97,8 @@ public class ContentCouchCommand {
 		return bs;
 	}
 	
-	public BlobGetter getBlobGetter( Map options ) {
-		MultiBlobGetter mbg = new MultiBlobGetter();
+	public Getter getBlobGetter( Map options ) {
+		MultiGetter mbg = new MultiGetter();
 		mbg.addBlobGetter(getDatastore(options));
 		mbg.addBlobGetter(new FileBlobMap(""));
 		return mbg;

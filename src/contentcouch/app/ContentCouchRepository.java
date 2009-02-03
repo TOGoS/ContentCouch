@@ -4,21 +4,21 @@ import java.io.File;
 
 import contentcouch.data.Blob;
 import contentcouch.file.FileUtil;
-import contentcouch.store.BlobGetter;
-import contentcouch.store.BlobPutter;
-import contentcouch.store.BlobSink;
+import contentcouch.store.Getter;
+import contentcouch.store.Putter;
+import contentcouch.store.Pusher;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 
-public class ContentCouchRepository implements BlobGetter, BlobSink {
+public class ContentCouchRepository implements Getter, Pusher {
 	protected String path;
 	
 	// TODO: Allow repo to be accessed remotely (http, freenet, etc) 
-	protected BlobGetter dataBlobSource;
-	protected BlobSink dataBlobSink;
-	protected BlobPutter headBlobPutter;
-	protected BlobGetter headBlobSource;
+	protected Getter dataBlobSource;
+	protected Pusher dataBlobSink;
+	protected Putter headBlobPutter;
+	protected Getter headBlobSource;
 	
 	public ContentCouchRepository( String path ) {
 		this.path = path;
@@ -34,11 +34,11 @@ public class ContentCouchRepository implements BlobGetter, BlobSink {
 		FileUtil.mkParentDirs( new File(path) );
 	}
 	
-	public String push( Blob blob ) {
-		return dataBlobSink.push(blob);
+	public String push( Object obj ) {
+		return dataBlobSink.push(obj);
 	}
 	
-	public Blob get( String blobId ) {
+	public Object get( String blobId ) {
 		return dataBlobSource.get(blobId);
 	}
 	

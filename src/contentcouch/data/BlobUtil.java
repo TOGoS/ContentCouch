@@ -39,6 +39,22 @@ public class BlobUtil {
 		}
 	}
 	
+	public static Blob getBlob(Object obj) {
+		if( obj == null ) {
+			return null;
+		} else if( obj instanceof Blob ) {
+			return (Blob)obj;
+		} else if( obj instanceof byte[] ) {
+			return new ByteArrayBlob((byte[])obj);
+		} else if( obj instanceof String ) {
+			return getBlob((String)obj);
+		} else if( obj instanceof File ) {
+			return new FileBlob((File)obj);
+		} else {
+			throw new RuntimeException("Don't know how to turn " + obj.getClass().getName() + " into a Blob");
+		}
+	}
+	
 	static final int maxChunkLength = 1024*1024;
 
 	public static void copyInputToOutput( InputStream is, OutputStream os )

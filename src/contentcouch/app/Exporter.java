@@ -7,17 +7,17 @@ import java.util.Iterator;
 
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
-import contentcouch.store.BlobGetter;
+import contentcouch.store.Getter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 import contentcouch.xml.RDF.RdfNode;
 import contentcouch.xml.RDF.Ref;
 
 public class Exporter {
-	BlobGetter blobGetter;
+	Getter getter;
 	
-	public Exporter( BlobGetter blobSource ) {
-		this.blobGetter = blobSource;
+	public Exporter( Getter blobSource ) {
+		this.getter = blobSource;
 	}
 
 	public void exportFile( Blob blob, File destination ) {
@@ -25,7 +25,7 @@ public class Exporter {
 	}
 	
 	public void exportFile( String fileUri, File destination ) {
-		Blob blob = blobGetter.get(fileUri);
+		Blob blob = BlobUtil.getBlob(getter.get(fileUri));
 		if( blob == null ) {
 			throw new RuntimeException("Couldn't find blob: " + fileUri);
 		}
@@ -39,7 +39,7 @@ public class Exporter {
 	protected Object getRdf( Object obj, String sourceUri ) {
 		if( obj instanceof Ref ) {
 			String targetUri = ((Ref)obj).targetUri;
-			Blob blob = blobGetter.get( targetUri );
+			Blob blob = BlobUtil.getBlob(getter.get( targetUri ));
 			if( blob == null ) throw new RuntimeException("Could not load " + ((Ref)obj).targetUri );
 			return getRdf(blob, targetUri);
 		} else if( obj instanceof Blob ) {
@@ -65,7 +65,7 @@ public class Exporter {
 		if( targetType == null ) {
 			if( target != null ) {
 				if( target instanceof Ref ) {
-					return blobGetter.get( ((Ref)target).targetUri );
+					return getter.get( ((Ref)target).targetUri );
 				} else if( target instanceof RdfNode ) {
 					return target;
 				} else {
@@ -77,7 +77,7 @@ public class Exporter {
 		} else if( RDF.OBJECT_TYPE_BLOB.equals(targetType) ) {
 			if( target != null ) {
 				if( target instanceof Ref ) {
-					return blobGetter.get( ((Ref)target).targetUri );
+					return getter.get( ((Ref)target).targetUri );
 				} else {
 					return target;
 				}

@@ -12,7 +12,7 @@ import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
 import contentcouch.data.FileBlob;
 import contentcouch.file.FileUtil;
-import contentcouch.store.BlobSink;
+import contentcouch.store.Pusher;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.FileForBlobGetter;
 import contentcouch.store.FileGetter;
@@ -23,12 +23,12 @@ import contentcouch.xml.RDF.RdfNode;
 import contentcouch.xml.RDF.Ref;
 
 public class Importer {
-	BlobSink blobSink;
+	Pusher blobSink;
 	FileBlobMap namedStore;
 	public boolean shouldLinkStored;
 	public boolean shouldRelinkImported;
 	
-	public Importer( BlobSink blobSink, FileBlobMap namedStore ) {
+	public Importer( Pusher blobSink, FileBlobMap namedStore ) {
 		this.blobSink = blobSink;
 		this.namedStore = namedStore;
 	}
