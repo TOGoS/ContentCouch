@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +17,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import contentcouch.data.Directory;
 
 
 public class RDF {
@@ -70,6 +73,40 @@ public class RDF {
 		public Description() {
 			super();
 			this.typeName = RDF_DESCRIPTION;
+		}
+	}
+	
+	public static class RdfDirectory extends RdfNode implements Directory {
+		public static class Entry extends RdfNode implements Directory.Entry {
+			public long getLastModified() {
+				try {
+					return CCOUCH_DATEFORMAT.parse((String)this.getSingle(DC_MODIFIED)).getTime();
+				} catch( ParseException e ) {
+					throw new RuntimeException(e);
+				}
+			}
+			
+			public String getName() {
+				return (String)this.getSingle(CCOUCH_NAME);
+			}
+			
+			public Object getTarget() {
+				return this.getSingle(CCOUCH_TARGET);
+			}
+			
+			public String getTargetType() {
+				return (String)this.getSingle(CCOUCH_TARGETTYPE);
+			}
+		}
+		
+		public Map getEntries() {
+			List entryList = (List)this.getSingle(CCOUCH_ENTRIES);
+			HashMap entries = new HashMap();
+			for( Iterator i=entryList.iterator(); i.hasNext(); ) {
+				Entry e = (Entry)i.next();
+				entries.put(e.getName(), e);
+			}
+			return entries;
 		}
 	}
 
@@ -251,6 +288,12 @@ public class RDF {
 				 desc = new Description();
 				 String about = (String)descOpenTag.attributes.get(RDF_ABOUT);
 				 if( about != null ) ((Description)desc).about = new Ref(about);
+			} else if( CCOUCH_DIRECTORY.equals(descOpenTag.name) ) {
+				desc = new RdfDirectory();
+				desc.typeName = descOpenTag.name;
+			} else if( CCOUCH_DIRECTORYENTRY.equals(descOpenTag.name) ) {
+				desc = new RdfDirectory.Entry();
+				desc.typeName = descOpenTag.name;
 			} else {
 				 desc = new RdfNode();
 				 desc.typeName = descOpenTag.name;

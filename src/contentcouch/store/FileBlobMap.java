@@ -6,7 +6,6 @@ import java.io.IOException;
 
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
-import contentcouch.data.FileBlob;
 import contentcouch.file.FileUtil;
 
 public class FileBlobMap implements PutterGetter, FileGetter {
@@ -52,8 +51,7 @@ public class FileBlobMap implements PutterGetter, FileGetter {
 
 	public Object get( String filename ) {
 		File file = getFile( filename );
-		if( file.isDirectory() ) return file;
-		if( file.exists() ) return new FileBlob( file );		
-		return null;
+		if( !file.exists() ) return null;
+		return FileUtil.getContentCouchObject(file);		
 	}
 }

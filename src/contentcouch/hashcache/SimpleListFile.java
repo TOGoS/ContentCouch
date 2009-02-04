@@ -46,12 +46,12 @@ import java.util.Arrays;
  */
 public class SimpleListFile {
 	public static class Chunk {
-		int offset = 0;
-		int prevOffset = 0;
-		int nextOffset = 0;
-		int listPrevOffset = 0;
-		int listNextOffset = 0;
-		int type = 0;
+		public int offset = 0;
+		public int prevOffset = 0;
+		public int nextOffset = 0;
+		public int listPrevOffset = 0;
+		public int listNextOffset = 0;
+		public int type = 0;
 	}
 	
 	protected static char[] hexChars = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
@@ -172,7 +172,7 @@ public class SimpleListFile {
 			((b[offset+3] <<  0) & 0x000000FF);
 	}
 	
-	static int strToInt(String c) {
+	public static int strToInt(String c) {
 		try {
 			return bytesToInt(c.getBytes("UTF-8"), 0);
 		} catch (UnsupportedEncodingException e) {
@@ -180,7 +180,7 @@ public class SimpleListFile {
 		}
 	}
 	
-	static String intToStr(int i) {
+	public static String intToStr(int i) {
 		try {
 			return new String(intToBytes(i), "UTF-8");
 		} catch( UnsupportedEncodingException e ) {
@@ -214,6 +214,11 @@ public class SimpleListFile {
 		return data;
 	}
 	
+	public byte[] getBytes(int offset, int count) throws IOException {
+		raf.seek(offset);
+		return readBytes(count, "getBytes");
+	}
+	
 	//// Edit the index ////
 	
 	public int getRawIndexItem(int itemNum) throws IOException {
@@ -245,6 +250,18 @@ public class SimpleListFile {
 	
 	protected void setLastChunkOffset(int offset) throws IOException {
 		setRawIndexItem(ENDF_LIST_INDEX, offset);
+	}
+	
+	public int getIndexRawItemCount( Chunk indexChunk ) throws IOException {
+		return getIntAt( indexChunk.offset + CHUNK_HEADER_LENGTH );
+	}
+	public int[] getIndexItems( Chunk indexChunk ) throws IOException {
+		int itemCount = getIndexRawItemCount( indexChunk );
+		int[] items = new int[itemCount];
+		for( int i=0; i<itemCount; ++i ) {
+			items[i] = readInt();
+		}
+		return items;
 	}
 
 	//// Check / correct pointers ////
@@ -286,6 +303,12 @@ public class SimpleListFile {
 		chunk.listNextOffset = bytesToInt(header, CHUNK_LIST_NEXT_OFFSET);
 		chunk.type           = bytesToInt(header, CHUNK_TYPE_OFFSET);
 		return chunk;
+	}
+	
+	public byte[] getChunkData(Chunk c) throws IOException {
+		int start = c.offset + CHUNK_HEADER_LENGTH;
+		int length = (c.nextOffset == 0) ? 0 : c.nextOffset - start;
+		return getBytes(start,length);
 	}
 
 	//// Write a brand new chunk ////
@@ -478,10 +501,10 @@ public class SimpleListFile {
 		}
 		return readBytes(partLength, "getPairPart");
 	}
-	protected byte[] getPairKey( int pairOffset ) throws IOException {
+	public byte[] getPairKey( int pairOffset ) throws IOException {
 		return getPairPart(pairOffset, 0);
 	}
-	protected byte[] getPairValue( int pairOffset ) throws IOException {
+	public byte[] getPairValue( int pairOffset ) throws IOException {
 		return getPairPart(pairOffset, 1);
 	}
 	
