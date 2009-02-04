@@ -11,7 +11,7 @@ public class MultiGetter implements Getter {
 		this.subGetters = new ArrayList();
 	}
 	
-	public void addBlobGetter(Getter bg) {
+	public void addGetter(Getter bg) {
 		if( bg != null ) this.subGetters.add(0, bg);
 	}
 	

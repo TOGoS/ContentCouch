@@ -107,8 +107,8 @@ public class ContentCouchCommand {
 	
 	public Getter getBlobGetter( Map options ) {
 		MultiGetter mbg = new MultiGetter();
-		mbg.addBlobGetter(getDatastore(options));
-		mbg.addBlobGetter(new FileBlobMap(""));
+		mbg.addGetter(getDatastore(options));
+		mbg.addGetter(new FileBlobMap(""));
 		return mbg;
 	}
 	

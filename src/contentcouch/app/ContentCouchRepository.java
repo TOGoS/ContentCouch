@@ -4,10 +4,12 @@ import java.io.File;
 
 import contentcouch.data.Blob;
 import contentcouch.file.FileUtil;
-import contentcouch.store.Getter;
-import contentcouch.store.Putter;
-import contentcouch.store.Pusher;
 import contentcouch.store.FileBlobMap;
+import contentcouch.store.Getter;
+import contentcouch.store.MultiGetter;
+import contentcouch.store.ParseRdfGetFilter;
+import contentcouch.store.Pusher;
+import contentcouch.store.Putter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 
@@ -15,19 +17,25 @@ public class ContentCouchRepository implements Getter, Pusher {
 	protected String path;
 	
 	// TODO: Allow repo to be accessed remotely (http, freenet, etc) 
-	protected Getter dataBlobSource;
-	protected Pusher dataBlobSink;
-	protected Putter headBlobPutter;
-	protected Getter headBlobSource;
+	protected Getter dataGetter;
+	protected Pusher dataPusher;
+	protected Getter headGetter;
+	protected Putter headPutter;
+	protected Getter exploratBlobGetter;
 	
 	public ContentCouchRepository( String path ) {
 		this.path = path;
-		Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "/data") );
-		dataBlobSource = bs;
-		dataBlobSink = bs;
-		FileBlobMap hs = new FileBlobMap(path + "/heads");
-		headBlobPutter = hs;
-		headBlobSource = hs;
+		Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "/data/") );
+		dataGetter = bs;
+		dataPusher = bs;
+		FileBlobMap hs = new FileBlobMap(path + "/heads/");
+		headPutter = hs;
+		headGetter = hs;
+		
+		MultiGetter mbg = new MultiGetter();
+		mbg.addGetter(new FileBlobMap(path + "/"));
+		mbg.addGetter(dataGetter);
+		exploratBlobGetter = new ParseRdfGetFilter(mbg);
 	}
 	
 	public void initialize() {
@@ -35,15 +43,15 @@ public class ContentCouchRepository implements Getter, Pusher {
 	}
 	
 	public String push( Object obj ) {
-		return dataBlobSink.push(obj);
+		return dataPusher.push(obj);
 	}
 	
-	public Object get( String blobId ) {
-		return dataBlobSource.get(blobId);
+	public Object get( String identifier ) {
+		return exploratBlobGetter.get(identifier);
 	}
 	
 	public void putHead( String headName, Blob headData ) {
-		headBlobPutter.put(headName, headData);
+		headPutter.put(headName, headData);
 	}
 	
 	public void putHead( String headName, RDF.RdfNode headInfo ) {

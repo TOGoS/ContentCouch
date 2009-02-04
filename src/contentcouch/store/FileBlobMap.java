@@ -52,6 +52,7 @@ public class FileBlobMap implements PutterGetter, FileGetter {
 
 	public Object get( String filename ) {
 		File file = getFile( filename );
+		if( file.isDirectory() ) return file;
 		if( file.exists() ) return new FileBlob( file );		
 		return null;
 	}
