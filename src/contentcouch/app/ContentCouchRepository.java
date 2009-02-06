@@ -4,6 +4,7 @@ import java.io.File;
 
 import contentcouch.data.Blob;
 import contentcouch.file.FileUtil;
+import contentcouch.http.HttpBlobGetter;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
@@ -35,6 +36,7 @@ public class ContentCouchRepository implements Getter, Pusher {
 		MultiGetter mbg = new MultiGetter();
 		mbg.addGetter(new FileBlobMap(path + "/"));
 		mbg.addGetter(dataGetter);
+		mbg.addGetter(new HttpBlobGetter()); // Take this out and you can remove some ext-lib jars
 		exploratBlobGetter = new ParseRdfGetFilter(mbg);
 	}
 	
