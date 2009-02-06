@@ -20,6 +20,12 @@ public class XML {
 	public static String xmlEscapeAttributeValue( String text ) {
 		return text.replaceAll("&","&amp").replaceAll("\"","&quot;").replaceAll("<", "&lt;").replaceAll(">","&gt;");
 	}
+	
+	public static String xmlUnescape(String text) {
+		char[] chars = new char[text.length()];
+		text.getChars(0, text.length(), chars, 0);
+		return (String)parseXmlText(chars, 0, '<').value;
+	}
 
 	public static String longToShort( String name, Map availableNsAbbreviations, Map usedNsAbbreviations ) {
 		for( Iterator i=usedNsAbbreviations.keySet().iterator(); i.hasNext(); ) {

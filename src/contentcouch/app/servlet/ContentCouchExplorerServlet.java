@@ -255,11 +255,13 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				w.write(XML.xmlEscapeText(rdf.subSequence(at,m.start()).toString()));
 				String url = m.group(1);
 				if( url != null ) {
+					url = XML.xmlUnescape(url);
 					w.write("rdf:resource=\"");
 					w.write(formatLink(url));
 					w.write("\"");
 				} else {
 					url = m.group(2);
+					url = XML.xmlUnescape(url);
 					w.write(formatLink(url));
 				}
 				at = m.end();
