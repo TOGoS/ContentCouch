@@ -32,6 +32,10 @@ public class RepoChecker {
 	}
 	
 	public void checkFiles(File f) {
+		if( !f.exists() ) {
+			System.err.println("Nothing to check at " + f.getPath());
+			return;
+		}
 		if( f.isDirectory() ) {
 			File[] subFiles = f.listFiles();
 			for( int i=0; i<subFiles.length; ++i ) {
