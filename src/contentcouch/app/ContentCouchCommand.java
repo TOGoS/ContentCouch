@@ -52,7 +52,11 @@ public class ContentCouchCommand {
 		"\n" +
 		"If -n is specified, a commit will be stored under that name as\n" +
 		"<repo-path>/heads/local/<name>/<version>, where <version> is automatically\n" +
-		"incremented for new commits.";
+		"incremented for new commits.\n" +
+		"\n" +
+		"-relink is useful when a copy of the file is already in the\n" +
+		"repository and you want to make sure the data ends up being\n" +
+		"shared.  -relink implies -link.";
 	
 	public String CHECKOUT_USAGE =
 		"Usage: ccouch [general options] checkout [checkout options] <source> <dest>\n" +
@@ -145,6 +149,7 @@ public class ContentCouchCommand {
 			} else if( "-link".equals(arg) ) {
 				importer.shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
+				importer.shouldLinkStored = true;
 				importer.shouldRelinkImported = true;
 			} else if( "-m".equals(arg) ) {
 				message = args[++i];
