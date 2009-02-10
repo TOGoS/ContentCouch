@@ -44,15 +44,21 @@ public class ContentCouchCommand {
 		"  -a <author>        ; create a commit with this author\n" +
 		"  -n <name>          ; name your commit this\n" +
 		"  -link              ; hardlink files into the store instead of copying\n" +
+		"  -files-only        ; store only file content (no directory listings)\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
+		"  -q                 ; quiet - show nothing\n" +
 		"  -?                 ; display help and exit\n" +
 		"\n" +
 		"If -m, -a, and/or -n are used, a commit will be created and its URN output.\n" +
 		"\n" +
 		"If -n is specified, a commit will be stored under that name as\n" +
 		"<repo-path>/heads/local/<name>/<version>, where <version> is automatically\n" +
-		"incremented for new commits.";
+		"incremented for new commits.\n" +
+		"\n" +
+		"-relink is useful when a copy of the file is already in the\n" +
+		"repository and you want to make sure the data ends up being\n" +
+		"shared.  -relink implies -link.";
 	
 	public String CHECKOUT_USAGE =
 		"Usage: ccouch [general options] checkout [checkout options] <source> <dest>\n" +
@@ -134,17 +140,23 @@ public class ContentCouchCommand {
 		String name = null;
 		String author = null;
 		final Importer importer = getImporter(options);
-		boolean pShowSubMappings = false;
+		int verbosity = 1;
+		boolean importFilesOnly = false;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
 				System.err.println(STORE_USAGE);
 				System.exit(1);
+			} else if( "-v0".equals(arg) ) {
+				verbosity = 0;
 			} else if( "-v".equals(arg) ) {
-				pShowSubMappings = true;
+				verbosity = 2;
+			} else if( "-files-only".equals(arg) ) {
+				importFilesOnly = true;
 			} else if( "-link".equals(arg) ) {
 				importer.shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
+				importer.shouldLinkStored = true;
 				importer.shouldRelinkImported = true;
 			} else if( "-m".equals(arg) ) {
 				message = args[++i];
@@ -179,11 +191,14 @@ public class ContentCouchCommand {
 			createCommit = false;
 		}
 
-		final boolean showSubMappings = pShowSubMappings;
+		final boolean showAllMappings = (
+			(importFilesOnly && verbosity >= 1) ||
+			(verbosity >= 2)
+		);
 		
 		FileImportListener fileImportListener = new FileImportListener() {
 			public void fileImported(File file, String urn) {
-				if( showSubMappings ) {
+				if( showAllMappings ) {
 					System.out.println(importer.getFileUri(file) + "\t" + urn);
 				}
 			}
@@ -191,21 +206,27 @@ public class ContentCouchCommand {
 		
 		for( Iterator i=files.iterator(); i.hasNext(); ) {
 			File file = new File((String)i.next());
-			String urn = importer.importFileOrDirectory( file, fileImportListener );
-			if( !showSubMappings ) {
-				// otherwise, this will already have been printed by our listener
-				System.out.println(importer.getFileUri(file) + "\t" + urn);
-			}
-			if( createCommit ) {
-				String targetType;
-				if( urn.charAt(0) == '@' ) {
-					targetType = RDF.OBJECT_TYPE_DIRECTORY;
-				} else {
-					targetType = RDF.OBJECT_TYPE_BLOB;
+			if( importFilesOnly ) {
+				importer.recursivelyImportFiles( file, fileImportListener );
+			} else {
+				String urn = importer.importFileOrDirectory( file, fileImportListener );
+				if( !showAllMappings && verbosity > 0 ) {
+					// otherwise, this will already have been printed by our listener
+					System.out.println(importer.getFileUri(file) + "\t" + urn);
 				}
-				if( name != null ) name = "local/" + name;
-				String commitUri = importer.saveHead(name, targetType, urn, new Date(), author, message, null);
-				System.out.println( "Committed " + commitUri );
+				if( createCommit ) {
+					String targetType;
+					if( urn.charAt(0) == '@' ) {
+						targetType = RDF.OBJECT_TYPE_DIRECTORY;
+					} else {
+						targetType = RDF.OBJECT_TYPE_BLOB;
+					}
+					if( name != null ) name = "local/" + name;
+					String commitUri = importer.saveHead(name, targetType, urn, new Date(), author, message, null);
+					if( verbosity > 0 ) {
+						System.out.println( "Committed " + commitUri );
+					}
+				}
 			}
 		}
 	}

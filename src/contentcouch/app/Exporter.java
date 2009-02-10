@@ -5,10 +5,12 @@ import java.text.ParseException;
 import java.util.Collection;
 import java.util.Iterator;
 
+import contentcouch.app.Linker.LinkException;
 import contentcouch.data.Blob;
 import contentcouch.data.BlobUtil;
-import contentcouch.store.ParseRdfGetFilter;
+import contentcouch.data.FileBlob;
 import contentcouch.store.Getter;
+import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.xml.RDF;
 import contentcouch.xml.RDF.RdfNode;
@@ -28,6 +30,14 @@ public class Exporter {
 
 	public void exportFile( Blob blob, File destination ) {
 		if( verbose ) System.err.println(destination.getPath());
+		if( link && blob instanceof FileBlob ) {
+			try {
+				Linker.getInstance().link(((FileBlob)blob).getFile(), destination);
+				return;
+			} catch( LinkException e ) {
+				System.err.println("Failed to hardlink " + destination + " to " + ((FileBlob)blob).getFile() + "; will copy");
+			}
+		}
 		BlobUtil.writeBlobToFile(blob, destination);
 	}
 	
