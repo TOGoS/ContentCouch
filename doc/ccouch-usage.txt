@@ -8,7 +8,10 @@
 # In general, an @-sign before a URI means 'the thing described by
 # this resource', which may be a list of resource, a reference to a
 # single resource, or a resource describing a directory or a
-# collection.
+# collection.  When the following points to an RDF document, this has
+# the same effect as prefixing the URL with x-parse-rdf:, which is
+# how 'the object described by ...' URLs are passed around and stored
+# internally.
 
 
 # Checkout takes a file or directory and exports it to your filesystem
@@ -33,8 +36,32 @@ ccouch store mahfile.mp3
 ccouch store somedir
 
 
-# Storify moves files into the store, hardlinks them back to their
-# current position, if possible, and outputs their URNs.
-# Usage: ccouch storify <file1> <file2> ...
-ccouch storify mahfile.mp3
-ccouch storify mahdir
+# Cache: cache files from a remote repository without checking them out
+# Usage: ccocuch cache[:<repo-name>] <file1> <file2>
+# If <repo-name> is given, will cache files into the named repository,
+# ignoring whether or not they are already available in other [local]
+# repositories
+ccouch cache urn:sha1:SOMEFILE ...
+ccouch cache @urn:sha1:SOMEDIRECTORY ; will cache all files and subdirs
+
+
+
+# Pull heads from other repositories
+# Usage: ccouch pull [-no-cache] <project-name> [<remote-repo>]
+# Unless -no-cache option is given, will also try to cache files referenced
+# by the new head in the cache repository.
+# <project-name> and <remote-repo> can also be full URLs
+ccouch pull rocker barney
+ccouch pull rocker x-ccouch://barney/heads/barney/rocker/latest
+ccouch push x-ccouch://fred/heads/barney/rocker/new x-ccouch://barney/heads/barney/rocker/latest
+
+
+
+# Push heads to other repositories
+# Usage: ccouch push [-no-rcache] <project-name> <remote-repo>
+# Unless -no-cache is given, will also try to push dependent
+# files to the remote repository
+# <project-name> and <remote-repo> can also be full URLs
+ccouch push rocker barney
+ccouch push rocker x-ccouch://barney/heads/fred/rocker/new
+ccouch push urn:sha1:SOMECOMMIT x-ccouch://barney/heads/fred/rocker/new

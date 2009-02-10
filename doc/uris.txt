@@ -1,36 +1,38 @@
-How does ContentCouch interpret URIs?
+Extended URI syntax:
 
-The general format of a ContentCouch URI is
-
-  cc-uri = cc-prefrag-uri[??<cc-metadata>][#<cc-path>]
-  cc-prefrag-uri = {<func-name> <cc-uri>} | <uri>
-  cc-metadata = <key>=<value>[&<cc-metadata>]
-  cc-path = <path>[??<cc-metadata>][#<cc-path>]
-  func-name = as-dir
-
-If the pre-fragment part of the URI references a directory object (not a directory
-on ths server, not a document representing a directory, but a 'directory object'),
-then the fragment is a path to follow within that directory.
-
-Git blobs, commits, and trees can be referenced by their git IDs.
-Git-blob URIs reference blobs that happen to be stored in a git repository, while
-git-commit and git-tree URIs dereference to objects that may be treated as directory
-objects (but may also contain git specific metadata).
-
-  git-blob:<name>                  ; a specific blob
-  git-blob:<name>??type=text/plain ; a specific blob with some metadata
-  git-commit:<name>                ; a git commit - does not represent a blob!
-  git-commit:<name>#path/to/file   ; a blob or a git tree
-  git-tree:<name>#path/to/file     ; same as above
-  git-tree:<name>#path/to/file     ; same as above
+  <uri>??k1=v1&k2=v2&...
   
-URIs that reference RDF documents containing ccouch:Directory descriptions must
-be explicitly interpreted as directories - otherwise they will be interpreted
-as blobs or RDF documents:
+  Indicates the thing indicated by <uri>, but with some additional metadata.
+  e.g.
+  
+  urn:sha1:JEBK36HHQ7PZ2OHNTLKJHHQLAM6WOPX3??type=audio/mpeg&name=TOGoS-Narg_28.0.192.mp3
+  
+  This doesn't affect the resolution of the URI, but gives additional
+  information that may be used to handle the result.
 
-  urn:sha1:POOP??type=application/rdf+xml               ; an RDF document
-  {as-dir urn:sha1:POOP??type=application/rdf+xml}      ; a directory
-  @urn:sha1:POOP??type=application/rdf+xml              ; shorthand for as-dir
-  @freenet:GAGAWAGA/MyRepo/heads/53/latest              ; useful use of shorthand
-  {as-dir urn:sha1:POOP??type=application/rdf+xml}/yuk  ; a sub-directory
-  {as-dir urn:sha1:POOP??type=application/rdf+xml}#yuk  ; same sub-directory
+URI schemes:
+
+  urn:sha1:<base32-encoded-sha-1-sum>
+    This one is self-explanatory, and is already in use by some file sharing
+    software.
+    
+  x-parse-rdf:<uri>
+    Indicates to take the result of resolving <uri>, parse it as an RDF
+    document, and return the resulting object.  This gives us the ability
+    to target the object that an RDF document represents and to differentiate
+    between that and the RDF document itself (which is normally a bunch of
+    bytes).
+    
+  urn:x-git-blob:<git-object-name>
+    A bunch of bytes referenced using Git's scheme for naming objects.
+  
+  urn:x-git-tree:<git-object-name>
+    A Directory object referenced using Git's scheme for naming objects.
+  
+  urn:x-git-commit:<git-object-name>
+    A Commit object referenced using Git's scheme for naming objects.
+
+  x-ccouch:[//repo-name/]<path>
+    A blob in a ContentCouch repo, by default the main one.
+    Must be prefixed with "x-parse-rdf:" to point to 
+  

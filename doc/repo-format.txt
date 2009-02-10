@@ -2,4 +2,5 @@
 ...repo/data/XX/XXZZZZZZZZZZ                  ; holds all the data. Blobs are named by base32-encoded SHA-1 sum.
 ...repo/heads/<host>/<project>/<version>      ; holds heads!
 ...repo/urn-res/XX.txt                        ; URN-resolution files (XX is first 2 bytes of base32-encoded SHA1-sum)
-...repo/metadata-cache.bdb                    ; BDB full of metadata (size, last modified date, sha-1 sum, type-specific extracted info) about files in the host filesystem
+...repo/cache/file-attrs.slf                  ; BDB full of metadata (size, last modified date, sha-1 sum, type-specific extracted info) about files in the host filesystem
+...repo/ccouch-options.txt                    ; a file giving extra options to be used by the 'ccouch' command when used with this repo.
