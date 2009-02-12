@@ -26,6 +26,11 @@ public class FileDirectory implements Directory {
 		public Object getTarget() {
 			return FileUtil.getContentCouchObject(file);
 		}
+		
+		public long getSize() {
+			if( file.isFile() ) return file.length();
+			return -1;
+		}
 
 		public String getTargetType() {
 			if( file.isDirectory() ) {
@@ -47,6 +52,7 @@ public class FileDirectory implements Directory {
 		HashMap entries = new HashMap();
 		for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
+			if( subFile.getName().startsWith(".") ) continue;
 			entries.put(subFile.getName(), new FileDirectoryEntry(subFile));
 		}
 		return entries;

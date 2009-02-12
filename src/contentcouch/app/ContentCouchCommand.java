@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import contentcouch.data.FileDirectory;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.hashcache.SimpleListFile;
@@ -35,6 +36,7 @@ public class ContentCouchCommand {
 		"  store <files>         ; store files in the repo\n" +
 		"  checkout <uri> <dest> ; check files out to the filesystem\n" +
 		"  id <files>            ; give URNs for files without storing\n" +
+		"  rdfify <dir>          ; print RDF listing of a directory\n" +
 		"  check                 ; check repo integrity and delete bad files";
 	
 	public String STORE_USAGE =
@@ -132,6 +134,12 @@ public class ContentCouchCommand {
 		if( ds == null ) throw new RuntimeException("Datastore unspecified");
 		FileBlobMap namedStore = getNamedStore(options);
 		return new Importer(ds, namedStore);
+	}
+	
+	public Importer getNoopImporter( Map options ) {
+		options = new HashMap(options);
+		options.put(OPTION_DONT_STORE, Boolean.TRUE);
+		return getImporter(options);
 	}
 	
 	public void runStoreCmd( String[] args, Map options ) {
@@ -294,6 +302,11 @@ public class ContentCouchCommand {
 		rc.checkFiles(new File(rp + "/data"));
 	}
 	
+	public void runRdfifyCmd( String[] args, Map options ) {
+		String dir = args[0];
+		System.out.println(RDF.xmlEncodeRdf(RDF.rdfifyDirectory(new FileDirectory(new File(dir))), RDF.CCOUCH_NS));
+	}
+	
 	public void run( String[] args ) {
 		if( args.length == 0 ) {
 			System.err.println(USAGE);
@@ -330,6 +343,8 @@ public class ContentCouchCommand {
 			runCheckCmd( cmdArgs, options );
 		} else if( "id".equals(cmd) ) {
 			runIdCmd( cmdArgs, options );
+		} else if( "rdfify".equals(cmd) ) {
+			runRdfifyCmd( cmdArgs, options );
 		} else {
 			System.err.println("ccouch: Unrecognised sub-command: " + cmd);
 			System.err.println(USAGE);

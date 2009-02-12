@@ -23,9 +23,8 @@ public class ParseRdfGetFilter implements Getter {
 		}
 		if( parseIdentifier != null ) {
 			Object obj = get(parseIdentifier);
-			if( obj instanceof RDF.RdfNode ) {
-				return obj;
-			}
+			if( obj == null ) return null;
+			if( obj instanceof RDF.RdfNode ) return obj;
 			Blob blob = BlobUtil.getBlob(obj);
 			return RDF.parseRdf(BlobUtil.getString(blob), parseIdentifier);
 		} else {

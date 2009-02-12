@@ -145,6 +145,7 @@ public class Importer {
 			addTarget(n, RDF.OBJECT_TYPE_DIRECTORY, importDirectory(file, fileImportListener));
 		} else {
 			n.add(RDF.DC_MODIFIED, RDF.CCOUCH_DATEFORMAT.format(new Date(file.lastModified())));
+			n.add(RDF.CCOUCH_SIZE, String.valueOf(file.length()) );
 			addTarget(n, RDF.OBJECT_TYPE_BLOB, importFileContent(file, fileImportListener));
 		}
 		return n;
@@ -154,6 +155,7 @@ public class Importer {
 		if( !dir.isDirectory() ) {
 			throw new RuntimeException("Cannot import a plain file with importDir!");
 		}
+		// TODO: Use RDF.rdfifyDirectory
 		RdfNode n = new RdfNode();
 		n.typeName = RDF.CCOUCH_DIRECTORY;
 		List entries = new ArrayList();

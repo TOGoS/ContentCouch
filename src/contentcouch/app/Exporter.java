@@ -24,6 +24,7 @@ public class Exporter {
 	public Exporter( Getter getter ) {
 		if( !(getter instanceof ParseRdfGetFilter) ) {
 			getter = new ParseRdfGetFilter(getter);
+			((ParseRdfGetFilter)getter).handleAtSignAsParseRdf = true;
 		}
 		this.getter = getter;
 	}
@@ -69,8 +70,10 @@ public class Exporter {
 			throw new RuntimeException("Could not get RdfNode from " + obj.getClass().getName());
 		}
 	}
-		
-	protected Object getTarget( RdfNode node ) {
+	
+	// TODO: Change export functions to use Directoris instead of manually parsing RDF
+	
+	protected Object getTarget( RdfNode node, boolean dieOnGetFailure ) {
 		String targetType = (String)node.getSingle(RDF.CCOUCH_TARGETTYPE);
 		Object target = node.getSingle(RDF.CCOUCH_TARGET);
 		Object targetListing = node.getSingle(RDF.CCOUCH_TARGETLISTING);
@@ -82,7 +85,13 @@ public class Exporter {
 		if( targetType == null ) {
 			if( target != null ) {
 				if( target instanceof Ref ) {
-					return getter.get( ((Ref)target).targetUri );
+					String targetUri = ((Ref)target).targetUri;
+					Object value = getter.get( targetUri );
+					if( value == null && dieOnGetFailure ) {
+						throw new Getter.GetFailure("Get for target of " + node + " failed", targetUri);
+					} else {
+						return value;
+					}
 				} else if( target instanceof RdfNode ) {
 					return target;
 				} else {
@@ -94,7 +103,13 @@ public class Exporter {
 		} else if( RDF.OBJECT_TYPE_BLOB.equals(targetType) ) {
 			if( target != null ) {
 				if( target instanceof Ref ) {
-					return getter.get( ((Ref)target).targetUri );
+					String targetUri = ((Ref)target).targetUri;
+					Object value = getter.get( targetUri );
+					if( value == null && dieOnGetFailure ) {
+						throw new Getter.GetFailure("Get for target of " + node + " failed", targetUri);
+					} else {
+						return value;
+					}
 				} else {
 					return target;
 				}
@@ -107,6 +122,10 @@ public class Exporter {
 		}
 	}
 	
+	protected Object getTarget(RdfNode n) {
+		return getTarget(n, true);
+	}
+	
 	//// Export functions (lowest-to-highest level) ////
 	
 	public void exportDirectoryEntry( RdfNode entry, File destDir ) {
@@ -114,7 +133,12 @@ public class Exporter {
 		if( (name.indexOf('/') != -1) || (name.indexOf('\\') != -1) ) throw new RuntimeException("Invalid characters in directory entry name: " + name);
 		File destination = new File(destDir + "/" + name);
 		
-		exportObject( getTarget(entry), destination, entry );
+		Object target = getTarget(entry);
+		if( target == null ) {
+			throw new RuntimeException("Entry targeted nothing " + entry);
+		}
+		
+		exportObject( target, destination, entry );
 	}
 	
 	public void exportObjectFromRdf( RdfNode listing, File destination ) {
@@ -151,14 +175,16 @@ public class Exporter {
 		} else if( object instanceof RdfNode ) {
 			exportObjectFromRdf( (RdfNode)object, destination );
 		} else if( object == null ) {
-			throw new RuntimeException("Can't export null" + ((entry == null) ? "" : "targetted by " + entry.sourceUri));
+			throw new RuntimeException("Can't export null" + ((entry == null) ? "" : ", targetted by " + entry.sourceUri));
 		} else {
 			throw new RuntimeException("Don't know how to export " + object.getClass().getName() + " targeted by " + entry.sourceUri);
 		}
 	}
 	
 	public void exportObject( String uri, File destination ) {
-		exportObject(getter.get(uri), destination, null);
+		Object obj = getter.get(uri);
+		if( obj == null ) throw new RuntimeException("Couldn't find " + uri);
+		exportObject(obj, destination, null);
 	}
 	
 	public static void main(String[] args) {

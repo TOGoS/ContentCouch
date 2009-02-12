@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,7 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import contentcouch.data.Blob;
 import contentcouch.data.Directory;
+import contentcouch.digest.DigestUtil;
+import contentcouch.misc.Function1;
 
 
 public class RDF {
@@ -26,6 +30,7 @@ public class RDF {
 	
 	public static class Ref {
 		public String targetUri;
+		public Map targetMetadata;
 		public Ref(String targetUri) {
 			this.targetUri = targetUri;
 		}
@@ -66,6 +71,9 @@ public class RDF {
 	public static class RdfNode extends MultiMap {
 		public String sourceUri;
 		public String typeName;
+		public String toString() {
+			return RDF.xmlEncodeRdf(this);
+		}
 	}
 	
 	public static class Description extends RdfNode {
@@ -78,6 +86,32 @@ public class RDF {
 	
 	public static class RdfDirectory extends RdfNode implements Directory {
 		public static class Entry extends RdfNode implements Directory.Entry {
+			public Entry() {
+				super();
+				this.typeName = RDF.CCOUCH_DIRECTORYENTRY;
+			}
+			
+			public Object getTarget() {
+				return getSingle(CCOUCH_TARGET);
+			}
+
+			public String getTargetType() {
+				return (String)getSingle(CCOUCH_TARGETTYPE);
+			}
+
+			public String getName() {
+				return (String)getSingle(CCOUCH_NAME);
+			}
+
+			public long getSize() {
+				String lm = (String)getSingle(CCOUCH_SIZE);
+				if( lm != null ) {
+					return Long.parseLong(lm);
+				} else {
+					return -1;
+				}
+			}
+
 			public long getLastModified() {
 				try {
 					return CCOUCH_DATEFORMAT.parse((String)this.getSingle(DC_MODIFIED)).getTime();
@@ -85,18 +119,11 @@ public class RDF {
 					throw new RuntimeException(e);
 				}
 			}
-			
-			public String getName() {
-				return (String)this.getSingle(CCOUCH_NAME);
-			}
-			
-			public Object getTarget() {
-				return this.getSingle(CCOUCH_TARGET);
-			}
-			
-			public String getTargetType() {
-				return (String)this.getSingle(CCOUCH_TARGETTYPE);
-			}
+		}
+		
+		public RdfDirectory() {
+			super();
+			this.typeName = RDF.CCOUCH_DIRECTORY;
 		}
 		
 		public Map getEntries() {
@@ -108,6 +135,57 @@ public class RDF {
 			}
 			return entries;
 		}
+	}
+	
+	public static Function1 DEFAULT_DIRECTORY_ENTRY_TARGET_PROCESSOR = new Function1() {
+		public Object apply(Object input) {
+			if( input instanceof Ref || input instanceof RdfNode ) {
+				return input;
+			} else if( input instanceof Directory ) {
+				return rdfifyDirectory( (Directory)input, this );
+			} else if( input instanceof Blob ) {
+				return new Ref(DigestUtil.getSha1Urn((Blob)input));
+			} else {
+				throw new RuntimeException("Don't know how to process " + input.getClass().getName() );
+			}
+		}
+	};
+	
+	public static RdfNode rdfifyDirectoryEntry( Directory.Entry de, Function1 targetProcessor ) {
+		if( OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
+		} else if( OBJECT_TYPE_DIRECTORY.equals(de.getTargetType()) ) {
+		} else {
+			throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
+		}
+
+		RdfDirectory.Entry n = new RdfDirectory.Entry();
+		n.add(RDF.CCOUCH_NAME, de.getName());
+		n.add(CCOUCH_TARGETTYPE, de.getTargetType());
+
+		long modified = de.getLastModified();
+		if( modified != -1 ) n.add(RDF.DC_MODIFIED, RDF.CCOUCH_DATEFORMAT.format(new Date(modified)));
+		
+		long size = de.getSize();
+		if( size != -1 ) n.add(RDF.CCOUCH_SIZE, String.valueOf(size) );
+
+		n.add(CCOUCH_TARGET, targetProcessor.apply(de.getTarget()));
+		return n;
+	}
+	
+	public static RdfNode rdfifyDirectory( Directory dir, Function1 targetProcessor ) {
+		RdfDirectory n = new RdfDirectory();
+		Map entries = dir.getEntries();
+		List rdfEntries = new ArrayList();
+		for( Iterator i = entries.values().iterator(); i.hasNext(); ) {
+			Directory.Entry entry = (Directory.Entry)i.next();
+			rdfEntries.add( rdfifyDirectoryEntry(entry, targetProcessor) );
+		}
+		n.add(RDF.CCOUCH_ENTRIES, rdfEntries);
+		return n;
+	}
+	
+	public static RdfNode rdfifyDirectory( Directory dir ) {
+		return rdfifyDirectory( dir, DEFAULT_DIRECTORY_ENTRY_TARGET_PROCESSOR );
 	}
 
 	//// Constants ////
@@ -141,6 +219,7 @@ public class RDF {
 	public static final String CCOUCH_TARGETTYPE       = CCOUCH_NS + "targetType";
 	/** What is target? */
 	public static final String CCOUCH_TARGET           = CCOUCH_NS + "target";
+	public static final String CCOUCH_SIZE             = CCOUCH_NS + "size";
 	/** If we can't directly represent target, link to its listing */
 	public static final String CCOUCH_TARGETLISTING    = CCOUCH_NS + "targetListing";
 	public static final String CCOUCH_PARENT           = CCOUCH_NS + "parent";
