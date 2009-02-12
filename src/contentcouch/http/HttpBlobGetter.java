@@ -9,7 +9,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import contentcouch.data.InputStreamBlob;
+import contentcouch.blob.InputStreamBlob;
 import contentcouch.store.Getter;
 
 public class HttpBlobGetter implements Getter {

@@ -97,7 +97,7 @@ public class XML {
 		}
 	}
 
-	static final class ParseResult {
+	public final static class ParseResult {
 		public Object value;
 		public int newOffset;
 		public ParseResult( Object value, int newOffset ) {
@@ -106,7 +106,7 @@ public class XML {
 		}
 	}
 	
-	final static class XmlAttribute {
+	public final static class XmlAttribute {
 		public String name;
 		public String value;
 		public XmlAttribute( String name, String value ) {
@@ -114,13 +114,15 @@ public class XML {
 			this.value = value;
 		}
 	}
-	final static class XmlCloseTag {
+	
+	public final static class XmlCloseTag {
 		public String name;
 		public XmlCloseTag(String name) {
 			this.name = name;
 		}
 	}
-	final static class XmlOpenTag {
+	
+	public final static class XmlOpenTag {
 		public String name;
 		public Map attributes = new HashMap();
 		public boolean closed;
@@ -287,5 +289,4 @@ public class XML {
 			return xmlPart;
 		}
 	}
-
 }

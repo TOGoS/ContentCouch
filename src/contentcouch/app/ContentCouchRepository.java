@@ -2,9 +2,9 @@ package contentcouch.app;
 
 import java.io.File;
 
-import contentcouch.data.Blob;
 import contentcouch.file.FileUtil;
 import contentcouch.http.HttpBlobGetter;
+import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
@@ -12,7 +12,7 @@ import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.store.Pusher;
 import contentcouch.store.Putter;
 import contentcouch.store.Sha1BlobStore;
-import contentcouch.xml.RDF;
+import contentcouch.value.Blob;
 
 public class ContentCouchRepository implements Getter, Pusher {
 	protected String path;
@@ -56,7 +56,7 @@ public class ContentCouchRepository implements Getter, Pusher {
 		headPutter.put(headName, headData);
 	}
 	
-	public void putHead( String headName, RDF.RdfNode headInfo ) {
+	public void putHead( String headName, RdfNode headInfo ) {
 		// TODO!
 	}
 	

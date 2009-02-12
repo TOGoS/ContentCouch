@@ -1,4 +1,4 @@
-package contentcouch.data;
+package contentcouch.value;
 
 public interface Blob {
 	public long getLength();

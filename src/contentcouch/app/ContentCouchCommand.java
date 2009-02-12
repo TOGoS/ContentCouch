@@ -10,10 +10,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import contentcouch.data.FileDirectory;
+import contentcouch.file.FileDirectory;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.hashcache.SimpleListFile;
+import contentcouch.misc.Function1;
+import contentcouch.rdf.RdfDirectory;
+import contentcouch.rdf.RdfIO;
+import contentcouch.rdf.RdfNamespace;
 import contentcouch.store.BlobStore;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
@@ -21,7 +25,9 @@ import contentcouch.store.MultiGetter;
 import contentcouch.store.NoopPutter;
 import contentcouch.store.Putter;
 import contentcouch.store.Sha1BlobStore;
-import contentcouch.xml.RDF;
+import contentcouch.value.Blob;
+import contentcouch.value.Directory;
+import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
 	public static String OPTION_REPO_PATH = "repo-path";
@@ -47,6 +53,7 @@ public class ContentCouchCommand {
 		"  -n <name>          ; name your commit this\n" +
 		"  -link              ; hardlink files into the store instead of copying\n" +
 		"  -files-only        ; store only file content (no directory listings)\n" +
+		"  -dirs-only         ; store only directory listings (no file content)\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
 		"  -q                 ; quiet - show nothing\n" +
@@ -148,8 +155,10 @@ public class ContentCouchCommand {
 		String name = null;
 		String author = null;
 		final Importer importer = getImporter(options);
+		final Importer noopImporter = getNoopImporter(options);
 		int verbosity = 1;
-		boolean importFilesOnly = false;
+		boolean importFiles = true;
+		boolean importDirs = true;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
@@ -160,7 +169,11 @@ public class ContentCouchCommand {
 			} else if( "-v".equals(arg) ) {
 				verbosity = 2;
 			} else if( "-files-only".equals(arg) ) {
-				importFilesOnly = true;
+				importFiles = true;
+				importDirs = false;
+			} else if( "-dirs-only".equals(arg) ) {
+				importFiles = false;
+				importDirs = true;
 			} else if( "-link".equals(arg) ) {
 				importer.shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
@@ -200,40 +213,70 @@ public class ContentCouchCommand {
 		}
 
 		final boolean showAllMappings = (
-			(importFilesOnly && verbosity >= 1) ||
+			(!importDirs && verbosity >= 1) ||
 			(verbosity >= 2)
 		);
-		
-		FileImportListener fileImportListener = new FileImportListener() {
-			public void fileImported(File file, String urn) {
+
+		importer.importListener = new ImportListener() {
+			public void objectImported(Object obj, String urn) {
 				if( showAllMappings ) {
-					System.out.println(importer.getFileUri(file) + "\t" + urn);
+					String uri;
+					if( obj instanceof File ) {
+						uri = importer.getFileUri((File)obj);
+					} else {
+						uri = null;
+					}
+					if( uri != null ) System.out.println(uri + "\t" + urn);
 				}
 			}
 		};
+		noopImporter.importListener = null;
+		
+		final boolean fImportFiles = importFiles;
+		final boolean fImportDirs = importDirs;
+		
+		Function1 importFunction = new Function1() {
+			public Object apply(Object input) {
+				input = Importer.getImportableObject(input);
+				if( input instanceof Blob ) {
+					if( fImportFiles ) {
+						return importer.importObject(input);
+					} else {
+						return noopImporter.importObject(input);
+					}
+				} else if( input instanceof Directory ) {
+					if( fImportDirs ) {
+						return importer.importObject(input);
+					} else {
+						return noopImporter.importObject(input);
+					}
+				} else {
+					throw new RuntimeException("Don't know how to import " + input.getClass().getName());
+				}
+			}
+		};
+
+		importer.entryTargetRdfifier = importFunction;
+		noopImporter.entryTargetRdfifier = importer.entryTargetRdfifier;
 		
 		for( Iterator i=files.iterator(); i.hasNext(); ) {
 			File file = new File((String)i.next());
-			if( importFilesOnly ) {
-				importer.recursivelyImportFiles( file, fileImportListener );
-			} else {
-				String urn = importer.importFileOrDirectory( file, fileImportListener );
-				if( !showAllMappings && verbosity > 0 ) {
-					// otherwise, this will already have been printed by our listener
-					System.out.println(importer.getFileUri(file) + "\t" + urn);
+			Ref ref = (Ref)importFunction.apply( file );
+			if( !showAllMappings && verbosity > 0 ) {
+				// otherwise, this will already have been printed by our listener
+				System.out.println(importer.getFileUri(file) + "\t" + ref.targetUri);
+			}
+			if( createCommit ) {
+				String targetType;
+				if( ref.targetUri.charAt(0) == '@' || ref.targetUri.startsWith("x-parse-rdf:") ) {
+					targetType = RdfNamespace.OBJECT_TYPE_DIRECTORY;
+				} else {
+					targetType = RdfNamespace.OBJECT_TYPE_BLOB;
 				}
-				if( createCommit ) {
-					String targetType;
-					if( urn.charAt(0) == '@' ) {
-						targetType = RDF.OBJECT_TYPE_DIRECTORY;
-					} else {
-						targetType = RDF.OBJECT_TYPE_BLOB;
-					}
-					if( name != null ) name = "local/" + name;
-					String commitUri = importer.saveHead(name, targetType, urn, new Date(), author, message, null);
-					if( verbosity > 0 ) {
-						System.out.println( "Committed " + commitUri );
-					}
+				if( name != null ) name = "local/" + name;
+				String commitUri = importer.saveHead(name, targetType, ref.targetUri, new Date(), author, message, null);
+				if( verbosity > 0 ) {
+					System.out.println( "Committed " + commitUri );
 				}
 			}
 		}
@@ -304,7 +347,7 @@ public class ContentCouchCommand {
 	
 	public void runRdfifyCmd( String[] args, Map options ) {
 		String dir = args[0];
-		System.out.println(RDF.xmlEncodeRdf(RDF.rdfifyDirectory(new FileDirectory(new File(dir))), RDF.CCOUCH_NS));
+		System.out.println(RdfIO.xmlEncodeRdf(new RdfDirectory(new FileDirectory(new File(dir))), RdfNamespace.CCOUCH_NS));
 	}
 	
 	public void run( String[] args ) {

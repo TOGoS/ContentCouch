@@ -1,4 +1,4 @@
-package contentcouch.data;
+package contentcouch.value;
 
 import java.util.Map;
 

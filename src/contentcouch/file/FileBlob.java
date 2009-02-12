@@ -1,23 +1,19 @@
-package contentcouch.data;
+package contentcouch.file;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-public class FileBlob implements Blob {
-	File file;
-	
+import contentcouch.value.Blob;
+
+public class FileBlob extends File implements Blob {
 	public FileBlob( File file ) {
-		this.file = file;
-	}
-	
-	public File getFile() {
-		return file;
+		super(file.getPath());
 	}
 	
 	public byte[] getData(long offset, int length) {
 		try {
-			FileInputStream s = new FileInputStream(file);
+			FileInputStream s = new FileInputStream(this);
 			try {
 				s.skip(offset);
 				byte[] data = new byte[length];
@@ -37,6 +33,6 @@ public class FileBlob implements Blob {
 	}
 	
 	public long getLength() {
-		return file.length();
+		return length();
 	}
 }

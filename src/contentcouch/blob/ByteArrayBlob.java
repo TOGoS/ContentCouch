@@ -1,4 +1,6 @@
-package contentcouch.data;
+package contentcouch.blob;
+
+import contentcouch.value.Blob;
 
 public class ByteArrayBlob implements Blob {
 	byte[] bytes;

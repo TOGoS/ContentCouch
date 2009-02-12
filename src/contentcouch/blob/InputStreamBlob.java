@@ -1,7 +1,9 @@
-package contentcouch.data;
+package contentcouch.blob;
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import contentcouch.value.Blob;
 
 public class InputStreamBlob implements Blob {
 	InputStream inputStream;

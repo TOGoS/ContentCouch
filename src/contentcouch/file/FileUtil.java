@@ -2,8 +2,6 @@ package contentcouch.file;
 
 import java.io.File;
 
-import contentcouch.data.FileBlob;
-import contentcouch.data.FileDirectory;
 
 public class FileUtil {
 	public static void mkdirs(File d) {

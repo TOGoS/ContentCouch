@@ -21,16 +21,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import contentcouch.app.ContentCouchRepository;
-import contentcouch.data.Blob;
-import contentcouch.data.BlobUtil;
-import contentcouch.data.Directory;
-import contentcouch.data.FileBlob;
-import contentcouch.data.Directory.Entry;
+import contentcouch.blob.BlobUtil;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
-import contentcouch.xml.RDF;
+import contentcouch.rdf.RdfNamespace;
+import contentcouch.value.Blob;
+import contentcouch.value.Directory;
+import contentcouch.value.Ref;
+import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
-import contentcouch.xml.RDF.Ref;
 
 public class ContentCouchExplorerServlet extends HttpServlet {
 	protected ContentCouchRepository getRepo() {
@@ -225,10 +224,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		
 		protected String formatLink(String url) {
-			if( url.startsWith(RDF.URI_PARSE_PREFIX) ) {
+			if( url.startsWith(RdfNamespace.URI_PARSE_PREFIX) ) {
 				// Then show 2 links
-				String noParsePart = url.substring(RDF.URI_PARSE_PREFIX.length());
-				return formatLink2("/explore/" + url, RDF.URI_PARSE_PREFIX.substring(0,RDF.URI_PARSE_PREFIX.length()-1)) + ":" +
+				String noParsePart = url.substring(RdfNamespace.URI_PARSE_PREFIX.length());
+				return formatLink2("/explore/" + url, RdfNamespace.URI_PARSE_PREFIX.substring(0,RdfNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
 					formatLink2("/explore/"+noParsePart, noParsePart);
 			} else {
 				if( url.startsWith("http:") ) {
@@ -289,7 +288,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					if( e1.getTargetType().equals(e2.getTargetType()) ) {
 						return e1.getName().compareTo(e2.getName());
 					} else {
-						if( RDF.OBJECT_TYPE_DIRECTORY.equals(e1.getTargetType()) ) {
+						if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e1.getTargetType()) ) {
 							return -1;
 						} else {
 							return 1;
@@ -316,7 +315,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				} else {
 					href = name;
 				}
-				if( RDF.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+				if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
 					href += "/";
 					name += "/";
 				}
@@ -350,8 +349,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 
 	public Object explore(String path) {
 		Object obj = getRepo().get(path);
-		if( obj instanceof FileBlob && ((FileBlob)obj).getFile().getName().endsWith(".slf") ) {
-			return new SlfSourcePageGenerator(((FileBlob)obj).getFile());
+		if( obj instanceof File && ((File)obj).getName().endsWith(".slf") ) {
+			return new SlfSourcePageGenerator((File)obj);
 		} else if( obj instanceof Blob && looksLikeRdfBlob((Blob)obj) ) {
 			return new RdfSourcePageGenerator(path, (Blob)obj);
 		} else if( obj instanceof Directory ) {

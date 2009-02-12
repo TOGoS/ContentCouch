@@ -5,11 +5,11 @@ import java.io.File;
 
 import org.bitpedia.util.Base32;
 
-import contentcouch.data.Blob;
-import contentcouch.data.BlobUtil;
-import contentcouch.data.FileBlob;
+import contentcouch.blob.BlobUtil;
 import contentcouch.digest.DigestUtil;
+import contentcouch.file.FileBlob;
 import contentcouch.hashcache.FileHashCache;
+import contentcouch.value.Blob;
 
 public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, UrnForBlobGetter {
 	protected Getter blobGetter;

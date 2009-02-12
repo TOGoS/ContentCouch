@@ -4,8 +4,8 @@ import java.io.File;
 
 import org.bitpedia.util.Base32;
 
-import contentcouch.data.FileBlob;
 import contentcouch.digest.DigestUtil;
+import contentcouch.file.FileBlob;
 
 public class RepoChecker {
 	public String getProperName(File f) {

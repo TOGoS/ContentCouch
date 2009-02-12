@@ -5,8 +5,8 @@ import java.io.IOException;
 
 import org.bitpedia.util.Base32;
 
-import contentcouch.data.FileBlob;
 import contentcouch.digest.DigestUtil;
+import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
 
 
@@ -78,14 +78,13 @@ public class FileHashCache {
 		return (e != null && file.lastModified() == e.mtime && file.length() == e.size) ? e : null;
 	}
 	
-	public byte[] getSha1( FileBlob fb ) {
+	public byte[] getSha1( FileBlob file ) {
 		try {
-			File file = fb.getFile();
 			Entry e = getCachedValidEntry(file);
 			if( e != null ) {
 				return e.sha1sum;
 			}
-			byte[] sha1sum = DigestUtil.sha1DigestBlob(fb);
+			byte[] sha1sum = DigestUtil.sha1DigestBlob(file);
 			if( cacheFile.isWritable() ) {
 				e = new Entry();
 				e.mtime = file.lastModified();

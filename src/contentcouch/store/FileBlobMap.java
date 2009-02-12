@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import contentcouch.data.Blob;
-import contentcouch.data.BlobUtil;
+import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileUtil;
+import contentcouch.value.Blob;
 
 public class FileBlobMap implements PutterGetter, FileGetter {
 	protected String filenamePrefix;

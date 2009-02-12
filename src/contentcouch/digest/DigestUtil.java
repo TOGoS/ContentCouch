@@ -8,9 +8,9 @@ import java.security.NoSuchAlgorithmException;
 
 import org.bitpedia.util.Base32;
 
-import contentcouch.data.Blob;
-import contentcouch.data.ByteArrayBlob;
-import contentcouch.data.FileBlob;
+import contentcouch.blob.ByteArrayBlob;
+import contentcouch.file.FileBlob;
+import contentcouch.value.Blob;
 
 public class DigestUtil {
 	final static int maxChunkLength = 1024*1024; // 1 megabyte
@@ -47,9 +47,9 @@ public class DigestUtil {
 		if( blob instanceof ByteArrayBlob ) {
 			// Do all at once no matter the length
 			return md.digest( blob.getData(0, (int)blob.getLength()) );
-		} else if( blob instanceof FileBlob ) {
+		} else if( blob instanceof File ) {
 			// Use special file reading function so not to do many opens and closes 
-			return digestFile( ((FileBlob)blob).getFile(), md );
+			return digestFile( (File)blob, md );
 		} else {
 			// Do it one chunk at a time ._.
 			long len = blob.getLength();

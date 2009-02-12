@@ -1,8 +1,10 @@
 package contentcouch.store;
 
-import contentcouch.data.Blob;
-import contentcouch.data.BlobUtil;
-import contentcouch.xml.RDF;
+import contentcouch.blob.BlobUtil;
+import contentcouch.rdf.RdfIO;
+import contentcouch.rdf.RdfNamespace;
+import contentcouch.rdf.RdfNode;
+import contentcouch.value.Blob;
 
 public class ParseRdfGetFilter implements Getter {
 	Getter getter;
@@ -16,17 +18,17 @@ public class ParseRdfGetFilter implements Getter {
 		String parseIdentifier;
 		if( handleAtSignAsParseRdf && identifier.charAt(0) == '@' ) {
 			parseIdentifier = identifier.substring(1);
-		} else if( identifier.startsWith(RDF.URI_PARSE_PREFIX) ) {
-			parseIdentifier = identifier.substring(RDF.URI_PARSE_PREFIX.length());
+		} else if( identifier.startsWith(RdfNamespace.URI_PARSE_PREFIX) ) {
+			parseIdentifier = identifier.substring(RdfNamespace.URI_PARSE_PREFIX.length());
 		} else {
 			parseIdentifier = null;
 		}
 		if( parseIdentifier != null ) {
 			Object obj = get(parseIdentifier);
 			if( obj == null ) return null;
-			if( obj instanceof RDF.RdfNode ) return obj;
+			if( obj instanceof RdfNode ) return obj;
 			Blob blob = BlobUtil.getBlob(obj);
-			return RDF.parseRdf(BlobUtil.getString(blob), parseIdentifier);
+			return RdfIO.parseRdf(BlobUtil.getString(blob), parseIdentifier);
 		} else {
 			return getter.get(identifier);
 		}

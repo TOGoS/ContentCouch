@@ -1,4 +1,4 @@
-package contentcouch.data;
+package contentcouch.blob;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,7 +8,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
+import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
+import contentcouch.value.Blob;
 
 public class BlobUtil {
 	public static byte[] getBytes(Blob blob) {
@@ -69,8 +71,8 @@ public class BlobUtil {
 	
 	public static void writeBlobToOutputStream( Blob blob, OutputStream os ) {
 		try {
-			if( blob instanceof FileBlob ) {
-				FileInputStream is = new FileInputStream(((FileBlob)blob).getFile());
+			if( blob instanceof File ) {
+				FileInputStream is = new FileInputStream((File)blob);
 				try {
 					copyInputToOutput(is, os);
 				} finally {

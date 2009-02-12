@@ -1,54 +1,46 @@
-package contentcouch.data;
+package contentcouch.file;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import contentcouch.file.FileUtil;
-import contentcouch.xml.RDF;
+import contentcouch.rdf.RdfNamespace;
+import contentcouch.value.Directory;
 
-public class FileDirectory implements Directory {
-	public static class FileDirectoryEntry implements Directory.Entry {
-		protected File file;
-		
+public class FileDirectory extends File implements Directory {
+	public static class FileDirectoryEntry extends File implements Directory.Entry {
 		public FileDirectoryEntry(File file) {
-			this.file = file;
+			super(file.getPath());
 		}
 
 		public long getLastModified() {
-			return file.lastModified();
-		}
-
-		public String getName() {
-			return file.getName();
+			return lastModified();
 		}
 
 		public Object getTarget() {
-			return FileUtil.getContentCouchObject(file);
+			return FileUtil.getContentCouchObject(this);
 		}
 		
 		public long getSize() {
-			if( file.isFile() ) return file.length();
+			if( isFile() ) return length();
 			return -1;
 		}
 
 		public String getTargetType() {
-			if( file.isDirectory() ) {
-				return RDF.OBJECT_TYPE_DIRECTORY;
+			if( isDirectory() ) {
+				return RdfNamespace.OBJECT_TYPE_DIRECTORY;
 			} else {
-				return RDF.OBJECT_TYPE_BLOB;
+				return RdfNamespace.OBJECT_TYPE_BLOB;
 			}
 		}
 	}
 	
-	protected File file;
-	
 	public FileDirectory( File file ) {
-		this.file = file;
+		super(file.getPath());
 	}
 	
 	public Map getEntries() {
-		File[] subFiles = file.listFiles();
+		File[] subFiles = listFiles();
 		HashMap entries = new HashMap();
 		for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];

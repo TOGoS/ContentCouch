@@ -6,15 +6,15 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import contentcouch.app.Linker.LinkException;
-import contentcouch.data.Blob;
-import contentcouch.data.BlobUtil;
-import contentcouch.data.FileBlob;
+import contentcouch.blob.BlobUtil;
+import contentcouch.rdf.RdfIO;
+import contentcouch.rdf.RdfNamespace;
+import contentcouch.rdf.RdfNode;
 import contentcouch.store.Getter;
 import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.store.Sha1BlobStore;
-import contentcouch.xml.RDF;
-import contentcouch.xml.RDF.RdfNode;
-import contentcouch.xml.RDF.Ref;
+import contentcouch.value.Blob;
+import contentcouch.value.Ref;
 
 public class Exporter {
 	Getter getter;
@@ -31,12 +31,12 @@ public class Exporter {
 
 	public void exportFile( Blob blob, File destination ) {
 		if( verbose ) System.err.println(destination.getPath());
-		if( link && blob instanceof FileBlob ) {
+		if( link && blob instanceof File ) {
 			try {
-				Linker.getInstance().link(((FileBlob)blob).getFile(), destination);
+				Linker.getInstance().link((File)blob, destination);
 				return;
 			} catch( LinkException e ) {
-				System.err.println("Failed to hardlink " + destination + " to " + ((FileBlob)blob).getFile() + "; will copy");
+				System.err.println("Failed to hardlink " + destination + " to " + (File)blob + "; will copy");
 			}
 		}
 		BlobUtil.writeBlobToFile(blob, destination);
@@ -51,7 +51,7 @@ public class Exporter {
 	}
 	
 	protected Object getRdf( Blob blob, String sourceUri ) {
-		return RDF.parseRdf(BlobUtil.getString(blob), sourceUri);
+		return RdfIO.parseRdf(BlobUtil.getString(blob), sourceUri);
 	}
 	
 	protected Object getRdf( Object obj, String sourceUri ) {
@@ -74,9 +74,9 @@ public class Exporter {
 	// TODO: Change export functions to use Directoris instead of manually parsing RDF
 	
 	protected Object getTarget( RdfNode node, boolean dieOnGetFailure ) {
-		String targetType = (String)node.getSingle(RDF.CCOUCH_TARGETTYPE);
-		Object target = node.getSingle(RDF.CCOUCH_TARGET);
-		Object targetListing = node.getSingle(RDF.CCOUCH_TARGETLISTING);
+		String targetType = (String)node.getSingle(RdfNamespace.CCOUCH_TARGETTYPE);
+		Object target = node.getSingle(RdfNamespace.CCOUCH_TARGET);
+		Object targetListing = node.getSingle(RdfNamespace.CCOUCH_TARGETLISTING);
 		
 		// Now, based on target, targetType, and targetListing, we can try to figure
 		// out what this refers to.
@@ -100,7 +100,7 @@ public class Exporter {
 			} else {
 				return getRdf( targetListing, node.sourceUri );
 			}
-		} else if( RDF.OBJECT_TYPE_BLOB.equals(targetType) ) {
+		} else if( RdfNamespace.OBJECT_TYPE_BLOB.equals(targetType) ) {
 			if( target != null ) {
 				if( target instanceof Ref ) {
 					String targetUri = ((Ref)target).targetUri;
@@ -129,7 +129,7 @@ public class Exporter {
 	//// Export functions (lowest-to-highest level) ////
 	
 	public void exportDirectoryEntry( RdfNode entry, File destDir ) {
-		String name = (String)entry.getSingle(RDF.CCOUCH_NAME);
+		String name = (String)entry.getSingle(RdfNamespace.CCOUCH_NAME);
 		if( (name.indexOf('/') != -1) || (name.indexOf('\\') != -1) ) throw new RuntimeException("Invalid characters in directory entry name: " + name);
 		File destination = new File(destDir + "/" + name);
 		
@@ -142,19 +142,19 @@ public class Exporter {
 	}
 	
 	public void exportObjectFromRdf( RdfNode listing, File destination ) {
-		if( RDF.CCOUCH_COMMIT.equals(listing.typeName) || RDF.CCOUCH_REDIRECT.equals(listing.typeName) ) {
+		if( RdfNamespace.CCOUCH_COMMIT.equals(listing.typeName) || RdfNamespace.CCOUCH_REDIRECT.equals(listing.typeName) ) {
 			Object target = getTarget( listing );
 			exportObject( target, destination, listing );
-		} else if( RDF.CCOUCH_DIRECTORY.equals(listing.typeName) ) {
-			Collection c = (Collection)listing.getSingle(RDF.CCOUCH_ENTRIES);
+		} else if( RdfNamespace.CCOUCH_DIRECTORY.equals(listing.typeName) ) {
+			Collection c = (Collection)listing.getSingle(RdfNamespace.CCOUCH_ENTRIES);
 			for( Iterator i=c.iterator(); i.hasNext(); ) {
 				exportDirectoryEntry( (RdfNode)i.next(), destination );
 			}
 		} else {
 			throw new RuntimeException("The RDF document at " + listing.sourceUri + " does not contain a " +
-					RDF.CCOUCH_DIRECTORY + ", a " +
-					RDF.CCOUCH_REDIRECT + ", or a " +
-					RDF.CCOUCH_COMMIT + ", but rather a " +
+					RdfNamespace.CCOUCH_DIRECTORY + ", a " +
+					RdfNamespace.CCOUCH_REDIRECT + ", or a " +
+					RdfNamespace.CCOUCH_COMMIT + ", but rather a " +
 					listing.typeName + ", which I don't know how to export" );
 		}
 	}
@@ -163,10 +163,10 @@ public class Exporter {
 		if( object instanceof Blob ) {
 			exportFile( (Blob)object, destination );
 			if( entry != null ) {
-				String lastModifiedStr = (String)entry.getSingle(RDF.DC_MODIFIED);
+				String lastModifiedStr = (String)entry.getSingle(RdfNamespace.DC_MODIFIED);
 				if( lastModifiedStr != null ) {
 					try {
-						destination.setLastModified( RDF.CCOUCH_DATEFORMAT.parse(lastModifiedStr).getTime() );
+						destination.setLastModified( RdfNamespace.CCOUCH_DATEFORMAT.parse(lastModifiedStr).getTime() );
 					} catch (ParseException e) {
 						throw new RuntimeException("Couldn't parse date in " + entry.sourceUri + ": " + lastModifiedStr );
 					}

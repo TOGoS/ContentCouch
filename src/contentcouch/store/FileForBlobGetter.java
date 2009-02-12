@@ -3,7 +3,7 @@ package contentcouch.store;
 
 import java.io.File;
 
-import contentcouch.data.Blob;
+import contentcouch.value.Blob;
 
 public interface FileForBlobGetter {
     public File getFileForBlob( Blob blob );
