@@ -95,7 +95,11 @@ public class BlobUtil {
 		FileUtil.mkParentDirs(f);
 		try {
 			FileOutputStream fos = new FileOutputStream(f);
-			writeBlobToOutputStream(blob, fos);
+			try {
+				writeBlobToOutputStream(blob, fos);
+			} finally {
+				fos.close();
+			}
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
