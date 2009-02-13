@@ -97,4 +97,8 @@ public class Exporter {
 			throw new RuntimeException("Don't know how to export " + obj.getClass().getName() );
 		}
 	}
+	
+	public void exportObject( Object obj, File destination ) {
+		exportObject( obj, destination, null );
+	}
 }

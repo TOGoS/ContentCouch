@@ -6,12 +6,13 @@
 # datastore.
 #
 # In general, an @-sign before a URI means 'the thing described by
-# this resource', which may be a list of resource, a reference to a
+# this resource', which may be a list of resources, a reference to a
 # single resource, or a resource describing a directory or a
 # collection.  When the following points to an RDF document, this has
-# the same effect as prefixing the URL with x-parse-rdf:, which is
-# how 'the object described by ...' URLs are passed around and stored
+# the same effect as prefixing the URI with x-parse-rdf:, which is
+# how 'the object described by ...' URIs are passed around and stored
 # internally.
+
 
 
 # Checkout takes a file or directory and exports it to your filesystem
@@ -19,6 +20,7 @@
 ccouch checkout urn:sha1:BLOB a-file.txt
 ccouch checkout @urn:sha1:DIRLISTING a-directory
 ccouch checkout @urn:sha1:REDIRECTTOAFILEORDIR something
+
 
 
 # Merge updates a local directory by adding files to it from another
@@ -34,6 +36,7 @@ ccouch merge http://togos-dyn.ath.cx/mahfiles/ mahfiles/
 # Usage: ccouch store <file1> <file2> ...
 ccouch store mahfile.mp3
 ccouch store somedir
+
 
 
 # Cache: cache files from a remote repository without checking them out
