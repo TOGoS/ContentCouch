@@ -73,6 +73,7 @@ public class ContentCouchCommand {
 		"Usage: ccouch [general options] checkout [checkout options] <source> <dest>\n" +
 		"Checkout options:\n" +
 		"  -link              ; hardlink files from the store instead of copying\n" +
+		"  -dirs-only         ; only export the directory structure\n" +
 		"  -v                 ; verbose - report every file exported\n" +
 		"  -?                 ; display help and exit";
 
@@ -284,6 +285,7 @@ public class ContentCouchCommand {
 	
 	public void runCheckoutCmd( String[] args, Map options ) {
 		boolean verbose = false;
+		boolean exportFiles = true;
 		boolean link = false;
 		String source = null;
 		String dest = null;
@@ -296,6 +298,8 @@ public class ContentCouchCommand {
 				verbose = true;
 			} else if( "-link".equals(arg) ) {
 				link = true;
+			} else if( "-dirs-only".equals(arg) ) {
+				exportFiles = false;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
 				System.out.println(CHECKOUT_USAGE);
 				System.exit(0);
@@ -326,8 +330,9 @@ public class ContentCouchCommand {
 		final Exporter exporter = new Exporter(getBlobGetter(options));
 		exporter.link = link;
 		exporter.verbose = verbose;
+		exporter.exportFiles = exportFiles;
 		File destFile = new File(dest);
-		exporter.exportObject(source, destFile);
+		exporter.exportObject(new Ref(source), destFile, null);
 	}
 	
 	public void runIdCmd( String[] args, Map options ) {
