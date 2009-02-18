@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import contentcouch.app.ContentCouchRepository;
 import contentcouch.blob.BlobUtil;
+import contentcouch.file.FileBlob;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.rdf.RdfNamespace;
@@ -50,10 +51,12 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	class SlfSourcePageGenerator extends PageGenerator {
 		protected char[] hexChars = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
-		File file;
+		Blob blob;
+		String title;
 		
-		public SlfSourcePageGenerator(File f) {
-			this.file = f;
+		public SlfSourcePageGenerator(Blob b, String title) {
+			this.blob = b;
+			this.title = title;
 		}
 		
 		protected void writeByteAsHex(byte b, PrintWriter w) {
@@ -84,8 +87,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			w.write(' ');
 		}
 		
-		protected void writeIntAsHexLink(int i, PrintWriter w) {
-			if( i != 0 ) w.print("<a class=\"chunk-link\" href=\"#chunk-" + intToHex(i) + "\">");
+		protected void writeIntAsHexLink(PrintWriter w, int i, String title) {
+			if( i != 0 ) w.print("<a class=\"chunk-link\" href=\"#chunk-" + intToHex(i) + "\"" + (title == null ? "" : " title=\"" + title + "\"") + ">");
 			writeIntAsHex(i, w);
 			if( i != 0 ) w.print("</a>");
 		}
@@ -143,10 +146,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				w.println("</div");
 			}
 			w.println("<div class=\"chunk-content\">");
-			openSpan("#EBB", w); writeIntAsHexLink(c.prevOffset, w); closeSpan(w);
-			openSpan("#BEB", w); writeIntAsHexLink(c.nextOffset, w); closeSpan(w);
-			openSpan("#EBB", w); writeIntAsHexLink(c.listPrevOffset, w); closeSpan(w);
-			openSpan("#BEB", w); writeIntAsHexLink(c.listNextOffset, w); closeSpan(w);
+			openSpan("#EBB", w); writeIntAsHexLink(w, c.prevOffset, "Prev"); closeSpan(w);
+			openSpan("#BEB", w); writeIntAsHexLink(w, c.nextOffset, "Next"); closeSpan(w);
+			openSpan("#EBB", w); writeIntAsHexLink(w, c.listPrevOffset, "Prev in list"); closeSpan(w);
+			openSpan("#BEB", w); writeIntAsHexLink(w, c.listNextOffset, "Next in list"); closeSpan(w);
 			openSpan("#EEE", w); writeIntAsHex(c.type, w); closeSpan(w);
 			if( indexItems != null ) {
 				openSpan("#BBE", w); writeIntAsHex(indexItems.length, w); closeSpan(w);
@@ -155,7 +158,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					int item = indexItems[i];
 					if( item != 0 ) {
 						openSpan("#BEB", w);
-						writeIntAsHexLink(item, w);
+						writeIntAsHexLink(w, item, null);
 						closeSpan(w);
 					} else {
 						writeIntAsHex(item, w);
@@ -171,12 +174,12 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		
 		public void write(PrintWriter w) throws IOException {
-			SimpleListFile slf = new SimpleListFile(file, "r");
+			SimpleListFile slf = new SimpleListFile(blob, "r");
 			Chunk c = slf.getFirstChunk();
 			
 			w.println("<html>");
 			w.println("<head>");
-			w.println("<title>" + file.getName() + "</title>");
+			w.println("<title>" + title + "</title>");
 			w.println("<style>");
 			w.println("body { background-color: #88B; color: black; }");
 			w.println(".chunk-title { margin: 0; padding: 2px 4px 2px 4px; background-color: #EEE }");
@@ -203,9 +206,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		String path;
 		Blob blob;
 		
-		public RdfSourcePageGenerator( String path, Blob b ) {
-			this.path = path;
+		public RdfSourcePageGenerator( Blob b, String path ) {
 			this.blob = b;
+			this.path = path;
 		}
 		
 		protected Pattern RDFRESPAT = Pattern.compile("rdf:resource=\"([^\\\"]+)\"|((?:http:|file:|x-parse-rdf:|data:|urn:)[a-zA-Z0-9\\-\\._\\~:/\\?\\#\\[\\]\\@\\!\\$\\&\\'\\(\\)\\*\\+\\,\\;\\=\\%]+)");
@@ -332,6 +335,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		return repoCache;
 	}
 	
+	protected String CT_RDF = "application/rdf+xml";
+	protected String CT_SLF = "application/x-simple-list-file";
+	protected String CT_HTML = "text/html";
+	
 	protected CharsetDecoder UTF_8_DECODER = Charset.forName("UTF-8").newDecoder();
 	
 	protected boolean looksLikeRdfBlob( Blob b ) {
@@ -350,31 +357,65 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		return false;
 	}
+	
+	protected String guessContentType( Blob b ) {
+		if( b instanceof FileBlob ) {
+			String n = ((FileBlob)b).getName();
+			if( n.endsWith(".rdf") ) return CT_RDF;
+			if( n.endsWith(".html") ) return CT_HTML;
+			if( n.endsWith(".slf") ) return CT_SLF;
+		}
+		if( looksLikeRdfBlob(b)) return CT_RDF;
+		return null;
+	}
 
-	public Object explore(String path) {
-		Object obj = getRepo().get(path);
-		if( obj instanceof File && ((File)obj).getName().endsWith(".slf") ) {
-			return new SlfSourcePageGenerator((File)obj);
-		} else if( obj instanceof Blob && looksLikeRdfBlob((Blob)obj) ) {
-			return new RdfSourcePageGenerator(path, (Blob)obj);
-		} else if( obj instanceof Directory ) {
+	protected Object exploreObject(Object obj, String path) {
+		if( obj instanceof Blob ) {
+			Blob b = (Blob)obj;
+			String ct = guessContentType(b);
+			if( CT_SLF.equals(ct) ) {
+				return new SlfSourcePageGenerator(b, path);
+			} else if( CT_RDF.equals(ct) ) {
+				return new RdfSourcePageGenerator((Blob)obj, path);
+			}
+		}
+		if( obj instanceof Directory ) {
 			return new DirectoryPageGenerator(path, (Directory)obj);
-		} else {
+		}
+		return obj;
+	}
+	
+	public Object explore(String path) {
+		return exploreObject(getRepo().get(path), path);
+	}
+
+	protected Object rawObject(Object obj, String path) {
+		if( obj instanceof Blob ) {
 			return obj;
 		}
+		if( obj instanceof Directory ) {
+			return new DirectoryPageGenerator(path, (Directory)obj);
+		}
+		return obj;
+	}
+	
+	protected Object raw(String path) {
+		return rawObject(getRepo().get(path), path);
 	}
 	
 	public Object get(String path) {
-		if( path.startsWith("explore/") ) {
+		if( path.equals("") ) {
+			return new FileBlob(new File("web/_index.html"));
+		} else if( path.startsWith("explore/") ) {
 			return explore(path.substring(8));
+		} else if( path.startsWith("raw/") ) {
+			return raw(path.substring(4));
 		} else {
 			return "I don't know about '" + path + "'";
 		}
 	}
 	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.setHeader("Content-Type", "text/plain");
-		
 		String pi = request.getPathInfo();
 		if( pi == null ) pi = request.getRequestURI();
 		if( pi == null ) pi = "/";
@@ -384,8 +425,12 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		if( page instanceof HttpServletRequestHandler ) {
 			((HttpServletRequestHandler)page).handle(request, response);
 		} else if( page instanceof Blob ) {
+			String contentType = guessContentType((Blob)page);
+			if( contentType != null ) response.setHeader("Content-Type", contentType);
+			else response.setHeader("Content-Type", "text/plain");
 			BlobUtil.writeBlobToOutputStream(((Blob)page), response.getOutputStream());
 		} else {
+			response.setHeader("Content-Type", "text/plain");			
 			response.getWriter().println(page.toString());
 		}
 	}

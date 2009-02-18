@@ -6,6 +6,8 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import contentcouch.value.Blob;
+
 /** Format of this kind of file:
  * 
  * [header]
@@ -101,13 +103,16 @@ public class SimpleListFile {
 	
 	//// 'life cycle' functions ////
 	
-	public SimpleListFile(File file, String mode) throws IOException {
-		this.file = file;
-		this.raf = new RandomAccessFile(file, mode);
-		writeMode = (mode.indexOf('w') != -1);
-		if( raf.length() > HEADER_LENGTH ) {
-			this.indexSize = getIntAt(INDEX_SIZE_OFFSET);
+	public SimpleListFile(Blob blob, String mode) throws IOException {
+		if( blob instanceof File ) {
+			initr((File)blob, mode);
+		} else {
+			throw new RuntimeException("Can't open SimpleListFile except on files, sry");
 		}
+	}
+	
+	public SimpleListFile(File file, String mode) throws IOException {
+		initr(file, mode);
 	}
 	
 	public void clear() throws IOException {
@@ -119,6 +124,16 @@ public class SimpleListFile {
 		byte[] dat = new byte[(numEntries+RESERVED_INDEX_ITEMS)*4 + 4];
 		intToBytes(numEntries, dat, 0);
 		return dat;
+	}
+
+	protected void initr(File file, String mode) throws IOException {
+		this.file = file;
+		this.raf = new RandomAccessFile(file, mode);
+		writeMode = (mode.indexOf('w') != -1);
+		
+		if( raf.length() > HEADER_LENGTH ) {
+			this.indexSize = getIntAt(INDEX_SIZE_OFFSET);
+		}
 	}
 
 	public void init(int indexSize, int fileSize) throws IOException {

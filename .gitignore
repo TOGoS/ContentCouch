@@ -1,3 +1,5 @@
 .src-files.lst
+.settings
 junk
 junk-repo
+web/WEB-INF/classes
