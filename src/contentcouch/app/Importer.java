@@ -3,6 +3,7 @@ package contentcouch.app;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.Map;
 
@@ -18,19 +19,23 @@ import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.FileForBlobGetter;
 import contentcouch.store.FileGetter;
+import contentcouch.store.Identifier;
 import contentcouch.store.Pusher;
-import contentcouch.store.UrnForBlobGetter;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
-public class Importer {
+public class Importer implements Pusher {
 	Pusher blobSink;
 	FileBlobMap namedStore;
 	public boolean shouldLinkStored;
 	public boolean shouldRelinkImported;
 	public ImportListener importListener;
-	public Function1 entryTargetRdfifier = new Function1() {
+	public boolean shouldStoreDirs;
+	public boolean shouldStoreFiles;
+	public boolean shouldStoreHeads;
+	
+	public Function1 entityTargetRdfifier = new Function1() {
 		public Object apply( Object input ) {
 			if( input instanceof Directory || input instanceof Blob || input instanceof File ) {
 				return importObject( input );
@@ -45,6 +50,10 @@ public class Importer {
 	public Importer( Pusher blobSink, FileBlobMap namedStore ) {
 		this.blobSink = blobSink;
 		this.namedStore = namedStore;
+	}
+	
+	public Importer( ContentCouchRepository repo ) {
+		this( repo.dataPusher, (FileBlobMap)repo.headPutter );
 	}
 	
 	//// Utility functions //// 
@@ -63,9 +72,33 @@ public class Importer {
 		}
 	}
 	
+	protected static final char[] hexChars = new char[]{'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+	
 	protected static String uriEscapePath( String path ) {
-		// TODO
-		return path;
+		byte[] bites;
+		try {
+			bites = path.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+		StringBuffer b = new StringBuffer();
+		for( int i=0; i<bites.length; ++i ) {
+			char c = (char)bites[i];
+			if( (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ) {
+				b.append(c);
+			} else {
+				switch(c) {
+				case('/'): case('+'): case('-'): case('.'): case(':'): case('~'): case('^'): case('('): case(')'): case('\\'):
+					b.append(c); break;
+				default:
+					b.append('%');
+					b.append(hexChars[(c >> 4) & 0xF]);
+					b.append(hexChars[(c >> 0) & 0xF]);
+				}
+			}
+			    
+		}
+		return b.toString();
 	}
 	
 	protected String getFileUri(File file ) {
@@ -127,9 +160,9 @@ public class Importer {
 	
 	//// Import objects ////
 	
-	public Ref importBlob( Blob b ) {
+	public Ref importBlob( Blob b, boolean store ) {
 		String contentUri;
-		if( shouldLinkStored && b instanceof File && blobSink instanceof FileForBlobGetter && blobSink instanceof UrnForBlobGetter ) {
+		if( store && shouldLinkStored && b instanceof File && blobSink instanceof FileForBlobGetter && blobSink instanceof Identifier ) {
 			// It may be that this should be part of the blob sink, 
 			// so that Sha1BlobStore can check hashes while importing
 			File importFile = (File)b;
@@ -139,9 +172,11 @@ public class Importer {
 				Linker.getInstance().link( importFile, storeFile );
 				storeFile.setReadOnly();
 			}
-			contentUri = ((UrnForBlobGetter)blobSink).getUrnForBlob(b);
+			contentUri = ((Identifier)blobSink).identify(b);
+		} else if( store ) {
+			contentUri = blobSink.push(b);
 		} else {
-			contentUri = blobSink.push( b );
+			contentUri = ((Identifier)blobSink).identify(b);
 		}
 
 		if( shouldRelinkImported && b instanceof File && ((File)b).isFile() && blobSink instanceof FileGetter ) {
@@ -157,7 +192,7 @@ public class Importer {
 	}
 	
 	public Ref importDirectory( Directory dir ) {
-		String uri = RdfNamespace.URI_PARSE_PREFIX + importBlob(createMetadataBlob(new RdfDirectory(dir, entryTargetRdfifier), RdfNamespace.CCOUCH_NS)).targetUri;
+		String uri = RdfNamespace.URI_PARSE_PREFIX + importBlob(createMetadataBlob(new RdfDirectory(dir, entityTargetRdfifier), RdfNamespace.CCOUCH_NS), shouldStoreDirs).targetUri;
 		if( importListener != null ) importListener.objectImported( dir, uri );
 		return new Ref(uri);
 	}
@@ -167,10 +202,14 @@ public class Importer {
 		if( obj instanceof Directory ) {
 			return importDirectory( (Directory)obj );
 		} else if( obj instanceof Blob ) {
-			return importBlob( (Blob)obj );
+			return importBlob( (Blob)obj, shouldStoreFiles );
 		} else {
 			throw new RuntimeException( "Don't know how to import " + obj.getClass().getName() );
 		}
+	}
+	
+	public String push( Object obj ) {
+		return importObject( obj ).targetUri;
 	}
 		
 	//// Name stuff ////
@@ -226,11 +265,15 @@ public class Importer {
 		namedStore.put(filename, blob);
 	}
 	
-	public String saveHead( String name, String targetType, String targetUri, Date date, String creator, String description, String[] parentUris ) {
-		RdfNode commit = getCommitRdfNode(targetType, targetUri, date, creator, description, parentUris );
+	public String saveHead( RdfNode commit, String name ) {
 		Blob b = createMetadataBlob(commit, RdfNamespace.CCOUCH_NS);
 		String commitUri = blobSink.push(b);
-		if( name != null ) saveLink( name, commitUri, b );
+		if( shouldStoreHeads && name != null ) saveLink( name, commitUri, b );
 		return commitUri;
+	}
+	
+	public String saveHead( String name, String targetType, String targetUri, Date date, String creator, String description, String[] parentUris ) {
+		RdfNode commit = getCommitRdfNode(targetType, targetUri, date, creator, description, parentUris );
+		return saveHead( commit, name );
 	}
 }

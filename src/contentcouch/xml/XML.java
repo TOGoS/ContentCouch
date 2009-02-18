@@ -145,6 +145,15 @@ public class XML {
 				case( 'l' ): textChar = '<'; offset += 4; break; // &lt;
 				case( 'g' ): textChar = '>'; offset += 4; break; // &gt;
 				case( 'q' ): textChar = '"'; offset += 6; break; // &quot;
+				case( '#' ):
+					offset+=2;
+					String num = "";
+					while( chars[offset] >= '0' && chars[offset] <= '9' ) {
+						num += chars[offset++];						
+					}
+					textChar = (char)Integer.parseInt(num);
+					++offset;
+					break;
 				default    : textChar = '&'; offset += 1;
 				}
 				text[textLength++] = textChar;
@@ -288,5 +297,10 @@ public class XML {
 		} else {
 			return xmlPart;
 		}
+	}
+	
+	public static void main(String[] args) {
+		String text = "Foo&#33;bar<br/>";
+		System.out.println(parseXmlText(text.toCharArray(), 0, '<').value);
 	}
 }

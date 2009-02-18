@@ -2,31 +2,20 @@
 package contentcouch.app;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import contentcouch.file.FileDirectory;
 import contentcouch.file.FileUtil;
-import contentcouch.hashcache.FileHashCache;
-import contentcouch.hashcache.SimpleListFile;
-import contentcouch.misc.Function1;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
-import contentcouch.store.BlobStore;
+import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
-import contentcouch.store.NoopPutter;
-import contentcouch.store.Putter;
-import contentcouch.store.Sha1BlobStore;
-import contentcouch.value.Blob;
-import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
@@ -54,6 +43,7 @@ public class ContentCouchCommand {
 		"  -link              ; hardlink files into the store instead of copying\n" +
 		"  -files-only        ; store only file content (no directory listings)\n" +
 		"  -dirs-only         ; store only directory listings (no file content)\n" +
+		"  -dont-store        ; store nothing (same as using 'ccocuch id')\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
 		"  -q                 ; quiet - show nothing\n" +
@@ -77,104 +67,62 @@ public class ContentCouchCommand {
 		"  -v                 ; verbose - report every file exported\n" +
 		"  -?                 ; display help and exit";
 
+	////
+	
 	protected String repoPath = ".";
 	protected ContentCouchRepository repositoryCache = null;
 	
 	public ContentCouchRepository getRepository() {
 		if( repositoryCache == null ) {
-			repositoryCache = ContentCouchRepository.getIfExists(repoPath);
+			repositoryCache = new ContentCouchRepository(repoPath);
 		}
 		return repositoryCache;
 	}
-	
-	public BlobStore getDatastore( Map options ) {
-		FileBlobMap fbm;
-		Putter putter;
-		String repoPath = (String)options.get(OPTION_REPO_PATH);
-		if( Boolean.TRUE.equals(options.get(OPTION_DONT_STORE)) ) {
-			putter = new NoopPutter();
-			fbm = null;
-		} else {
-			if( repoPath == null ) return null;
-			fbm = new FileBlobMap(repoPath + "/data/");
-			putter = fbm;
-		}
-		Sha1BlobStore bs = new Sha1BlobStore(fbm, putter);
-		SimpleListFile slf;
-		if( repoPath != null ) {
-			File cf = new File(repoPath + "/cache/file-attrs.slf");
-			try {
-				FileUtil.mkParentDirs(cf);
-				slf = new SimpleListFile(cf, "rw");
-				slf.init(65536, 1024*1024);
-			} catch( IOException e ) {
-				try {
-					System.err.println("Couldn't open " + cf + " in 'rw' mode, trying 'r'");
-					slf = new SimpleListFile(cf, "r");
-					slf.init(65536, 1024*1024);
-				} catch( IOException ee ) {
-					throw new RuntimeException(ee);
-				}
-			}
-			bs.fileHashCache = new FileHashCache(slf);
-		}
-		return bs;
+		
+	public Importer getImporter() {
+		return new Importer(getRepository());
 	}
 	
-	public Getter getBlobGetter( Map options ) {
-		MultiGetter mbg = new MultiGetter();
-		mbg.addGetter(getDatastore(options));
-		mbg.addGetter(new FileBlobMap(""));
-		return mbg;
+	public Getter getLocalGetter() {
+		MultiGetter mg = new MultiGetter();
+		mg.addGetter(getRepository());
+		mg.addGetter(new FileBlobMap(""));
+		return mg;
 	}
 	
-	public FileBlobMap getNamedStore( Map options ) {
-		String repoPath = (String)options.get(OPTION_REPO_PATH);
-		if( repoPath == null ) {
-			return null;
-		} else {
-			return new FileBlobMap(repoPath + "/heads/");
-		}
-	}
-	
-	public Importer getImporter( Map options ) {
-		BlobStore ds = getDatastore(options);
-		if( ds == null ) throw new RuntimeException("Datastore unspecified");
-		FileBlobMap namedStore = getNamedStore(options);
-		return new Importer(ds, namedStore);
-	}
-	
-	public Importer getNoopImporter( Map options ) {
-		options = new HashMap(options);
-		options.put(OPTION_DONT_STORE, Boolean.TRUE);
-		return getImporter(options);
-	}
-	
-	public void runStoreCmd( String[] args, Map options ) {
+	public void runStoreCmd( String[] args ) {
 		List files = new ArrayList();
 		String message = null;
 		String name = null;
 		String author = null;
-		final Importer importer = getImporter(options);
-		final Importer noopImporter = getNoopImporter(options);
+		final Importer importer = getImporter();
 		int verbosity = 1;
-		boolean importFiles = true;
-		boolean importDirs = true;
+		boolean storeFiles = true;
+		boolean storeDirs = true;
+		boolean storeCommits = true;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
 				System.err.println(STORE_USAGE);
 				System.exit(1);
-			} else if( "-v0".equals(arg) ) {
-				verbosity = 0;
 			} else if( "-v".equals(arg) ) {
 				verbosity = 2;
+			} else if( arg.startsWith("-v") ) {
+				verbosity = Integer.parseInt(arg.substring(2));
+			} else if( "-dont-store".equals(arg) ) {
+				storeFiles = false;
+				storeDirs = false;
+				storeCommits = false;
+			} else if( "-dont-store-files".equals(arg) ) {
+				storeFiles = false;
+			} else if( "-dont-store-dirs".equals(arg) ) {
+				storeDirs = false;
 			} else if( "-files-only".equals(arg) ) {
-				importFiles = true;
-				importDirs = false;
+				storeFiles = true;
+				storeDirs = false;
 			} else if( "-dirs-only".equals(arg) ) {
-				importFiles = false;
-				importDirs = true;
+				storeFiles = false;
+				storeDirs = true;
 			} else if( "-link".equals(arg) ) {
 				importer.shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
@@ -197,6 +145,20 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
+		
+		final boolean showIntermediateFiles;
+		final boolean showIntermediateDirs;
+		if( verbosity >= 3 ) {
+			showIntermediateFiles = true;
+			showIntermediateDirs = true;
+		} else if( verbosity >= 2 ) {
+			showIntermediateFiles = storeFiles;
+			showIntermediateDirs = storeDirs;
+		} else {
+			showIntermediateFiles = false;
+			showIntermediateDirs = false;			
+		}
+		
 		if( files.size() == 0 ) {
 			System.err.println("ccouch store: No files given");
 			System.err.println(STORE_USAGE);
@@ -212,59 +174,40 @@ public class ContentCouchCommand {
 		} else {
 			createCommit = false;
 		}
-
-		final boolean showAllMappings = (
-			(!importDirs && verbosity >= 1) ||
-			(verbosity >= 2)
-		);
-
+		
 		importer.importListener = new ImportListener() {
 			public void objectImported(Object obj, String urn) {
-				if( showAllMappings ) {
-					String uri;
-					if( obj instanceof File ) {
-						uri = importer.getFileUri((File)obj);
+				String uri;
+				if( obj instanceof File ) {
+					uri = importer.getFileUri((File)obj);
+					if( ((File)obj).isDirectory() ) {
+						if( !showIntermediateDirs ) uri = null;
 					} else {
-						uri = null;
-					}
-					if( uri != null ) System.out.println(uri + "\t" + urn);
-				}
-			}
-		};
-		noopImporter.importListener = null;
-		
-		final boolean fImportFiles = importFiles;
-		final boolean fImportDirs = importDirs;
-		
-		Function1 importFunction = new Function1() {
-			public Object apply(Object input) {
-				input = Importer.getImportableObject(input);
-				if( input instanceof Blob ) {
-					if( fImportFiles ) {
-						return importer.importObject(input);
-					} else {
-						return noopImporter.importObject(input);
-					}
-				} else if( input instanceof Directory ) {
-					if( fImportDirs ) {
-						return importer.importObject(input);
-					} else {
-						return noopImporter.importObject(input);
+						if( !showIntermediateFiles ) uri = null;
 					}
 				} else {
-					throw new RuntimeException("Don't know how to import " + input.getClass().getName());
+					uri = null;
 				}
+				if( uri != null ) System.out.println(uri + "\t" + urn);
 			}
 		};
-
-		importer.entryTargetRdfifier = importFunction;
-		noopImporter.entryTargetRdfifier = importer.entryTargetRdfifier;
+		
+		importer.shouldStoreFiles = storeFiles;
+		importer.shouldStoreDirs = storeDirs;
+		importer.shouldStoreHeads = storeCommits;
 		
 		for( Iterator i=files.iterator(); i.hasNext(); ) {
 			File file = new File((String)i.next());
-			Ref ref = (Ref)importFunction.apply( file );
-			if( !showAllMappings && verbosity > 0 ) {
-				// otherwise, this will already have been printed by our listener
+			Ref ref = importer.importObject(FileUtil.getContentCouchObject(file));
+			
+			boolean showFinal;
+			if( file.isDirectory() ) {
+				showFinal = !showIntermediateDirs;
+			} else {
+				showFinal = !showIntermediateFiles;
+			}
+			
+			if( showFinal && verbosity > 0 ) {
 				System.out.println(importer.getFileUri(file) + "\t" + ref.targetUri);
 			}
 			if( createCommit ) {
@@ -275,15 +218,18 @@ public class ContentCouchCommand {
 					targetType = RdfNamespace.OBJECT_TYPE_BLOB;
 				}
 				if( name != null ) name = "local/" + name;
-				String commitUri = importer.saveHead(name, targetType, ref.targetUri, new Date(), author, message, null);
+				
+				RdfNode commit = importer.getCommitRdfNode(targetType, ref.targetUri, new Date(), author, message, null);
+				String commitUri;
+				commitUri = importer.saveHead(commit, name);
 				if( verbosity > 0 ) {
-					System.out.println( "Committed " + commitUri );
+					System.out.println( "Commit\t" + commitUri );
 				}
 			}
 		}
 	}
 	
-	public void runCheckoutCmd( String[] args, Map options ) {
+	public void runCheckoutCmd( String[] args ) {
 		boolean verbose = false;
 		boolean exportFiles = true;
 		boolean link = false;
@@ -327,7 +273,7 @@ public class ContentCouchCommand {
 			System.err.println(CHECKOUT_USAGE);
 			System.exit(1);
 		}
-		final Exporter exporter = new Exporter(getBlobGetter(options));
+		final Exporter exporter = new Exporter(getLocalGetter());
 		exporter.link = link;
 		exporter.verbose = verbose;
 		exporter.exportFiles = exportFiles;
@@ -335,22 +281,24 @@ public class ContentCouchCommand {
 		exporter.exportObject(new Ref(source), destFile, null);
 	}
 	
-	public void runIdCmd( String[] args, Map options ) {
-		options = new HashMap(options);
-		options.put(OPTION_DONT_STORE, Boolean.TRUE);
-		runStoreCmd(args, options);
+	protected String[] concat( String[] s1, String[] s2 ) {
+		String[] r = new String[s1.length+s2.length];
+		int j = 0;
+		for( int i=0; i<s1.length; ++i, ++j ) r[j] = s1[i];
+		for( int i=0; i<s2.length; ++i, ++j ) r[j] = s2[i];
+		return r;
 	}
 	
-	public void runCheckCmd( String[] args, Map options ) {
-		String rp = (String)options.get(OPTION_REPO_PATH);
-		if( rp == null ) {
-			System.err.println("Repository unspecified");
-		}
+	public void runIdCmd( String[] args ) {
+		runStoreCmd(concat(new String[]{"-dont-store"},args));
+	}
+	
+	public void runCheckCmd( String[] args ) {
 		RepoChecker rc = new RepoChecker();
-		rc.checkFiles(new File(rp + "/data"));
+		rc.checkFiles(new File(repoPath + "/data"));
 	}
 	
-	public void runRdfifyCmd( String[] args, Map options ) {
+	public void runRdfifyCmd( String[] args ) {
 		String dir = args[0];
 		System.out.println(RdfIO.xmlEncodeRdf(new RdfDirectory(new FileDirectory(new File(dir))), RdfNamespace.CCOUCH_NS));
 	}
@@ -361,14 +309,13 @@ public class ContentCouchCommand {
 			System.exit(1);
 		}
 		String cmd = null;
-		Map options = new HashMap();
 		int i;
 		for( i=0; i<args.length; ++i ) {
 			if( "-h".equals(args[i]) || "-?".equals(args[i]) ) {
 				System.out.println(USAGE);
 				System.exit(0);
 			} else if( "-repo".equals(args[i]) ) {
-				options.put(OPTION_REPO_PATH, args[++i]);
+				repoPath = args[++i];
 			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
 				cmd = args[i++];
 				break;
@@ -384,15 +331,15 @@ public class ContentCouchCommand {
 			cmdArgs[j] = args[i];
 		}
 		if( "store".equals(cmd) ) {
-			runStoreCmd( cmdArgs, options );
+			runStoreCmd( cmdArgs );
 		} else if( "checkout".equals(cmd) ) {
-			runCheckoutCmd( cmdArgs, options );
+			runCheckoutCmd( cmdArgs );
 		} else if( "check".equals(cmd) ) {
-			runCheckCmd( cmdArgs, options );
+			runCheckCmd( cmdArgs );
 		} else if( "id".equals(cmd) ) {
-			runIdCmd( cmdArgs, options );
+			runIdCmd( cmdArgs );
 		} else if( "rdfify".equals(cmd) ) {
-			runRdfifyCmd( cmdArgs, options );
+			runRdfifyCmd( cmdArgs );
 		} else {
 			System.err.println("ccouch: Unrecognised sub-command: " + cmd);
 			System.err.println(USAGE);

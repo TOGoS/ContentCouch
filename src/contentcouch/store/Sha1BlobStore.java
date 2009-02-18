@@ -11,7 +11,7 @@ import contentcouch.file.FileBlob;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.value.Blob;
 
-public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, UrnForBlobGetter {
+public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, Identifier {
 	protected Getter blobGetter;
 	protected Putter blobPutter;
 	public FileHashCache fileHashCache;
@@ -46,8 +46,12 @@ public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, 
 		}
 	}
 
-	public String getUrnForBlob( Blob blob ) {
-		return getUrnForSha1( getSha1(blob) );
+	public String identify( Object blob ) {
+		if( blob instanceof Blob ) {
+			return getUrnForSha1( getSha1((Blob)blob) );
+		} else {
+			throw new RuntimeException("Can't identify " + blob.getClass().getName());
+		}
 	}
 	
 	public String push( Object obj ) {

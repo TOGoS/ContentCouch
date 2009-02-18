@@ -1,16 +1,20 @@
 package contentcouch.app;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileUtil;
+import contentcouch.hashcache.FileHashCache;
+import contentcouch.hashcache.SimpleListFile;
 import contentcouch.http.HttpBlobGetter;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
+import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.store.PrefixGetFilter;
 import contentcouch.store.Pusher;
 import contentcouch.store.Putter;
@@ -44,16 +48,33 @@ public class ContentCouchRepository implements Getter, Pusher {
 		if( path.startsWith("http:") ) {
 			HttpBlobGetter hbg = new HttpBlobGetter();
 			
-			dataGetter = new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null );
+			dataGetter = new ParseRdfGetFilter(new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null ));
 			headGetter = new PrefixGetFilter(hbg, path + "heads/");
 		} else {
 			exploratGetter = new FileBlobMap(path);
 			Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "data/") );
-			dataGetter = bs;
+			dataGetter = new ParseRdfGetFilter(bs);
 			dataPusher = bs;
 			FileBlobMap hs = new FileBlobMap(path + "heads/");
 			headPutter = hs;
 			headGetter = hs;
+
+			File cf = new File(path + "cache/file-attrs.slf");
+			SimpleListFile slf;
+			try {
+				FileUtil.mkParentDirs(cf);
+				slf = new SimpleListFile(cf, "rw");
+				slf.init(65536, 1024*1024);
+			} catch( IOException e ) {
+				try {
+					System.err.println("Couldn't open " + cf + " in 'rw' mode, trying 'r'");
+					slf = new SimpleListFile(cf, "r");
+					slf.init(65536, 1024*1024);
+				} catch( IOException ee ) {
+					throw new RuntimeException(ee);
+				}
+			}
+			bs.fileHashCache = new FileHashCache(slf);
 		}
 	}
 	
