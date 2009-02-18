@@ -32,10 +32,6 @@ import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
 public class ContentCouchExplorerServlet extends HttpServlet {
-	protected ContentCouchRepository getRepo() {
-		return new ContentCouchRepository("junk-repo");
-	}
-	
 	public interface HttpServletRequestHandler {
 		public void handle( HttpServletRequest request, HttpServletResponse response ) throws IOException;
 	}
@@ -327,6 +323,14 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 	};
 
+	protected ContentCouchRepository repoCache;
+	protected ContentCouchRepository getRepo() {
+		if( repoCache == null ) { 
+			repoCache = new ContentCouchRepository("junk-repo");
+			repoCache.explorable = true;
+		}
+		return repoCache;
+	}
 	
 	protected CharsetDecoder UTF_8_DECODER = Charset.forName("UTF-8").newDecoder();
 	

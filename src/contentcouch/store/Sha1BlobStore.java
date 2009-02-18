@@ -67,11 +67,21 @@ public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, 
 		}
 		return urn;
 	}
+	
+	protected byte[] getSha1FromUrn( String urn ) {
+		if( urn.startsWith("urn:sha1:") ) {
+			return Base32.decode(urn.substring(9));
+		} else if( urn.startsWith("urn:bitprint:") ) {
+			return Base32.decode(urn.substring(13, 13+32));
+		} else {
+			return null;
+		}
+	}
 
 	public Object get( String urn ) {
 		if( blobGetter == null ) return null;
-		if( urn.startsWith("urn:sha1:") ) {
-			byte[] sha1 = Base32.decode(urn.substring(9));
+		byte[] sha1 = getSha1FromUrn( urn );
+		if( sha1 != null ) {
 			String filename = getFilenameForSha1( sha1 );
 			return blobGetter.get(filename);
 		}
