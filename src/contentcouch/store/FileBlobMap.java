@@ -3,12 +3,15 @@ package contentcouch.store;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileUtil;
+import contentcouch.misc.MetadataUtil;
+import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.Blob;
 
-public class FileBlobMap implements PutterGetter, FileGetter {
+public class FileBlobMap implements PutterGetter, StoreFileGetter {
 	protected String filenamePrefix;
 	public boolean overwriteExistingFiles = false;
 	
@@ -16,13 +19,13 @@ public class FileBlobMap implements PutterGetter, FileGetter {
 		this.filenamePrefix = filenamePrefix;
 	}
 	
-	public File getFile( String filename ) {
+	public File getStoreFile( String filename ) {
 		return new File(filenamePrefix + filename);
 	}
 	
 	public void put( String filename, Object obj ) {
 		Blob blob = BlobUtil.getBlob(obj);
-		File file = getFile( filename );
+		File file = getStoreFile( filename );
 		// TODO: Have a hardlink option, and if set, use that when blob is another file
 		if( !file.exists() || overwriteExistingFiles ) {
 			try {
@@ -43,6 +46,8 @@ public class FileBlobMap implements PutterGetter, FileGetter {
 				}
 				if( file.exists() ) file.delete();
 				tempFile.renameTo(file);
+				Date lm = (Date)MetadataUtil.getMetadataFrom(blob, RdfNamespace.DC_MODIFIED);
+				if( lm != null ) file.setLastModified(lm.getTime());
 			} catch( IOException e ) {
 				throw new RuntimeException(e);
 			}
@@ -50,7 +55,7 @@ public class FileBlobMap implements PutterGetter, FileGetter {
 	}
 
 	public Object get( String filename ) {
-		File file = getFile( filename );
+		File file = getStoreFile( filename );
 		if( !file.exists() ) return null;
 		return FileUtil.getContentCouchObject(file);		
 	}

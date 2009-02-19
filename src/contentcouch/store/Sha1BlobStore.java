@@ -11,7 +11,7 @@ import contentcouch.file.FileBlob;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.value.Blob;
 
-public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, Identifier {
+public class Sha1BlobStore implements BlobStore, StoreFileGetter, FileForBlobGetter, Identifier {
 	protected Getter blobGetter;
 	protected Putter blobPutter;
 	public FileHashCache fileHashCache;
@@ -63,8 +63,8 @@ public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, 
 		String urn = getUrnForSha1( sha1 );
 		String filename = getFilenameForSha1( sha1 );
 		blobPutter.put(filename, blob);
-		if( blobPutter instanceof FileGetter ) {
-			File f = ((FileGetter)blobPutter).getFile(filename);
+		if( blobPutter instanceof StoreFileGetter ) {
+			File f = ((StoreFileGetter)blobPutter).getStoreFile(filename);
 			if( f != null ) {
 				f.setReadOnly();
 			}
@@ -94,20 +94,20 @@ public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, 
 		return null;
 	}
 	
-	public File getFile( String urn ) {
-		if( urn.startsWith("urn:sha1:") && (blobGetter instanceof FileGetter) ) {
+	public File getStoreFile( String urn ) {
+		if( urn.startsWith("urn:sha1:") && (blobGetter instanceof StoreFileGetter) ) {
 			byte[] sha1 = Base32.decode(urn.substring(9));
 			String filename = getFilenameForSha1( sha1 );
-			return ((FileGetter)blobGetter).getFile(filename);
+			return ((StoreFileGetter)blobGetter).getStoreFile(filename);
 		}
 		return null;
 	}
 
 	public File getFileForBlob( Blob blob ) {
-		if( blobGetter instanceof FileGetter ) {
+		if( blobGetter instanceof StoreFileGetter ) {
 			byte[] sha1 = getSha1(blob);
 			String filename = getFilenameForSha1( sha1 );
-			return ((FileGetter)blobGetter).getFile(filename);
+			return ((StoreFileGetter)blobGetter).getStoreFile(filename);
 		}
 		return null;		
 	}

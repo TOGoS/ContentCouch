@@ -1,26 +1,30 @@
 package contentcouch.app;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.http.HttpBlobGetter;
-import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
+import contentcouch.store.Identifier;
 import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.store.PrefixGetFilter;
 import contentcouch.store.Pusher;
 import contentcouch.store.Putter;
 import contentcouch.store.Sha1BlobStore;
-import contentcouch.value.Blob;
-import contentcouch.value.Ref;
 
-public class ContentCouchRepository implements Getter, Pusher {
+public class ContentCouchRepository implements Getter, Pusher, Identifier {
 	protected String path;
 	
 	public Getter dataGetter;
@@ -28,7 +32,10 @@ public class ContentCouchRepository implements Getter, Pusher {
 	public Getter headGetter;
 	public Putter headPutter;
 	public Getter exploratGetter;
+	public Identifier identifier;
+	public boolean initialized = false;
 	public boolean explorable = false;
+	public boolean isMainRepo = false;
 	
 	public ContentCouchRepository remoteCacheRepository; 
 	public List localRepositories = new ArrayList();
@@ -37,9 +44,30 @@ public class ContentCouchRepository implements Getter, Pusher {
 	public ContentCouchRepository() {
 	}
 	
-	public ContentCouchRepository( String path ) {
+	public ContentCouchRepository( String path, boolean isMainRepo ) {
 		this();
-		
+		this.isMainRepo = isMainRepo;
+		if( path == null ) return;
+		try {
+			File f = new File(path); 
+			if( f.exists() && f.isFile() ) {
+				loadConfig( f );
+			} else {
+				initBasics( path );
+				loadConfig( new File(path + "/ccouch-config") );
+			}
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public ContentCouchRepository( String path ) {
+		this( path, true );
+	}
+	
+	//// Configuration ////
+
+	public void initBasics( String path ) throws IOException {
 		if( !path.endsWith("/") ) path += "/";
 		this.path = path;		
 		
@@ -49,16 +77,91 @@ public class ContentCouchRepository implements Getter, Pusher {
 			dataGetter = new ParseRdfGetFilter(new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null ));
 			headGetter = new PrefixGetFilter(hbg, path + "heads/");
 		} else {
+			if( FileUtil.mkParentDirs( new File(path) ) ) {
+				File configFile = new File(path + "/ccouch-config");
+				FileWriter fw = new FileWriter(configFile);
+				fw.write("# This is the config file for this repository.\n");
+				fw.write("# Add options here as you would specify them on the command line.\n");
+				fw.write("# For example:\n");
+				fw.write("# -remote-repo http://www.example.com/r3p0/\n");
+				fw.write("# -use-main-repo-as-cache\n");
+				fw.close();
+			}
+
 			exploratGetter = new FileBlobMap(path);
 			Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "data/") );
 			dataGetter = new ParseRdfGetFilter(bs);
 			dataPusher = bs;
+			identifier = bs;
 			FileBlobMap hs = new FileBlobMap(path + "heads/");
 			headPutter = hs;
 			headGetter = hs;
 
 			File cf = new File(path + "cache/file-attrs.slf");
 			bs.fileHashCache = new FileHashCache(cf);
+		}
+		
+		initialized = true;
+	}
+	
+	/** Interprets arguments at the given offset in the given argument array
+	 * that are understood and returns the offset into the arguments list
+	 * after the parsed arguments. If the offset given is returned, then it
+	 * can be assumed that no arguments were understood. */
+	public int handleArguments( String[] args, int offset ) {
+		if( offset >= args.length ) return 0;
+		String arg = args[offset];
+		if( "-repo".equals(arg) ) {
+			++offset;
+			if( isMainRepo ) try {
+				initBasics(args[offset]);
+			} catch( IOException e ) {
+				throw new RuntimeException("Couldn't initialize repo at " + args[offset], e);
+			}
+			++offset;
+		} else if( "-local-repo".equals(arg) ) {
+			++offset;
+			if( isMainRepo ) addLocal(new ContentCouchRepository(args[offset]));
+			++offset;
+		} else if( "-cache-repo".equals(arg) ) {
+			++offset;
+			if( isMainRepo ) remoteCacheRepository = new ContentCouchRepository(args[offset]);
+			++offset;
+		} else if( "-remote-repo".equals(arg) ) {
+			++offset;
+			if( isMainRepo ) addRemote(new ContentCouchRepository(args[offset]));
+			++offset;
+		}
+		return offset;
+	}
+	
+	static Pattern argPattern = Pattern.compile("(?:\\S|\"(?:[^\"]|\\\\\")*\")+");
+	
+	public void loadConfig( File f ) throws IOException {
+		BufferedReader fr;
+		try {
+			fr = new BufferedReader(new FileReader(f));
+		} catch (FileNotFoundException e) {
+			return;
+		}
+		ArrayList args = new ArrayList();
+		try {
+			String line;
+			lines: while( (line = fr.readLine()) != null ) {
+				Matcher m = argPattern.matcher(line);
+				while( m.find() ) {
+					if( m.group().charAt(0) == '#' ) continue lines;
+					args.add(m.group());
+				}
+			}
+		} finally {
+			fr.close();
+		}
+		String[] argar = new String[args.size()];
+		argar = (String[])args.toArray(argar);
+		int endupat = handleArguments( argar, 0 );
+		if( endupat < argar.length ) {
+			System.err.println("Unrecognised arg in config: " + argar[endupat]);
 		}
 	}
 	
@@ -70,13 +173,7 @@ public class ContentCouchRepository implements Getter, Pusher {
 		remoteRepositories.add(0,repo);
 	}
 
-	public void initialize() {
-		FileUtil.mkParentDirs( new File(path) );
-	}
-	
-	public String push( Object obj ) {
-		return dataPusher.push(obj);
-	}
+	//// Get stuff ////
 	
 	public Object getReallyLocal( String identifier ) {
 		return dataGetter.get(identifier);
@@ -134,47 +231,14 @@ public class ContentCouchRepository implements Getter, Pusher {
 		return obj;
 	}
 	
-	public void putHead( String headName, Blob headData ) {
-		headPutter.put(headName, headData);
+	public String identify( Object obj ) {
+		if( identifier != null ) return identifier.identify(obj);
+		return null;
 	}
 	
-	public void putHead( String headName, RdfNode headInfo ) {
-		// TODO!
-	}
+	//// Put stuff ////
 	
-	public static ContentCouchRepository getIfExists( String path ) {
-		if( new File(path + "/ccouch-repo").exists() ) {
-			return new ContentCouchRepository( path );
-		} else {
-			throw new RuntimeException( "CCouch repository does not exist at " + path );
-		}
-	}
-	
-	public static ContentCouchRepository create( String path ) {
-		if( new File(path + "/ccouch-repo").exists() ) {
-			throw new RuntimeException( "CCouch repository already exists at " + path );
-		} else {
-			ContentCouchRepository repo = new ContentCouchRepository( path );
-			repo.initialize();
-			return repo;
-		}
-	}
-	
-	public static void main(String[] args) {
-		ContentCouchRepository mainRepo = new ContentCouchRepository("junk/main-repo");
-		mainRepo.remoteCacheRepository = new ContentCouchRepository("junk/cache-repo");
-		mainRepo.addRemote(new ContentCouchRepository("http://localhost/ccouch/"));
-		
-		String uri = "urn:sha1:2AAQ5X4YWKVE3HRKWXTGID6QOABFSRWD";
-		
-		Blob b = (Blob)mainRepo.get(uri);
-		if( b == null ) {
-			System.err.println("Couldn't find " + uri);
-		} else {
-			BlobUtil.writeBlobToFile(b, new File("junk/windowpotts.jpg") );
-		}
-		
-		Exporter e = new Exporter(mainRepo);
-		e.exportObject(new Ref("x-parse-rdf:urn:sha1:AMQT7PP6HTDP5WMH6RTW3RWIDR5JTXNK"), new File("junk/2009-01-15-pix") );
+	public String push( Object obj ) {
+		return dataPusher.push(obj);
 	}
 }

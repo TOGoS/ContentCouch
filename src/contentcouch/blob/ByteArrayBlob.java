@@ -1,11 +1,16 @@
 package contentcouch.blob;
 
-import contentcouch.value.Blob;
+import java.util.HashMap;
+import java.util.Map;
 
-public class ByteArrayBlob implements Blob {
+import contentcouch.value.Blob;
+import contentcouch.value.MetadataHaver;
+
+public class ByteArrayBlob implements Blob, MetadataHaver {
 	byte[] bytes;
 	int offset;
 	int length;
+	Map metadata;
 	
 	public ByteArrayBlob( byte[] bytes, int offset, int length ) {
 		this.bytes = bytes;
@@ -16,6 +21,17 @@ public class ByteArrayBlob implements Blob {
 	public ByteArrayBlob( byte[] bytes ) {
 		this( bytes, 0, bytes.length ); 
 	}
+	
+	//// MetadataHaver implementation ////
+	
+	public Map getMetadata() { return metadata; }
+	
+	public void putMetadata(String key, Object value) {
+		if( metadata == null ) metadata = new HashMap();
+		metadata.put(key,value);
+	}
+	
+	//// Blob implementation ////
 	
 	public long getLength() {
 		return length;

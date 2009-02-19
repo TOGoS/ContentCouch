@@ -5,9 +5,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Date;
 
 import contentcouch.blob.FileCacheBlob;
 import contentcouch.blob.InputStreamBlob;
+import contentcouch.rdf.RdfNamespace;
 import contentcouch.store.Getter;
 
 public class HttpBlobGetter implements Getter {
@@ -29,7 +31,11 @@ public class HttpBlobGetter implements Getter {
 			
 			URLConnection urlConn = new URL(identifier).openConnection();
 			File tempFile = File.createTempFile("httpdownload", null);
-			return new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), urlConn.getContentLength()));
+			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), urlConn.getContentLength()));
+			if( urlConn.getLastModified() > 0 ) { 
+				fcb.putMetadata(RdfNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
+			}
+			return fcb;
 		} catch( FileNotFoundException e ) {
 			return null;
 		} catch( IOException e ) {

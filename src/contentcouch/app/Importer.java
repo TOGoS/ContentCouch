@@ -18,7 +18,7 @@ import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.FileForBlobGetter;
-import contentcouch.store.FileGetter;
+import contentcouch.store.StoreFileGetter;
 import contentcouch.store.Identifier;
 import contentcouch.store.Pusher;
 import contentcouch.value.Blob;
@@ -53,7 +53,8 @@ public class Importer implements Pusher {
 	}
 	
 	public Importer( ContentCouchRepository repo ) {
-		this( repo.dataPusher, (FileBlobMap)repo.headPutter );
+		this( repo, (FileBlobMap)repo.headPutter );
+		if( !repo.initialized ) throw new RuntimeException("Repo is not yet initialized");
 	}
 	
 	//// Utility functions //// 
@@ -131,8 +132,8 @@ public class Importer implements Pusher {
 	}
 	
 	public File getFile( String uri ) {
-		if( blobSink instanceof FileGetter ) {
-			return ((FileGetter)blobSink).getFile(uri);
+		if( blobSink instanceof StoreFileGetter ) {
+			return ((StoreFileGetter)blobSink).getStoreFile(uri);
 		} else {
 			return null;
 		}
@@ -179,8 +180,8 @@ public class Importer implements Pusher {
 			contentUri = ((Identifier)blobSink).identify(b);
 		}
 
-		if( shouldRelinkImported && b instanceof File && ((File)b).isFile() && blobSink instanceof FileGetter ) {
-			File relinkTo = ((FileGetter)blobSink).getFile(contentUri);
+		if( shouldRelinkImported && b instanceof File && ((File)b).isFile() && blobSink instanceof StoreFileGetter ) {
+			File relinkTo = ((StoreFileGetter)blobSink).getStoreFile(contentUri);
 			if( relinkTo != null ) {
 				//System.err.println( "Relinking " + file + " to " + relinkTo );
 				Linker.getInstance().relink( relinkTo, (File)b );
@@ -215,7 +216,7 @@ public class Importer implements Pusher {
 	//// Name stuff ////
 
 	public long getHighestNameVersion( String name ) {
-		File nameDir = namedStore.getFile(name);
+		File nameDir = namedStore.getStoreFile(name);
 		FileUtil.mkdirs(nameDir);
 		String[] nums = nameDir.list();
 		long highest = 0;
@@ -250,10 +251,10 @@ public class Importer implements Pusher {
 	public void saveLink( String name, String targetUri, Blob blob ) {
 		String filename = getNextFilenameForName(name);
 		
-		if( blobSink instanceof FileGetter ) {
-			File targetFile = ((FileGetter)blobSink).getFile(targetUri);
+		if( blobSink instanceof StoreFileGetter ) {
+			File targetFile = ((StoreFileGetter)blobSink).getStoreFile(targetUri);
 			if( targetFile != null ) {
-				Linker.getInstance().link( targetFile, namedStore.getFile(filename) );
+				Linker.getInstance().link( targetFile, namedStore.getStoreFile(filename) );
 				return;
 			}
 		}

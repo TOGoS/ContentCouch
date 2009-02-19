@@ -1,10 +1,12 @@
 package contentcouch.app;
 
 import java.io.File;
+import java.util.Date;
 import java.util.Iterator;
 
 import contentcouch.app.Linker.LinkException;
 import contentcouch.blob.BlobUtil;
+import contentcouch.misc.MetadataUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.Getter;
@@ -31,15 +33,20 @@ public class Exporter {
 
 	public void exportBlob( Blob blob, File destination ) {
 		if( verbose ) System.err.println(destination.getPath());
+		boolean fileMade = false;
 		if( link && blob instanceof File ) {
 			try {
 				Linker.getInstance().link((File)blob, destination);
-				return;
+				fileMade = true;
 			} catch( LinkException e ) {
 				System.err.println("Failed to hardlink " + destination + " to " + (File)blob + "; will copy");
 			}
 		}
-		BlobUtil.writeBlobToFile(blob, destination);
+		if( !fileMade ) {
+			BlobUtil.writeBlobToFile(blob, destination);
+		}
+		Date lm = (Date)MetadataUtil.getMetadataFrom(blob, RdfNamespace.DC_MODIFIED);
+		if( lm != null ) destination.setLastModified(lm.getTime());
 	}
 	
 	protected void exportDirectoryEntry( Directory.Entry entry, File destDir, String entrySourceLocation ) {

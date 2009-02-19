@@ -26,7 +26,10 @@ public class ContentCouchCommand {
 		"Usage: ccouch [general options] <sub-command> [command-args]\n" +
 		"Run ccouch <subcommand> -? for further help\n" +
 		"General options:\n" +
-		"  -repo <path>   ; specify a local repository to use\n" +
+		"  -repo <path>          ; specify main repository\n" +
+		"  -local-repo <path>    ; specify secondary local repository\n" +
+		"  -cache-repo <path>    ; specify repository to cache downloaded objects\n" +
+		"  -remote-repo <path>   ; specify a remote repository\n" +
 		"Sub-commands:\n" +
 		"  store <files>         ; store files in the repo\n" +
 		"  checkout <uri> <dest> ; check files out to the filesystem\n" +
@@ -69,12 +72,11 @@ public class ContentCouchCommand {
 
 	////
 	
-	protected String repoPath = ".";
 	protected ContentCouchRepository repositoryCache = null;
 	
 	public ContentCouchRepository getRepository() {
 		if( repositoryCache == null ) {
-			repositoryCache = new ContentCouchRepository(repoPath);
+			repositoryCache = new ContentCouchRepository(null, true);
 		}
 		return repositoryCache;
 	}
@@ -295,7 +297,7 @@ public class ContentCouchCommand {
 	
 	public void runCheckCmd( String[] args ) {
 		RepoChecker rc = new RepoChecker();
-		rc.checkFiles(new File(repoPath + "/data"));
+		rc.checkFiles(new File(getRepository().path + "/data"));
 	}
 	
 	public void runRdfifyCmd( String[] args ) {
@@ -310,15 +312,20 @@ public class ContentCouchCommand {
 		}
 		String cmd = null;
 		int i;
-		for( i=0; i<args.length; ++i ) {
+		for( i=0; i<args.length; ) {
+			int ni;
 			if( "-h".equals(args[i]) || "-?".equals(args[i]) ) {
 				System.out.println(USAGE);
 				System.exit(0);
-			} else if( "-repo".equals(args[i]) ) {
-				repoPath = args[++i];
+			} else if( (ni = getRepository().handleArguments(args, i)) > i ) {
+				i = ni;
 			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
 				cmd = args[i++];
 				break;
+			} else {
+				System.err.println("ccouch: Unrecognised command: " + args[i]);
+				System.err.println(USAGE);
+				System.exit(1);
 			}
 		}
 		if( cmd == null ) {

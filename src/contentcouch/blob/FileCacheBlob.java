@@ -4,14 +4,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
+import java.util.Map;
 
 import contentcouch.value.Blob;
+import contentcouch.value.MetadataHaver;
 
-public class FileCacheBlob implements Blob {
+public class FileCacheBlob implements Blob, MetadataHaver {
 	File file;
 	RandomAccessFile raf;
 	Blob sourceBlob;
 	long bytesCached = 0;
+	Map metadata;
 	
 	public FileCacheBlob( File file, Blob sourceBlob ) {
 		this.file = file;
@@ -22,6 +26,13 @@ public class FileCacheBlob implements Blob {
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public Map getMetadata() { return metadata; }
+	
+	public void putMetadata(String key, Object value) {
+		if( metadata == null ) metadata = new HashMap();
+		metadata.put(key,value);
 	}
 	
 	public byte[] getData(long offset, int length) {
