@@ -74,8 +74,10 @@ public class Sha1BlobStore implements BlobStore, FileGetter, FileForBlobGetter, 
 	
 	protected byte[] getSha1FromUrn( String urn ) {
 		if( urn.startsWith("urn:sha1:") ) {
-			return Base32.decode(urn.substring(9));
+			if( urn.length() < 41 ) throw new RuntimeException("Badly formed sha-1 urn: " + urn);
+			return Base32.decode(urn.substring(9, 9+32));
 		} else if( urn.startsWith("urn:bitprint:") ) {
+			if( urn.length() < 13+32 ) throw new RuntimeException("Badly formed bitprint urn: " + urn);
 			return Base32.decode(urn.substring(13, 13+32));
 		} else {
 			return null;
