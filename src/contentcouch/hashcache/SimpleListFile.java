@@ -562,16 +562,16 @@ public class SimpleListFile {
 	// A very simple (and not secure) hash function found at
 	// http://www.partow.net/programming/hashfunctions/
 	public int hash( byte[] identifier ) {
-      int b    = 378551;
-      int a    = 63689;
-      int hash = 0;
+		int b    = 378551;
+		int a    = 63689;
+		int hash = 0;
 
-      for(int i = 0; i < identifier.length; i++) {
-         hash = hash * a + identifier[i];
-         a    = a * b;
-      }
-
-      return hash & 0x7FFFFFFF;
+		for( int i = 0; i < identifier.length; ++i ) {
+			hash = hash * a + identifier[i];
+			a *= b;
+		}
+		
+		return hash & 0x7FFFFFFF;
 	}
 	
 	public byte[] get( byte[] k ) throws IOException {

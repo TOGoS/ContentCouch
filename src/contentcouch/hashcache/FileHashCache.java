@@ -61,14 +61,43 @@ public class FileHashCache {
 		}
 	}
 	
-	protected SimpleListFile cacheFile;
+	protected File cacheFile;
+	protected SimpleListFile slf;
+	protected String mode;
 	
-	public FileHashCache(SimpleListFile cacheFile) {
-		this.cacheFile = cacheFile;
+	protected SimpleListFile getSlf() {
+		if( slf == null ) {
+			try {
+				FileUtil.mkParentDirs(cacheFile);
+				slf = new SimpleListFile(cacheFile, mode);
+				slf.init(65536, 1024*1024);
+			} catch( IOException e ) {
+				if( mode.indexOf('w') != -1 ) {
+					System.err.println("Couldn't open cache file in '" + mode + "' mode, trying again as 'r'");
+					try { 
+						slf = new SimpleListFile(cacheFile, "r");
+					} catch( IOException ee ) {
+						throw new RuntimeException( ee );
+					}
+				} else {
+					throw new RuntimeException("Couldn't open cache file in '" + mode + "' mode", e);
+				}
+			}
+		}
+		return slf;
 	}
 	
+	public FileHashCache(File cacheFile, String mode) {
+		this.cacheFile = cacheFile;
+		this.mode = mode;
+	}
+	
+	public FileHashCache(File cacheFile) {
+		this(cacheFile, "rw");
+	}
+
 	public Entry getCachedEntry( File file ) throws IOException {
-		byte[] eb = this.cacheFile.get(file.getCanonicalPath());
+		byte[] eb = getSlf().get(file.getCanonicalPath());
 		if( eb == null ) return null;
 		return Entry.fromBytes(eb);
 	}
@@ -85,12 +114,12 @@ public class FileHashCache {
 				return e.sha1sum;
 			}
 			byte[] sha1sum = DigestUtil.sha1DigestBlob(file);
-			if( cacheFile.isWritable() ) {
+			if( getSlf().isWritable() ) {
 				e = new Entry();
 				e.mtime = file.lastModified();
 				e.size = file.length();
 				e.sha1sum = sha1sum;
-				cacheFile.put(file.getCanonicalPath(), e.toBytes());
+				getSlf().put(file.getCanonicalPath(), e.toBytes());
 			}
 			return sha1sum;
 		} catch( IOException e ) {
@@ -101,10 +130,7 @@ public class FileHashCache {
 	public static void main(String[] args) {
 		try {
 			File slff = new File("C:/stuff/proj/ContentCouch/junk-repo/cache/file-info.slf");
-			FileUtil.mkParentDirs(slff);
-			SimpleListFile slf = new SimpleListFile(slff, "rw");
-			slf.init(64436, 1024*1024);
-			FileHashCache fhc = new FileHashCache(slf);
+			FileHashCache fhc = new FileHashCache(slff, "rw");
 			//System.err.println(fhc.getSha1(new FileBlob(new File("F:/archives/apps/Reason/Reason-4.0-AiR/Reason 4.iso"))));
 			System.err.println(Base32.encode(fhc.getSha1(new FileBlob(new File("C:/stuff/proj/ContentCouch/.classpath")))));
 		} catch( Exception e ) {
@@ -113,6 +139,9 @@ public class FileHashCache {
 	}
 	
 	public void close() throws IOException {
-		cacheFile.close();
+		if( slf != null ) {
+			slf.close();
+			slf = null;
+		}
 	}
 }

@@ -1,7 +1,6 @@
 package contentcouch.app;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -9,7 +8,6 @@ import java.util.List;
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
-import contentcouch.hashcache.SimpleListFile;
 import contentcouch.http.HttpBlobGetter;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
@@ -60,21 +58,7 @@ public class ContentCouchRepository implements Getter, Pusher {
 			headGetter = hs;
 
 			File cf = new File(path + "cache/file-attrs.slf");
-			SimpleListFile slf;
-			try {
-				FileUtil.mkParentDirs(cf);
-				slf = new SimpleListFile(cf, "rw");
-				slf.init(65536, 1024*1024);
-			} catch( IOException e ) {
-				try {
-					System.err.println("Couldn't open " + cf + " in 'rw' mode, trying 'r'");
-					slf = new SimpleListFile(cf, "r");
-					slf.init(65536, 1024*1024);
-				} catch( IOException ee ) {
-					throw new RuntimeException(ee);
-				}
-			}
-			bs.fileHashCache = new FileHashCache(slf);
+			bs.fileHashCache = new FileHashCache(cf);
 		}
 	}
 	
