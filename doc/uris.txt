@@ -16,6 +16,10 @@ URI schemes:
     This one is self-explanatory, and is already in use by some file sharing
     software.
     
+  urn:bitprint:<base32-encoded-sha-1-sum>.<base32-encoded-tiger-tree-hash>
+    Used by Bitzi.
+    Compatible with urn:sha1, since the sha-1 sum is included.
+    
   x-parse-rdf:<uri>
     Indicates to take the result of resolving <uri>, parse it as an RDF
     document, and return the resulting object.  This gives us the ability
@@ -33,6 +37,5 @@ URI schemes:
     A Commit object referenced using Git's scheme for naming objects.
 
   x-ccouch:[//repo-name/]<path>
-    A blob in a ContentCouch repo, by default the main one.
-    Must be prefixed with "x-parse-rdf:" to point to 
+    A blob in a ContentCouch repo, by default any available repository.
   
