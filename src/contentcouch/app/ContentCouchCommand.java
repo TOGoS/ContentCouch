@@ -93,7 +93,22 @@ public class ContentCouchCommand {
 		return mg;
 	}
 	
+	protected String[] concat( String[] s1, String[] s2 ) {
+		String[] r = new String[s1.length+s2.length];
+		int j = 0;
+		for( int i=0; i<s1.length; ++i, ++j ) r[j] = s1[i];
+		for( int i=0; i<s2.length; ++i, ++j ) r[j] = s2[i];
+		return r;
+	}
+	
+	protected String[] mergeConfiguredArgs( String commandName, String[] commandLineArgs ) {
+		return concat( getRepository().getCommandArgs(commandName), commandLineArgs );
+	}
+	
+	//// Commands ////
+	
 	public void runStoreCmd( String[] args ) {
+		args = mergeConfiguredArgs("store", args);
 		List files = new ArrayList();
 		String message = null;
 		String name = null;
@@ -237,6 +252,7 @@ public class ContentCouchCommand {
 	}
 	
 	public void runCheckoutCmd( String[] args ) {
+		args = mergeConfiguredArgs("checkout", args);
 		boolean verbose = false;
 		boolean exportFiles = true;
 		boolean link = false;
@@ -294,24 +310,19 @@ public class ContentCouchCommand {
 		exporter.exportObject(new Ref(source), destFile, null);
 	}
 	
-	protected String[] concat( String[] s1, String[] s2 ) {
-		String[] r = new String[s1.length+s2.length];
-		int j = 0;
-		for( int i=0; i<s1.length; ++i, ++j ) r[j] = s1[i];
-		for( int i=0; i<s2.length; ++i, ++j ) r[j] = s2[i];
-		return r;
-	}
-	
 	public void runIdCmd( String[] args ) {
+		args = mergeConfiguredArgs("id", args);
 		runStoreCmd(concat(new String[]{"-dont-store"},args));
 	}
 	
 	public void runCheckCmd( String[] args ) {
+		args = mergeConfiguredArgs("check", args);
 		RepoChecker rc = new RepoChecker();
 		rc.checkFiles(new File(getRepository().path + "/data"));
 	}
 	
 	public void runRdfifyCmd( String[] args ) {
+		args = mergeConfiguredArgs("rdfify", args);
 		String dir = args[0];
 		System.out.println(RdfIO.xmlEncodeRdf(new RdfDirectory(new FileDirectory(new File(dir))), RdfNamespace.CCOUCH_NS));
 	}
@@ -369,14 +380,3 @@ public class ContentCouchCommand {
 		new ContentCouchCommand().run( args );
 	}
 }
-
-// Used: 42294853632
-// Copied yayshots
-// Used: 42331856896
-
-// Stored yayshots-relink-test without relinking
-// Used: 42338385920
-// Used: 42341187584
-
-// After apparently successful relink of files in yayshots-relink-test
-// Used: 52309570560

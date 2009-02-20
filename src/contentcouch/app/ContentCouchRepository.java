@@ -7,8 +7,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +42,8 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 	public ContentCouchRepository remoteCacheRepository; 
 	public List localRepositories = new ArrayList();
 	public List remoteRepositories = new ArrayList();
+	
+	public Map cmdArgs = new HashMap();
 	
 	public ContentCouchRepository() {
 	}
@@ -135,27 +139,47 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 		return offset;
 	}
 	
-	static Pattern argPattern = Pattern.compile("(?:\\S|\"(?:[^\"]|\\\\\")*\")+");
+	static Pattern argPattern = Pattern.compile("(?:\\S|\"(?:[^\\\\\"]|\\\\\\\\|\\\\\")*\")+");
 	
-	public void loadConfig( File f ) throws IOException {
-		BufferedReader fr;
-		try {
-			fr = new BufferedReader(new FileReader(f));
-		} catch (FileNotFoundException e) {
-			return;
-		}
-		ArrayList args = new ArrayList();
-		try {
-			String line;
-			lines: while( (line = fr.readLine()) != null ) {
-				Matcher m = argPattern.matcher(line);
-				while( m.find() ) {
-					if( m.group().charAt(0) == '#' ) continue lines;
-					args.add(m.group());
+	protected static String unescape(String arg) {
+		StringBuffer res = new StringBuffer();
+		for( int i=0; i<arg.length(); ++i ) {
+			char c = arg.charAt(i);
+			if( c == '\\' && i<arg.length()-1 ) {
+				++i;
+				switch(c = arg.charAt(i)) {
+				case('n'): c = '\n'; break;
+				case('t'): c = '\t'; break;
+				case('r'): c = '\r'; break;
 				}
 			}
-		} finally {
-			fr.close();
+			res.append(c);
+		}
+		return res.toString();
+	}
+	
+	public void loadConfig( BufferedReader fr, String sourceLocation ) throws IOException {
+		ArrayList args = new ArrayList();
+		String line;
+		String cmdName = null;
+		lines: while( (line = fr.readLine()) != null ) {
+			Matcher m = argPattern.matcher(line);
+			while( m.find() ) {
+				String arg = m.group();
+				if( arg.charAt(0) == '#' ) continue lines;
+				if( arg.charAt(0) == '[' ) {
+					cmdName = arg.substring(1,arg.length()-1);
+					continue;
+				}
+				if( arg.charAt(0) == '"' ) arg = unescape(arg.substring(1,arg.length()-1));
+				if( cmdName == null ) {
+					args.add(arg);
+				} else {
+					List cas = (List)cmdArgs.get(cmdName);
+					if( cas == null ) cmdArgs.put(cmdName, cas = new ArrayList());
+					cas.add(arg);
+				}
+			}
 		}
 		String[] argar = new String[args.size()];
 		argar = (String[])args.toArray(argar);
@@ -165,7 +189,25 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 		    offset = endupat;
 		}
 		if( endupat < argar.length ) {
-			System.err.println("Unrecognised arg in " + f + ": " + argar[endupat]);
+			System.err.println("Unrecognised arg in " + sourceLocation + ": " + argar[endupat]);
+		}
+	}
+	
+	public String[] getCommandArgs(String commandName) {
+		List l = (List)cmdArgs.get(commandName);
+		if( l == null ) return new String[0];
+		String[] s = new String[l.size()];
+		return (String[])l.toArray(s);
+	}
+	
+	public void loadConfig( File f ) throws IOException {
+		BufferedReader fr;
+		try {
+			fr = new BufferedReader(new FileReader(f));
+			loadConfig(fr, f.getPath());
+			fr.close();
+		} catch (FileNotFoundException e) {
+			return;
 		}
 	}
 	
