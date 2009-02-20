@@ -16,6 +16,7 @@ import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
+import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
@@ -191,6 +192,7 @@ public class ContentCouchCommand {
 					uri = null;
 				}
 				if( uri != null ) System.out.println(uri + "\t" + urn);
+				else System.out.println("??\t" + urn);
 			}
 		};
 		
@@ -198,19 +200,22 @@ public class ContentCouchCommand {
 		importer.shouldStoreDirs = storeDirs;
 		importer.shouldStoreHeads = storeCommits;
 		
+		Getter lg = getLocalGetter();
 		for( Iterator i=files.iterator(); i.hasNext(); ) {
-			File file = new File((String)i.next());
-			Ref ref = importer.importObject(FileUtil.getContentCouchObject(file));
+			String uri = (String)i.next();
+			Object o = lg.get(uri);
+			if( o == null ) throw new RuntimeException("Couldn't find " + uri);
+			Ref ref = importer.importObject(o);
 			
 			boolean showFinal;
-			if( file.isDirectory() ) {
+			if( o instanceof Directory ) {
 				showFinal = !showIntermediateDirs;
 			} else {
 				showFinal = !showIntermediateFiles;
 			}
 			
 			if( showFinal && verbosity > 0 ) {
-				System.out.println(importer.getFileUri(file) + "\t" + ref.targetUri);
+				System.out.println(uri + "\t" + ref.targetUri);
 			}
 			if( createCommit ) {
 				String targetType;

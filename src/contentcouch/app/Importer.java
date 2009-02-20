@@ -89,7 +89,9 @@ public class Importer implements Pusher {
 				b.append(c);
 			} else {
 				switch(c) {
-				case('/'): case('+'): case('-'): case('.'): case(':'): case('~'): case('^'): case('('): case(')'): case('\\'):
+				case('/'): case('+'): case('-'): case('.'): case(':'):
+				case('~'): case('^'): case('('): case(')'): case('\\'):
+				case('_'):
 					b.append(c); break;
 				default:
 					b.append('%');

@@ -54,7 +54,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 				loadConfig( f );
 			} else {
 				initBasics( path );
-				loadConfig( new File(path + "/ccouch-config") );
 			}
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
@@ -100,6 +99,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 			File cf = new File(path + "cache/file-attrs.slf");
 			bs.fileHashCache = new FileHashCache(cf);
 		}
+		loadConfig( new File(path + "/ccouch-config") );
 		
 		initialized = true;
 	}
@@ -109,7 +109,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 	 * after the parsed arguments. If the offset given is returned, then it
 	 * can be assumed that no arguments were understood. */
 	public int handleArguments( String[] args, int offset ) {
-		if( offset >= args.length ) return 0;
+		if( offset >= args.length ) return offset;
 		String arg = args[offset];
 		if( "-repo".equals(arg) ) {
 			++offset;
@@ -159,9 +159,13 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 		}
 		String[] argar = new String[args.size()];
 		argar = (String[])args.toArray(argar);
-		int endupat = handleArguments( argar, 0 );
+		int endupat;
+		int offset = 0;
+		while( (endupat = handleArguments( argar, offset )) > offset ) {
+		    offset = endupat;
+		}
 		if( endupat < argar.length ) {
-			System.err.println("Unrecognised arg in config: " + argar[endupat]);
+			System.err.println("Unrecognised arg in " + f + ": " + argar[endupat]);
 		}
 	}
 	
