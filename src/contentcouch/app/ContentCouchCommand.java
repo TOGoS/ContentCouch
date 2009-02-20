@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import contentcouch.file.FileDirectory;
-import contentcouch.file.FileUtil;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
@@ -67,6 +66,7 @@ public class ContentCouchCommand {
 		"Usage: ccouch [general options] checkout [checkout options] <source> <dest>\n" +
 		"Checkout options:\n" +
 		"  -link              ; hardlink files from the store instead of copying\n" +
+		"  -merge             ; merge source tree into destination\n" +
 		"  -dirs-only         ; only export the directory structure\n" +
 		"  -v                 ; verbose - report every file exported\n" +
 		"  -?                 ; display help and exit";
@@ -240,6 +240,7 @@ public class ContentCouchCommand {
 		boolean verbose = false;
 		boolean exportFiles = true;
 		boolean link = false;
+		boolean merge = false;
 		String source = null;
 		String dest = null;
 		for( int i=0; i < args.length; ++i ) {
@@ -247,6 +248,8 @@ public class ContentCouchCommand {
 			if( arg.length() == 0 ) {
 				System.err.println(CHECKOUT_USAGE);
 				System.exit(1);
+			} else if( "-merge".equals(arg) ) {
+				merge = true;
 			} else if( "-v".equals(arg) ) {
 				verbose = true;
 			} else if( "-link".equals(arg) ) {
@@ -285,6 +288,9 @@ public class ContentCouchCommand {
 		exporter.verbose = verbose;
 		exporter.exportFiles = exportFiles;
 		File destFile = new File(dest);
+		if( destFile.exists() && !merge ) {
+			System.err.println("Destination '" + destFile + "' already exists.  Use -merge to merge directory trees.");
+		}
 		exporter.exportObject(new Ref(source), destFile, null);
 	}
 	
