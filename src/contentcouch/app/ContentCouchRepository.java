@@ -121,15 +121,15 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 			++offset;
 		} else if( "-local-repo".equals(arg) ) {
 			++offset;
-			if( isMainRepo ) addLocal(new ContentCouchRepository(args[offset]));
+			if( isMainRepo ) addLocal(new ContentCouchRepository(args[offset], false));
 			++offset;
 		} else if( "-cache-repo".equals(arg) ) {
 			++offset;
-			if( isMainRepo ) remoteCacheRepository = new ContentCouchRepository(args[offset]);
+			if( isMainRepo ) remoteCacheRepository = new ContentCouchRepository(args[offset], false);
 			++offset;
 		} else if( "-remote-repo".equals(arg) ) {
 			++offset;
-			if( isMainRepo ) addRemote(new ContentCouchRepository(args[offset]));
+			if( isMainRepo ) addRemote(new ContentCouchRepository(args[offset], false));
 			++offset;
 		}
 		return offset;

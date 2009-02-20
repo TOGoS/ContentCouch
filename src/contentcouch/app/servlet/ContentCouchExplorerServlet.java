@@ -11,6 +11,7 @@ import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -25,6 +26,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileBlob;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
+import contentcouch.misc.MetadataUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
@@ -335,9 +337,12 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		return repoCache;
 	}
 	
-	protected String CT_RDF = "application/rdf+xml";
-	protected String CT_SLF = "application/x-simple-list-file";
+	protected String CT_RDF  = "application/rdf+xml";
+	protected String CT_SLF  = "application/x-simple-list-file";
 	protected String CT_HTML = "text/html";
+	protected String CT_TEXT = "text/plain";
+	protected String CT_PNG  = "image/png";
+	protected String CT_JPEG = "image/jpeg";
 	
 	protected CharsetDecoder UTF_8_DECODER = Charset.forName("UTF-8").newDecoder();
 	
@@ -352,13 +357,38 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					s.startsWith("<Redirect") ||
 					s.startsWith("<Description");
 			} catch( CharacterCodingException e ) {
-				return false;
 			}
 		}
 		return false;
 	}
 	
+	protected boolean looksLikePlainText( Blob b ) {
+		if( b.getLength() >= 20 ) {
+			byte[] data = b.getData(0, 20);
+			try {
+				UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
+				return true;
+			} catch( CharacterCodingException e ) {
+			}
+		}
+		return false;
+	}
+	
+	protected long guessLastModified( Blob b ) {
+		Date date = (Date)MetadataUtil.getMetadataFrom(b, RdfNamespace.DC_MODIFIED);
+		if( date != null ) return date.getTime();
+		
+		if( b instanceof FileBlob ) {
+			return ((FileBlob)b).lastModified();
+		}
+		
+		return 0;
+	}
+	
 	protected String guessContentType( Blob b ) {
+		String type = (String)MetadataUtil.getMetadataFrom(b, RdfNamespace.DC_FORMAT);
+		if( type != null ) return type;
+		
 		if( b instanceof FileBlob ) {
 			String n = ((FileBlob)b).getName();
 			if( n.endsWith(".rdf") ) return CT_RDF;
@@ -366,6 +396,24 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			if( n.endsWith(".slf") ) return CT_SLF;
 		}
 		if( looksLikeRdfBlob(b)) return CT_RDF;
+		if( looksLikePlainText(b)) return CT_TEXT;
+		
+		if( b.getLength() >= 4 ) {
+			byte[] magic = b.getData(0, 4);
+			int magicN =
+				((magic[0] & 0xFF) << 24) |
+				((magic[1] & 0xFF) << 16) |
+				((magic[2] & 0xFF) <<  8) |
+				((magic[3] & 0xFF) <<  0);
+			switch( magicN ) {
+			case( 0x89504E47 ): return CT_PNG;
+			}
+
+			switch( (magicN >> 16) & 0xFFFF ) {
+			case( 0xFFD8 ): return CT_JPEG;
+			}
+		}
+
 		return null;
 	}
 
@@ -427,7 +475,11 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		} else if( page instanceof Blob ) {
 			String contentType = guessContentType((Blob)page);
 			if( contentType != null ) response.setHeader("Content-Type", contentType);
-			else response.setHeader("Content-Type", "text/plain");
+			else response.setHeader("Content-Type", "");
+			
+			long mtime = guessLastModified((Blob)page);
+			if( mtime > 0 ) response.setDateHeader("Last-Modified", mtime);
+			
 			BlobUtil.writeBlobToOutputStream(((Blob)page), response.getOutputStream());
 		} else {
 			response.setHeader("Content-Type", "text/plain");			
