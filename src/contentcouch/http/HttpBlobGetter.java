@@ -30,8 +30,10 @@ public class HttpBlobGetter implements Getter {
 			 */
 			
 			URLConnection urlConn = new URL(identifier).openConnection();
+			long length = urlConn.getContentLength();
+			System.err.println("Downloading " + identifier + " (" + length + " bytes)");
 			File tempFile = File.createTempFile("httpdownload", null);
-			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), urlConn.getContentLength()));
+			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), length));
 			if( urlConn.getLastModified() > 0 ) { 
 				fcb.putMetadata(RdfNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
 			}
