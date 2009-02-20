@@ -5,6 +5,8 @@ package contentcouch.rdf;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -92,9 +94,15 @@ public class RdfDirectory extends RdfNode implements Directory {
 	
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
 		this();
-		Map entries = dir.getEntries();
+		Map entryMap = dir.getEntries();
+		List entries = new ArrayList(entryMap.values());
+		Collections.sort( entries, new Comparator() {
+			public int compare( Object o1, Object o2 ) {
+				return ((Directory.Entry)o1).getName().compareTo(((Directory.Entry)o2).getName());
+			}
+		});
 		List rdfEntries = new ArrayList();
-		for( Iterator i = entries.values().iterator(); i.hasNext(); ) {
+		for( Iterator i = entries.iterator(); i.hasNext(); ) {
 			Directory.Entry entry = (Directory.Entry)i.next();
 			rdfEntries.add( new RdfDirectory.Entry(entry, targetRdfifier) );
 		}
