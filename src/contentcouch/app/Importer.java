@@ -34,10 +34,13 @@ public class Importer implements Pusher {
 	public boolean shouldStoreDirs;
 	public boolean shouldStoreFiles;
 	public boolean shouldStoreHeads;
+	public boolean shouldNestSubdirs;
 	
 	public Function1 entityTargetRdfifier = new Function1() {
 		public Object apply( Object input ) {
-			if( input instanceof Directory || input instanceof Blob || input instanceof File ) {
+			if( input instanceof Directory && shouldNestSubdirs ) {
+				return new RdfDirectory( (Directory)input, this );
+			} else if( input instanceof Directory || input instanceof Blob || input instanceof File ) {
 				return importObject( input );
 			} else if( input instanceof RdfNode || input instanceof Ref ) {
 				return input;
@@ -194,8 +197,12 @@ public class Importer implements Pusher {
 		return new Ref(contentUri);
 	}
 	
+	public RdfNode rdfifyDirectory( Directory dir ) {
+		return new RdfDirectory(dir, entityTargetRdfifier);
+	}
+	
 	public Ref importDirectory( Directory dir ) {
-		String uri = RdfNamespace.URI_PARSE_PREFIX + importBlob(createMetadataBlob(new RdfDirectory(dir, entityTargetRdfifier), RdfNamespace.CCOUCH_NS), shouldStoreDirs).targetUri;
+		String uri = RdfNamespace.URI_PARSE_PREFIX + importBlob(createMetadataBlob(rdfifyDirectory(dir), RdfNamespace.CCOUCH_NS), shouldStoreDirs).targetUri;
 		if( importListener != null ) importListener.objectImported( dir, uri );
 		return new Ref(uri);
 	}

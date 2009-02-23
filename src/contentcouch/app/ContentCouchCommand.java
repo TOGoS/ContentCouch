@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import contentcouch.file.FileDirectory;
+import contentcouch.misc.Function1;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
@@ -70,6 +71,11 @@ public class ContentCouchCommand {
 		"  -dirs-only         ; only export the directory structure\n" +
 		"  -v                 ; verbose - report every file exported\n" +
 		"  -?                 ; display help and exit";
+	
+	public String RDFIFY_USAGE =
+		"Usage: ccouch [general options] rdfify [rdfify options] <dir>\n" +
+		"Rdfify options:\n" +
+		"  -nested            ; nest sub-dirs in output instead of linking to them";
 
 	////
 	
@@ -324,7 +330,44 @@ public class ContentCouchCommand {
 	public void runRdfifyCmd( String[] args ) {
 		args = mergeConfiguredArgs("rdfify", args);
 		String dir = args[0];
-		System.out.println(RdfIO.xmlEncodeRdf(new RdfDirectory(new FileDirectory(new File(dir))), RdfNamespace.CCOUCH_NS));
+		boolean nested = false;
+		for( int i=0; i < args.length; ++i ) {
+			String arg = args[i];
+			if( arg.length() == 0 ) {
+				System.err.println(RDFIFY_USAGE);
+				System.exit(1);
+			} else if( "-nested".equals(arg) ) {
+				nested = true;
+			} else if( arg.charAt(0) != '-' ) {
+				dir = arg;
+			} else {
+				System.err.println("ccouch rdfify: Unrecognised argument: " + arg);
+				System.err.println(RDFIFY_USAGE);
+				System.exit(1);
+			}
+		}
+		
+		Importer imp = new Importer(getRepository());
+		imp.shouldStoreFiles = false;
+		imp.shouldStoreDirs = false;
+		imp.shouldNestSubdirs = nested;
+		
+		if( dir == null ) {
+			System.err.println("ccouch rdfify: No object specified" );
+			System.exit(1);
+		}
+
+		Object o = getLocalGetter().get(dir);
+		if( o == null ) {
+			System.err.println("ccouch rdfify: Could not find " + dir);
+			System.exit(1);
+		}
+		if( !(o instanceof Directory) ) {
+			System.err.println("ccouch rdfify: Object specified is not a directory: " + dir);
+			System.exit(1);
+		}
+		
+		System.out.println(RdfIO.xmlEncodeRdf(imp.rdfifyDirectory(new FileDirectory(new File(dir))), RdfNamespace.CCOUCH_NS));
 	}
 	
 	public void run( String[] args ) {
@@ -350,7 +393,7 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
-		if( cmd == null ) {
+		if( cmd == null ) { 
 			System.err.println("No command given");
 			System.err.println(USAGE);
 			System.exit(1);
