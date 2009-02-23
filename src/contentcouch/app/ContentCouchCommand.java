@@ -8,8 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import contentcouch.file.FileDirectory;
-import contentcouch.misc.Function1;
-import contentcouch.rdf.RdfDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
