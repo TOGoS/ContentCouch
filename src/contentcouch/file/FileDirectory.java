@@ -14,7 +14,8 @@ public class FileDirectory extends File implements Directory {
 		}
 
 		public long getLastModified() {
-			return lastModified();
+			if( isFile() ) return lastModified();
+			return -1; // Mtime on a directory doesn't necessarily mean much, so let's ignore
 		}
 
 		public Object getTarget() {

@@ -208,10 +208,14 @@ public class ContentCouchCommand {
 						if( !showIntermediateFiles ) uri = null;
 					}
 				} else {
-					uri = null;
+					uri = "??";
+					if( obj instanceof Directory ) {
+						if( !showIntermediateDirs ) uri = null;
+					} else {
+						if( !showIntermediateFiles ) uri = null;
+					}
 				}
 				if( uri != null ) System.out.println(uri + "\t" + urn);
-				else System.out.println("??\t" + urn);
 			}
 		};
 		
