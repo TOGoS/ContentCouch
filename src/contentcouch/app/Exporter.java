@@ -12,6 +12,7 @@ import contentcouch.rdf.RdfNode;
 import contentcouch.store.Getter;
 import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.value.Blob;
+import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
@@ -87,19 +88,29 @@ public class Exporter {
 		}
 	}
 	
+	public Object followRedirects( Object obj, String referencedBy ) {
+		while( true ) {
+			if( obj instanceof Ref ) {
+				String uri = ((Ref)obj).targetUri;
+				obj = getter.get(uri);
+				if( obj == null ) throw new RuntimeException("Couldn't find " + uri + (referencedBy == null ? "" : ", referenced by " + referencedBy ));
+			} else if( obj instanceof RdfNode && RdfNamespace.CCOUCH_REDIRECT.equals(((RdfNode)obj).typeName) ) {
+				obj = ((RdfNode)obj).getSingle(RdfNamespace.CCOUCH_TARGET);
+			} else {
+				return obj;
+			}
+		}
+	}
+	
 	public void exportObject( Object obj, File destination, String referencedBy ) {
-		if( obj instanceof Ref ) {
-			String uri = ((Ref)obj).targetUri;
-			obj = getter.get(uri);
-			if( obj == null ) throw new RuntimeException("Couldn't find " + uri + (referencedBy == null ? "" : ", referenced by " + referencedBy ));
-			exportObject(obj, destination, uri);
-		} else if( obj instanceof Blob ) {
+		obj = followRedirects(obj, referencedBy);
+		if( obj instanceof Blob ) {
 			exportBlob( (Blob)obj, destination );
 		} else if( obj instanceof Directory ) {
 			exportDirectory( (Directory)obj, destination, referencedBy );
-		} else if( obj instanceof RdfNode && (RdfNamespace.CCOUCH_COMMIT.equals(((RdfNode)obj).typeName) || RdfNamespace.CCOUCH_REDIRECT.equals(((RdfNode)obj).typeName)) ) {
-			Object target = ((RdfNode)obj).get(RdfNamespace.CCOUCH_TARGET);
-			exportObject( target, destination, referencedBy );
+		} else if( obj instanceof Commit ) {
+			Object target = ((Commit)obj).getTarget();
+			exportObject( target, destination, ((Commit)obj).getUri() );
 		} else {
 			throw new RuntimeException("Don't know how to export " + obj.getClass().getName() );
 		}

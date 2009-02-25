@@ -279,7 +279,7 @@ public class Importer implements Pusher {
 		Blob b = createMetadataBlob(commit, RdfNamespace.CCOUCH_NS);
 		String commitUri = blobSink.push(b);
 		if( shouldStoreHeads && name != null ) saveLink( name, commitUri, b );
-		return commitUri;
+		return RdfNamespace.URI_PARSE_PREFIX + commitUri;
 	}
 	
 	public String saveHead( String name, String targetType, String targetUri, Date date, String creator, String description, String[] parentUris ) {

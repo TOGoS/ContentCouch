@@ -1,7 +1,11 @@
 // -*- tab-width:4 -*-
 package contentcouch.app;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -14,6 +18,7 @@ import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
+import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
@@ -107,6 +112,72 @@ public class ContentCouchCommand {
 	
 	protected String[] mergeConfiguredArgs( String commandName, String[] commandLineArgs ) {
 		return concat( getRepository().getCommandArgs(commandName), commandLineArgs );
+	}
+	
+	//// Commit tracking ////
+	
+	public File getParentCommitListFile(File about) {
+		if( about.isDirectory() ) {
+			return new File(about + "/.ccouch-parent-commits");
+		} else {
+			return null;
+		}
+	}
+	
+	public String[] readUris(BufferedReader r) throws IOException {
+		ArrayList commitUris = new ArrayList();
+		String line;
+		while( (line = r.readLine()) != null ) {
+			line = line.trim();
+			if( line.startsWith("#") ) continue;
+			commitUris.add(line);
+		}
+		String[] commitUriArr = new String[commitUris.size()];
+		return (String[])commitUris.toArray(commitUriArr);
+	}
+	
+	public String[] getParentCommitUris(File about) {
+		try {
+			File parentCommitListFile = getParentCommitListFile(about);
+			if( parentCommitListFile == null || !parentCommitListFile.exists() ) return null;
+			BufferedReader r = new BufferedReader(new FileReader(parentCommitListFile));
+			try {
+				return readUris(r);
+			} finally {
+				r.close();
+			}
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	protected void writeParentCommitUri(File about, String commitUri, boolean append) {
+		String[] existingCommitUris = getParentCommitUris(about);
+		if( existingCommitUris != null ) for( int i=0; i<existingCommitUris.length; ++i ) {
+			if( existingCommitUris[i].equals(commitUri) ) return;
+		}
+		
+		File commitUriListFile = getParentCommitListFile(about);
+		if( commitUriListFile == null ) return;
+		try {
+			FileWriter w = new FileWriter(commitUriListFile, append);
+			try {
+				w.write(commitUri);
+				w.write("\n");
+			} finally {
+				w.close();
+			}
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void addParentCommitUri(File about, String commitUri) {
+		writeParentCommitUri(about, commitUri, true);
+	}
+	
+	public void setParentCommitUri(File about, String commitUri) {
+		writeParentCommitUri(about, commitUri, false);	
 	}
 	
 	//// Commands ////
@@ -242,18 +313,25 @@ public class ContentCouchCommand {
 			}
 			if( createCommit ) {
 				String targetType;
-				if( ref.targetUri.charAt(0) == '@' || ref.targetUri.startsWith("x-parse-rdf:") ) {
+				if( ref.targetUri.charAt(0) == '@' || ref.targetUri.startsWith(RdfNamespace.URI_PARSE_PREFIX) ) {
 					targetType = RdfNamespace.OBJECT_TYPE_DIRECTORY;
 				} else {
 					targetType = RdfNamespace.OBJECT_TYPE_BLOB;
 				}
 				if( name != null ) name = "local/" + name;
 				
-				RdfNode commit = importer.getCommitRdfNode(targetType, ref.targetUri, new Date(), author, message, null);
+				String[] parentCommitUris = null;
+				if( o instanceof File ) {
+					parentCommitUris = getParentCommitUris((File)o);
+				}
+				RdfNode commit = importer.getCommitRdfNode(targetType, ref.targetUri, new Date(), author, message, parentCommitUris);
 				String commitUri;
 				commitUri = importer.saveHead(commit, name);
 				if( verbosity > 0 ) {
 					System.out.println( "Commit\t" + commitUri );
+				}
+				if( o instanceof File && commitUri != null ) {
+					setParentCommitUri((File)o, commitUri);
 				}
 			}
 		}
@@ -314,8 +392,13 @@ public class ContentCouchCommand {
 		File destFile = new File(dest);
 		if( destFile.exists() && !merge ) {
 			System.err.println("Destination '" + destFile + "' already exists.  Use -merge to merge directory trees.");
+			System.exit(1);
 		}
-		exporter.exportObject(new Ref(source), destFile, null);
+		Object exportThis = exporter.followRedirects(new Ref(source), null);
+		if( exportThis instanceof Commit ) {
+			addParentCommitUri(destFile, ((Commit)exportThis).getUri());
+		}
+		exporter.exportObject(exportThis, destFile, null);
 	}
 	
 	public void runIdCmd( String[] args ) {

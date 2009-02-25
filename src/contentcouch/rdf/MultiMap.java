@@ -25,7 +25,11 @@ public class MultiMap extends HashMap {
 		}
 		i.add(value);
 	}
-
+	
+	public Set getSet(Object key) {
+		return (Set)get(key);
+	}
+	
 	public Object getSingle(Object key) {
 		Set i = (Set)get(key);
 		if( i == null ) return null;

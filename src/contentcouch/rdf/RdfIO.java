@@ -146,6 +146,9 @@ public class RdfIO {
 			} else if( RdfNamespace.CCOUCH_DIRECTORYENTRY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory.Entry();
 				desc.typeName = descOpenTag.name;
+			} else if( RdfNamespace.CCOUCH_COMMIT.equals(descOpenTag.name) ) {
+				desc = new RdfCommit();
+				desc.typeName = descOpenTag.name;
 			} else {
 				 desc = new RdfNode(descOpenTag.name);
 			}
