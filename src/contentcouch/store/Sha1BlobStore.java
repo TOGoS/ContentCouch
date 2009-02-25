@@ -11,7 +11,7 @@ import contentcouch.file.FileBlob;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.value.Blob;
 
-public class Sha1BlobStore implements BlobStore, StoreFileGetter, FileForBlobGetter, Identifier {
+public class Sha1BlobStore implements BlobStore, StoreFileGetter, Identifier {
 	protected Getter blobGetter;
 	protected Putter blobPutter;
 	public FileHashCache fileHashCache;
@@ -103,7 +103,7 @@ public class Sha1BlobStore implements BlobStore, StoreFileGetter, FileForBlobGet
 		return null;
 	}
 
-	public File getFileForBlob( Blob blob ) {
+	public File getStoreFile( Blob blob ) {
 		if( blobGetter instanceof StoreFileGetter ) {
 			byte[] sha1 = getSha1(blob);
 			String filename = getFilenameForSha1( sha1 );

@@ -23,6 +23,10 @@ public class FileBlobMap implements PutterGetter, StoreFileGetter {
 		return new File(filenamePrefix + filename);
 	}
 	
+	public File getStoreFile( Blob blob ) {
+		return null;
+	}
+
 	public void put( String filename, Object obj ) {
 		Blob blob = BlobUtil.getBlob(obj);
 		File file = getStoreFile( filename );

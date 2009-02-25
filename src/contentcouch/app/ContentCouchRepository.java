@@ -25,8 +25,10 @@ import contentcouch.store.PrefixGetFilter;
 import contentcouch.store.Pusher;
 import contentcouch.store.Putter;
 import contentcouch.store.Sha1BlobStore;
+import contentcouch.store.StoreFileGetter;
+import contentcouch.value.Blob;
 
-public class ContentCouchRepository implements Getter, Pusher, Identifier {
+public class ContentCouchRepository implements Getter, Pusher, Identifier, StoreFileGetter {
 	protected String path;
 	
 	public Getter dataGetter;
@@ -282,6 +284,22 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier {
 		return null;
 	}
 	
+	public File getStoreFile(String identifier) {
+		if( dataGetter instanceof StoreFileGetter ) {
+			return ((StoreFileGetter)dataGetter).getStoreFile(identifier);
+		} else {
+			return null;
+		}
+	}
+
+	public File getStoreFile(Blob blob) {
+		if( dataPusher instanceof StoreFileGetter ) {
+			return ((StoreFileGetter)dataPusher).getStoreFile(blob);
+		} else {
+			return null;
+		}
+	}
+
 	//// Put stuff ////
 	
 	public String push( Object obj ) {

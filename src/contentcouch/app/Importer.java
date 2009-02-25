@@ -17,15 +17,14 @@ import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.FileBlobMap;
-import contentcouch.store.FileForBlobGetter;
-import contentcouch.store.StoreFileGetter;
 import contentcouch.store.Identifier;
 import contentcouch.store.Pusher;
+import contentcouch.store.StoreFileGetter;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
-public class Importer implements Pusher {
+public class Importer implements Pusher, StoreFileGetter {
 	Pusher blobSink;
 	FileBlobMap namedStore;
 	public boolean shouldLinkStored;
@@ -136,9 +135,29 @@ public class Importer implements Pusher {
 		return createMetadataBlob(desc, null);
 	}
 	
-	public File getFile( String uri ) {
+	//// StoreFileGetter ////
+	
+	public File getStoreFile( String uri ) {
 		if( blobSink instanceof StoreFileGetter ) {
 			return ((StoreFileGetter)blobSink).getStoreFile(uri);
+		} else {
+			return null;
+		}
+	}
+	
+	public File getStoreFile( Blob b ) {
+		if( blobSink instanceof StoreFileGetter ) {
+			return ((StoreFileGetter)blobSink).getStoreFile(b);
+		} else {
+			return null;
+		}
+	}
+
+	public File getStoreFile( String uri, Blob b ) {
+		if( blobSink instanceof StoreFileGetter ) {
+			File f = ((StoreFileGetter)blobSink).getStoreFile(uri);
+			if( f != null ) return f;
+			return ((StoreFileGetter)blobSink).getStoreFile(b);
 		} else {
 			return null;
 		}
@@ -166,18 +185,22 @@ public class Importer implements Pusher {
 	
 	//// Import objects ////
 	
+	protected void linkOrWriteBlob( Blob b, File dest ) {
+		File importFile = (File)b;
+		if( !dest.exists() ) {
+			FileUtil.mkParentDirs(dest);
+			Linker.getInstance().link( importFile, dest );
+			dest.setReadOnly();
+		}
+	}
+	
 	public Ref importBlob( Blob b, boolean store ) {
 		String contentUri;
-		if( store && shouldLinkStored && b instanceof File && blobSink instanceof FileForBlobGetter && blobSink instanceof Identifier ) {
+		File dest;
+		if( store && shouldLinkStored && b instanceof File && blobSink instanceof StoreFileGetter && blobSink instanceof Identifier && (dest = ((StoreFileGetter)blobSink).getStoreFile(b)) != null ) {
 			// It may be that this should be part of the blob sink, 
 			// so that Sha1BlobStore can check hashes while importing
-			File importFile = (File)b;
-			File storeFile = ((FileForBlobGetter)blobSink).getFileForBlob(b);
-			if( !storeFile.exists() ) {
-				FileUtil.mkParentDirs(storeFile);
-				Linker.getInstance().link( importFile, storeFile );
-				storeFile.setReadOnly();
-			}
+			linkOrWriteBlob( b, dest );
 			contentUri = ((Identifier)blobSink).identify(b);
 		} else if( store ) {
 			contentUri = blobSink.push(b);
@@ -188,7 +211,6 @@ public class Importer implements Pusher {
 		if( shouldRelinkImported && b instanceof File && ((File)b).isFile() && blobSink instanceof StoreFileGetter ) {
 			File relinkTo = ((StoreFileGetter)blobSink).getStoreFile(contentUri);
 			if( relinkTo != null ) {
-				//System.err.println( "Relinking " + file + " to " + relinkTo );
 				Linker.getInstance().relink( relinkTo, (File)b );
 			}
 			relinkTo.setReadOnly();
@@ -260,14 +282,13 @@ public class Importer implements Pusher {
 	public void saveLink( String name, String targetUri, Blob blob ) {
 		String filename = getNextFilenameForName(name);
 		
-		if( blobSink instanceof StoreFileGetter ) {
-			File targetFile = ((StoreFileGetter)blobSink).getStoreFile(targetUri);
-			if( targetFile != null ) {
-				Linker.getInstance().link( targetFile, namedStore.getStoreFile(filename) );
-				return;
-			}
-		}
+		File targetFile = getStoreFile( targetUri, blob );
 		
+		if( targetFile != null ) {
+			Linker.getInstance().link( targetFile, namedStore.getStoreFile(filename) );
+			return;
+		}
+
 		if( blob == null ) {
 			throw new RuntimeException("Could not create hard link to " + targetUri + ", and no blob given to copy");
 		}
@@ -277,7 +298,7 @@ public class Importer implements Pusher {
 	
 	public String saveHead( RdfNode commit, String name ) {
 		Blob b = createMetadataBlob(commit, RdfNamespace.CCOUCH_NS);
-		String commitUri = blobSink.push(b);
+		String commitUri = importBlob( b, shouldStoreHeads ).targetUri;
 		if( shouldStoreHeads && name != null ) saveLink( name, commitUri, b );
 		return RdfNamespace.URI_PARSE_PREFIX + commitUri;
 	}
