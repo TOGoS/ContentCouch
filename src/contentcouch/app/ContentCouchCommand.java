@@ -118,7 +118,7 @@ public class ContentCouchCommand {
 	
 	public File getParentCommitListFile(File about) {
 		if( about.isDirectory() ) {
-			return new File(about + "/.ccouch-parent-commits");
+			return new File(about + "/.ccouch-commit-uris");
 		} else {
 			return null;
 		}
