@@ -279,27 +279,22 @@ public class Importer implements Pusher, StoreFileGetter {
 	 * @param destUri - URI to hardlink to
 	 * @param blob - blob to copy in case a link can't be made
 	 */
-	public void saveLink( String name, String targetUri, Blob blob ) {
+	public void saveNamedHead( String name, String targetUri, Blob blob ) {
 		String filename = getNextFilenameForName(name);
-		
-		File targetFile = getStoreFile( targetUri, blob );
-		
-		if( targetFile != null ) {
+		File targetFile;
+		if( shouldLinkStored && (targetFile = getStoreFile( targetUri, blob )) != null ) {
 			Linker.getInstance().link( targetFile, namedStore.getStoreFile(filename) );
-			return;
-		}
-
-		if( blob == null ) {
+		} else if( blob == null ) {
 			throw new RuntimeException("Could not create hard link to " + targetUri + ", and no blob given to copy");
+		} else {
+			namedStore.put(filename, blob);
 		}
-		
-		namedStore.put(filename, blob);
 	}
 	
 	public String saveHead( RdfNode commit, String name ) {
 		Blob b = createMetadataBlob(commit, RdfNamespace.CCOUCH_NS);
 		String commitUri = importBlob( b, shouldStoreHeads ).targetUri;
-		if( shouldStoreHeads && name != null ) saveLink( name, commitUri, b );
+		if( shouldStoreHeads && name != null ) saveNamedHead( name, commitUri, b );
 		return RdfNamespace.URI_PARSE_PREFIX + commitUri;
 	}
 	
