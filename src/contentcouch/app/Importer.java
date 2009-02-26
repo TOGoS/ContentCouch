@@ -212,8 +212,8 @@ public class Importer implements Pusher, StoreFileGetter {
 			File relinkTo = ((StoreFileGetter)blobSink).getStoreFile(contentUri);
 			if( relinkTo != null ) {
 				Linker.getInstance().relink( relinkTo, (File)b );
+				relinkTo.setReadOnly();
 			}
-			relinkTo.setReadOnly();
 		}
 		if( importListener != null ) importListener.objectImported( b, contentUri );
 		return new Ref(contentUri);
