@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -331,10 +332,15 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	protected ContentCouchRepository repoCache;
 	protected ContentCouchRepository getRepo() {
 		if( repoCache == null ) { 
-			repoCache = new ContentCouchRepository("junk-repo");
+			repoCache = new ContentCouchRepository();
+			repoCache.isMainRepo = true;
 			repoCache.explorable = true;
+			repoCache.handleArguments(new String[]{"-repo:junk", "junk-repo"}, 0);
 		}
 		return repoCache;
+	}
+	protected ContentCouchRepository getRepo(String name) {
+		return (ContentCouchRepository)getRepo().namedRepositories.get(name);
 	}
 	
 	protected String CT_RDF  = "application/rdf+xml";
@@ -433,8 +439,51 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		return obj;
 	}
 	
-	public Object explore(String path) {
-		return exploreObject(getRepo().get(path), path);
+	public Object getObject(String path) {
+		if( path.equals("") ) {
+			return new Directory() {
+				public Map getEntries() {
+					Map entries = new HashMap();
+					for( Iterator i=getRepo().namedRepositories.entrySet().iterator(); i.hasNext(); ) {
+						final Map.Entry e = (Map.Entry)i.next();
+						entries.put((String)e.getKey(), new Directory.Entry() {
+							public long getLastModified() {
+								return -1;
+							}
+							public String getName() {
+								return (String)e.getKey();
+							}
+							public long getSize() {
+								return -1;
+							}
+							public Object getTarget() {
+								return e.getValue();
+							}
+							public String getTargetType() {
+								return RdfNamespace.OBJECT_TYPE_DIRECTORY;
+							}
+						});
+					}
+					return entries;
+				}
+			};
+		} else {
+			String[] rr = path.split("/",2);
+			if( rr.length == 2 ) {
+				String repoName = rr[0];
+				path = rr[1];
+				ContentCouchRepository repo = getRepo(repoName);
+				if( repo == null ) {
+					return "No such repository: " + repoName;
+				}
+				return repo.get(path);
+			}
+		}
+		return getRepo().get(path);
+	}
+	
+	public Object explore(String path) {		
+		return exploreObject(getObject(path), path);
 	}
 
 	protected Object rawObject(Object obj, String path) {
@@ -448,7 +497,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	}
 	
 	protected Object raw(String path) {
-		return rawObject(getRepo().get(path), path);
+		return rawObject(getObject(path), path);
 	}
 	
 	public Object get(String path) {

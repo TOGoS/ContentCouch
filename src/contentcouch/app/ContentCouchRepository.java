@@ -29,6 +29,40 @@ import contentcouch.store.StoreFileGetter;
 import contentcouch.value.Blob;
 
 public class ContentCouchRepository implements Getter, Pusher, Identifier, StoreFileGetter {
+	protected static class RepoParameters {
+		public static final String DISPOSITION_MAIN = "main";
+		public static final String DISPOSITION_LOCAL = "local";
+		public static final String DISPOSITION_CACHE = "cache";
+		public static final String DISPOSITION_REMOTE = "remote";
+		
+		public String disposition;
+		public String name;
+		
+		public static RepoParameters parse(String arg) {
+			String[] parts = arg.split(":");
+			
+			String disposition;
+			if( "-repo".equals(parts[0]) ) {
+				disposition = DISPOSITION_MAIN;
+			} else if( "-remote-repo".equals(parts[0]) ) {
+				disposition = DISPOSITION_REMOTE;
+			} else if( "-cache-repo".equals(parts[0]) ) {
+				disposition = DISPOSITION_CACHE;
+			} else if( "-local-repo".equals(parts[0]) ) {
+				disposition = DISPOSITION_LOCAL;
+			} else {
+				return null;
+			}
+			
+			RepoParameters rp = new RepoParameters();
+			rp.disposition = disposition;
+			if( parts.length >= 2 ) {
+				rp.name = parts[1];
+			}
+			return rp;
+		}
+	}
+	
 	protected String path;
 	
 	public Getter dataGetter;
@@ -44,6 +78,8 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public ContentCouchRepository remoteCacheRepository; 
 	public List localRepositories = new ArrayList();
 	public List remoteRepositories = new ArrayList();
+	
+	public Map namedRepositories = new HashMap();
 	
 	public Map cmdArgs = new HashMap();
 	
@@ -117,26 +153,38 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public int handleArguments( String[] args, int offset ) {
 		if( offset >= args.length ) return offset;
 		String arg = args[offset];
-		if( "-repo".equals(arg) ) {
+		RepoParameters rp = RepoParameters.parse(arg);
+		if( rp != null ) {
 			++offset;
-			if( isMainRepo ) try {
-				initBasics(args[offset]);
-			} catch( IOException e ) {
-				throw new RuntimeException("Couldn't initialize repo at " + args[offset], e);
+			String path = args[offset];
+			++offset;
+			if( isMainRepo ) {
+				ContentCouchRepository repo;
+				if( rp.disposition == RepoParameters.DISPOSITION_MAIN ) {
+					try {
+						initBasics(path);
+					} catch( IOException e ) {
+						throw new RuntimeException("Couldn't initialize repo at " + path, e);
+					}
+					if( rp.name == null ) rp.name = "main";
+					repo = this;
+				} else if( rp.disposition == RepoParameters.DISPOSITION_LOCAL ) {
+					repo = new ContentCouchRepository(path, false);
+					addLocal(repo);
+				} else if( rp.disposition == RepoParameters.DISPOSITION_CACHE ) {
+					repo = new ContentCouchRepository(path, false);
+					remoteCacheRepository = repo;
+				} else if( rp.disposition == RepoParameters.DISPOSITION_REMOTE ) {
+					repo = new ContentCouchRepository(path, false);
+					addRemote(repo);
+				} else {
+					throw new RuntimeException("unknown repo disposition: " + rp.disposition);
+				}
+				if( explorable ) repo.explorable = true;
+				if( rp.name != null ) {
+					namedRepositories.put(rp.name, repo);
+				}
 			}
-			++offset;
-		} else if( "-local-repo".equals(arg) ) {
-			++offset;
-			if( isMainRepo ) addLocal(new ContentCouchRepository(args[offset], false));
-			++offset;
-		} else if( "-cache-repo".equals(arg) ) {
-			++offset;
-			if( isMainRepo ) remoteCacheRepository = new ContentCouchRepository(args[offset], false);
-			++offset;
-		} else if( "-remote-repo".equals(arg) ) {
-			++offset;
-			if( isMainRepo ) addRemote(new ContentCouchRepository(args[offset], false));
-			++offset;
 		}
 		return offset;
 	}
