@@ -36,6 +36,7 @@ public class RdfNamespace {
 	public static final String DC_CREATED              = DC_NS + "created";
 	public static final String DC_MODIFIED             = DC_NS + "modified";
 	public static final String DC_FORMAT               = DC_NS + "format";
+	public static final String DC_TITLE                = DC_NS + "title";
 
 	public static final String DC_DESCRIPTION          = CCOUCH_NS + "description";
 	public static final String CCOUCH_NAME             = CCOUCH_NS + "name";

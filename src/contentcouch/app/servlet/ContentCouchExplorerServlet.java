@@ -1,6 +1,8 @@
 package contentcouch.app.servlet;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -12,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -28,7 +29,9 @@ import contentcouch.file.FileBlob;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.MetadataUtil;
+import contentcouch.misc.SimpleDirectory;
 import contentcouch.rdf.RdfNamespace;
+import contentcouch.store.Getter;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -274,10 +277,12 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	class DirectoryPageGenerator extends PageGenerator {
 		final String path;
 		final Directory dir;
+		public String title;
 
 		public DirectoryPageGenerator(String path, Directory dir) {
 			this.path = path;
 			this.dir = dir;
+			this.title = (String)MetadataUtil.getMetadataFrom(dir, RdfNamespace.DC_TITLE);
 		}
 		
 		public void write(PrintWriter w) throws IOException {
@@ -299,15 +304,24 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				}
 			});
 			
-			String title = "Index of " + path;
+			String title = this.title;
+			if( title == null ) title = "Index of " + path;
 
 			w.println("<html>");
 			w.println("<head>");
 			w.println("<title>" + XML.xmlEscapeText(title) + "</title>");
+			w.println("<style>");
+			w.println(".dir-list td, .dir-list th { padding-left: 1ex; padding-right: 1ex; font-family: Courier }");
+			w.println("</style>");
 			w.println("</head>");
 			w.println("<body>");
 			w.println("<h2>" + XML.xmlEscapeText(title) + "</h2>");
-			w.println("<ul>");
+			w.println("<table class=\"dir-list\">");
+			w.write("<tr>");
+			w.write("<th>Name</th>");
+			w.write("<th>Size</th>");
+			w.write("<th>Modified</th>");
+			w.write("</tr>\n");
 			for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 				Entry e = (Entry)i.next();
 				String href;
@@ -321,21 +335,53 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					href += "/";
 					name += "/";
 				}
-				w.println("<li><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></li>");
+				w.write("<tr>");
+				w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
+				w.write("<td align=\"right\">" + (e.getSize() > -1 ? Long.toString(e.getSize()) : "") + "</td>");
+				w.write("<td>" + (e.getLastModified() > -1 ? RdfNamespace.CCOUCH_DATEFORMAT.format(new Date(e.getLastModified())) : "") + "</td>");
+				w.write("</tr>\n");
 			}
-			w.println("</ul>");
+			w.println("</table>");
 			w.println("</body>");
 			w.println("</html>");
 		}
 	};
 
+	protected void copyFile( File src, File dest ) throws IOException {
+		FileInputStream is = new FileInputStream(src);
+		FileOutputStream os = new FileOutputStream(dest);
+		try {
+			byte[] buf = new byte[512];
+			int len;
+			while( (len = is.read(buf)) > 0 ) {
+				os.write(buf, 0, len);
+			}
+		} finally {
+			is.close();
+			os.close();
+		}
+	}
+	
 	protected ContentCouchRepository repoCache;
 	protected ContentCouchRepository getRepo() {
 		if( repoCache == null ) { 
 			repoCache = new ContentCouchRepository();
+			File configFile = new File("web/repo-config");
+			File configTemplateFile = new File("web/repo-config.template");
+			if( !configFile.exists() ) {
+				try {
+					copyFile(configTemplateFile, configFile);
+				} catch( IOException e ) {
+					throw new RuntimeException("Failed to copy " + configTemplateFile.getPath() + " to " + configFile.getPath(), e);
+				}
+			}
 			repoCache.isMainRepo = true;
 			repoCache.explorable = true;
-			repoCache.handleArguments(new String[]{"-repo:junk", "junk-repo"}, 0);
+			try {
+				repoCache.loadConfig(configFile);
+			} catch( IOException e ) {
+				throw new RuntimeException("Error while loading repo config " + configFile.getPath(), e);
+			}
 		}
 		return repoCache;
 	}
@@ -422,6 +468,47 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 
 		return null;
 	}
+	
+	public Object getObject(Object root, String path, String rootPath) {
+		while( true ) {
+			if( root == null || path == null || "".equals(path) || "/".equals(path) ) {
+				return root;
+			} else if( root instanceof Getter ) {
+				return ((Getter)root).get(path);
+			} else if( root instanceof Directory ) {
+				String[] parts = path.split("/", 2);
+				Object nextRoot;
+				Directory.Entry nextPart = (Directory.Entry)((Directory)root).getEntries().get(parts[0]);
+				if( nextPart == null ) return null;
+				nextRoot = nextPart.getTarget();
+				root = nextRoot;
+				rootPath = rootPath + "/" + parts[0];
+				if( parts.length == 1 ) {
+					path = null;
+				} else {
+					path = parts[1];
+				}
+			}
+		}
+	}
+
+	public Object getObject(String path) {
+		SimpleDirectory sd = new SimpleDirectory(getRepo().namedRepositories);
+		sd.putMetadata(RdfNamespace.DC_TITLE, "All named repositories");
+		Object obj = getObject(sd, path, "");
+		if( obj != null ) return obj;
+		return getRepo().get(path);
+	}
+	
+	public Object getGenericResponse(Object obj, String path) {
+		if( obj instanceof ContentCouchRepository && !(obj instanceof Directory) ) {
+			obj = ((ContentCouchRepository)obj).getDirectory();
+		}
+		if( obj instanceof Directory ) {
+			obj = new DirectoryPageGenerator(path, (Directory)obj);
+		}
+		return obj;
+	}
 
 	protected Object exploreObject(Object obj, String path) {
 		if( obj instanceof Blob ) {
@@ -433,55 +520,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				return new RdfSourcePageGenerator((Blob)obj, path);
 			}
 		}
-		if( obj instanceof Directory ) {
-			return new DirectoryPageGenerator(path, (Directory)obj);
-		}
-		return obj;
+		return getGenericResponse(obj, path);
 	}
-	
-	public Object getObject(String path) {
-		if( path.equals("") ) {
-			return new Directory() {
-				public Map getEntries() {
-					Map entries = new HashMap();
-					for( Iterator i=getRepo().namedRepositories.entrySet().iterator(); i.hasNext(); ) {
-						final Map.Entry e = (Map.Entry)i.next();
-						entries.put((String)e.getKey(), new Directory.Entry() {
-							public long getLastModified() {
-								return -1;
-							}
-							public String getName() {
-								return (String)e.getKey();
-							}
-							public long getSize() {
-								return -1;
-							}
-							public Object getTarget() {
-								return e.getValue();
-							}
-							public String getTargetType() {
-								return RdfNamespace.OBJECT_TYPE_DIRECTORY;
-							}
-						});
-					}
-					return entries;
-				}
-			};
-		} else {
-			String[] rr = path.split("/",2);
-			if( rr.length == 2 ) {
-				String repoName = rr[0];
-				path = rr[1];
-				ContentCouchRepository repo = getRepo(repoName);
-				if( repo == null ) {
-					return "No such repository: " + repoName;
-				}
-				return repo.get(path);
-			}
-		}
-		return getRepo().get(path);
-	}
-	
+
 	public Object explore(String path) {		
 		return exploreObject(getObject(path), path);
 	}
@@ -489,11 +530,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	protected Object rawObject(Object obj, String path) {
 		if( obj instanceof Blob ) {
 			return obj;
+		} else {
+			return getGenericResponse(obj, path);
 		}
-		if( obj instanceof Directory ) {
-			return new DirectoryPageGenerator(path, (Directory)obj);
-		}
-		return obj;
 	}
 	
 	protected Object raw(String path) {

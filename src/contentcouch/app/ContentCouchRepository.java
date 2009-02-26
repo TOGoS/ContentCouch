@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import contentcouch.file.FileDirectory;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.http.HttpBlobGetter;
@@ -27,6 +28,7 @@ import contentcouch.store.Putter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.store.StoreFileGetter;
 import contentcouch.value.Blob;
+import contentcouch.value.Directory;
 
 public class ContentCouchRepository implements Getter, Pusher, Identifier, StoreFileGetter {
 	protected static class RepoParameters {
@@ -92,11 +94,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		if( path == null ) return;
 		try {
 			File f = new File(path); 
-			if( f.exists() && f.isFile() ) {
-				loadConfig( f );
-			} else {
-				initBasics( path );
-			}
+			loadConfig( f );
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -251,13 +249,17 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	}
 	
 	public void loadConfig( File f ) throws IOException {
-		BufferedReader fr;
-		try {
-			fr = new BufferedReader(new FileReader(f));
-			loadConfig(fr, f.getPath());
-			fr.close();
-		} catch (FileNotFoundException e) {
-			return;
+		if( f.exists() && f.isFile() ) {
+			BufferedReader fr;
+			try {
+				fr = new BufferedReader(new FileReader(f));
+				loadConfig(fr, f.getPath());
+				fr.close();
+			} catch (FileNotFoundException e) {
+				return;
+			}
+		} else {
+			initBasics(f.getPath());
 		}
 	}
 	
@@ -346,6 +348,10 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		} else {
 			return null;
 		}
+	}
+	
+	public Directory getDirectory() {
+		return new FileDirectory(new File(path));
 	}
 
 	//// Put stuff ////
