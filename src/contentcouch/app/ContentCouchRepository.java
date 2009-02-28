@@ -139,7 +139,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			File cf = new File(path + "cache/file-attrs.slf");
 			bs.fileHashCache = new FileHashCache(cf);
 		}
-		loadConfig( new File(path + "/ccouch-config") );
+		_loadConfig( new File(path + "/ccouch-config") );
 		
 		initialized = true;
 	}
@@ -247,17 +247,21 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		String[] s = new String[l.size()];
 		return (String[])l.toArray(s);
 	}
+
+	public void _loadConfig( File f ) throws IOException {
+		BufferedReader fr;
+		try {
+			fr = new BufferedReader(new FileReader(f));
+			loadConfig(fr, f.getPath());
+			fr.close();
+		} catch (FileNotFoundException e) {
+			return;
+		}
+	}
 	
 	public void loadConfig( File f ) throws IOException {
 		if( f.exists() && f.isFile() ) {
-			BufferedReader fr;
-			try {
-				fr = new BufferedReader(new FileReader(f));
-				loadConfig(fr, f.getPath());
-				fr.close();
-			} catch (FileNotFoundException e) {
-				return;
-			}
+			_loadConfig( f );
 		} else {
 			initBasics(f.getPath());
 		}
