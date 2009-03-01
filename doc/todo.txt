@@ -1,0 +1,2 @@
+- Don't create new commit if the single previous commit refers to exact
+  same tree or -force-commit is specified
