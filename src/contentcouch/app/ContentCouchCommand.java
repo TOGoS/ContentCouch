@@ -47,6 +47,7 @@ public class ContentCouchCommand {
 		"  -m <message>       ; create a commit with this message\n" +
 		"  -a <author>        ; create a commit with this author\n" +
 		"  -n <name>          ; name your commit this\n" +
+		"  -force-commit      ; create a new commit even if nothing has changed\n" +
 		"  -link              ; hardlink files into the store instead of copying\n" +
 		"  -files-only        ; store only file content (no directory listings)\n" +
 		"  -dirs-only         ; store only directory listings (no file content)\n" +
@@ -139,7 +140,7 @@ public class ContentCouchCommand {
 	public String[] getParentCommitUris(File about) {
 		try {
 			File parentCommitListFile = getParentCommitListFile(about);
-			if( parentCommitListFile == null || !parentCommitListFile.exists() ) return null;
+			if( parentCommitListFile == null || !parentCommitListFile.exists() ) return new String[0];
 			BufferedReader r = new BufferedReader(new FileReader(parentCommitListFile));
 			try {
 				return readUris(r);
@@ -193,6 +194,7 @@ public class ContentCouchCommand {
 		boolean storeFiles = true;
 		boolean storeDirs = true;
 		boolean storeCommits = true;
+		boolean forceCommit = false;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
@@ -227,6 +229,8 @@ public class ContentCouchCommand {
 				name = args[++i];
 			} else if( "-a".equals(arg) ) {
 				author = args[++i];
+			} else if( "-force-commit".equals(arg) ) {
+				forceCommit = true;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
 				System.out.println(STORE_USAGE);
 				System.exit(0);
@@ -257,7 +261,7 @@ public class ContentCouchCommand {
 			System.err.println(STORE_USAGE);
 			System.exit(1);
 		}
-		final boolean createCommit;
+		boolean createCommit;
 		if( name != null || message != null || author != null ) {
 			createCommit = true;
 			if( files.size() != 1 ) {
@@ -320,18 +324,37 @@ public class ContentCouchCommand {
 				}
 				if( name != null ) name = getRepository().name + "/" + name;
 				
-				String[] parentCommitUris = null;
+				String[] parentCommitUris;
 				if( o instanceof File ) {
 					parentCommitUris = getParentCommitUris((File)o);
+					if(parentCommitUris == null) throw new RuntimeException("getParentCommitUris returned null.  Not too cool.");
+				} else {
+					parentCommitUris = new String[0];
 				}
-				RdfNode commit = importer.getCommitRdfNode(targetType, ref.targetUri, new Date(), author, message, parentCommitUris);
-				String commitUri;
-				commitUri = importer.saveHead(commit, name);
-				if( verbosity > 0 ) {
-					System.out.println( "Commit\t" + commitUri );
+				
+				if( parentCommitUris.length == 1 && !forceCommit ) {
+					// Cancel the commit if the old one points to the same thing
+					Commit oldCommit = (Commit)getRepository().get(parentCommitUris[0]);
+					Object oldTarget = oldCommit.getTarget();
+					if( oldTarget instanceof Ref ) {
+						if( ((Ref)oldTarget).targetUri.equals(ref.targetUri) ) {
+							System.err.println("No changes since last commit.  Use -force-commit to commit anyway.");
+							createCommit = false;
+						}
+					}
 				}
-				if( o instanceof File && commitUri != null ) {
-					setParentCommitUri((File)o, commitUri);
+				
+				// If after those checks, we still want to create it, then go ahead and do so:
+				if( createCommit ) {				
+					RdfNode commit = importer.getCommitRdfNode(targetType, ref.targetUri, new Date(), author, message, parentCommitUris);
+					String commitUri;
+					commitUri = importer.saveHead(commit, name);
+					if( verbosity > 0 ) {
+						System.out.println( "Commit\t" + commitUri );
+					}
+					if( o instanceof File && commitUri != null ) {
+						setParentCommitUri((File)o, commitUri);
+					}
 				}
 			}
 		}
