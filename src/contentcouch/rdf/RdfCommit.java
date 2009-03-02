@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.Set;
 
+import contentcouch.date.DateUtil;
 import contentcouch.value.Commit;
 
 public class RdfCommit extends RdfNode implements Commit {	
@@ -22,7 +23,7 @@ public class RdfCommit extends RdfNode implements Commit {
 		String lm = (String)this.getSingle(RdfNamespace.DC_CREATED);
 		if( lm == null ) return null;
 		try {
-			return RdfNamespace.CCOUCH_DATEFORMAT.parse(lm);
+			return DateUtil.parseDate(lm);
 		} catch (ParseException e) {
 			System.err.println("Error parsing created date in " + this.sourceUri);
 			return null;

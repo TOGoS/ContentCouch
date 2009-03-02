@@ -59,7 +59,7 @@ public class ContentCouchCommand {
 		"If -m, -a, and/or -n are used, a commit will be created and its URN output.\n" +
 		"\n" +
 		"If -n is specified, a commit will be stored under that name as\n" +
-		"<repo-path>/heads/local/<name>/<version>, where <version> is automatically\n" +
+		"<repo-path>/heads/<main-repo-name>/<name>/<version>, where <version> is automatically\n" +
 		"incremented for new commits.\n" +
 		"\n" +
 		"-relink is useful when a copy of the file is already in the\n" +
@@ -318,7 +318,7 @@ public class ContentCouchCommand {
 				} else {
 					targetType = RdfNamespace.OBJECT_TYPE_BLOB;
 				}
-				if( name != null ) name = "local/" + name;
+				if( name != null ) name = getRepository().name + "/" + name;
 				
 				String[] parentCommitUris = null;
 				if( o instanceof File ) {

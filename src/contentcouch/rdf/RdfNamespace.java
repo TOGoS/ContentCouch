@@ -1,7 +1,5 @@
 package contentcouch.rdf;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,8 +18,6 @@ public class RdfNamespace {
 	//// Constants ////
 
 	public static final String URI_PARSE_PREFIX = "x-parse-rdf:";
-	
-	public static final DateFormat CCOUCH_DATEFORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	public static final String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	public static final String DC_NS  = "http://purl.org/dc/terms/";

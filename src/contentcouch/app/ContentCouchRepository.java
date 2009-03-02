@@ -76,6 +76,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public boolean initialized = false;
 	public boolean explorable = false;
 	public boolean isMainRepo = false;
+	public String name = "unnamed";
 	
 	public ContentCouchRepository remoteCacheRepository; 
 	public List localRepositories = new ArrayList();
@@ -181,6 +182,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 				if( explorable ) repo.explorable = true;
 				if( rp.name != null ) {
 					namedRepositories.put(rp.name, repo);
+					repo.name = rp.name;
 				}
 			}
 		}

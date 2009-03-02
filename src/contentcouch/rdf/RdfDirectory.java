@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;
 import contentcouch.misc.Function1;
 import contentcouch.value.Blob;
@@ -47,7 +48,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 			add(RdfNamespace.CCOUCH_TARGETTYPE, de.getTargetType());
 
 			long modified = de.getLastModified();
-			if( modified != -1 ) add(RdfNamespace.DC_MODIFIED, RdfNamespace.CCOUCH_DATEFORMAT.format(new Date(modified)));
+			if( modified != -1 ) add(RdfNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
 			
 			long size = de.getSize();
 			if( size != -1 ) add(RdfNamespace.CCOUCH_SIZE, String.valueOf(size) );
@@ -81,9 +82,10 @@ public class RdfDirectory extends RdfNode implements Directory {
 			try {
 				String lm = (String)this.getSingle(RdfNamespace.DC_MODIFIED);
 				if( lm == null ) return -1;
-				return RdfNamespace.CCOUCH_DATEFORMAT.parse(lm).getTime();
+				return DateUtil.parseDate(lm).getTime();
 			} catch( ParseException e ) {
-				throw new RuntimeException(e);
+				System.err.println("Error parsing modified date in " + this.sourceUri);
+				return -1;
 			}
 		}
 	}

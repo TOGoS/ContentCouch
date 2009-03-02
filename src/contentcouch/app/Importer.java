@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.Map;
 
 import contentcouch.blob.BlobUtil;
+import contentcouch.date.DateUtil;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileDirectory;
 import contentcouch.file.FileUtil;
@@ -165,7 +166,7 @@ public class Importer implements Pusher, StoreFileGetter {
 	
 	public RdfNode getCommitRdfNode( String targetType, String targetUri, Date date, String creator, String description, String[] parentUris ) {
 		RdfNode n = new RdfNode(RdfNamespace.CCOUCH_COMMIT);
-		n.add(RdfNamespace.DC_CREATED, RdfNamespace.CCOUCH_DATEFORMAT.format(date));
+		n.add(RdfNamespace.DC_CREATED, DateUtil.formatDate(date));
 		n.add(RdfNamespace.DC_CREATOR, creator);
 		n.add(RdfNamespace.DC_DESCRIPTION, description);
 		n.add(RdfNamespace.CCOUCH_TARGET, new Ref(targetUri) );
