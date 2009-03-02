@@ -367,8 +367,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	protected ContentCouchRepository getRepo() {
 		if( repoCache == null ) { 
 			repoCache = new ContentCouchRepository();
-			File configFile = new File("web/repo-config");
-			File configTemplateFile = new File("web/repo-config.template");
+			String webPath = this.getServletContext().getRealPath("");
+			File configFile = new File(webPath + "/repo-config");
+			File configTemplateFile = new File(webPath + "/repo-config.template");
 			if( !configFile.exists() ) {
 				try {
 					copyFile(configTemplateFile, configFile);

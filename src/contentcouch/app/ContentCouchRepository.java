@@ -18,6 +18,7 @@ import contentcouch.file.FileDirectory;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.http.HttpBlobGetter;
+import contentcouch.path.PathUtil;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.Identifier;
@@ -145,6 +146,9 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		initialized = true;
 	}
 	
+	// Used to interpret relative paths in arguments
+	public String basePath;
+	
 	/** Interprets arguments at the given offset in the given argument array
 	 * that are understood and returns the offset into the arguments list
 	 * after the parsed arguments. If the offset given is returned, then it
@@ -155,7 +159,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		RepoParameters rp = RepoParameters.parse(arg);
 		if( rp != null ) {
 			++offset;
-			String path = args[offset];
+			String path = PathUtil.appendPath(basePath, args[offset]);
 			++offset;
 			if( isMainRepo ) {
 				ContentCouchRepository repo;
@@ -208,38 +212,45 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		return res.toString();
 	}
 	
-	public void loadConfig( BufferedReader fr, String sourceLocation ) throws IOException {
-		ArrayList args = new ArrayList();
-		String line;
-		String cmdName = null;
-		lines: while( (line = fr.readLine()) != null ) {
-			Matcher m = argPattern.matcher(line);
-			while( m.find() ) {
-				String arg = m.group();
-				if( arg.charAt(0) == '#' ) continue lines;
-				if( arg.charAt(0) == '[' ) {
-					cmdName = arg.substring(1,arg.length()-1);
-					continue;
-				}
-				if( arg.charAt(0) == '"' ) arg = unescape(arg.substring(1,arg.length()-1));
-				if( cmdName == null ) {
-					args.add(arg);
-				} else {
-					List cas = (List)cmdArgs.get(cmdName);
-					if( cas == null ) cmdArgs.put(cmdName, cas = new ArrayList());
-					cas.add(arg);
+	protected void _loadConfig( BufferedReader fr, String sourceLocation ) throws IOException {
+		String oldBasePath = basePath;
+		try {
+			basePath = sourceLocation;
+			
+			ArrayList args = new ArrayList();
+			String line;
+			String cmdName = null;
+			lines: while( (line = fr.readLine()) != null ) {
+				Matcher m = argPattern.matcher(line);
+				while( m.find() ) {
+					String arg = m.group();
+					if( arg.charAt(0) == '#' ) continue lines;
+					if( arg.charAt(0) == '[' ) {
+						cmdName = arg.substring(1,arg.length()-1);
+						continue;
+					}
+					if( arg.charAt(0) == '"' ) arg = unescape(arg.substring(1,arg.length()-1));
+					if( cmdName == null ) {
+						args.add(arg);
+					} else {
+						List cas = (List)cmdArgs.get(cmdName);
+						if( cas == null ) cmdArgs.put(cmdName, cas = new ArrayList());
+						cas.add(arg);
+					}
 				}
 			}
-		}
-		String[] argar = new String[args.size()];
-		argar = (String[])args.toArray(argar);
-		int endupat;
-		int offset = 0;
-		while( (endupat = handleArguments( argar, offset )) > offset ) {
-		    offset = endupat;
-		}
-		if( endupat < argar.length ) {
-			System.err.println("Unrecognised arg in " + sourceLocation + ": " + argar[endupat]);
+			String[] argar = new String[args.size()];
+			argar = (String[])args.toArray(argar);
+			int endupat;
+			int offset = 0;
+			while( (endupat = handleArguments( argar, offset )) > offset ) {
+			    offset = endupat;
+			}
+			if( endupat < argar.length ) {
+				System.err.println("Unrecognised arg in " + sourceLocation + ": " + argar[endupat]);
+			}
+		} finally {
+			basePath = oldBasePath;
 		}
 	}
 	
@@ -250,11 +261,11 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		return (String[])l.toArray(s);
 	}
 
-	public void _loadConfig( File f ) throws IOException {
+	protected void _loadConfig( File f ) throws IOException {
 		BufferedReader fr;
 		try {
 			fr = new BufferedReader(new FileReader(f));
-			loadConfig(fr, f.getPath());
+			_loadConfig(fr, f.getPath());
 			fr.close();
 		} catch (FileNotFoundException e) {
 			return;

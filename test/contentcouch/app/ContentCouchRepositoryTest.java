@@ -15,7 +15,7 @@ public class ContentCouchRepositoryTest extends TestCase {
 	
 	public void testConfigLoad() throws IOException {
 		ContentCouchRepository r = new ContentCouchRepository();
-		r.loadConfig(new BufferedReader(new StringReader("[checkout] -link -shrink [store] -relink")), "test config");
+		r._loadConfig(new BufferedReader(new StringReader("[checkout] -link -shrink [store] -relink")), "test config");
 		
 		assertEquals("-link", ((List)r.cmdArgs.get("checkout")).get(0) );
 		assertEquals("-shrink", ((List)r.cmdArgs.get("checkout")).get(1) );

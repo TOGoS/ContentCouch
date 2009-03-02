@@ -43,7 +43,7 @@ public class FileDirectory extends File implements Directory {
 	public Map getEntries() {
 		File[] subFiles = listFiles();
 		HashMap entries = new HashMap();
-		for( int i=0; i<subFiles.length; ++i ) {
+		if( subFiles != null ) for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
 			if( subFile.getName().startsWith(".") ) continue;
 			entries.put(subFile.getName(), new FileDirectoryEntry(subFile));
