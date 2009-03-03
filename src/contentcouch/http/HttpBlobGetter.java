@@ -14,7 +14,7 @@ import contentcouch.store.Getter;
 
 public class HttpBlobGetter implements Getter {
 	public Object get(String identifier) {
-		if( !identifier.startsWith("http:") && !identifier.startsWith("https:") ) return null;
+		if( !identifier.startsWith("http://") && !identifier.startsWith("https://") ) return null;
 
 		try {
 			/*
@@ -29,7 +29,8 @@ public class HttpBlobGetter implements Getter {
 			return new InputStreamBlob(is, length);
 			 */
 			
-			URLConnection urlConn = new URL(identifier).openConnection();
+			URL url = new URL(identifier);
+			URLConnection urlConn = url.openConnection();
 			long length = urlConn.getContentLength();
 			System.err.println("Downloading " + identifier + " (" + length + " bytes)");
 			File tempFile = File.createTempFile("httpdownload", null);

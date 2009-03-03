@@ -95,8 +95,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		this.isMainRepo = isMainRepo;
 		if( path == null ) return;
 		try {
-			File f = new File(path); 
-			loadConfig( f );
+			loadConfigAt(path);
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -279,6 +278,15 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			initBasics(f.getPath());
 		}
 	}
+
+	public void loadConfigAt( String path ) throws IOException {
+		File f = new File(path);
+		if( f.exists() && f.isFile() ) {
+			_loadConfig( f );
+		} else {
+			initBasics(path);
+		}
+	}
 	
 	public void addLocal( ContentCouchRepository repo ) {
 		localRepositories.add(0,repo);
@@ -341,6 +349,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			if( cachedId == null || !(cachedId.equals(identifier)) ) {
 				throw new RuntimeException("Calculated identifier (" + cachedId + ") does not match requested identifier (" + identifier + ")");
 			}
+			obj = remoteCacheRepository.get(cachedId);
 		}
 	
 		return obj;

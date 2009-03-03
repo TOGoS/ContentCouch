@@ -1,6 +1,16 @@
 package contentcouch.path;
 
 public class PathUtil {
+	public static boolean isAbsolute( String path ) {
+		int slashi = path.indexOf('/');
+		int coloni = path.indexOf(':');
+		// This treats as absolute:
+		//   /absolute/unix/filenames
+		//   arbitrarily-schemed:uris/or/whatever
+		//   F:/windows/paths
+		return slashi == 0 || (coloni > 0 && (slashi > coloni || slashi < 0));
+	}
+
 	public static String appendPath( String p1, String p2 ) {
 		if( p1 == null || p1.length() == 0 ) return p2;
 		if( p2 == null || p2.length() == 0 ) return p1;
@@ -8,7 +18,7 @@ public class PathUtil {
 		p2 = p2.replace('\\', '/');
 
 		// If p2 is absolute, return it
-		if( p2.matches("^(?:[a-zA-Z]:)?/.*") ) return p2;
+		if( isAbsolute(p2) ) return p2;
 
 		int lastSlash = p1.lastIndexOf('/');
 		if( lastSlash == -1 ) return p2;
