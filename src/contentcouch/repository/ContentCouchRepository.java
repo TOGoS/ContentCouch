@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -110,6 +111,20 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public String getPath() {
 		return path;
 	}
+	
+	public void writeDefaultConfig(File configFile) throws IOException {
+		String resname = "config-template.txt";
+		InputStream res = this.getClass().getResourceAsStream(resname);
+		if( res == null ) throw new IOException("Couldn't find internal resource: " + this.getClass().getPackage().getName() + "/" + resname);
+		FileWriter fw = new FileWriter(configFile);
+		BufferedReader br = new BufferedReader(new InputStreamReader(res));
+		String line;
+		while( (line = br.readLine()) != null ) {
+			fw.write(line + "\n");
+		}
+		br.close();
+		fw.close();
+	}
 
 	public void initBasics( String path ) throws IOException {
 		if( !path.endsWith("/") ) path += "/";
@@ -124,14 +139,11 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			FileUtil.mkdirs( new File(path) );
 			File configFile = new File(path + "/ccouch-config");
 			if( !configFile.exists() ) {
-				FileWriter fw = new FileWriter(configFile);
-				BufferedReader br = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("config-template.txt")));
-				String line;
-				while( (line = br.readLine()) != null ) {
-					fw.write(line + "\n");
+				try {
+					writeDefaultConfig(configFile);
+				} catch( IOException e ) {
+					System.err.println("Failed to write default config file at " + configFile.getPath() + ": " + e.getMessage());
 				}
-				br.close();
-				fw.close();
 			}
 
 			exploratGetter = new FileBlobMap(path + "/");

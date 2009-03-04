@@ -3,14 +3,12 @@
   - if different, throw error, unless -overwrite
   - if different and -overwrite, overwrite
 
-- add cache command
+- Add cache command
 
-- add cache-heads command
+- Add cache-heads command
 
 - Add option or wrapper for HttpBlobGetter to interpret .../ URIs as
   HTML directory indexes and return a Directory object.
 
 - RdfNodes ought to read relative URIs as relative to the node's source URI.
   I don't think I ever did this.
-
-- don't die just because can't write default config file 
