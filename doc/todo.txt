@@ -1,1 +1,10 @@
-- Interpret paths in ccouch-config as relative
+- checkout -merge, on existing files should:
+  - ignore if identical (don't even report)
+  - if different, throw error, unless -overwrite
+  - if different and -overwrite, overwrite
+
+- add cache command
+
+- add cache-heads command
+
+- add support for x-ccouch-head:[//repo]/auth/.../(#|latest) URIs
