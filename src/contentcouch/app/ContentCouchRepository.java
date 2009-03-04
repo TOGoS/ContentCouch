@@ -22,7 +22,6 @@ import contentcouch.path.PathUtil;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.Identifier;
-import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.store.PrefixGetFilter;
 import contentcouch.store.Pusher;
 import contentcouch.store.Putter;
@@ -114,7 +113,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		if( path.startsWith("http:") ) {
 			HttpBlobGetter hbg = new HttpBlobGetter();
 			
-			dataGetter = new ParseRdfGetFilter(new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null ));
+			dataGetter = new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null );
 			headGetter = new PrefixGetFilter(hbg, path + "heads/");
 		} else {
 			if( FileUtil.mkParentDirs( new File(path) ) ) {
@@ -130,7 +129,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 
 			exploratGetter = new FileBlobMap(path);
 			Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "data/") );
-			dataGetter = new ParseRdfGetFilter(bs);
+			dataGetter = bs;
 			dataPusher = bs;
 			identifier = bs;
 			FileBlobMap hs = new FileBlobMap(path + "heads/");

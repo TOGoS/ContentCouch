@@ -31,8 +31,10 @@ import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
+import contentcouch.path.PathUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.store.Getter;
+import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -333,7 +335,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					href = name;
 				}
 				if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
-					href += "/";
+					if( !PathUtil.isAbsolute(href) ) href += "/";
 					name += "/";
 				}
 				w.write("<tr>");
@@ -389,6 +391,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	}
 	protected ContentCouchRepository getRepo(String name) {
 		return (ContentCouchRepository)getRepo().namedRepositories.get(name);
+	}
+	
+	protected Getter getLocalGetter() {
+		return new ParseRdfGetFilter(getRepo());
 	}
 	
 	protected String CT_RDF  = "application/rdf+xml";
@@ -499,7 +505,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		sd.putMetadata(RdfNamespace.DC_TITLE, "All named repositories");
 		Object obj = getObject(sd, path, "");
 		if( obj != null ) return obj;
-		return getRepo().get(path);
+		return getLocalGetter().get(path);
 	}
 	
 	public Object getGenericResponse(Object obj, String path) {
