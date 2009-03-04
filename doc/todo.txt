@@ -7,8 +7,6 @@
 
 - add cache-heads command
 
-- add support for x-ccouch-head:[//repo]/auth/.../(#|latest) URIs
-
 - Add option or wrapper for HttpBlobGetter to interpret .../ URIs as
   HTML directory indexes and return a Directory object.
 
