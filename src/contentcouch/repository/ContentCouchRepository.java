@@ -1,4 +1,4 @@
-package contentcouch.app;
+package contentcouch.repository;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -105,6 +106,10 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	}
 	
 	//// Configuration ////
+	
+	public String getPath() {
+		return path;
+	}
 
 	public void initBasics( String path ) throws IOException {
 		if( !path.endsWith("/") ) path += "/";
@@ -116,14 +121,16 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			dataGetter = new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null );
 			headGetter = new PrefixGetFilter(hbg, path + "heads/");
 		} else {
-			if( FileUtil.mkParentDirs( new File(path) ) ) {
-				File configFile = new File(path + "/ccouch-config");
+			FileUtil.mkdirs( new File(path) );
+			File configFile = new File(path + "/ccouch-config");
+			if( !configFile.exists() ) {
 				FileWriter fw = new FileWriter(configFile);
-				fw.write("# This is the config file for this repository.\n");
-				fw.write("# Add options here as you would specify them on the command line.\n");
-				fw.write("# For example:\n");
-				fw.write("# -remote-repo http://www.example.com/r3p0/\n");
-				fw.write("# -use-main-repo-as-cache\n");
+				BufferedReader br = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("config-template.txt")));
+				String line;
+				while( (line = br.readLine()) != null ) {
+					fw.write(line + "\n");
+				}
+				br.close();
 				fw.close();
 			}
 

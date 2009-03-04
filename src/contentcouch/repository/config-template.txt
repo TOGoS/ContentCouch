@@ -1,0 +1,17 @@
+# This is the config file for this repository.
+# Add options here as you would specify them on the command line.
+#
+# You can give options for sub-commands after a heading in square brackets
+# that is the name of the sub-command.
+#
+# Lines starting with '#' are ignored.
+#
+# For example:
+#
+#   -repo-name wookie13
+#   -remote-repo http://www.example.com/r3p0/
+#   -use-main-repo-as-cache
+#
+#   [checkout]
+#   # I want to always hardlink when I check out files!
+#   -link

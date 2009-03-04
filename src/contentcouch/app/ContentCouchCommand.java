@@ -15,6 +15,7 @@ import contentcouch.file.FileDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
+import contentcouch.repository.ContentCouchRepository;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
@@ -432,7 +433,7 @@ public class ContentCouchCommand {
 	public void runCheckCmd( String[] args ) {
 		args = mergeConfiguredArgs("check", args);
 		RepoChecker rc = new RepoChecker();
-		rc.checkFiles(new File(getRepository().path + "/data"));
+		rc.checkFiles(new File(getRepository().getPath() + "/data"));
 	}
 	
 	public void runRdfifyCmd( String[] args ) {

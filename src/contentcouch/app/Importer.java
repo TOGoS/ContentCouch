@@ -17,6 +17,7 @@ import contentcouch.rdf.RdfDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
+import contentcouch.repository.ContentCouchRepository;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Identifier;
 import contentcouch.store.Pusher;

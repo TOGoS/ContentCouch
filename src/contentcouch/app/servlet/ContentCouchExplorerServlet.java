@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import contentcouch.app.ContentCouchRepository;
 import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
 import contentcouch.file.FileBlob;
@@ -33,6 +32,7 @@ import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.RdfNamespace;
+import contentcouch.repository.ContentCouchRepository;
 import contentcouch.store.Getter;
 import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.value.Blob;

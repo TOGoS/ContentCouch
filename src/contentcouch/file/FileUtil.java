@@ -4,23 +4,19 @@ import java.io.File;
 
 
 public class FileUtil {
-	public static void mkdirs(File d) {
+	public static boolean mkdirs(File d) {
 		if( d != null && !d.exists() ) {
 			if( !d.mkdirs() ) {
 				throw new RuntimeException("Couldn't create dir " + d);
 			}
+			return true;
 		}
+		return false;
 	}
 	
 	public static boolean mkParentDirs(File f) {
 		File d = f.getParentFile();
-		if( d != null && !d.exists() ) {
-			if( !d.mkdirs() ) {
-				throw new RuntimeException("Couldn't create parent dir for " + f);
-			}
-			return true;
-		}
-		return false;
+		return mkdirs(d);
 	}
 	
 	public static Object getContentCouchObject(File f) {
