@@ -11,14 +11,17 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
+import contentcouch.repository.CCouchHeadGetter;
 import contentcouch.repository.ContentCouchRepository;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
+import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -100,6 +103,7 @@ public class ContentCouchCommand {
 	public Getter getLocalGetter() {
 		MultiGetter mg = new MultiGetter();
 		mg.addGetter(getRepository());
+		mg.addGetter(new CCouchHeadGetter(getRepository()));
 		mg.addGetter(new FileBlobMap(""));
 		return mg;
 	}
@@ -324,6 +328,7 @@ public class ContentCouchCommand {
 					targetType = RdfNamespace.OBJECT_TYPE_BLOB;
 				}
 				if( name != null ) name = getRepository().name + "/" + name;
+				System.err.println("Save as " + name);
 				
 				String[] parentCommitUris;
 				if( o instanceof File ) {
@@ -336,6 +341,10 @@ public class ContentCouchCommand {
 				if( parentCommitUris.length == 1 && !forceCommit ) {
 					// Cancel the commit if the old one points to the same thing
 					Commit oldCommit = (Commit)getRepository().get(parentCommitUris[0]);
+					if( oldCommit == null ) {
+						System.err.println("Error: Could not load old commit " + parentCommitUris[0]);
+						System.exit(1);
+					}
 					Object oldTarget = oldCommit.getTarget();
 					if( oldTarget instanceof Ref ) {
 						if( ((Ref)oldTarget).targetUri.equals(ref.targetUri) ) {
@@ -385,7 +394,7 @@ public class ContentCouchCommand {
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
 				System.out.println(CHECKOUT_USAGE);
 				System.exit(0);
-			} else if( arg.charAt(0) != '-' ) {
+			} else if( arg.charAt(0) != '-' || "-".equals(arg) ) {
 				if( source == null ) source = arg;
 				else if( dest == null ) dest = arg;
 				else {
@@ -414,11 +423,20 @@ public class ContentCouchCommand {
 		exporter.verbose = verbose;
 		exporter.exportFiles = exportFiles;
 		File destFile = new File(dest);
+		Object exportThis = exporter.followRedirects(new Ref(source), null);
+		if( "-".equals(dest) ) {
+			if( exportThis instanceof Blob ) {
+				BlobUtil.writeBlobToOutputStream((Blob)exportThis, System.out);
+				return;
+			} else {
+				System.err.println("Can't export " + exportThis.getClass().getName() + " to stdout");
+				System.exit(1);
+			}
+		}
 		if( destFile.exists() && !merge ) {
 			System.err.println("Destination '" + destFile + "' already exists.  Use -merge to merge directory trees.");
 			System.exit(1);
 		}
-		Object exportThis = exporter.followRedirects(new Ref(source), null);
 		if( exportThis instanceof Commit ) {
 			addParentCommitUri(destFile, ((Commit)exportThis).getUri());
 		}

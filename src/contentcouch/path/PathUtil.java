@@ -1,5 +1,8 @@
 package contentcouch.path;
 
+import java.io.UnsupportedEncodingException;
+
+
 public class PathUtil {
 	public static boolean isAbsolute( String path ) {
 		int slashi = path.indexOf('/');
@@ -24,5 +27,62 @@ public class PathUtil {
 		if( lastSlash == -1 ) return p2;
 
 		return p1.substring(0,lastSlash+1) + p2;
+	}
+
+	public static final char[] hexChars = new char[]{'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+
+	public static int hexDigit(char c) {
+		if( c >= 'A' ) { 
+			if( c >= 'a' ) return c - 'a' + 10;
+			return c - 'A' + 10;
+		}
+		return c - '0';
+	}
+	
+	public static String uriEscapePath( String path ) {
+		byte[] bites;
+		try {
+			bites = path.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+		StringBuffer b = new StringBuffer();
+		for( int i=0; i<bites.length; ++i ) {
+			char c = (char)bites[i];
+			if( (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ) {
+				b.append(c);
+			} else {
+				switch(c) {
+				case('/'): case('+'): case('-'): case('.'): case(':'):
+				case('~'): case('^'): case('('): case(')'): case('\\'):
+				case('_'):
+					b.append(c); break;
+				default:
+					b.append('%');
+					b.append(hexChars[(c >> 4) & 0xF]);
+					b.append(hexChars[(c >> 0) & 0xF]);
+				}
+			}
+			    
+		}
+		return b.toString();
+	}
+	
+	public static String uriUnescapePath( String path ) {
+		byte[] bites = new byte[path.length()];
+		int bi = 0;
+		for( int ci=0; ci<path.length(); ++ci ) {
+			char c = path.charAt(ci++);
+			if( c == '%' ) {
+				int d0 = hexDigit(path.charAt(ci++)) << 4;
+				c = (char)(d0 + hexDigit(path.charAt(ci++)));
+			}
+			bites[bi++] = (byte)c;
+		}
+		try {
+			return new String(bites, 0, bi, "UTF-8");
+		} catch( UnsupportedEncodingException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 }

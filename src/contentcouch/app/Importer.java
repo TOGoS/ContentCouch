@@ -3,7 +3,6 @@ package contentcouch.app;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.Map;
 
@@ -13,6 +12,7 @@ import contentcouch.file.FileBlob;
 import contentcouch.file.FileDirectory;
 import contentcouch.file.FileUtil;
 import contentcouch.misc.Function1;
+import contentcouch.path.PathUtil;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
@@ -77,49 +77,18 @@ public class Importer implements Pusher, StoreFileGetter {
 		}
 	}
 	
-	protected static final char[] hexChars = new char[]{'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
-	
-	protected static String uriEscapePath( String path ) {
-		byte[] bites;
-		try {
-			bites = path.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
-		StringBuffer b = new StringBuffer();
-		for( int i=0; i<bites.length; ++i ) {
-			char c = (char)bites[i];
-			if( (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ) {
-				b.append(c);
-			} else {
-				switch(c) {
-				case('/'): case('+'): case('-'): case('.'): case(':'):
-				case('~'): case('^'): case('('): case(')'): case('\\'):
-				case('_'):
-					b.append(c); break;
-				default:
-					b.append('%');
-					b.append(hexChars[(c >> 4) & 0xF]);
-					b.append(hexChars[(c >> 0) & 0xF]);
-				}
-			}
-			    
-		}
-		return b.toString();
-	}
-	
 	protected String getFileUri(File file ) {
 		try {
 			String path = file.getCanonicalPath();
 			path = path.replace('\\', '/');
 			if( path.charAt(1) == ':' ) {
 				// Windows path!
-				return "file:///" + uriEscapePath(path);
+				return "file:///" + PathUtil.uriEscapePath(path);
 			} else if( path.charAt(0) == '/' ) { 
 				// Unix path, leading slash already included!
-				return "file://" + uriEscapePath(path);
+				return "file://" + PathUtil.uriEscapePath(path);
 			} else {
-				return "file:" + uriEscapePath(path);
+				return "file:" + PathUtil.uriEscapePath(path);
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);

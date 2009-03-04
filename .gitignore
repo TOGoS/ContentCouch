@@ -1,6 +1,5 @@
 .src-files.lst
 .settings
-junk
-junk-repo
+junk*
 web/WEB-INF/classes
 web/repo-config

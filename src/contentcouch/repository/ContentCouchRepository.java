@@ -134,7 +134,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 				fw.close();
 			}
 
-			exploratGetter = new FileBlobMap(path);
+			exploratGetter = new FileBlobMap(path + "/");
 			Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "data/") );
 			dataGetter = bs;
 			dataPusher = bs;
@@ -174,7 +174,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 					} catch( IOException e ) {
 						throw new RuntimeException("Couldn't initialize repo at " + path, e);
 					}
-					if( rp.name == null ) rp.name = "main";
 					repo = this;
 				} else if( rp.disposition == RepoParameters.DISPOSITION_LOCAL ) {
 					repo = new ContentCouchRepository(path, false);
@@ -384,6 +383,25 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		} else {
 			return null;
 		}
+	}
+	
+	public Object getHead(String path) {
+		Object res = exploratGetter.get("heads/"+path);
+		if( res == null && path.endsWith("/latest") ) {
+			String dirPath = path.substring(0,path.length()-"/latest".length());
+			Object dir = exploratGetter.get("heads/"+dirPath);
+			if( dir instanceof Directory ) {
+				String highestKey = null;
+				for( Iterator i=((Directory)dir).getEntries().keySet().iterator(); i.hasNext(); ) {
+					String k = (String)i.next();
+					if( highestKey == null || k.compareTo(k) > 0 ) highestKey = k;
+				}
+				if( highestKey != null ) {
+					return exploratGetter.get("heads/"+dirPath+"/"+highestKey);
+				}
+			}
+		}
+		return res;
 	}
 	
 	public Directory getDirectory() {
