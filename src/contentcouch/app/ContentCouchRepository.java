@@ -182,11 +182,15 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 					throw new RuntimeException("unknown repo disposition: " + rp.disposition);
 				}
 				if( explorable ) repo.explorable = true;
-				if( rp.name != null ) {
-					namedRepositories.put(rp.name, repo);
-					repo.name = rp.name;
-				}
+				if( rp.name != null ) repo.name = rp.name;
+				if( repo.name != null ) namedRepositories.put(repo.name, repo);
 			}
+		} else if( "-repo-name".equals(arg) ) {
+			++offset;
+			String name = args[offset];
+			++offset;
+			this.name = name;
+			namedRepositories.put(name, this);
 		}
 		return offset;
 	}
