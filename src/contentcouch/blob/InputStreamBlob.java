@@ -50,5 +50,16 @@ public class InputStreamBlob implements Blob {
 	public long getLength() {
 		return length;
 	}
+	
+	// For getting at the underlying input stream
 
+	public long getPosition() {
+		return position;
+	}
+	
+	public int read(byte[] bytes, int off, int length) throws IOException{
+		int r = inputStream.read(bytes, off, length);
+		position += r;
+		return r;
+	}
 }

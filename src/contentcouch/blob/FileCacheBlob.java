@@ -16,6 +16,7 @@ public class FileCacheBlob implements Blob, MetadataHaver {
 	Blob sourceBlob;
 	long bytesCached = 0;
 	Map metadata;
+	long length = -2;
 	
 	public FileCacheBlob( File file, Blob sourceBlob ) {
 		this.file = file;
@@ -63,8 +64,38 @@ public class FileCacheBlob implements Blob, MetadataHaver {
 		}
 	}
 
+	protected long cacheAll() {
+		try {
+			raf.seek(bytesCached);
+			if( !(sourceBlob instanceof InputStreamBlob) ) {
+				throw new RuntimeException("cacheAll only supported when source is InputStreamBlob");
+			}
+			InputStreamBlob isb = (InputStreamBlob)sourceBlob;
+			if( isb.getPosition() != bytesCached ) {
+				throw new RuntimeException("bytesCached != sourceBlob.position");
+			}
+			raf.seek(bytesCached);
+			int nread;
+			byte[] b = new byte[1024];
+			while( (nread = isb.read(b, 0, 1024)) > 0 ) {
+				bytesCached += nread;
+				raf.write(b, 0, nread);
+			}
+			return bytesCached;
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public long getLength() {
-		return sourceBlob.getLength();
+		if( length < 0 ) {
+			length = sourceBlob.getLength();
+			if( length == -1 && sourceBlob instanceof InputStreamBlob ) {
+				cacheAll();
+				length = bytesCached;
+			}
+		}
+		return length;
 	}
 	
 	public void finalize() throws IOException {
