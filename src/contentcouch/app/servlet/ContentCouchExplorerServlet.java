@@ -335,8 +335,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					href = name;
 				}
 				if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
-					if( !PathUtil.isAbsolute(href) ) href += "/";
-					name += "/";
+					if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
+					if( !name.endsWith("/") ) name += "/";
 				}
 				w.write("<tr>");
 				w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
@@ -380,7 +380,6 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				}
 			}
 			repoCache.isMainRepo = true;
-			repoCache.explorable = true;
 			try {
 				repoCache.loadConfig(configFile);
 			} catch( IOException e ) {
@@ -481,6 +480,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		while( true ) {
 			if( root == null || path == null || "".equals(path) || "/".equals(path) ) {
 				return root;
+			} else if( root instanceof ContentCouchRepository ) {
+				return ((ContentCouchRepository)root).getExplorat(path);
 			} else if( root instanceof Getter ) {
 				return ((Getter)root).get(path);
 			} else if( root instanceof Directory ) {
@@ -510,7 +511,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	
 	public Object getGenericResponse(Object obj, String path) {
 		if( obj instanceof ContentCouchRepository && !(obj instanceof Directory) ) {
-			obj = ((ContentCouchRepository)obj).getDirectory();
+			obj = ((ContentCouchRepository)obj).getExplorat("");
 		}
 		if( obj instanceof Directory ) {
 			obj = new DirectoryPageGenerator(path, (Directory)obj);

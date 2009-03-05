@@ -16,9 +16,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import contentcouch.file.FileDirectory;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
+import contentcouch.http.HtmlDirectoryGetFilter;
 import contentcouch.http.HttpBlobGetter;
 import contentcouch.path.PathUtil;
 import contentcouch.store.FileBlobMap;
@@ -76,7 +76,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public Getter exploratGetter;
 	public Identifier identifier;
 	public boolean initialized = false;
-	public boolean explorable = false;
 	public boolean isMainRepo = false;
 	public String name = "unnamed";
 	
@@ -132,13 +131,12 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 
 	public void initBasics( String path ) throws IOException {
 		if( !path.endsWith("/") ) path += "/";
-		this.path = path;		
+		this.path = path;
 		
 		if( path.startsWith("http:") ) {
-			HttpBlobGetter hbg = new HttpBlobGetter();
-			
-			blobStore = new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null );
-			headGetter = new PrefixGetFilter(hbg, path + "heads/");
+			exploratGetter = new PrefixGetFilter(new HtmlDirectoryGetFilter(new HttpBlobGetter()), path);
+			blobStore = new Sha1BlobStore( new PrefixGetFilter(exploratGetter, "data/"), null );
+			headGetter = new PrefixGetFilter(exploratGetter, "heads/");
 		} else {
 			FileUtil.mkdirs( new File(path) );
 			File configFile = new File(path + "/ccouch-config");
@@ -203,7 +201,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 				} else {
 					throw new RuntimeException("unknown repo disposition: " + rp.disposition);
 				}
-				if( explorable ) repo.explorable = true;
 				if( rp.name != null ) repo.name = rp.name;
 				if( repo.name != null ) namedRepositories.put(repo.name, repo);
 			}
@@ -350,12 +347,14 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		return null;
 	}
 	
+	public Object getExplorat( String identifier ) {
+		Object o = exploratGetter.get(identifier);
+		//throw new RuntimeException("Get '" + path + "'+'" + identifier + "' = " + (o == null ? "null " : o.getClass().getName()));
+		return o;
+	}
+	
 	public Object get( String identifier ) {
 		Object obj;
-		if( explorable && exploratGetter != null ) {
-			obj = exploratGetter.get(identifier);
-			if( obj != null ) return obj;
-		}
 		
 		// Check this repo
 		obj = getLocal(identifier);
@@ -420,10 +419,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		return res;
 	}
 	
-	public Directory getDirectory() {
-		return new FileDirectory(new File(path));
-	}
-
 	//// Put stuff ////
 	
 	public String push( Object obj ) {
