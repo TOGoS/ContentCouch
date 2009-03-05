@@ -1,6 +1,8 @@
 package contentcouch.path;
 
 import java.io.UnsupportedEncodingException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class PathUtil {
@@ -14,6 +16,8 @@ public class PathUtil {
 		return slashi == 0 || (coloni > 0 && (slashi > coloni || slashi < 0));
 	}
 
+	protected static Pattern SOMETHINGDOTDOT = Pattern.compile("(?:/[^/]+/\\.\\./)|(?:/\\./)", 0);
+	
 	public static String appendPath( String p1, String p2 ) {
 		if( p1 == null || p1.length() == 0 ) return p2;
 		if( p2 == null || p2.length() == 0 ) return p1;
@@ -26,7 +30,13 @@ public class PathUtil {
 		int lastSlash = p1.lastIndexOf('/');
 		if( lastSlash == -1 ) return p2;
 
-		return p1.substring(0,lastSlash+1) + p2;
+		String fp = p1.substring(0,lastSlash+1) + p2;
+		Matcher dotDotMatch = SOMETHINGDOTDOT.matcher(fp);
+		while( dotDotMatch.find() ) {
+			fp = dotDotMatch.replaceAll("/");
+			dotDotMatch = SOMETHINGDOTDOT.matcher(fp);
+		}
+		return fp;
 	}
 
 	public static final char[] hexChars = new char[]{'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
