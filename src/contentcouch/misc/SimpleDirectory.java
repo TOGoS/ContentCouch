@@ -10,9 +10,9 @@ import contentcouch.value.MetadataHaver;
 
 public class SimpleDirectory implements Directory, MetadataHaver {
 	public static class Entry implements Directory.Entry, MetadataHaver {
-		public long lastModified;
+		public long lastModified = -1;
 		public String name;
-		public long size;
+		public long size = -1;
 		public Object target;
 		public String targetType;
 		public Map metadata;
@@ -38,6 +38,9 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 	
 	public Map entries = new HashMap();
 	public Map metadata;
+	
+	public SimpleDirectory() {
+	}
 	
 	public SimpleDirectory(Map m) {
 		for( Iterator i=m.entrySet().iterator(); i.hasNext(); ) {
