@@ -76,9 +76,17 @@ public class ContentCouchCommand {
 		"Checkout options:\n" +
 		"  -link              ; hardlink files from the store instead of copying\n" +
 		"  -merge             ; merge source tree into destination\n" +
+		"  -replace           ; when merging, always replace existing files\n" +
 		"  -dirs-only         ; only export the directory structure\n" +
 		"  -v                 ; verbose - report every file exported\n" +
-		"  -?                 ; display help and exit";
+		"  -?                 ; display help and exit\n" +
+		"\n" +
+		"When merging, unless -replace is given, only files that do not already\n" +
+		"exist in the destination folder will be checked out.  If the destination\n" +
+		"file has the same content as the to-be-checked-out file, no action is taken.\n" +
+		"If the content is different, an error is printed and the program exits.";
+		
+	
 	
 	public String RDFIFY_USAGE =
 		"Usage: ccouch [general options] rdfify [rdfify options] <dir>\n" +
@@ -376,6 +384,7 @@ public class ContentCouchCommand {
 		boolean exportFiles = true;
 		boolean link = false;
 		boolean merge = false;
+		boolean replaceFiles = false;
 		String source = null;
 		String dest = null;
 		for( int i=0; i < args.length; ++i ) {
@@ -389,6 +398,8 @@ public class ContentCouchCommand {
 				verbose = true;
 			} else if( "-link".equals(arg) ) {
 				link = true;
+			} else if( "-replace".equals(arg) ) {
+				replaceFiles = true;
 			} else if( "-dirs-only".equals(arg) ) {
 				exportFiles = false;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
@@ -418,10 +429,11 @@ public class ContentCouchCommand {
 			System.err.println(CHECKOUT_USAGE);
 			System.exit(1);
 		}
-		final Exporter exporter = new Exporter(getLocalGetter());
+		final Exporter exporter = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
 		exporter.link = link;
 		exporter.verbose = verbose;
 		exporter.exportFiles = exportFiles;
+		exporter.replaceFiles = replaceFiles;
 		File destFile = new File(dest);
 		Object exportThis = exporter.followRedirects(new Ref(source), null);
 		if( "-".equals(dest) ) {

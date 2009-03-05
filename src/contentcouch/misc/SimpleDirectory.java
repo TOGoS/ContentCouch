@@ -25,6 +25,11 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 		
 		public Map getMetadata() { return metadata; }
 		
+		public Object getMetadata(String key) {
+			if( metadata == null ) return null;
+			return metadata.get(key);
+		}
+		
 		public void putMetadata(String key, Object value) {
 			if( metadata == null ) metadata = new HashMap();
 			metadata.put(key,value);
@@ -54,6 +59,11 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 	//// MetadataHaver implementation ////
 	
 	public Map getMetadata() { return metadata; }
+	
+	public Object getMetadata(String key) {
+		if( metadata == null ) return null;
+		return metadata.get(key);
+	}
 	
 	public void putMetadata(String key, Object value) {
 		if( metadata == null ) metadata = new HashMap();

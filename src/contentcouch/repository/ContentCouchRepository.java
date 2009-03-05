@@ -69,7 +69,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	
 	protected String path;
 	
-	public Getter dataGetter;
+	public Sha1BlobStore blobStore;
 	public Pusher dataPusher;
 	public Getter headGetter;
 	public Putter headPutter;
@@ -112,6 +112,10 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		return path;
 	}
 	
+	public Identifier getBlobIdentifier() {
+		return blobStore;
+	}
+	
 	public void writeDefaultConfig(File configFile) throws IOException {
 		String resname = "config-template.txt";
 		InputStream res = this.getClass().getResourceAsStream(resname);
@@ -133,7 +137,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		if( path.startsWith("http:") ) {
 			HttpBlobGetter hbg = new HttpBlobGetter();
 			
-			dataGetter = new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null );
+			blobStore = new Sha1BlobStore( new PrefixGetFilter(hbg, path + "data/"), null );
 			headGetter = new PrefixGetFilter(hbg, path + "heads/");
 		} else {
 			FileUtil.mkdirs( new File(path) );
@@ -148,7 +152,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 
 			exploratGetter = new FileBlobMap(path + "/");
 			Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "data/") );
-			dataGetter = bs;
+			blobStore = bs;
 			dataPusher = bs;
 			identifier = bs;
 			FileBlobMap hs = new FileBlobMap(path + "heads/");
@@ -320,7 +324,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	//// Get stuff ////
 	
 	public Object getReallyLocal( String identifier ) {
-		return dataGetter.get(identifier);
+		return blobStore.get(identifier);
 	}
 	
 	public Object getLocal( String identifier ) {
@@ -382,8 +386,8 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	}
 	
 	public File getStoreFile(String identifier) {
-		if( dataGetter instanceof StoreFileGetter ) {
-			return ((StoreFileGetter)dataGetter).getStoreFile(identifier);
+		if( blobStore instanceof StoreFileGetter ) {
+			return ((StoreFileGetter)blobStore).getStoreFile(identifier);
 		} else {
 			return null;
 		}

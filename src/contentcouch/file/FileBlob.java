@@ -23,6 +23,11 @@ public class FileBlob extends File implements Blob, MetadataHaver {
 	
 	public Map getMetadata() { return metadata; }
 	
+	public Object getMetadata(String key) {
+		if( metadata == null ) return null;
+		return metadata.get(key);
+	}
+	
 	public void putMetadata(String key, Object value) {
 		if( metadata == null ) metadata = new HashMap();
 		metadata.put(key,value);
@@ -53,5 +58,11 @@ public class FileBlob extends File implements Blob, MetadataHaver {
 	
 	public long getLength() {
 		return length();
+	}
+	
+	////
+	
+	public String toString() {
+		return "FileBlob " + getPath();
 	}
 }

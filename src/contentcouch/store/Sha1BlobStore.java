@@ -10,6 +10,7 @@ import contentcouch.digest.DigestUtil;
 import contentcouch.file.FileBlob;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.value.Blob;
+import contentcouch.value.MetadataHaver;
 
 public class Sha1BlobStore implements BlobStore, StoreFileGetter, Identifier {
 	protected Getter blobGetter;
@@ -45,10 +46,25 @@ public class Sha1BlobStore implements BlobStore, StoreFileGetter, Identifier {
 			return DigestUtil.sha1DigestBlob(blob);
 		}
 	}
+	
+	protected static final String SHA1URN = "sha-1-urn"; 
 
+	protected void cacheUrn( Object blob, String urn ) {
+		if( blob instanceof MetadataHaver ) {
+			((MetadataHaver)blob).putMetadata(SHA1URN, urn);
+		}		
+	}
+	
 	public String identify( Object blob ) {
+		String urn;
+		if( blob instanceof MetadataHaver ) {
+			urn = (String)((MetadataHaver)blob).getMetadata(SHA1URN);
+			if( urn != null ) return urn;
+		}
 		if( blob instanceof Blob ) {
-			return getUrnForSha1( getSha1((Blob)blob) );
+			urn = getUrnForSha1( getSha1((Blob)blob) );
+			cacheUrn(blob, urn);
+			return urn;
 		} else {
 			throw new RuntimeException("Can't identify " + blob.getClass().getName());
 		}
@@ -61,6 +77,7 @@ public class Sha1BlobStore implements BlobStore, StoreFileGetter, Identifier {
 		Blob blob = BlobUtil.getBlob(obj);
 		byte[] sha1 = getSha1(blob);
 		String urn = getUrnForSha1( sha1 );
+		cacheUrn(blob, urn);
 		String filename = getFilenameForSha1( sha1 );
 		blobPutter.put(filename, blob);
 		if( blobPutter instanceof StoreFileGetter ) {
@@ -89,7 +106,9 @@ public class Sha1BlobStore implements BlobStore, StoreFileGetter, Identifier {
 		byte[] sha1 = getSha1FromUrn( urn );
 		if( sha1 != null ) {
 			String filename = getFilenameForSha1( sha1 );
-			return blobGetter.get(filename);
+			Object blob = blobGetter.get(filename);
+			cacheUrn(blob, urn);
+			return blob;
 		}
 		return null;
 	}
