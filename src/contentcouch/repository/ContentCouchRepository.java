@@ -10,9 +10,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +35,52 @@ import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
 public class ContentCouchRepository implements Getter, Pusher, Identifier, StoreFileGetter {
+	public static class DownloadInfo {
+		public ContentCouchRepository sourceRepo;
+		public String sourceUrl;
+		public long dataLength;
+		
+		public DownloadInfo(ContentCouchRepository sourceRepo, Object dlo) {
+			this.sourceRepo = sourceRepo;
+			if( dlo instanceof Blob ) {
+				dataLength = ((Blob)dlo).getLength();
+			}
+		}
+		
+		public String getRepoName() {
+			if( sourceRepo == null || sourceRepo.name == null ) {
+				return "(unnamed repo)";
+			} else {
+				return "'" + sourceRepo.name + "'";
+			}
+		}
+		
+		public String getShortDesc() {
+			String d = " from " + getRepoName();
+			if( dataLength != -1 ) {
+				d += ", " + dataLength + " bytes";
+			}
+			return d;
+		}
+
+		public String getLengthDesc() {
+			if( dataLength != -1 ) {
+				return " " + dataLength + "B";
+			} else {
+				return "";
+			}
+		}
+	}
+	
+	public static interface GetAttemptListener {
+		public static int GET_FAILED      = 1;
+		public static int GOT_FROM_REMOTE = 2;
+		public static int GOT_FROM_CACHE  = 3;
+		public static int GOT_FROM_LOCAL  = 4;
+		
+		public void getAttempted( String uri, int status, DownloadInfo info );
+	}
+	
 	protected static class RepoParameters {
 		public static final String DISPOSITION_MAIN = "main";
 		public static final String DISPOSITION_LOCAL = "local";
@@ -318,10 +366,37 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		remoteRepositories.add(0,repo);
 	}
 
+	//// Get listeners ////
+	
+	protected Set getAttemptListeners;
+	
+	public void addGetAttemptListener( GetAttemptListener l ) {
+		if( getAttemptListeners == null ) getAttemptListeners = new HashSet();
+		getAttemptListeners.add(l);
+	}
+	
+	public boolean removeGetAttemptListener( GetAttemptListener l ) {
+		if( getAttemptListeners == null ) return false;
+		return getAttemptListeners.remove(l);
+	}
+
+	public void getAttempted( String uri, int status, DownloadInfo info ) {
+		if( getAttemptListeners == null ) return;
+		for( Iterator i=getAttemptListeners.iterator(); i.hasNext(); ) {
+			((GetAttemptListener)i.next()).getAttempted(uri, status, info);
+		}
+	}
+	
+	public void getAttempted( String uri, int status, ContentCouchRepository foundAt, Object o ) {
+		getAttempted(uri, status, new DownloadInfo(foundAt, o));
+	}
+
 	//// Get stuff ////
 	
 	public Object getReallyLocal( String identifier ) {
-		return blobStore.get(identifier);
+		Object obj = blobStore.get(identifier);
+		if( obj != null ) getAttempted( identifier, GetAttemptListener.GOT_FROM_LOCAL, this, obj );
+		return obj;
 	}
 	
 	public Object getLocal( String identifier ) {
@@ -331,7 +406,10 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		for( Iterator i=localRepositories.iterator(); i.hasNext(); ) {
 			ContentCouchRepository localRepo = (ContentCouchRepository)i.next();
 			obj = localRepo.getReallyLocal(identifier);
-			if( obj != null ) return obj;
+			if( obj != null ) {
+				getAttempted( identifier, GetAttemptListener.GOT_FROM_LOCAL, localRepo, obj );
+				return obj;
+			}
 		}
 		
 		return null;
@@ -340,9 +418,12 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public Object getRemote( String identifier ) {
 		Object obj;
 		for( Iterator i=remoteRepositories.iterator(); i.hasNext(); ) {
-			ContentCouchRepository localRepo = (ContentCouchRepository)i.next();
-			obj = localRepo.getReallyLocal(identifier);
-			if( obj != null ) return obj;
+			ContentCouchRepository remoteRepo = (ContentCouchRepository)i.next();
+			obj = remoteRepo.getReallyLocal(identifier);
+			if( obj != null ) {
+				getAttempted( identifier, GetAttemptListener.GOT_FROM_REMOTE, remoteRepo, obj );
+				return obj;
+			}
 		}
 		return null;
 	}
@@ -363,7 +444,10 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		// Check cache repo
 		if( remoteCacheRepository != null ) {
 			obj = remoteCacheRepository.getReallyLocal(identifier);
-			if( obj != null ) return obj;
+			if( obj != null ) {
+				getAttempted( identifier, GetAttemptListener.GOT_FROM_CACHE, remoteCacheRepository, obj );
+				return obj;
+			}
 		}
 		
 		// Check remote repos
@@ -376,6 +460,8 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			obj = remoteCacheRepository.get(cachedId);
 		}
 	
+		if( obj == null ) getAttempted( identifier, GetAttemptListener.GET_FAILED, null );
+		
 		return obj;
 	}
 	

@@ -32,7 +32,6 @@ public class HttpBlobGetter implements Getter {
 			URL url = new URL(identifier);
 			URLConnection urlConn = url.openConnection();
 			long length = urlConn.getContentLength();
-			System.err.println("Downloading " + identifier + " (" + length + " bytes)");
 			File tempFile = File.createTempFile("httpdownload", null);
 			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), length));
 			if( urlConn.getLastModified() > 0 ) { 

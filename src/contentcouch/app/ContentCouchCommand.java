@@ -18,6 +18,8 @@ import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
 import contentcouch.repository.CCouchHeadGetter;
 import contentcouch.repository.ContentCouchRepository;
+import contentcouch.repository.ContentCouchRepository.DownloadInfo;
+import contentcouch.repository.ContentCouchRepository.GetAttemptListener;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
@@ -86,9 +88,20 @@ public class ContentCouchCommand {
 		"file has the same content as the to-be-checked-out file, no action is taken.\n" +
 		"If the content is different, an error is printed and the program exits.";
 		
+	public static String CACHE_USAGE =
+		"Usage: ccouch [general options] cache <urn> <urn> ...\n" +
+		"Options:\n" +
+		"  -v  ; show all URNs being followed\n" +
+		"  -q  ; show nothing - not even failures\n" +
+		"\n" +
+		"Attempts to cache any objects that are not already in a local repository\n" +
+		"into your cache repository.  Directories, Commits, and Redirects will\n" +
+		"be followed and all referenced objects will be cached.\n" +
+		"\n" +
+		"By default, URIs that fail to load and ones that are newly cached are\n" +
+		"reported to stderr\n";
 	
-	
-	public String RDFIFY_USAGE =
+	public static String RDFIFY_USAGE =
 		"Usage: ccouch [general options] rdfify [rdfify options] <dir>\n" +
 		"Rdfify options:\n" +
 		"  -nested            ; nest sub-dirs in output instead of linking to them";
@@ -96,10 +109,23 @@ public class ContentCouchCommand {
 	////
 	
 	protected ContentCouchRepository repositoryCache = null;
+	protected int cacheVerbosity = GetAttemptListener.GOT_FROM_REMOTE;
 	
 	public ContentCouchRepository getRepository() {
 		if( repositoryCache == null ) {
 			repositoryCache = new ContentCouchRepository(null, true);
+			repositoryCache.addGetAttemptListener(new GetAttemptListener() {
+				public void getAttempted( String uri, int status, DownloadInfo info ) {
+					if( cacheVerbosity >= status ) {
+						switch( status ) {
+						case( 1 ): System.err.println("! Couldn't find  " + uri); break;
+						case( 2 ): System.err.println("  Downloading    " + uri + info.getShortDesc() ); break;
+						case( 3 ): System.err.println("  Already cached " + uri); break;
+						case( 4 ): System.err.println("  Already local  " + uri); break;
+						}
+					}
+				}
+			});
 		}
 		return repositoryCache;
 	}
@@ -455,6 +481,70 @@ public class ContentCouchCommand {
 		exporter.exportObject(exportThis, destFile, null);
 	}
 	
+	public boolean cache( String uri ) {
+		Object o = getRepository().get(uri);
+		if( o == null ) {
+			//reportCacheStatus(uri, verbosity, false);
+			return false;
+		} else if( o instanceof Directory ) {
+			//reportCacheStatus(uri, verbosity, true);
+			boolean success = true;
+			Directory d = (Directory)o;
+			for( Iterator i=d.getEntries().values().iterator(); i.hasNext(); ) {
+				Directory.Entry e = (Directory.Entry)i.next();
+				if( e.getTarget() instanceof Ref ) {
+					if( !cache( ((Ref)e.getTarget()).targetUri ) ) success = false;
+				}
+			}
+			return success;
+		} else if( o instanceof Commit ) {
+			//reportCacheStatus(uri, verbosity, true);
+			Commit c = (Commit)o;
+			o = c.getTarget();
+		} else if( o instanceof RdfNode && RdfNamespace.CCOUCH_REDIRECT.equals(((RdfNode)o).typeName) ) {
+			//reportCacheStatus(uri, verbosity, true);
+			o = ((RdfNode)o).getSingle(RdfNamespace.CCOUCH_TARGET);
+		}
+		
+		if( o instanceof Ref ) {
+			return cache( ((Ref)o).targetUri );
+		} else {
+			return true;
+		}
+	}
+	
+	public void runCacheCmd( String[] args ) {
+		args = mergeConfiguredArgs("cache", args);
+		List cacheUris = new ArrayList();
+		boolean cacheless = false;
+		for( int i=0; i<args.length; ++i ) {
+			String arg = args[i];
+			if( "-q".equals(arg) ) {
+				cacheVerbosity = 0;
+			} else if( "-v".equals(arg) ) {
+				cacheVerbosity = GetAttemptListener.GOT_FROM_LOCAL;
+			} else if( "-cacheless".equals(arg) ) {
+				cacheless = true;
+			} else if( !arg.startsWith("-") ) {
+				cacheUris.add(arg);
+			} else {
+				System.err.println("ccouch cache: Unrecognised argument: " + arg);
+				System.err.println(CACHE_USAGE);
+				System.exit(1);
+			}
+		}
+		if( getRepository().remoteCacheRepository == null && !cacheless ) {
+			System.err.println("ccouch cache: The currently selected repository (" + getRepository().getPath() + ")");
+			System.err.println("  has no cache repository set up.  'ccouch cache' is pretty pointless!");
+			System.err.println("  Use -cacheless to run anyway");
+		}
+		boolean success = true;
+		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
+			if( !cache( (String)i.next() ) ) success = false;
+		}
+		System.exit(success ? 0 : 1);
+	}
+	
 	public void runIdCmd( String[] args ) {
 		args = mergeConfiguredArgs("id", args);
 		runStoreCmd(concat(new String[]{"-dont-store"},args));
@@ -545,6 +635,8 @@ public class ContentCouchCommand {
 			runStoreCmd( cmdArgs );
 		} else if( "checkout".equals(cmd) ) {
 			runCheckoutCmd( cmdArgs );
+		} else if( "cache".equals(cmd) ) {
+			runCacheCmd( cmdArgs );
 		} else if( "check".equals(cmd) ) {
 			runCheckCmd( cmdArgs );
 		} else if( "id".equals(cmd) ) {
