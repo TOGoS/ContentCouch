@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.eekboom.utils.Strings;
+
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.http.HtmlDirectoryGetFilter;
@@ -495,7 +497,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 				String highestKey = null;
 				for( Iterator i=((Directory)dir).getEntries().keySet().iterator(); i.hasNext(); ) {
 					String k = (String)i.next();
-					if( highestKey == null || k.compareTo(k) > 0 ) highestKey = k;
+					if( highestKey == null || Strings.compareNatural(k,highestKey) > 0 ) highestKey = k;
 				}
 				if( highestKey != null ) {
 					return exploratGetter.get("heads/"+dirPath+"/"+highestKey);

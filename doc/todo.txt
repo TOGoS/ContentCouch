@@ -1,5 +1,3 @@
-- Add cache command
-
 - Add cache-heads command
 
 - RdfNodes ought to read relative URIs as relative to the node's source URI.

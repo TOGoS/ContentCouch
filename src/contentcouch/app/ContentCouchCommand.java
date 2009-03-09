@@ -363,7 +363,6 @@ public class ContentCouchCommand {
 					targetType = RdfNamespace.OBJECT_TYPE_BLOB;
 				}
 				if( name != null ) name = getRepository().name + "/" + name;
-				System.err.println("Save as " + name);
 				
 				String[] parentCommitUris;
 				if( o instanceof File ) {
@@ -375,7 +374,7 @@ public class ContentCouchCommand {
 				
 				if( parentCommitUris.length == 1 && !forceCommit ) {
 					// Cancel the commit if the old one points to the same thing
-					Commit oldCommit = (Commit)getRepository().get(parentCommitUris[0]);
+					Commit oldCommit = (Commit)getLocalGetter().get(parentCommitUris[0]);
 					if( oldCommit == null ) {
 						System.err.println("Error: Could not load old commit " + parentCommitUris[0]);
 						System.exit(1);

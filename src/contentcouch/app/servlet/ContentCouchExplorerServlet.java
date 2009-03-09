@@ -23,6 +23,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.eekboom.utils.Strings;
+
 import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
 import contentcouch.file.FileBlob;
@@ -296,7 +298,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					Entry e1 = (Entry)o1;
 					Entry e2 = (Entry)o2;
 					if( e1.getTargetType().equals(e2.getTargetType()) ) {
-						return e1.getName().compareTo(e2.getName());
+						return Strings.compareNatural(e1.getName(),e2.getName());
 					} else {
 						if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e1.getTargetType()) ) {
 							return -1;
