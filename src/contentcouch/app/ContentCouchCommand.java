@@ -129,6 +129,14 @@ public class ContentCouchCommand {
 		"Rdfify options:\n" +
 		"  -nested            ; nest sub-dirs in output instead of linking to them";
 
+	public static String CACHE_CHECK_USAGE =
+		"Usage: ccouch [general options] check <path> <path> ...\n" +
+		"\n" +
+		"Walks the named directories or files and ensures that all non-dot files'\n" +
+		"names match their base-32 encoded SHA-1 hash.\n" +
+		"\n" +
+		"If no paths are given, checks the data directory in the main repository";
+	
 	////
 	
 	protected ContentCouchRepository repositoryCache = null;
@@ -661,8 +669,29 @@ public class ContentCouchCommand {
 	
 	public void runCheckCmd( String[] args ) {
 		args = mergeConfiguredArgs("check", args);
+		List checkPaths = new ArrayList();
+		for( int i=0; i<args.length; ++i ) {
+			String arg = args[i];
+			if( arg.startsWith("-" ) ) {
+				System.err.println("ccouch check: Unrecognised argument: " + arg);
+				System.err.println(CACHE_CHECK_USAGE);
+				System.exit(1);
+			} else {
+				checkPaths.add(arg);
+			}
+		}
+		
+		if( checkPaths.size() == 0 ) {
+			checkPaths.add(getRepository().getPath() + "data/");
+		}
+		
 		RepoChecker rc = new RepoChecker();
-		rc.checkFiles(new File(getRepository().getPath() + "/data"));
+		for( Iterator i=checkPaths.iterator(); i.hasNext(); ) {
+			String path = (String)i.next();
+			System.err.println("Checking " + path);
+			File f = new File(path);
+			rc.checkFiles(f);
+		}
 	}
 	
 	public void runRdfifyCmd( String[] args ) {
