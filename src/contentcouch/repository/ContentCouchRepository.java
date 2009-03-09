@@ -491,7 +491,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public Object getHead(String path) {
 		Object res = exploratGetter.get("heads/"+path);
 		if( res == null && path.endsWith("/latest") ) {
-			String dirPath = path.substring(0,path.length()-"/latest".length());
+			String dirPath = path.substring(0,path.length()-"latest".length());
 			Object dir = exploratGetter.get("heads/"+dirPath);
 			if( dir instanceof Directory ) {
 				String highestKey = null;
