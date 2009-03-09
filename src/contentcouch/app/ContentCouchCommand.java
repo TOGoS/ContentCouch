@@ -23,6 +23,7 @@ import contentcouch.repository.ContentCouchRepository.GetAttemptListener;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.MultiGetter;
+import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
@@ -139,7 +140,7 @@ public class ContentCouchCommand {
 		mg.addGetter(getRepository());
 		mg.addGetter(new CCouchHeadGetter(getRepository()));
 		mg.addGetter(new FileBlobMap(""));
-		return mg;
+		return new ParseRdfGetFilter(mg);
 	}
 	
 	protected String[] concat( String[] s1, String[] s2 ) {
@@ -482,7 +483,7 @@ public class ContentCouchCommand {
 	}
 	
 	public boolean cache( String uri ) {
-		Object o = getRepository().get(uri);
+		Object o = getLocalGetter().get(uri);
 		if( o == null ) {
 			//reportCacheStatus(uri, verbosity, false);
 			return false;
