@@ -8,6 +8,7 @@ import contentcouch.app.Linker.LinkException;
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileBlob;
 import contentcouch.misc.MetadataUtil;
+import contentcouch.path.PathUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.Getter;
@@ -72,6 +73,7 @@ public class Exporter {
 	
 	protected void exportDirectoryEntry( Directory.Entry entry, File destDir, String entrySourceLocation ) {
 		String name = entry.getName();
+		if( name.endsWith("/") ) name = name.substring(0, name.length()-1);
 		if( (name.indexOf('/') != -1) || (name.indexOf('\\') != -1) ) {
 			throw new RuntimeException("Invalid characters in directory entry name: " + name);
 		}
@@ -80,9 +82,9 @@ public class Exporter {
 		
 		Object target = entry.getTarget();
 		if( target == null ) {
-			throw new RuntimeException("Entry targeted nothing " + entry);
+			throw new RuntimeException( "Entry has no target: " + entrySourceLocation );
 		}
-	
+		
 		if( RdfNamespace.OBJECT_TYPE_BLOB.equals(entry.getTargetType()) ) {
 			if( exportFiles ) {
 				exportObject( target, destination, entrySourceLocation );
@@ -123,8 +125,15 @@ public class Exporter {
 	}
 	
 	public void exportObject( Object obj, File destination, String referencedBy ) {
-		obj = followRedirects(obj, referencedBy);
-		if( obj instanceof Blob ) {
+		if( obj instanceof Ref ) {
+			String uri = PathUtil.appendPath(referencedBy, ((Ref)obj).targetUri);
+			obj = getter.get(uri);
+			if( obj == null ) throw new RuntimeException("Couldn't find " + uri + (referencedBy == null ? "" : ", referenced by " + referencedBy ));
+			exportObject( obj, destination, uri );
+		} else if( obj instanceof RdfNode && RdfNamespace.CCOUCH_REDIRECT.equals(((RdfNode)obj).typeName) ) {
+			obj = ((RdfNode)obj).getSingle(RdfNamespace.CCOUCH_TARGET);
+			exportObject( obj, destination, referencedBy );
+		} else if( obj instanceof Blob ) {
 			exportBlob( (Blob)obj, destination );
 		} else if( obj instanceof Directory ) {
 			exportDirectory( (Directory)obj, destination, referencedBy );

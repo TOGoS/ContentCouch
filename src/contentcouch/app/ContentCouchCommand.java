@@ -44,6 +44,8 @@ public class ContentCouchCommand {
 		"Sub-commands:\n" +
 		"  store <files>         ; store files in the repo\n" +
 		"  checkout <uri> <dest> ; check files out to the filesystem\n" +
+		"  cache <urn> ...       ; cache blobs\n" +
+		"  cache-heads ...       ; cache heads from another repository\n" +
 		"  id <files>            ; give URNs for files without storing\n" +
 		"  rdfify <dir>          ; print RDF listing of a directory\n" +
 		"  check                 ; check repo integrity and delete bad files";
@@ -90,7 +92,7 @@ public class ContentCouchCommand {
 		"If the content is different, an error is printed and the program exits.";
 		
 	public static String CACHE_USAGE =
-		"Usage: ccouch [general options] cache <urn> <urn> ...\n" +
+		"Usage: ccouch [general options] cache [options] <urn> <urn> ...\n" +
 		"Options:\n" +
 		"  -v  ; show all URNs being followed\n" +
 		"  -q  ; show nothing - not even failures\n" +
@@ -101,6 +103,26 @@ public class ContentCouchCommand {
 		"\n" +
 		"By default, URIs that fail to load and ones that are newly cached are\n" +
 		"reported to stderr\n";
+	
+	public static String CACHE_HEADS_USAGE =
+		"Usage: ccouch [general options] cache-heads [options] <head-uri> ...\n" +
+		"Options:\n" +
+//		"  -v           ; show all URNs being followed\n" +
+//		"  -q           ; show nothing - not even failures\n" +
+		"  -all-remotes ; cache heads from each remote repository\n" +
+		"\n" +
+		"Attempts to cache heads from the given repo/paths into your cache repository.\n" +
+		"\n" +
+		"If -all-remotes is given, heads from each remote repository under a folder\n" +
+		"with the same name as the repository will be stored in the cache repository\n" +
+		"under that same name.  e.g.\n" +
+		"  x-ccouch-repo://barney-repo/barney-repo/foobar/123 will be cached at\n" +
+		"  x-ccouch-repo://my-cache-repo/barney-repo/foobar/123\n" +
+		"\n" +
+		"Otherwise, head-uri can be of any of the following forms:\n" +
+		"  //repo/path/  ; cache only a certain set of heads from a certain repository\n" +
+		"  /path/        ; cache heads under the given path from any repository that\n" +
+		"                ; has them";
 	
 	public static String RDFIFY_USAGE =
 		"Usage: ccouch [general options] rdfify [rdfify options] <dir>\n" +
@@ -523,6 +545,9 @@ public class ContentCouchCommand {
 				cacheVerbosity = 0;
 			} else if( "-v".equals(arg) ) {
 				cacheVerbosity = GetAttemptListener.GOT_FROM_LOCAL;
+			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
+				System.out.println(CACHE_USAGE);
+				System.exit(0);
 			} else if( "-cacheless".equals(arg) ) {
 				cacheless = true;
 			} else if( !arg.startsWith("-") ) {
@@ -537,6 +562,7 @@ public class ContentCouchCommand {
 			System.err.println("ccouch cache: The currently selected repository (" + getRepository().getPath() + ")");
 			System.err.println("  has no cache repository set up.  'ccouch cache' is pretty pointless!");
 			System.err.println("  Use -cacheless to run anyway");
+			System.exit(1);
 		}
 		boolean success = true;
 		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
@@ -544,7 +570,90 @@ public class ContentCouchCommand {
 		}
 		System.exit(success ? 0 : 1);
 	}
+
+	protected static final String ALL_REMOTE_HEADS_PATH = "-all-remotes";
 	
+	protected boolean cacheHeads( ContentCouchRepository remote, String remotePath,
+			ContentCouchRepository cache, String cachePath ) {
+		Exporter e = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
+		Object ro = remote.getHead(remotePath);
+		if( ro == null ) {
+			System.err.println("Could not find //" + remote.name + "/" + remotePath);
+			return false;
+		}
+		System.err.println("Export //" + remote.name + "/" + remotePath + " as " + cachePath);
+		e.exportObject(ro, new File(cache.getPath() + "heads/" + cachePath), "x-ccouch-head://" + remote.name + "/" + remotePath );
+		return true;
+	}
+	
+	protected boolean cacheHeads( String path ) {
+		ContentCouchRepository cache = getRepository().remoteCacheRepository;
+		
+		if( path.startsWith(RdfNamespace.URI_PARSE_PREFIX)) path = path.substring(RdfNamespace.URI_PARSE_PREFIX.length());
+		if( path.startsWith("x-ccouch-head:") ) path = path.substring("x-ccouch-head:".length());
+		
+		boolean success = true;
+		if( ALL_REMOTE_HEADS_PATH.equals(path) ) {
+			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
+				ContentCouchRepository rr = (ContentCouchRepository)rri.next();
+				if( rr.name != null ) {
+					if( !cacheHeads( rr, rr.name + "/", cache, rr.name + "/" ) ) success = false;
+				}
+			}
+		} else if( path.startsWith("//") ) {
+			path = path.substring(2);
+			int si = path.indexOf('/');
+			if( si == -1 ) throw new RuntimeException("Malformed head path (contains '//' but no '/'): " + path);
+			String repoName = path.substring(0,si);
+			path = path.substring(si+1);
+			ContentCouchRepository rr = (ContentCouchRepository)getRepository().namedRepositories.get(repoName);
+			if( rr == null ) throw new RuntimeException("No such repository: " + repoName);
+			if( path.endsWith("/latest") ) path = rr.findHead(path);
+			return cacheHeads( rr, path, cache, path );
+		} else {
+			if( path.startsWith("/") ) path = path.substring(1);
+			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
+				ContentCouchRepository rr = (ContentCouchRepository)rri.next();
+				if( rr.name != null ) {
+					if( !cacheHeads( rr, path, cache, path) ) success = false;
+				}
+			}
+		}
+		return success;
+	}
+	
+	public void runCacheHeadsCmd( String[] args ) {
+		args = mergeConfiguredArgs("cache-heads", args);
+		List cacheUris = new ArrayList();
+		for( int i=0; i<args.length; ++i ) {
+			String arg = args[i];
+			if( "-q".equals(arg) ) {
+				cacheVerbosity = 0;
+			} else if( "-v".equals(arg) ) {
+				cacheVerbosity = GetAttemptListener.GOT_FROM_LOCAL;
+			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
+				System.out.println(CACHE_HEADS_USAGE);
+				System.exit(0);
+			} else if( !arg.startsWith("-") || ALL_REMOTE_HEADS_PATH.equals(arg) ) {
+				cacheUris.add(arg);
+			} else {
+				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
+				System.err.println(CACHE_HEADS_USAGE);
+				System.exit(1);
+			}
+		}
+		if( getRepository().remoteCacheRepository == null ) {
+			System.err.println("ccouch cache: The currently selected repository (" + getRepository().getPath() + ")");
+			System.err.println("  has no cache repository set up.  'ccouch cache-heads' is pretty pointless!");
+			System.exit(1);
+		}
+		boolean success = true;
+		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
+			if( !cacheHeads( (String)i.next() ) ) success = false;
+		}
+		System.exit(success ? 0 : 1);
+	}
+
 	public void runIdCmd( String[] args ) {
 		args = mergeConfiguredArgs("id", args);
 		runStoreCmd(concat(new String[]{"-dont-store"},args));
@@ -637,6 +746,8 @@ public class ContentCouchCommand {
 			runCheckoutCmd( cmdArgs );
 		} else if( "cache".equals(cmd) ) {
 			runCacheCmd( cmdArgs );
+		} else if( "cache-heads".equals(cmd) ) {
+			runCacheHeadsCmd( cmdArgs );
 		} else if( "check".equals(cmd) ) {
 			runCheckCmd( cmdArgs );
 		} else if( "id".equals(cmd) ) {

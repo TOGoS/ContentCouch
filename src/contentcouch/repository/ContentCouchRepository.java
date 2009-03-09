@@ -488,9 +488,8 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		}
 	}
 	
-	public Object getHead(String path) {
-		Object res = exploratGetter.get("heads/"+path);
-		if( res == null && path.endsWith("/latest") ) {
+	public String findHead(String path) {
+		if( path.endsWith("/latest") ) {
 			String dirPath = path.substring(0,path.length()-"latest".length());
 			Object dir = exploratGetter.get("heads/"+dirPath);
 			if( dir instanceof Directory ) {
@@ -500,9 +499,21 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 					if( highestKey == null || Strings.compareNatural(k,highestKey) > 0 ) highestKey = k;
 				}
 				if( highestKey != null ) {
-					return exploratGetter.get("heads/"+dirPath+"/"+highestKey);
+					return dirPath+highestKey;
 				}
 			}
+			return null;
+		} else {
+			return path;
+		}
+	}
+	
+	public Object getHead(String path) {
+		Object res = exploratGetter.get("heads/"+path);
+		if( res == null && path.endsWith("/latest") ) {
+			path = findHead(path);
+			if( path == null ) return null;
+			return exploratGetter.get("heads/" + path);
 		}
 		return res;
 	}

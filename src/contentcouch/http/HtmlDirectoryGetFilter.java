@@ -12,6 +12,7 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.store.Getter;
 import contentcouch.value.Blob;
+import contentcouch.value.Ref;
 import contentcouch.xml.XML;
 
 public class HtmlDirectoryGetFilter implements Getter {
@@ -44,11 +45,13 @@ public class HtmlDirectoryGetFilter implements Getter {
 								SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 								e.name = subPath;
 								e.targetType = RdfNamespace.OBJECT_TYPE_BLOB;
+								e.target = new Ref(subPath);
 								dir.addEntry(e);
 							} else {
 								SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 								e.name = subPath.substring(0, si+1);
 								e.targetType = RdfNamespace.OBJECT_TYPE_DIRECTORY;
+								e.target = new Ref(e.name);
 								dir.addEntry(e);
 							}
 						}
