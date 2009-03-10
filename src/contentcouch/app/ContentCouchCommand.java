@@ -501,8 +501,12 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
-		if( destFile.exists() && !merge ) {
+		if( destFile.exists() && destFile.isDirectory() && !merge ) {
 			System.err.println("Destination '" + destFile + "' already exists.  Use -merge to merge directory trees.");
+			System.exit(1);
+		}
+		if( destFile.exists() && !destFile.isDirectory() && !replaceFiles ) {
+			System.err.println("Destination '" + destFile + "' already exists.  Use -replace to replace existing files.");
 			System.exit(1);
 		}
 		if( exportThis instanceof Commit ) {

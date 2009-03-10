@@ -58,13 +58,18 @@ public class Exporter {
 		
 		if( link && blob instanceof File ) {
 			try {
-				Linker.getInstance().link((File)blob, destination);
+				Linker.getInstance().relink((File)blob, destination);
 				fileMade = true;
 			} catch( LinkException e ) {
 				System.err.println("Failed to hardlink " + destination + " to " + (File)blob + "; will copy");
 			}
 		}
 		if( !fileMade ) {
+			if( destination.exists() ) {
+				if( !destination.delete() ) {
+					throw new RuntimeException("Could not delete existing file at " + destination.getPath());
+				}
+			}
 			BlobUtil.writeBlobToFile(blob, destination);
 		}
 		Date lm = (Date)MetadataUtil.getMetadataFrom(blob, RdfNamespace.DC_MODIFIED);

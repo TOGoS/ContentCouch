@@ -23,6 +23,7 @@ public abstract class Linker {
 	public static class WinLinker extends Linker {
 		public void link( File target, File link ) {
 			try {
+				if( link.exists() ) throw new LinkException(target, link, link.getPath() + " already exists");
 				Process lnProc = Runtime.getRuntime().exec(new String[] {"fsutil", "hardlink", "create", link.getPath(), target.getCanonicalPath()});
 				int lnProcReturn = lnProc.waitFor();
 				if( !link.exists() ) {
@@ -39,6 +40,7 @@ public abstract class Linker {
 	public static class UnixLinker extends Linker {
 		public void link( File target, File link ) {
 			try {
+				if( link.exists() ) throw new LinkException(target, link, link.getPath() + " already exists");
 				Process lnProc = Runtime.getRuntime().exec(new String[] {"ln", target.getCanonicalPath(), link.getPath()});
 				int lnProcReturn = lnProc.waitFor();
 				if( !link.exists() ) {
@@ -67,6 +69,8 @@ public abstract class Linker {
 	
 	public abstract void link( File target, File link );
 	
+	/** Same as -link unless the link already exists, in which case we attempt to replace it through
+	 * a series of renames so as not to delete anything if the link cannot be made. */
 	public void relink( File target, File link ) {
 		if( link.exists() ) {
 			String linkParentPath = link.getParent();
@@ -83,12 +87,10 @@ public abstract class Linker {
 			link( target, lnTemp );
 			if( link.exists() && !link.delete() ) {
 				lnTemp.delete();
-				System.err.println("Failed to create hard link from " + link + " to " + target + " (could not delete old file to replace with link)");
-				return;
+				throw new LinkException(target, link, "Could not delete old file to replace with link");
 			}
 			if( !lnTemp.renameTo(link) ) {
-				System.err.println("Failed to create hard link from " + link + " to " + target + " (could not rename temporary link to final location)");
-				return;				
+				throw new LinkException(target, link, "Could not rename temporary link to final location");
 			}
 		} else {
 			link( target, link );
