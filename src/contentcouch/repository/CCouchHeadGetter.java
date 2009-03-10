@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.eekboom.utils.Strings;
+
 import contentcouch.store.Getter;
 
 public class CCouchHeadGetter implements Getter {
@@ -24,14 +26,28 @@ public class CCouchHeadGetter implements Getter {
 		
 		ContentCouchRepository repo;
 		if( repoName == null ) {
-			repo = mainRepo;
-			Object o = mainRepo.getHead(headName);
-			if( o != null ) return o;
-			for( Iterator i=repo.localRepositories.iterator(); i.hasNext(); ) {
-				ContentCouchRepository r = (ContentCouchRepository)i.next();
-				o = r.getHead(headName);
-				if( o != null ) return o;
+			if( headName.endsWith("/latest") ) {
+				String latest = mainRepo.findHead(headName);
+				String maybeLatest = null;
+				for( Iterator i=mainRepo.localRepositories.iterator(); i.hasNext(); ) {
+					ContentCouchRepository r = (ContentCouchRepository)i.next();
+					maybeLatest = r.findHead(headName);
+					if( latest == null || (maybeLatest != null && Strings.compareNatural(maybeLatest, latest) > 0) ) latest = maybeLatest;
+				}
+				ContentCouchRepository r = mainRepo.remoteCacheRepository;
+				if( r != null ) maybeLatest = r.findHead(headName);
+				if( latest == null || (maybeLatest != null && Strings.compareNatural(maybeLatest, latest) > 0) ) latest = maybeLatest;
+				if( latest == null ) return null; // nobody has it
+				headName = latest;
 			}
+			Object o;
+			if( (o = mainRepo.getHead(headName)) != null ) return o;
+			for( Iterator i=mainRepo.localRepositories.iterator(); i.hasNext(); ) {
+				ContentCouchRepository r = (ContentCouchRepository)i.next();
+				if( (o = r.getHead(headName)) != null ) return o;
+			}
+			ContentCouchRepository r = mainRepo.remoteCacheRepository;
+			if( r != null && (o = r.getHead(headName)) != null ) return o;
 			return null;
 		} else {
 			repo = (ContentCouchRepository)mainRepo.namedRepositories.get(repoName);
