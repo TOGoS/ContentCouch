@@ -139,7 +139,6 @@ public class ContentCouchCommand {
 	
 	protected ContentCouchRepository repositoryCache = null;
 	protected int cacheVerbosity = GetAttemptListener.GOT_FROM_REMOTE;
-	protected int verbosity = 1;
 	
 	public ContentCouchRepository getRepository() {
 		if( repositoryCache == null ) {
@@ -449,9 +448,9 @@ public class ContentCouchCommand {
 			} else if( "-merge".equals(arg) ) {
 				merge = true;
 			} else if( "-v".equals(arg) ) {
-				verbosity = 2;
+				Log.setLevel(Log.LEVEL_CHANGES);
 			} else if( "-q".equals(arg) ) {
-				verbosity = 0;
+				Log.setLevel(Log.LEVEL_SILENT);
 			} else if( "-link".equals(arg) ) {
 				link = true;
 			} else if( "-replace".equals(arg) ) {
@@ -487,7 +486,6 @@ public class ContentCouchCommand {
 		}
 		final Exporter exporter = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
 		exporter.link = link;
-		exporter.verbosity = verbosity;
 		exporter.exportFiles = exportFiles;
 		exporter.replaceFiles = replaceFiles;
 		File destFile = new File(dest);
@@ -588,7 +586,6 @@ public class ContentCouchCommand {
 	protected boolean cacheHeads( ContentCouchRepository remote, String remotePath,
 			ContentCouchRepository cache, String cachePath ) {
 		Exporter e = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
-		e.verbosity = verbosity;
 		Object ro = remote.getHead(remotePath);
 		if( ro == null ) {
 			System.err.println("Could not find //" + remote.name + "/" + remotePath);
@@ -640,11 +637,11 @@ public class ContentCouchCommand {
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
-				verbosity = 0;
+				Log.setLevel(Log.LEVEL_SILENT);
 			} else if( "-v".equals(arg) ) {
-				verbosity = 2;
+				Log.setLevel(Log.LEVEL_CHANGES);
 			} else if( "-v3".equals(arg) ) {
-				verbosity = 3;
+				Log.setLevel(Log.LEVEL_CHATTY);
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_HEADS_USAGE);
 				System.exit(0);

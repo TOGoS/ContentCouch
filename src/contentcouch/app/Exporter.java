@@ -22,7 +22,6 @@ import contentcouch.value.Ref;
 public class Exporter {
 	Getter getter;
 	Identifier identifier;
-	public int verbosity = 0;
 	public boolean link = false;
 	public boolean exportFiles = true; 
 	public boolean replaceFiles = false;
@@ -48,21 +47,21 @@ public class Exporter {
 			String fileUrn = identifier.identify(new FileBlob(destination));
 			String blobUrn = identifier.identify(blob);
 			if( fileUrn.equals(blobUrn) ) {
-				if( verbosity >= 3 ) System.err.println("Unchanged " + destination.getPath());
+				Log.log(Log.LEVEL_CHATTY, Log.TYPE_UNCHANGED, destination.getPath());
 				return;
 			} else {
 				throw new RuntimeException("File already exists and is different from blob being exported: " + destination + " != " + blobUrn);
 			}
 		}
 		
-		if( verbosity >= 1 ) System.err.println("Exporting " + destination.getPath());
+		Log.log(Log.LEVEL_CHANGES, Log.TYPE_EXPORTING, "Exporting " + destination.getPath());
 		
 		if( link && blob instanceof File ) {
 			try {
 				Linker.getInstance().relink((File)blob, destination);
 				fileMade = true;
 			} catch( LinkException e ) {
-				if( verbosity >= 1 ) System.err.println("Failed to hardlink " + destination + " to " + (File)blob + "; will copy");
+				Log.log(Log.LEVEL_WARNINGS, Log.TYPE_WARNING, "Failed to hardlink " + destination + " to " + (File)blob + "; will copy");
 			}
 		}
 		if( !fileMade ) {
@@ -107,7 +106,7 @@ public class Exporter {
 	}
 
 	public void exportDirectory( Directory dir, File destination, String directorySourceLocation ) {
-		if( verbosity >= 2 ) System.err.println("Entering  " + destination.getPath());
+		Log.log(Log.LEVEL_CHATTY, "Entering " + destination.getPath());
 		if( !destination.exists() ) {
 			destination.mkdirs();
 		}
