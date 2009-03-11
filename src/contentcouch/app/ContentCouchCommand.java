@@ -30,9 +30,6 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
-	public static String OPTION_REPO_PATH = "repo-path";
-	public static String OPTION_DONT_STORE = "dont-store";
-	
 	public String USAGE =
 		"Usage: ccouch [general options] <sub-command> [command-args]\n" +
 		"Run ccouch <subcommand> -? for further help\n" +
@@ -107,8 +104,9 @@ public class ContentCouchCommand {
 	public static String CACHE_HEADS_USAGE =
 		"Usage: ccouch [general options] cache-heads [options] <head-uri> ...\n" +
 		"Options:\n" +
-//		"  -v           ; show all URNs being followed\n" +
-//		"  -q           ; show nothing - not even failures\n" +
+		"  -v3          ; show all exports and skipped files\n" +
+		"  -v           ; show all exports\n" +
+		"  -q           ; show only failures\n" +
 		"  -all-remotes ; cache heads from each remote repository\n" +
 		"\n" +
 		"Attempts to cache heads from the given repo/paths into your cache repository.\n" +
@@ -141,6 +139,7 @@ public class ContentCouchCommand {
 	
 	protected ContentCouchRepository repositoryCache = null;
 	protected int cacheVerbosity = GetAttemptListener.GOT_FROM_REMOTE;
+	protected int verbosity = 1;
 	
 	public ContentCouchRepository getRepository() {
 		if( repositoryCache == null ) {
@@ -436,7 +435,6 @@ public class ContentCouchCommand {
 	
 	public void runCheckoutCmd( String[] args ) {
 		args = mergeConfiguredArgs("checkout", args);
-		boolean verbose = false;
 		boolean exportFiles = true;
 		boolean link = false;
 		boolean merge = false;
@@ -451,7 +449,9 @@ public class ContentCouchCommand {
 			} else if( "-merge".equals(arg) ) {
 				merge = true;
 			} else if( "-v".equals(arg) ) {
-				verbose = true;
+				verbosity = 2;
+			} else if( "-q".equals(arg) ) {
+				verbosity = 0;
 			} else if( "-link".equals(arg) ) {
 				link = true;
 			} else if( "-replace".equals(arg) ) {
@@ -487,7 +487,7 @@ public class ContentCouchCommand {
 		}
 		final Exporter exporter = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
 		exporter.link = link;
-		exporter.verbose = verbose;
+		exporter.verbosity = verbosity;
 		exporter.exportFiles = exportFiles;
 		exporter.replaceFiles = replaceFiles;
 		File destFile = new File(dest);
@@ -588,12 +588,12 @@ public class ContentCouchCommand {
 	protected boolean cacheHeads( ContentCouchRepository remote, String remotePath,
 			ContentCouchRepository cache, String cachePath ) {
 		Exporter e = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
+		e.verbosity = verbosity;
 		Object ro = remote.getHead(remotePath);
 		if( ro == null ) {
 			System.err.println("Could not find //" + remote.name + "/" + remotePath);
 			return false;
 		}
-		System.err.println("Export //" + remote.name + "/" + remotePath + " as " + cachePath);
 		e.exportObject(ro, new File(cache.getPath() + "heads/" + cachePath), "x-ccouch-head://" + remote.name + "/" + remotePath );
 		return true;
 	}
@@ -640,9 +640,11 @@ public class ContentCouchCommand {
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
-				cacheVerbosity = 0;
+				verbosity = 0;
 			} else if( "-v".equals(arg) ) {
-				cacheVerbosity = GetAttemptListener.GOT_FROM_LOCAL;
+				verbosity = 2;
+			} else if( "-v3".equals(arg) ) {
+				verbosity = 3;
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_HEADS_USAGE);
 				System.exit(0);

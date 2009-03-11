@@ -1,4 +1,4 @@
-- Add cache-heads command
+- While caching heads, should store heads in cache datastore, not just heads dir
 
 - RdfNodes ought to read relative URIs as relative to the node's source URI.
   I don't think I ever did this.
