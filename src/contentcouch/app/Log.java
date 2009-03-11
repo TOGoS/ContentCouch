@@ -8,7 +8,7 @@ public class Log {
 	}
 	
 	public static class StderrLogger implements Logger {
-		protected int level = LEVEL_WARNINGS;
+		protected int level = LEVEL_CHANGES;
 		
 		public void setLevel(int level) {
 			this.level = level;
@@ -32,10 +32,10 @@ public class Log {
 	public static final int LEVEL_CHATTIER = 50;
 	
 	public static final String TYPE_GENERIC     = "";
-	public static final String TYPE_EXPORTING   = "Exporting   ";
-	public static final String TYPE_DOWNLOADING = "Downloading ";
-	public static final String TYPE_UNCHANGED   = "Unchanged:  ";
-	public static final String TYPE_NOTFOUND    = "Not Found:  ";
+	public static final String TYPE_EXPORTING   = "Exporting: ";
+	public static final String TYPE_DOWNLOADING = "Download:  ";
+	public static final String TYPE_UNCHANGED   = "Unchanged: ";
+	public static final String TYPE_NOTFOUND    = "Not Found: ";
 	public static final String TYPE_WARNING     = "Warning: ";
 	public static final String TYPE_NOTICE      = "Notice: ";
 	public static final String TYPE_ERROR       = "Error: ";

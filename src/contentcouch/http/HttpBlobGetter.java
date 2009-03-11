@@ -3,10 +3,13 @@ package contentcouch.http;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
 
+import contentcouch.app.Log;
 import contentcouch.blob.FileCacheBlob;
 import contentcouch.blob.InputStreamBlob;
 import contentcouch.rdf.RdfNamespace;
@@ -16,6 +19,12 @@ public class HttpBlobGetter implements Getter {
 	public Object get(String identifier) {
 		if( !identifier.startsWith("http://") && !identifier.startsWith("https://") ) return null;
 
+		URL url;
+		try {
+			url = new URL(identifier);
+		} catch( MalformedURLException e ) {
+			throw new RuntimeException(e);
+		}
 		try {
 			/*
 			HttpGet httpget = new HttpGet(identifier);
@@ -29,7 +38,6 @@ public class HttpBlobGetter implements Getter {
 			return new InputStreamBlob(is, length);
 			 */
 			
-			URL url = new URL(identifier);
 			URLConnection urlConn = url.openConnection();
 			long length = urlConn.getContentLength();
 			File tempFile = File.createTempFile("httpdownload", null);
@@ -38,6 +46,9 @@ public class HttpBlobGetter implements Getter {
 				fcb.putMetadata(RdfNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
 			}
 			return fcb;
+		} catch( ConnectException e ) {
+			Log.log(Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not connect to " + url.getHost() + ":" + url.getPort());
+			return null;
 		} catch( FileNotFoundException e ) {
 			return null;
 		} catch( IOException e ) {

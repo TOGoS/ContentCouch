@@ -80,7 +80,7 @@ public class ContentCouchCommand {
 		"  -merge             ; merge source tree into destination\n" +
 		"  -replace           ; when merging, always replace existing files\n" +
 		"  -dirs-only         ; only export the directory structure\n" +
-		"  -v                 ; verbose - report every file exported\n" +
+		"  -v                 ; verbose - report every file visited\n" +
 		"  -?                 ; display help and exit\n" +
 		"\n" +
 		"When merging, unless -replace is given, only files that do not already\n" +
@@ -104,8 +104,7 @@ public class ContentCouchCommand {
 	public static String CACHE_HEADS_USAGE =
 		"Usage: ccouch [general options] cache-heads [options] <head-uri> ...\n" +
 		"Options:\n" +
-		"  -v3          ; show all exports and skipped files\n" +
-		"  -v           ; show all exports\n" +
+		"  -v           ; show all exports and skipped files\n" +
 		"  -q           ; show only failures\n" +
 		"  -all-remotes ; cache heads from each remote repository\n" +
 		"\n" +
@@ -163,10 +162,16 @@ public class ContentCouchCommand {
 		return new Importer(getRepository());
 	}
 	
+	public CCouchHeadGetter getHeadGetter( boolean checkRemotes ) {
+		CCouchHeadGetter g = new CCouchHeadGetter(getRepository());
+		g.checkRemotes = checkRemotes;
+		return g;
+	}
+	
 	public Getter getLocalGetter() {
 		MultiGetter mg = new MultiGetter();
 		mg.addGetter(getRepository());
-		mg.addGetter(new CCouchHeadGetter(getRepository()));
+		mg.addGetter(getHeadGetter(false));
 		mg.addGetter(new FileBlobMap(""));
 		return new ParseRdfGetFilter(mg);
 	}
@@ -448,7 +453,7 @@ public class ContentCouchCommand {
 			} else if( "-merge".equals(arg) ) {
 				merge = true;
 			} else if( "-v".equals(arg) ) {
-				Log.setLevel(Log.LEVEL_CHANGES);
+				Log.setLevel(Log.LEVEL_CHATTY);
 			} else if( "-q".equals(arg) ) {
 				Log.setLevel(Log.LEVEL_SILENT);
 			} else if( "-link".equals(arg) ) {
@@ -588,7 +593,6 @@ public class ContentCouchCommand {
 		Exporter e = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
 		Object ro = remote.getHead(remotePath);
 		if( ro == null ) {
-			System.err.println("Could not find //" + remote.name + "/" + remotePath);
 			return false;
 		}
 		e.exportObject(ro, new File(cache.getPath() + "heads/" + cachePath), "x-ccouch-head://" + remote.name + "/" + remotePath );
@@ -601,8 +605,9 @@ public class ContentCouchCommand {
 		if( path.startsWith(RdfNamespace.URI_PARSE_PREFIX)) path = path.substring(RdfNamespace.URI_PARSE_PREFIX.length());
 		if( path.startsWith("x-ccouch-head:") ) path = path.substring("x-ccouch-head:".length());
 		
-		boolean success = true;
+		boolean success;
 		if( ALL_REMOTE_HEADS_PATH.equals(path) ) {
+			success = true;
 			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
 				ContentCouchRepository rr = (ContentCouchRepository)rri.next();
 				if( rr.name != null ) {
@@ -618,16 +623,25 @@ public class ContentCouchCommand {
 			ContentCouchRepository rr = (ContentCouchRepository)getRepository().namedRepositories.get(repoName);
 			if( rr == null ) throw new RuntimeException("No such repository: " + repoName);
 			if( path.endsWith("/latest") ) path = rr.findHead(path);
-			return cacheHeads( rr, path, cache, path );
+			success = cacheHeads( rr, path, cache, path );
 		} else {
+			success = false;
+
 			if( path.startsWith("/") ) path = path.substring(1);
+			
+			if( path.endsWith("/latest") ) path = getHeadGetter(true).findHead(path);
+			
 			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
 				ContentCouchRepository rr = (ContentCouchRepository)rri.next();
 				if( rr.name != null ) {
-					if( !cacheHeads( rr, path, cache, path) ) success = false;
+					if( cacheHeads( rr, path, cache, path) ) success = true;
 				}
 			}
 		}
+		if( !success ) {
+			Log.log( Log.LEVEL_ERRORS, Log.TYPE_NOTFOUND, "x-ccouch-head:" + path);
+		}
+
 		return success;
 	}
 	
@@ -639,8 +653,6 @@ public class ContentCouchCommand {
 			if( "-q".equals(arg) ) {
 				Log.setLevel(Log.LEVEL_SILENT);
 			} else if( "-v".equals(arg) ) {
-				Log.setLevel(Log.LEVEL_CHANGES);
-			} else if( "-v3".equals(arg) ) {
 				Log.setLevel(Log.LEVEL_CHATTY);
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_HEADS_USAGE);

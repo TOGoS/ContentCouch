@@ -37,7 +37,7 @@ public class Exporter {
 
 	//// Export functions ////
 
-	public void exportBlob( Blob blob, File destination ) {
+	public void exportBlob( Blob blob, File destination, String blobSourceUri ) {
 		boolean fileMade = false;
 		
 		if( destination.exists() && !replaceFiles ) {
@@ -47,14 +47,14 @@ public class Exporter {
 			String fileUrn = identifier.identify(new FileBlob(destination));
 			String blobUrn = identifier.identify(blob);
 			if( fileUrn.equals(blobUrn) ) {
-				Log.log(Log.LEVEL_CHATTY, Log.TYPE_UNCHANGED, destination.getPath());
+				Log.log(Log.LEVEL_CHATTY, Log.TYPE_UNCHANGED, destination.getPath() + " = " + blobSourceUri);
 				return;
 			} else {
 				throw new RuntimeException("File already exists and is different from blob being exported: " + destination + " != " + blobUrn);
 			}
 		}
 		
-		Log.log(Log.LEVEL_CHANGES, Log.TYPE_EXPORTING, "Exporting " + destination.getPath());
+		Log.log(Log.LEVEL_CHANGES, Log.TYPE_EXPORTING, destination.getPath() + " from " + blobSourceUri);
 		
 		if( link && blob instanceof File ) {
 			try {
@@ -106,7 +106,7 @@ public class Exporter {
 	}
 
 	public void exportDirectory( Directory dir, File destination, String directorySourceLocation ) {
-		Log.log(Log.LEVEL_CHATTY, "Entering " + destination.getPath());
+		Log.log(Log.LEVEL_CHATTY, "Merging " + destination.getPath() + " from " + directorySourceLocation);
 		if( !destination.exists() ) {
 			destination.mkdirs();
 		}
@@ -139,7 +139,7 @@ public class Exporter {
 			obj = ((RdfNode)obj).getSingle(RdfNamespace.CCOUCH_TARGET);
 			exportObject( obj, destination, referencedBy );
 		} else if( obj instanceof Blob ) {
-			exportBlob( (Blob)obj, destination );
+			exportBlob( (Blob)obj, destination, referencedBy );
 		} else if( obj instanceof Directory ) {
 			exportDirectory( (Directory)obj, destination, referencedBy );
 		} else if( obj instanceof Commit ) {

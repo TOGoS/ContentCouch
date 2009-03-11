@@ -488,6 +488,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		}
 	}
 	
+	/** If path ends with /latest, finds and returns the path with the newest version */
 	public String findHead(String path) {
 		if( path.endsWith("/latest") ) {
 			String dirPath = path.substring(0,path.length()-"latest".length());
