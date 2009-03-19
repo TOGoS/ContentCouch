@@ -552,7 +552,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	
 	public Object get(String path) {
 		if( path.equals("") ) {
-			return new FileBlob(new File("web/_index.html"));
+			String webPath = this.getServletContext().getRealPath("");
+			return new FileBlob(new File(webPath + "/_index.html"));
 		} else if( path.startsWith("explore/") ) {
 			return explore(path.substring(8));
 		} else if( path.startsWith("raw/") ) {
