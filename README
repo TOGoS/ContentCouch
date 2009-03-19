@@ -1,0 +1,78 @@
+More coonceptual details about ContentCouch can be found on the wiki at
+http://wiki.github.com/TOGoS/contentcouch and in the doc/ of the project
+directory.  This file gives some detail about the implementation, and will
+hopefully help you get the 'ccouch' command and/or the web servlet running.
+
+== Repository set up ==
+
+All you need to do to 'set up' a new repository is decide what directory
+you want it to be in.  Each repository has its own set of data files and
+'heads' (named pointers to notable objects).  It is perfectly acceptable
+to have a single repository that stores objects and heads for many projects,
+but you may want to create other repositories to simplify file management.
+
+Repository roles:
+- main
+- local
+- cache
+- remote
+
+///descriptions bending
+
+== ccouch Command ==
+
+...better installation instructions pending
+
+Basically you'll want to copy ccouch.sh or ccouch.bat to a location in
+your path and change the paths within to point at the ContentCouch program
+directory and your local repositories.
+
+Run 'ccouch -?' to see a list of sub-commands, and 'ccouch <subcommand> -?'
+to see a list of options for the given sub-command.
+
+== Servlet ==
+
+A shell script is included (winstone.sh for unix, winstone.bat for windows)
+that will start up the Winstone servlet container with the
+ContentCouchExplorerServlet.  This servlet may work with other containers,
+but has not been tested with them.
+
+The purpose of the servlet is to give you a way to easily poke around in
+your repositories.  It is not a necessary component to use ccouch.
+
+The included shell scripts point Winstone to the web/ directory in the
+ContentCouch project.  This directory contains:
+
+  repo-config - configuration file used to initialize the servlet repository
+  WEB-INF/classes - where all the class files are loaded from
+  WEB-INF/web.xml - servlet configuration file
+
+repo-config in the web folder should generally be a single line pointing
+to the actual location of the main repository.
+
+== Repositories and Configuration Files ==
+
+Each repository can have a configuration file in it called 'ccouch-config'.
+
+This file contains information about other local and remote repositories, and
+the options within can also be given on the command line to the 'ccouch'
+command.  Configuration files can also give default arguments for subcommands.
+
+Example:
+
+  -local-repo:music /home/ted/ccouch-music/
+  -remote-repo:jon http://www.jon.com/ccouch/
+
+  [checkout]
+  # Extra arguments to be passed when 'ccouch checkout' is invoked:
+  -link
+  -merge
+
+Configuration files can also be outside of the main repository and direct to
+it.  For example, if there is a file, /home/ted/ccouch.conf:
+
+  -repo /home/ted/ccouch/
+
+Then invoking 'ccouch -repo /home/ted/ccouch.conf' would be equivalent to
+'ccouch -repo /home/ted/ccouch/' (which, in turn, is equivalent to whatever
+other arguments are given 

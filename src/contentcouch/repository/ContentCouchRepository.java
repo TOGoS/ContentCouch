@@ -260,6 +260,9 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			++offset;
 			this.name = name;
 			namedRepositories.put(name, this);
+		} else if( "-use-main-repo-as-cache".equals(arg) ) {
+			++offset;
+			remoteCacheRepository = this;
 		}
 		return offset;
 	}
