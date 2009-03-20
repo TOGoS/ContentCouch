@@ -629,7 +629,12 @@ public class ContentCouchCommand {
 
 			if( path.startsWith("/") ) path = path.substring(1);
 			
+			String oPath = path;
 			if( path.endsWith("/latest") ) path = getHeadGetter(true).findHead(path);
+			if( path == null ) {
+				Log.log( Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not find latest head of " + oPath);
+				return false;
+			}
 			
 			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
 				ContentCouchRepository rr = (ContentCouchRepository)rri.next();

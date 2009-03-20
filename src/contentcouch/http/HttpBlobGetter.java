@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -46,6 +47,9 @@ public class HttpBlobGetter implements Getter {
 				fcb.putMetadata(RdfNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
 			}
 			return fcb;
+		} catch( NoRouteToHostException e ) {
+			Log.log(Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "No route to host " + url.getHost() );
+			return null;
 		} catch( ConnectException e ) {
 			Log.log(Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not connect to " + url.getHost() + ":" + url.getPort());
 			return null;
