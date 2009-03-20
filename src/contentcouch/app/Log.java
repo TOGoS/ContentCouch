@@ -33,6 +33,7 @@ public class Log {
 	
 	public static final String TYPE_GENERIC     = "";
 	public static final String TYPE_EXPORTING   = "Exporting: ";
+	public static final String TYPE_SKIP        = "Skipping:  ";
 	public static final String TYPE_DOWNLOADING = "Download:  ";
 	public static final String TYPE_UNCHANGED   = "Unchanged: ";
 	public static final String TYPE_NOTFOUND    = "Not Found: ";

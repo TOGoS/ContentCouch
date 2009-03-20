@@ -26,6 +26,17 @@ public class Exporter {
 	public boolean exportFiles = true; 
 	public boolean replaceFiles = false;
 	
+	public static interface MergeConflictHandler {
+		/** Return true if checkout should continue, false otherwise. */
+		public boolean handleMergeConflict( String path, String localUrn, Object localObj, String remoteUrn, Object remoteObj );
+	}
+	
+	public MergeConflictHandler mergeConflictHandler = new MergeConflictHandler() {
+		public boolean handleMergeConflict(String path, String localUrn, Object localObj, String remoteUrn, Object remoteObj) {
+			throw new RuntimeException("File already exists and is different from blob being exported: " + path + " != " + remoteUrn);			
+		}
+	};
+	
 	public Exporter( Getter getter, Identifier identifier ) {
 		if( !(getter instanceof ParseRdfGetFilter) ) {
 			getter = new ParseRdfGetFilter(getter);
@@ -44,13 +55,16 @@ public class Exporter {
 			if( identifier == null ) {
 				throw new RuntimeException("Exporter needs to identify some files but #identifier is not set up");
 			}
-			String fileUrn = identifier.identify(new FileBlob(destination));
-			String blobUrn = identifier.identify(blob);
-			if( fileUrn.equals(blobUrn) ) {
+			FileBlob fileBlob = new FileBlob(destination);
+			String fileUrn = identifier.identify(fileBlob);
+			String newUrn = identifier.identify(blob);
+			if( fileUrn.equals(newUrn) ) {
 				Log.log(Log.LEVEL_CHATTY, Log.TYPE_UNCHANGED, destination.getPath() + " = " + blobSourceUri);
 				return;
 			} else {
-				throw new RuntimeException("File already exists and is different from blob being exported: " + destination + " != " + blobUrn);
+				if( !mergeConflictHandler.handleMergeConflict(destination.getPath(), fileUrn, fileBlob, newUrn, blob) ) {
+					return;
+				}
 			}
 		}
 		

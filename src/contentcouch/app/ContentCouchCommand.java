@@ -78,15 +78,18 @@ public class ContentCouchCommand {
 		"Checkout options:\n" +
 		"  -link              ; hardlink files from the store instead of copying\n" +
 		"  -merge             ; merge source tree into destination\n" +
-		"  -replace           ; when merging, always replace existing files\n" +
+		"  -replace-existing  ; when merging, always replace existing files\n" +
+		"  -keep-existing     ; when merging, always keep existing files\n" +
 		"  -dirs-only         ; only export the directory structure\n" +
 		"  -v                 ; verbose - report every file visited\n" +
 		"  -?                 ; display help and exit\n" +
 		"\n" +
-		"When merging, unless -replace is given, only files that do not already\n" +
-		"exist in the destination folder will be checked out.  If the destination\n" +
-		"file has the same content as the to-be-checked-out file, no action is taken.\n" +
-		"If the content is different, an error is printed and the program exits.";
+		"When merging, unless -replace-existing is given:\n" +
+		"- only files that do not already exist in the destination folder will be\n" +
+		"  checked out.\n" +
+		"- If the destination file has the same content as the to-be-checked-out file,\n" +
+		"  no action is taken.\n" +
+		"- If the content is different, an error is printed and the program exits.";
 		
 	public static String CACHE_USAGE =
 		"Usage: ccouch [general options] cache [options] <urn> <urn> ...\n" +
@@ -443,6 +446,7 @@ public class ContentCouchCommand {
 		boolean link = false;
 		boolean merge = false;
 		boolean replaceFiles = false;
+		boolean keepFiles = false;
 		String source = null;
 		String dest = null;
 		for( int i=0; i < args.length; ++i ) {
@@ -458,8 +462,12 @@ public class ContentCouchCommand {
 				Log.setLevel(Log.LEVEL_SILENT);
 			} else if( "-link".equals(arg) ) {
 				link = true;
-			} else if( "-replace".equals(arg) ) {
+			} else if( "-replace-existing".equals(arg) ) {
 				replaceFiles = true;
+				keepFiles = false;
+			} else if( "-keep-existing".equals(arg) ) {
+				replaceFiles = false;
+				keepFiles = true;
 			} else if( "-dirs-only".equals(arg) ) {
 				exportFiles = false;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
@@ -493,6 +501,15 @@ public class ContentCouchCommand {
 		exporter.link = link;
 		exporter.exportFiles = exportFiles;
 		exporter.replaceFiles = replaceFiles;
+		if( keepFiles ) {
+			exporter.mergeConflictHandler = new Exporter.MergeConflictHandler() {
+				public boolean handleMergeConflict(String path, String localUrn,
+						Object localObj, String remoteUrn, Object remoteObj) {
+					Log.log( Log.LEVEL_WARNINGS, Log.TYPE_SKIP, path + "; " + localUrn + " != " + remoteUrn );
+					return false;
+				}
+			};
+		}
 		File destFile = new File(dest);
 		Object exportThis = exporter.followRedirects(new Ref(source), null);
 		if( "-".equals(dest) ) {
@@ -500,16 +517,16 @@ public class ContentCouchCommand {
 				BlobUtil.writeBlobToOutputStream((Blob)exportThis, System.out);
 				return;
 			} else {
-				System.err.println("Can't export " + exportThis.getClass().getName() + " to stdout");
+				Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Can't export " + exportThis.getClass().getName() + " to stdout");
 				System.exit(1);
 			}
 		}
 		if( destFile.exists() && destFile.isDirectory() && !merge ) {
-			System.err.println("Destination '" + destFile + "' already exists.  Use -merge to merge directory trees.");
+			Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Destination '" + destFile + "' already exists.  Use -merge to merge directory trees.");
 			System.exit(1);
 		}
 		if( destFile.exists() && !destFile.isDirectory() && !replaceFiles ) {
-			System.err.println("Destination '" + destFile + "' already exists.  Use -replace to replace existing files.");
+			Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Destination '" + destFile + "' already exists.  Use -replace-existing to replace existing files.");
 			System.exit(1);
 		}
 		if( exportThis instanceof Commit ) {
