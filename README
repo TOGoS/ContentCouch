@@ -6,18 +6,30 @@ hopefully help you get the 'ccouch' command and/or the web servlet running.
 == Repository set up ==
 
 All you need to do to 'set up' a new repository is decide what directory
-you want it to be in.  Each repository has its own set of data files and
-'heads' (named pointers to notable objects).  It is perfectly acceptable
-to have a single repository that stores objects and heads for many projects,
-but you may want to create other repositories to simplify file management.
+you want it to be in and what you want to name it.  Each repository is
+a directory containing a set of data files, 'heads' (named pointers to
+notable objects), and cache files.
 
-Repository roles:
-- main
-- local
-- cache
-- remote
+It is perfectly acceptable to have a single repository that stores objects
+and heads for many projects, but you may want to create other repositories
+to simplify file management.
 
-///descriptions bending
+When deciding on a name for your repository, you should choose something
+unique, as anyone who wants to download files from your repository will need
+to use this name to identify it.  A good convention is to include the name
+of the computer on which the repository resides and the role that it serves.
+
+See 'Heads' for more information on how repository names are used.
+
+If you will be using ccouch to download files from other computers, you should
+either set up a second, 'cache', repository, or configure the main repository
+to use itself as a cache by adding the following line to <repo-path>/ccouch-config
+(which will not exist if you have not already run some ccouch commands):
+
+  -use-main-repo-as-cache
+
+See the 'Repository Roles' section for details on other repository roles and why
+it may be useful to have more than one repository on one computer.
 
 == ccouch Command ==
 
@@ -74,5 +86,162 @@ it.  For example, if there is a file, /home/ted/ccouch.conf:
   -repo /home/ted/ccouch/
 
 Then invoking 'ccouch -repo /home/ted/ccouch.conf' would be equivalent to
-'ccouch -repo /home/ted/ccouch/' (which, in turn, is equivalent to whatever
-other arguments are given 
+'ccouch -repo /home/ted/ccouch/' (which, in turn, is equivalent to using
+/home/ted/ccouch/ as the root directory of the main repository plus whatever
+options are given in /home/ted/ccouch/ccouch-config).
+
+== Repository Roles ==
+
+- main - this is the repository that will be checked first when loading
+  files, and that files will be stored in when 'ccouch store' is invoked.
+  This repository can reference any number of local and remote
+  repositories, and one cache repository (which may be itself).
+
+- local - these are other repositories that can be accessed quickly
+  (i.e. on the same filesystem or computer as the main repository).
+  
+  It could be useful to have several 'main' repositories on a single computer
+  if you wanted to keep data for different purposes separate.  For example,
+  you might have one repository dedicated to storing photos, and one dedicated
+  to storing music.  These separate repositories could reference eachother
+  as '-local-repo:<name>'
+  
+- cache - if one is specified, blobs downloaded from remote repositories
+  are cached in the cache repository for fast access.  The cache repository
+  should, like local repositories, be on the same computer as the main repo.
+  It is useful to have this be separate from the main repository, since the
+  main repository holds files that are important to the user of this computer,
+  but the cache repository is more likely to hold less valuable files and/or
+  files that can be re-downloaded from elsewhere.
+
+- remote - a repository residing on a machine that is slow or difficult
+  to access, such as one connected only by a low-bandwidth link (such as
+  the internet).  You generally want to cache files that are loaded from
+  remote repositories rather than downloading them each time they are needed.
+
+== Heads ==
+
+Each repository can have a 'heads' directory that contains named files.
+The directory structure within heads has the following structure:
+
+  heads/<origin-repo-name>/<project-name>/<version-number>
+
+For example, if I have downloaded heads that were created on my home
+computer, 'togos-win', relating to my music archives, I might have a file:
+
+  heads/togos-win/music-archives/5
+
+The origin repository name is included so that repositories can cache
+information created by other repositories while providing some namespacing.
+If togos-ubn has heads for togos-win, that is saying that togos-ubn is
+storing these heads in togos-win's name.  It may be that togos-ubn has its
+own music archives (in fact, it does) which may or may not mirror what is
+on togos-win.  Because these things are namespaced, it is easy to tell
+which version of music-archives you are accessing.
+
+The project name part of the head path can itself be split up by sub-project.
+You could have a head named like:
+
+  heads/joe-laptop/work/ACME/timelogs/113
+
+The ccouch commands and servlet recognise a URI form that looks like:
+
+  x-ccouch-head:[//<repo-name>]/<origin-repo-name>/[<project-name>/[<version>]]
+
+Using these URIs you can reference specific heads.  If <repo-name> is
+included, the URI references the head in that specific repository. Otherwise,
+only the main, local, and cache repositories are checked (except by the
+'ccouch cache-heads', which will also load remote heads in some cases).
+
+If the URI ends with /latest, it will reference the latest version found
+in whichever repositories are being checked, where 'latest' is interpreted
+as 'highest filename using natural comparison'.
+
+If the URI ends with a slash, it is interpreted as pointing the entire
+directory of heads.
+
+If a head is to be interpreted as an RDF document (usually heads contain
+RDFified Commit objects), its URI must be prepended with "x-parse-rdf:".
+e.g., to reference the latest Commit of togos-win's music archives:
+
+  x-parse-rdf:x-ccouch-head://togos-win/togos-win/music-archives/latest
+
+For convenience, 'ccouch cache-heads' does some special handling of head
+paths.  For more information, run
+
+  ccouch cache-heads -?
+
+== Example: Joe's Laptop == 
+
+Joe has a laptop that he does a lot of work on.  He has a directory full of
+photos, a directory full of music, and a bunch of work stuff.  He wants to
+keep snapshots of these things, and so he sets up some ContentCouch
+repositories.  He sets up one repository for the bulk of his files and
+calls it "joe-laptop".  He keeps his work on a separate hard drive, and
+so it makes sense for him to have a separate repository on that hard drive
+for storing work stuff so that he can store and checkout using hardlinks.
+He also wants to use this laptop to back up files from a friend's server,
+and so sets up a cache repository where those files can be stored.
+
+  joe-laptop       ; catch-all repository for files archived from joe-laptop
+  joe-laptop-work  ; a repository storing joe's work-related files
+  joe-laptop-cache ; joe-laptop's cache for files downloaded from elsewhere
+
+Joe's 'work' hard drive is C, and his photos and music are stored on F, so
+he sets up his repositores to be on the same drives as the files they are
+storing (again, so that he can use hardlinks):
+
+  C:/ccouch/work/
+  F:/ccouch/main/
+  F:/ccouch/cache/
+
+Joe eventually decides that he wants other people to be able to pull from
+his repositories, and so he sets up a web server and maps his ccouch
+repositories to the following URLs:
+
+  http://laptop.joe.example.org/ccouch/main/
+  http://laptop.joe.example.org/ccouch/cache/
+  http://laptop.joe.example.org/ccouch/work/
+
+Next Joe is going to set up a script that will back up files from his friend
+Bill.  Bill has a the following repositories set up:
+
+  (repo name)  (repo URL)
+  bill         http://ccouch.billstuff.example.org/bill/
+  bill-cache   http://ccouch.billstuff.example.org/bill-cache/
+  
+(Note that Bill was not required to include the name of his repositories in
+their URLs, but doing so makes management simpler).
+
+Joe now adds references to Bill's repositories to his main repository's
+config file, F:/ccouch/main/ccouch-config:
+
+  # Local stuff:
+  -repo-name joe-laptop
+  -local-repo C:/ccouch/work
+  -cache-repo F:/ccouch/cache
+  # Bill's repositories:
+  -remote-repo:bill http://ccouch.billstuff.example.org/bill/
+  -remote-repo:bill-cache http://ccouch.billstuff.example.org/bill-cache/
+
+  # I always wanna symlink:
+  [checkout]
+  -link
+  
+  [store]
+  -link
+
+Now Joe is all set up to backup Bill's stuff.  Here is the shell script:
+
+  # Download all heads from bill that originated there
+  ccouch -repo F:/ccouch/main/ cache-heads x-ccouch-head://bill/bill/
+  # Cache the objects that one of those heads points at
+  ccouch -repo F:/ccouch/main/ cache x-parse-rdf:x-ccouch-head:bill/memoirs/latest
+  
+  # Also download heads that bill cached from his friend Dave:
+  ccouch -repo F:/ccouch/main/ cache-heads x-ccouch-head://bill/dave/
+  # And cache Dave's music:
+  ccouch -repo F:/ccouch/main/ cache x-parse-rdf:x-ccouch-head:dave/music/latest
+
+Now Joe can run that script to back up files from Bill and Dave.  He might even
+run it from a cron job so that those things get automatically backed up every day.
