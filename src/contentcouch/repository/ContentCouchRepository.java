@@ -129,7 +129,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public boolean isMainRepo = false;
 	public String name = "unnamed";
 	
-	public ContentCouchRepository remoteCacheRepository; 
+	public ContentCouchRepository cacheRepository; 
 	public List localRepositories = new ArrayList();
 	public List remoteRepositories = new ArrayList();
 	
@@ -244,7 +244,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 					addLocal(repo);
 				} else if( rp.disposition == RepoParameters.DISPOSITION_CACHE ) {
 					repo = new ContentCouchRepository(path, false);
-					remoteCacheRepository = repo;
+					cacheRepository = repo;
 				} else if( rp.disposition == RepoParameters.DISPOSITION_REMOTE ) {
 					repo = new ContentCouchRepository(path, false);
 					addRemote(repo);
@@ -262,7 +262,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			namedRepositories.put(name, this);
 		} else if( "-use-main-repo-as-cache".equals(arg) ) {
 			++offset;
-			remoteCacheRepository = this;
+			cacheRepository = this;
 		}
 		return offset;
 	}
@@ -447,22 +447,22 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		if( obj != null ) return obj;
 		
 		// Check cache repo
-		if( remoteCacheRepository != null ) {
-			obj = remoteCacheRepository.getReallyLocal(identifier);
+		if( cacheRepository != null ) {
+			obj = cacheRepository.getReallyLocal(identifier);
 			if( obj != null ) {
-				getAttempted( identifier, GetAttemptListener.GOT_FROM_CACHE, remoteCacheRepository, obj );
+				getAttempted( identifier, GetAttemptListener.GOT_FROM_CACHE, cacheRepository, obj );
 				return obj;
 			}
 		}
 		
 		// Check remote repos
 		obj = getRemote(identifier);
-		if( obj != null && remoteCacheRepository != null ) {
-			String cachedId = remoteCacheRepository.push(obj);
+		if( obj != null && cacheRepository != null ) {
+			String cachedId = cacheRepository.push(obj);
 			if( cachedId == null || !(cachedId.equals(identifier)) ) {
 				throw new RuntimeException("Calculated identifier (" + cachedId + ") does not match requested identifier (" + identifier + ")");
 			}
-			obj = remoteCacheRepository.get(cachedId);
+			obj = cacheRepository.get(cachedId);
 		}
 	
 		if( obj == null ) getAttempted( identifier, GetAttemptListener.GET_FAILED, null );

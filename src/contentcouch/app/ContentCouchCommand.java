@@ -6,10 +6,14 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import com.eekboom.utils.Strings;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileDirectory;
@@ -191,6 +195,51 @@ public class ContentCouchCommand {
 		return concat( getRepository().getCommandArgs(commandName), commandLineArgs );
 	}
 	
+	//// Dump stuff ////
+	
+	protected void dumpRepoConfig( ContentCouchRepository repo, PrintStream ps, String pfx ) {
+		ps.println( pfx + "Repository path: " + repo.getPath() );
+		ps.println( pfx );
+		
+		if( repo.namedRepositories != null && repo.namedRepositories.size() > 0 ) {
+			ps.println( pfx + "Named repositories:" );
+			for( Iterator i = repo.namedRepositories.entrySet().iterator(); i.hasNext(); ) {
+				Map.Entry e = (Map.Entry)i.next();
+				ps.println( pfx + "  " + e.getKey() + ": " + ((ContentCouchRepository)e.getValue()).getPath() );
+			}
+		}
+		ps.println( pfx );
+		
+		if( repo.localRepositories != null && repo.localRepositories.size() > 0 ) {
+			ps.println( pfx + "Local repositories:" );
+			for( Iterator i = repo.localRepositories.iterator(); i.hasNext(); ) {
+				ps.println( pfx + "  " + ((ContentCouchRepository)i.next()).getPath() );
+			}
+		}
+
+		if( repo.cacheRepository != null ) {
+			ps.println( pfx + "Cache repository:" );
+			ps.println( pfx + "  " + repo.cacheRepository.getPath() );
+		}
+		
+		if( repo.remoteRepositories != null && repo.remoteRepositories.size() > 0 ) {
+			ps.println( pfx + "Remote repositories:" );
+			for( Iterator i = repo.remoteRepositories.iterator(); i.hasNext(); ) {
+				ps.println( pfx + "  " + ((ContentCouchRepository)i.next()).getPath() );
+			}
+		}
+
+		ps.println( pfx + "Sub-command default arguments:" );
+		for( Iterator i=repo.cmdArgs.entrySet().iterator(); i.hasNext(); ) {
+			Map.Entry e = (Map.Entry)i.next();
+			ps.println( pfx + "  [" + e.getKey() + "]" );
+			List argList = (List)e.getValue();
+			for( Iterator argListI=argList.iterator(); argListI.hasNext(); ) {
+				ps.println( pfx + "    " + argListI.next() );
+			}
+		}
+	}
+	
 	//// Commit tracking ////
 	
 	public File getParentCommitListFile(File about) {
@@ -271,6 +320,7 @@ public class ContentCouchCommand {
 		boolean storeDirs = true;
 		boolean storeCommits = true;
 		boolean forceCommit = false;
+		boolean dumpConfig = false;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
@@ -307,6 +357,8 @@ public class ContentCouchCommand {
 				author = args[++i];
 			} else if( "-force-commit".equals(arg) ) {
 				forceCommit = true;
+			} else if( "-dump-config".equals(arg) ) {
+				dumpConfig = true;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
 				System.out.println(STORE_USAGE);
 				System.exit(0);
@@ -373,6 +425,31 @@ public class ContentCouchCommand {
 		importer.shouldStoreFiles = storeFiles;
 		importer.shouldStoreDirs = storeDirs;
 		importer.shouldStoreHeads = storeCommits;
+		
+		if( dumpConfig ) {
+			System.out.print("Store arguments:");
+			for( int i=0; i<args.length; ++i ) {
+				System.out.print(" " + args[i]);
+			}
+			System.out.println("");
+			System.out.println("");
+			System.out.println("Storing files:       " + (storeFiles ? "yes" : "no"));
+			System.out.println("Storing directories: " + (storeDirs ? "yes" : "no"));
+			System.out.println("Storing heads:       " + (storeCommits ? "yes" : "no"));
+			System.out.println("Create commit:       " + (createCommit ? "yes" : "no"));
+			System.out.println("Force commit:        " + (forceCommit ? "yes" : "no"));
+			System.out.println("Link:                " + importer.shouldLinkStored );
+			System.out.println("Relink:              " + importer.shouldRelinkImported );
+			if( createCommit ) {
+				System.out.println("Commit message:      " + message);
+				System.out.println("Commit author:       " + author);
+				System.out.println("Commit name:         " + name);
+			}
+			System.out.println("");
+			System.out.println("Repository:");
+			dumpRepoConfig( getRepository(), System.out, "  " );
+			return;
+		}
 		
 		Getter lg = getLocalGetter();
 		for( Iterator i=files.iterator(); i.hasNext(); ) {
@@ -590,7 +667,7 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
-		if( getRepository().remoteCacheRepository == null && !cacheless ) {
+		if( getRepository().cacheRepository == null && !cacheless ) {
 			System.err.println("ccouch cache: The currently selected repository (" + getRepository().getPath() + ")");
 			System.err.println("  has no cache repository set up.  'ccouch cache' is pretty pointless!");
 			System.err.println("  Use -cacheless to run anyway");
@@ -617,7 +694,7 @@ public class ContentCouchCommand {
 	}
 	
 	protected boolean cacheHeads( String path ) {
-		ContentCouchRepository cache = getRepository().remoteCacheRepository;
+		ContentCouchRepository cache = getRepository().cacheRepository;
 		
 		if( path.startsWith(RdfNamespace.URI_PARSE_PREFIX)) path = path.substring(RdfNamespace.URI_PARSE_PREFIX.length());
 		if( path.startsWith("x-ccouch-head:") ) path = path.substring("x-ccouch-head:".length());
@@ -687,7 +764,7 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
-		if( getRepository().remoteCacheRepository == null ) {
+		if( getRepository().cacheRepository == null ) {
 			System.err.println("ccouch cache: The currently selected repository (" + getRepository().getPath() + ")");
 			System.err.println("  has no cache repository set up.  'ccouch cache-heads' is pretty pointless!");
 			System.exit(1);
@@ -806,7 +883,10 @@ public class ContentCouchCommand {
 		for( int j=0; j<cmdArgs.length; ++i, ++j ) {
 			cmdArgs[j] = args[i];
 		}
-		if( "store".equals(cmd) ) {
+		if( "config".equals(cmd) ) {
+			System.out.println("Repo configuration:");
+			dumpRepoConfig(getRepository(), System.out, "  ");
+		} else if( "store".equals(cmd) ) {
 			runStoreCmd( cmdArgs );
 		} else if( "checkout".equals(cmd) ) {
 			runCheckoutCmd( cmdArgs );
