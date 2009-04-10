@@ -49,6 +49,7 @@ public class CCouchHeadGetter implements Getter {
 		ContentCouchRepository repo;
 		if( repoName == null ) {
 			if( headName.endsWith("/latest") ) headName = findHead(headName);
+			if( headName == null ) return null;
 
 			Object o;
 			if( (o = mainRepo.getHead(headName)) != null ) return o;
