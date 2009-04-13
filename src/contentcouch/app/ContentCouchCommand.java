@@ -683,6 +683,7 @@ public class ContentCouchCommand {
 	protected boolean cacheHeads( ContentCouchRepository remote, String remotePath,
 			ContentCouchRepository cache, String cachePath ) {
 		Exporter e = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
+		if( remotePath == null ) throw new RuntimeException("Can't get null path head!");
 		Object ro = remote.getHead(remotePath);
 		if( ro == null ) {
 			return false;
@@ -714,18 +715,27 @@ public class ContentCouchCommand {
 			path = path.substring(si+1);
 			ContentCouchRepository rr = (ContentCouchRepository)getRepository().namedRepositories.get(repoName);
 			if( rr == null ) throw new RuntimeException("No such repository: " + repoName);
-			if( path.endsWith("/latest") ) path = rr.findHead(path);
+			if( path.endsWith("/latest") ) {
+				String oPath = path;
+				path = rr.findHead(path);
+				if( path == null ) {
+					Log.log( Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not find latest head of " + oPath + " at //" + repoName);
+					return false;
+				}
+			}
 			success = cacheHeads( rr, path, cache, path );
 		} else {
 			success = false;
 
 			if( path.startsWith("/") ) path = path.substring(1);
 			
-			String oPath = path;
-			if( path.endsWith("/latest") ) path = getHeadGetter(true).findHead(path);
-			if( path == null ) {
-				Log.log( Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not find latest head of " + oPath);
-				return false;
+			if( path.endsWith("/latest") ) {
+				String oPath = path;
+				path = getHeadGetter(true).findHead(path);
+				if( path == null ) {
+					Log.log( Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not find latest head of " + oPath);
+					return false;
+				}
 			}
 			
 			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
