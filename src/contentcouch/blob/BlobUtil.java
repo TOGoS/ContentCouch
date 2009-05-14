@@ -33,7 +33,7 @@ public class BlobUtil {
 		return getString(getBytes(blob));
 	}
 	
-	public static Blob getBlob(String s) {
+	public static ByteArrayBlob getBlob(String s) {
 		try {
 			return new ByteArrayBlob(s.getBytes("UTF-8"));
 		} catch (UnsupportedEncodingException e) {

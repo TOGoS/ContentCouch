@@ -8,12 +8,18 @@ import contentcouch.value.Blob;
 
 public class ParseRdfGetFilter implements Getter {
 	Getter getter;
+	public boolean passThroughOtherUris;
 	public boolean handleAtSignAsParseRdf = false;
 	
 	public ParseRdfGetFilter(Getter getter) {
-		this.getter = getter;
+		this(getter,true);
 	}
-	
+
+	public ParseRdfGetFilter(Getter getter, boolean passThroughOtherUris) {
+		this.getter = getter;
+		this.passThroughOtherUris = passThroughOtherUris;
+	}
+
 	public Object get(String identifier) {
 		String parseIdentifier;
 		if( handleAtSignAsParseRdf && identifier.charAt(0) == '@' ) {
@@ -29,8 +35,10 @@ public class ParseRdfGetFilter implements Getter {
 			if( obj instanceof RdfNode ) return obj;
 			Blob blob = BlobUtil.getBlob(obj);
 			return RdfIO.parseRdf(BlobUtil.getString(blob), parseIdentifier);
-		} else {
+		} else if( passThroughOtherUris ) {
 			return getter.get(identifier);
+		} else {
+			return null;
 		}
 	}
 

@@ -13,8 +13,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import contentcouch.active.ActiveFunction;
+import contentcouch.active.ActiveUriResolver;
+import contentcouch.active.DataUriResolver;
+import contentcouch.active.Expression;
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileDirectory;
+import contentcouch.http.HttpBlobGetter;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
@@ -29,6 +34,7 @@ import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
+import contentcouch.value.MetadataHaver;
 import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
@@ -167,10 +173,35 @@ public class ContentCouchCommand {
 		return new Importer(getRepository());
 	}
 	
+	// TODO: Move all this URI resolution setup stuff to repository so it
+	// can be configured there and easily used by other apps.
+	
 	public CCouchHeadGetter getHeadGetter( boolean checkRemotes ) {
 		CCouchHeadGetter g = new CCouchHeadGetter(getRepository());
 		g.checkRemotes = checkRemotes;
 		return g;
+	}
+	
+	public ActiveUriResolver getActiveUriResolver( Getter getter ) {
+		ActiveUriResolver aur = new ActiveUriResolver( getter );
+		aur.namedActiveFunctions.put("hello", new ActiveFunction() {
+			public Object call(Map context, Map argumentExpressions) {
+				return "Hello, world!";
+			}
+		});
+		aur.namedActiveFunctions.put("type-of", new ActiveFunction() {
+			public Object call(Map context, Map argumentExpressions) {
+				Expression operand = (Expression)argumentExpressions.get("operand");
+				if( operand == null ) return null;
+				Object obj = operand.eval(context);
+				if( obj instanceof MetadataHaver ) {
+					return ((MetadataHaver)obj).getMetadata(RdfNamespace.DC_FORMAT);
+				}
+				// TODO: Try to guess type
+				return null;
+			}
+		});
+		return aur;
 	}
 	
 	public Getter getLocalGetter() {
@@ -178,7 +209,11 @@ public class ContentCouchCommand {
 		mg.addGetter(getRepository());
 		mg.addGetter(getHeadGetter(false));
 		mg.addGetter(new FileBlobMap(""));
-		return new ParseRdfGetFilter(mg);
+		mg.addGetter(new ParseRdfGetFilter(mg, false));
+		mg.addGetter(getActiveUriResolver(mg));
+		mg.addGetter(new DataUriResolver());
+		mg.addGetter(new HttpBlobGetter());
+		return mg;
 	}
 	
 	protected String[] concat( String[] s1, String[] s2 ) {
@@ -587,6 +622,11 @@ public class ContentCouchCommand {
 		}
 		File destFile = new File(dest);
 		Object exportThis = exporter.followRedirects(new Ref(source), null);
+		
+		if( exportThis instanceof String || exportThis instanceof byte[] ) {
+			exportThis = BlobUtil.getBlob(exportThis);
+		}
+		
 		if( "-".equals(dest) ) {
 			if( exportThis instanceof Blob ) {
 				BlobUtil.writeBlobToOutputStream((Blob)exportThis, System.out);

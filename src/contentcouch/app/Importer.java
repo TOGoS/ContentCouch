@@ -73,7 +73,7 @@ public class Importer implements Pusher, StoreFileGetter {
 				return new FileBlob((File)obj); 
 			}
 		} else {
-			throw new RuntimeException( "Don't know how to import " + obj.getClass().getName() );
+			return BlobUtil.getBlob(obj);
 		}
 	}
 	
