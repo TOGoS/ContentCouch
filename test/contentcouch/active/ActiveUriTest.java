@@ -3,6 +3,7 @@ package contentcouch.active;
 import java.util.Map;
 import java.util.TreeMap;
 
+import contentcouch.activefunctions.Hello;
 import contentcouch.misc.UriUtil;
 import junit.framework.TestCase;
 
@@ -77,5 +78,11 @@ public class ActiveUriTest extends TestCase {
 		ActiveUriResolver r = new ActiveUriResolver( null );
 		Expression e = r.parseActiveUriExpression("active:foo+bar@%28baz%20quux%3Dx%3Aqu%2Bux%29");
 		assertEquals("(foo bar=(baz quux=x:qu+ux))", e.toString());
+	}
+	
+	public void testGetFunctionByClassName() {
+		Object f = new GetFunctionByNameExpression("contentcouch.hello").eval(new TreeMap());
+		assertTrue("Got " + (f == null ? "null" : "a " + f.getClass()) + " but expected a Hello", f instanceof Hello);
+		assertEquals("Hello, world", ((ActiveFunction)f).call(new TreeMap(), new TreeMap()));
 	}
 }
