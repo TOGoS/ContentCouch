@@ -748,22 +748,22 @@ public class ContentCouchCommand {
 				}
 			}
 		} else if( path.startsWith("//") ) {
-			path = path.substring(2);
-			int si = path.indexOf('/');
+			String subPath = path.substring(2);
+			int si = subPath.indexOf('/');
 			if( si == -1 ) throw new RuntimeException("Malformed head path (contains '//' but no '/'): " + path);
-			String repoName = path.substring(0,si);
-			path = path.substring(si+1);
+			String repoName = subPath.substring(0,si);
+			subPath = subPath.substring(si+1);
 			ContentCouchRepository rr = (ContentCouchRepository)getRepository().namedRepositories.get(repoName);
 			if( rr == null ) throw new RuntimeException("No such repository: " + repoName);
-			if( path.endsWith("/latest") ) {
-				String oPath = path;
-				path = rr.findHead(path);
-				if( path == null ) {
+			if( subPath.endsWith("/latest") ) {
+				String oPath = subPath;
+				subPath = rr.findHead(subPath);
+				if( subPath == null ) {
 					Log.log( Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not find latest head of " + oPath + " at //" + repoName);
 					return false;
 				}
 			}
-			success = cacheHeads( rr, path, cache, path );
+			success = cacheHeads( rr, subPath, cache, path );
 		} else {
 			success = false;
 
@@ -786,7 +786,7 @@ public class ContentCouchCommand {
 			}
 		}
 		if( !success ) {
-			Log.log( Log.LEVEL_ERRORS, Log.TYPE_NOTFOUND, "x-ccouch-head:" + path);
+			Log.log( Log.LEVEL_ERRORS, Log.TYPE_NOTFOUND, "Could not find head: " + path);
 		}
 
 		return success;
