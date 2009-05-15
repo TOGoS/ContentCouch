@@ -2,6 +2,7 @@ package contentcouch.active;
 
 import java.util.Map;
 
+import contentcouch.misc.UriUtil;
 import contentcouch.store.Getter;
 
 public class ResolveUriExpression implements Expression {
@@ -18,7 +19,7 @@ public class ResolveUriExpression implements Expression {
 	}
 	
 	public String toString() {
-		return uri;
+		return UriUtil.sanitizeUri(uri);
 	}
 	
 	public Object eval( Map context ) {

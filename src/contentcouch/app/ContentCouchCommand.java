@@ -763,7 +763,7 @@ public class ContentCouchCommand {
 					return false;
 				}
 			}
-			success = cacheHeads( rr, subPath, cache, path );
+			success = cacheHeads( rr, subPath, cache, subPath );
 		} else {
 			success = false;
 

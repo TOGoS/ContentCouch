@@ -2,6 +2,8 @@ package contentcouch.active;
 
 import java.util.Map;
 
+import contentcouch.misc.UriUtil;
+
 public class GetFunctionByNameExpression implements Expression {
 	public static final String FUNCTION_MAP_VARNAME = "ccouch:functions";
 	
@@ -9,6 +11,10 @@ public class GetFunctionByNameExpression implements Expression {
 	
 	public GetFunctionByNameExpression( String funcName ) {
 		this.funcName = funcName;
+	}
+	
+	public String toString() {
+		return UriUtil.uriEncode(funcName);
 	}
 	
 	public Object eval( Map context ) {

@@ -3,6 +3,8 @@ package contentcouch.active;
 import java.util.Iterator;
 import java.util.Map;
 
+import contentcouch.misc.UriUtil;
+
 public class CallFunctionExpression implements Expression {
 	Expression funcExpression;
 	Map argumentExpressions;
@@ -15,13 +17,13 @@ public class CallFunctionExpression implements Expression {
 	public String toString() {
 		String res = "(";
 		if( funcExpression instanceof GetFunctionByNameExpression ) {
-			res += ((GetFunctionByNameExpression)funcExpression).funcName;
+			res += UriUtil.uriEncode(((GetFunctionByNameExpression)funcExpression).funcName);
 		} else {
 			res += funcExpression.toString();
 		}
 		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
-			res += " " + e.getKey().toString() + "=" + e.getValue().toString(); 
+			res += " " + UriUtil.uriEncode((String)e.getKey()) + "=" + e.getValue().toString(); 
 		}
 		res += ")";
 		return res;

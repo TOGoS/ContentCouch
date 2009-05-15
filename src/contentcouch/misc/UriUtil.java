@@ -6,7 +6,8 @@ import contentcouch.active.ActiveUriResolver;
 
 public class UriUtil {
 
-	public static String uriEncode( String text ) {
+
+	public static String uriEncode( String text, boolean keepUriSpecialChars ) {
 		byte[] inbytes;
 		try {
 			inbytes = text.getBytes("UTF-8");
@@ -19,7 +20,11 @@ public class UriUtil {
 			byte c = inbytes[inidx++];
 			if( (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 			    (c >= '0' && c <= '9') || c == '.' || c == ',' ||
-			    c == '/' || c == '-' || c == '_' )
+			    c == '/' || c == '-' || c == '_' ||
+			    (keepUriSpecialChars && (
+			    	c == '%' || c == '+' || c == ':' || c == ';' ||
+			    	c == '?' || c == '&' || c == '=' || c == '#'
+			    )))
 			{
 				outchars[outidx++] = (char)c;
 			} else {
@@ -29,6 +34,14 @@ public class UriUtil {
 			}
 		}
 		return new String(outchars,0,outidx);
+	}
+	
+	public static String uriEncode( String text ) {
+		return uriEncode( text, false );
+	}
+
+	public static String sanitizeUri( String text ) {
+		return uriEncode( text, true );
 	}
 
 	protected static final int hexValue( char digit ) {
