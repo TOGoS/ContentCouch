@@ -30,7 +30,7 @@ public class ParseRdfGetFilter implements Getter {
 			parseIdentifier = null;
 		}
 		if( parseIdentifier != null ) {
-			Object obj = get(parseIdentifier);
+			Object obj = getter.get(parseIdentifier);
 			if( obj == null ) return null;
 			if( obj instanceof RdfNode ) return obj;
 			Blob blob = BlobUtil.getBlob(obj);
@@ -41,5 +41,4 @@ public class ParseRdfGetFilter implements Getter {
 			return null;
 		}
 	}
-
 }

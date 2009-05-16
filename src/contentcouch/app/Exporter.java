@@ -13,7 +13,6 @@ import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.Getter;
 import contentcouch.store.Identifier;
-import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
@@ -38,10 +37,6 @@ public class Exporter {
 	};
 	
 	public Exporter( Getter getter, Identifier identifier ) {
-		if( !(getter instanceof ParseRdfGetFilter) ) {
-			getter = new ParseRdfGetFilter(getter);
-			((ParseRdfGetFilter)getter).handleAtSignAsParseRdf = true;
-		}
 		this.getter = getter;
 		this.identifier = identifier;
 	}
