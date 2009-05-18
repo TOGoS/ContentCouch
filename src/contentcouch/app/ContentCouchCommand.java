@@ -13,28 +13,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import contentcouch.active.ActiveFunction;
-import contentcouch.active.ActiveUriResolver;
-import contentcouch.active.DataUriResolver;
-import contentcouch.active.Expression;
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileDirectory;
-import contentcouch.http.HttpBlobGetter;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.rdf.RdfNode;
-import contentcouch.repository.CCouchHeadGetter;
 import contentcouch.repository.ContentCouchRepository;
 import contentcouch.repository.ContentCouchRepository.DownloadInfo;
 import contentcouch.repository.ContentCouchRepository.GetAttemptListener;
-import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
-import contentcouch.store.MultiGetter;
-import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
-import contentcouch.value.MetadataHaver;
 import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
@@ -176,44 +166,9 @@ public class ContentCouchCommand {
 	// TODO: Move all this URI resolution setup stuff to repository so it
 	// can be configured there and easily used by other apps.
 	
-	public CCouchHeadGetter getHeadGetter( boolean checkRemotes ) {
-		CCouchHeadGetter g = new CCouchHeadGetter(getRepository());
-		g.checkRemotes = checkRemotes;
-		return g;
-	}
-	
-	public ActiveUriResolver getActiveUriResolver( Getter getter ) {
-		ActiveUriResolver aur = new ActiveUriResolver( getter );
-		aur.namedActiveFunctions.put("hello", new ActiveFunction() {
-			public Object call(Map context, Map argumentExpressions) {
-				return "Hello, world!";
-			}
-		});
-		aur.namedActiveFunctions.put("type-of", new ActiveFunction() {
-			public Object call(Map context, Map argumentExpressions) {
-				Expression operand = (Expression)argumentExpressions.get("operand");
-				if( operand == null ) return null;
-				Object obj = operand.eval(context);
-				if( obj instanceof MetadataHaver ) {
-					return ((MetadataHaver)obj).getMetadata(RdfNamespace.DC_FORMAT);
-				}
-				// TODO: Try to guess type
-				return null;
-			}
-		});
-		return aur;
-	}
 	
 	public Getter getLocalGetter() {
-		MultiGetter mg = new MultiGetter();
-		mg.addGetter(getRepository());
-		mg.addGetter(getHeadGetter(false));
-		mg.addGetter(new FileBlobMap(""));
-		mg.addGetter(new ParseRdfGetFilter(mg, false));
-		mg.addGetter(getActiveUriResolver(mg));
-		mg.addGetter(new DataUriResolver());
-		mg.addGetter(new HttpBlobGetter());
-		return mg;
+		return getRepository().getGenericGetter();
 	}
 	
 	protected String[] concat( String[] s1, String[] s2 ) {
@@ -771,7 +726,7 @@ public class ContentCouchCommand {
 			
 			if( path.endsWith("/latest") ) {
 				String oPath = path;
-				path = getHeadGetter(true).findHead(path);
+				path = getRepository().getHeadGetter(true).findHead(path);
 				if( path == null ) {
 					Log.log( Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not find latest head of " + oPath);
 					return false;

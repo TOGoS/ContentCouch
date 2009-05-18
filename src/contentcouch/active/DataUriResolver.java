@@ -37,7 +37,7 @@ public class DataUriResolver implements Getter {
 			data = UriUtil.uriDecodeBytes( identifier.substring(commaPos+1) );
 		}
 		ByteArrayBlob b = new ByteArrayBlob(data);
-		if( type != null ) b.putMetadata(RdfNamespace.DC_FORMAT, type);
+		if( type != null && type.length() > 0 ) b.putMetadata(RdfNamespace.DC_FORMAT, type);
 		return b;
 	}
 }

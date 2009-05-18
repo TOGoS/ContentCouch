@@ -10,9 +10,12 @@ import java.io.UnsupportedEncodingException;
 
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
+import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.Blob;
 
 public class BlobUtil {
+	//// Conversions to Bytes ////
+	
 	public static byte[] getBytes(Blob blob) {
 		long len = blob.getLength();
 		if( len > Integer.MAX_VALUE ) {
@@ -20,6 +23,8 @@ public class BlobUtil {
 		}
 		return blob.getData(0, (int)blob.getLength());
 	}
+	
+	//// Conversion to String ////
 	
 	public static String getString(byte[] bytes) {
 		try {
@@ -33,9 +38,20 @@ public class BlobUtil {
 		return getString(getBytes(blob));
 	}
 	
+	public static String getString(Object obj) {
+		if( obj instanceof String ) return (String)obj;
+		if( obj instanceof byte[] ) return getString((byte[])obj);
+		if( obj instanceof Blob ) return getString((Blob)obj);
+		return obj.toString();
+	}
+	
+	//// Conversions to Blob ////
+	
 	public static ByteArrayBlob getBlob(String s) {
 		try {
-			return new ByteArrayBlob(s.getBytes("UTF-8"));
+			ByteArrayBlob bab = new ByteArrayBlob(s.getBytes("UTF-8"));
+			bab.putMetadata(RdfNamespace.DC_FORMAT, "text/plain");
+			return bab;
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}

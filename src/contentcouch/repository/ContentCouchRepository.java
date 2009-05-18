@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 
 import com.eekboom.utils.Strings;
 
+import contentcouch.active.ActiveUriResolver;
+import contentcouch.active.DataUriResolver;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.http.HtmlDirectoryGetFilter;
@@ -28,6 +30,8 @@ import contentcouch.path.PathUtil;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.Identifier;
+import contentcouch.store.MultiGetter;
+import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.store.PrefixGetFilter;
 import contentcouch.store.Pusher;
 import contentcouch.store.Putter;
@@ -437,6 +441,30 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		Object o = exploratGetter.get(identifier);
 		//throw new RuntimeException("Get '" + path + "'+'" + identifier + "' = " + (o == null ? "null " : o.getClass().getName()));
 		return o;
+	}
+	
+	public CCouchHeadGetter getHeadGetter( boolean checkRemotes ) {
+		CCouchHeadGetter g = new CCouchHeadGetter(this);
+		g.checkRemotes = checkRemotes;
+		return g;
+	}
+	
+	public ActiveUriResolver getActiveUriResolver( Getter getter ) {
+		ActiveUriResolver aur = new ActiveUriResolver( getter );
+
+		return aur;
+	}
+	
+	public Getter getGenericGetter() {
+		MultiGetter mg = new MultiGetter();
+		mg.addGetter(this);
+		mg.addGetter(getHeadGetter(false));
+		mg.addGetter(new FileBlobMap(""));
+		mg.addGetter(new ParseRdfGetFilter(mg, false));
+		mg.addGetter(getActiveUriResolver(mg));
+		mg.addGetter(new DataUriResolver());
+		mg.addGetter(new HttpBlobGetter());
+		return mg;
 	}
 	
 	public Object get( String identifier ) {

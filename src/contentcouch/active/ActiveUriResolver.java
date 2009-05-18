@@ -19,7 +19,7 @@ public class ActiveUriResolver implements Getter {
 	}
 	
 	public Object get( String uri ) {
-		if( !uri.startsWith(ACTIVE_URI_PREFIX) ) return null;
+		if( !uri.startsWith(ACTIVE_URI_PREFIX) && !uri.startsWith("(")) return null;
 		
 		Expression e = parseExpression( uri );
 		Map context = new HashMap();
@@ -93,40 +93,53 @@ public class ActiveUriResolver implements Getter {
 	}
 	
 	protected Expression processFunctionExpression( Expression e ) {
-		if( e instanceof ResolveUriExpression && ((ResolveUriExpression)e).uri.indexOf(':') == -1 ) {
-			return new GetFunctionByNameExpression(((ResolveUriExpression)e).uri);
+		if( e instanceof Bareword ) {
+			return new GetFunctionByNameExpression(e.toString());
 		}
 		return e;
 	}
 	
 	protected Expression parseParenContent( ParsePosition pp ) {
-		Expression functionExpression = parseParenExpression(pp);
+		Expression functionExpression = parseParenExpression(pp, false);
 		if( functionExpression == null ) {
 			throw new RuntimeException("Found end of expression where function expected at " + pp.lastTokenPos + " in " + new String(pp.source) );
 		}
 		functionExpression = processFunctionExpression(functionExpression);
 		Map argumentExpressions = new TreeMap();
-		String s = readToken(pp, true);
-		while( s != null && !")".equals(s) ) {
-			if( "(".equals(s) || "=".equals(s) ) {
-				throw new RuntimeException("Found '"+s+"' where '=' expected in " + pp.lastTokenPos + " in " + new String(pp.source) );
+
+		Expression e = parseParenExpression(pp, true);
+		int operandCounter = 0;
+		while( e != null ) {
+			Expression n = parseParenExpression(pp, true);
+			if( n instanceof Bareword && "=".equals(n.toString()) ) {
+				if( !(e instanceof Bareword) ) {
+					throw new RuntimeException("Bareword expected before '=', but found " + e.getClass().getName());
+				}
+				Expression v = parseParenExpression(pp, false);
+				if( v == null ) {
+					throw new RuntimeException("Reached end of expression where value expected");
+				}
+				argumentExpressions.put(e.toString(), v);
+				e = parseParenExpression(pp, true);
+			} else {
+				int oc = operandCounter++;
+				if( oc == 0 ) {
+					argumentExpressions.put("operand", e);
+				} else {
+					// TODO: Format as 0001 so that it is sorted properly when >= 10
+					argumentExpressions.put("operand" + oc, e);
+				}
+				e = n;
 			}
-			String paramName = s;
-			s = readToken(pp,true);
-			if( !"=".equals(s) ) {
-				throw new RuntimeException("Found '"+s+"' where parameter name expected in " + pp.lastTokenPos + " in " + new String(pp.source) );
-			}
-			Expression paramValueExpression = parseParenExpression(pp);
-			argumentExpressions.put(paramName, paramValueExpression);
-			s = readToken(pp, true);
 		}
 		return new CallFunctionExpression( functionExpression, argumentExpressions );
 	}
 	
-	protected Expression parseParenExpression( ParsePosition pp ) {
+	protected Expression parseParenExpression( ParsePosition pp, boolean stopOnEquals ) {
 		String s;
-		s = readToken(pp,false);
+		s = readToken(pp,stopOnEquals);
 		if( s == null ) return null;
+		if( ")".equals(s) ) return null;
 		if( "(".equals(s) ) {
 			return parseParenContent(pp);
 		}
@@ -134,12 +147,16 @@ public class ActiveUriResolver implements Getter {
 	}
 	
 	protected Expression parseParenExpression( String text ) {
-		return parseParenExpression( new ParsePosition(text.toCharArray()) );
+		return parseParenExpression( new ParsePosition(text.toCharArray()), false );
 	}
 	
 	protected Expression parseExpression( String uri ) {
 		if( uri.startsWith(ACTIVE_URI_PREFIX) ) return parseActiveUriExpression(uri);
 		if( uri.startsWith("(") ) return parseParenExpression(uri);
-		return new ResolveUriExpression(uri);
+		if( uri.indexOf(":") == -1 ) {
+			return new Bareword(uri);
+		} else {
+			return new ResolveUriExpression(uri);
+		}
 	}
 }

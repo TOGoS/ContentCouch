@@ -36,7 +36,6 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.repository.ContentCouchRepository;
 import contentcouch.store.Getter;
-import contentcouch.store.ParseRdfGetFilter;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -395,7 +394,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	}
 	
 	protected Getter getLocalGetter() {
-		return new ParseRdfGetFilter(getRepo());
+		return getRepo().getGenericGetter();
 	}
 	
 	protected String CT_RDF  = "application/rdf+xml";
@@ -550,15 +549,28 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		return rawObject(getObject(path), path);
 	}
 	
-	public Object get(String path) {
+	public Object get(String path, HttpServletRequest request) {
 		if( path.equals("") ) {
-			String webPath = this.getServletContext().getRealPath("");
-			return new FileBlob(new File(webPath + "/_index.html"));
-		} else if( path.startsWith("explore/") ) {
+			path = "_index";
+		}
+		if( path.startsWith("explore/") ) {
 			return explore(path.substring(8));
+		} else if( path.equals("explore") ) {
+			return explore((String)request.getParameter("uri"));
 		} else if( path.startsWith("raw/") ) {
 			return raw(path.substring(4));
+		} else if( path.equals("explore") ) {
+			return raw((String)request.getParameter("uri"));
 		} else {
+			String webPath = this.getServletContext().getRealPath("");
+			File f;
+			
+			f = new File(webPath + "/" + path);
+			if( f.exists() ) { return new FileBlob(f); }
+			
+			f = new File(webPath + "/" + path + ".html");
+			if( f.exists() ) { return new FileBlob(f); }
+			
 			return "I don't know about '" + path + "'";
 		}
 	}
@@ -568,7 +580,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		if( pi == null ) pi = request.getRequestURI();
 		if( pi == null ) pi = "/";
 		
-		Object page = get(pi.substring(1));
+		Object page = get(pi.substring(1), request);
 		if( page == null ) page = "Nothing found!";
 		if( page instanceof HttpServletRequestHandler ) {
 			((HttpServletRequestHandler)page).handle(request, response);
@@ -585,5 +597,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			response.setHeader("Content-Type", "text/plain");			
 			response.getWriter().println(page.toString());
 		}
+	}
+	
+	public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		doGet(request, response);
 	}
 }

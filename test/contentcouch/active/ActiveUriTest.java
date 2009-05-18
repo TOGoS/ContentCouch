@@ -38,6 +38,18 @@ public class ActiveUriTest extends TestCase {
 		Expression e = r.parseParenExpression("(foo bar=x:baz quux=x:quuux)");
 		assertEquals("(foo bar=x:baz quux=x:quuux)", e.toString());
 	}
+	
+	public void testParenDefaultKeyExpressionParse() {
+		ActiveUriResolver r = new ActiveUriResolver( null );
+		Expression e = r.parseParenExpression("(foo x:baz x:quuux)");
+		assertEquals("(foo operand=x:baz operand1=x:quuux)", e.toString());
+	}	
+
+	public void testParenMixedKeyExpressionParse() {
+		ActiveUriResolver r = new ActiveUriResolver( null );
+		Expression e = r.parseParenExpression("(foo bar=x:BAR x:OPERAND baz=x:BAZ x:OPERAND1)");
+		assertEquals("(foo bar=x:BAR baz=x:BAZ operand=x:OPERAND operand1=x:OPERAND1)", e.toString());
+	}	
 
 	public void testParenExpressionParse2() {
 		ActiveUriResolver r = new ActiveUriResolver( null );
