@@ -19,13 +19,14 @@ public class ActiveUriResolver implements Getter {
 	}
 	
 	public Object get( String uri ) {
-		if( !uri.startsWith(ACTIVE_URI_PREFIX) && !uri.startsWith("(")) return null;
-		
-		Expression e = parseExpression( uri );
-		Map context = new HashMap();
-		context.put(ResolveUriExpression.URI_RESOLVER_VARNAME, getter);
-		context.put(GetFunctionByNameExpression.FUNCTION_MAP_VARNAME, this.namedActiveFunctions);
-		return e.eval(context);
+		if( uri.startsWith(ACTIVE_URI_PREFIX) || uri.startsWith("(") || uri.startsWith("\"") ) {
+			Expression e = parseExpression( uri );
+			Map context = new HashMap();
+			context.put(ResolveUriExpression.URI_RESOLVER_VARNAME, getter);
+			context.put(GetFunctionByNameExpression.FUNCTION_MAP_VARNAME, this.namedActiveFunctions);
+			return e.eval(context);
+		}
+		return null;
 	}
 	
 	protected Expression parseActiveUriExpression( String uri ) {
@@ -52,7 +53,7 @@ public class ActiveUriResolver implements Getter {
 			this.end = source.length;
 		}
 		
-		public int current() {
+		public final int current() {
 			if( pos >= end ) return -1;
 			return source[pos];
 		}
@@ -71,6 +72,29 @@ public class ActiveUriResolver implements Getter {
 		pp.lastTokenPos = pp.pos;
 		int c = pp.current();
 		if( c == -1 ) return null;
+		if( c == '"' ) {
+			StringBuffer b = new StringBuffer();
+			b.append('"');
+			++pp.pos;
+			c = pp.current();
+			while( c != '"' && c != -1 ) {
+				if( c == '\\' ) {
+					++pp.pos;
+					c = pp.current();
+					switch( c ) {
+					case( 't' ): c = '\t'; break;
+					case( 'r' ): c = '\r'; break;
+					case( 'n' ): c = '\n'; break;
+					}
+				}
+				b.append( (char)c );
+				++pp.pos;
+				c = pp.current();
+			}
+			b.append('"');
+			++pp.pos;
+			return b.toString();
+		}
 		if( c == '(' ) {
 			++pp.pos;
 			return "(";
@@ -140,9 +164,7 @@ public class ActiveUriResolver implements Getter {
 		s = readToken(pp,stopOnEquals);
 		if( s == null ) return null;
 		if( ")".equals(s) ) return null;
-		if( "(".equals(s) ) {
-			return parseParenContent(pp);
-		}
+		if( "(".equals(s) ) return parseParenContent(pp);
 		return parseExpression(s);
 	}
 	
@@ -153,6 +175,7 @@ public class ActiveUriResolver implements Getter {
 	protected Expression parseExpression( String uri ) {
 		if( uri.startsWith(ACTIVE_URI_PREFIX) ) return parseActiveUriExpression(uri);
 		if( uri.startsWith("(") ) return parseParenExpression(uri);
+		if( uri.startsWith("\"") ) return new ValueExpression(uri.substring(1,uri.length()-1));
 		if( uri.indexOf(":") == -1 ) {
 			return new Bareword(uri);
 		} else {

@@ -97,4 +97,16 @@ public class ActiveUriTest extends TestCase {
 		assertTrue("Got " + (f == null ? "null" : "a " + f.getClass()) + " but expected a Hello", f instanceof Hello);
 		assertEquals("Hello, world", ((ActiveFunction)f).call(new TreeMap(), new TreeMap()));
 	}
+	
+	public void testParseQuotedString() {
+		ActiveUriResolver r = new ActiveUriResolver( null );
+		Expression e = r.parseExpression("\"foo\nbar\"");
+		assertEquals("foo\nbar", e.eval(null));
+	}
+
+	public void testParseQuotedString2() {
+		ActiveUriResolver r = new ActiveUriResolver( null );
+		Expression e = r.parseExpression("(blah \"foo\nbar\\\\\")");
+		assertEquals("(blah operand=\"foo\\nbar\\\\\")", e.toString());
+	}
 }
