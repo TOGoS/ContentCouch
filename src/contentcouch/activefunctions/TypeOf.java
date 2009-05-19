@@ -2,18 +2,17 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
-import contentcouch.active.ActiveFunction;
-import contentcouch.active.Expression;
+import contentcouch.active.BaseActiveFunction;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.MetadataHaver;
 
-public class TypeOf implements ActiveFunction {
+public class TypeOf extends BaseActiveFunction {
 	public Object call(Map context, Map argumentExpressions) {
-		Expression operand = (Expression)argumentExpressions.get("operand");
-		if( operand == null ) return null;
-		Object obj = operand.eval(context);
+		Object obj = getArgumentValue(context, argumentExpressions, "operand", null);
+		
 		if( obj instanceof MetadataHaver ) {
-			return ((MetadataHaver)obj).getMetadata(RdfNamespace.DC_FORMAT);
+			String format = (String)((MetadataHaver)obj).getMetadata(RdfNamespace.DC_FORMAT);
+			if( format != null ) return format;
 		}
 		if( obj instanceof String ) {
 			return "text/plain";

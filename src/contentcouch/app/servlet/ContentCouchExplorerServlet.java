@@ -1,5 +1,6 @@
 package contentcouch.app.servlet;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,6 +29,7 @@ import com.eekboom.utils.Strings;
 import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
 import contentcouch.file.FileBlob;
+import contentcouch.graphics.ImageUtil;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.MetadataUtil;
@@ -517,6 +519,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		if( obj instanceof Directory ) {
 			obj = new DirectoryPageGenerator(path, (Directory)obj);
 		}
+		if( obj instanceof BufferedImage ) {
+			obj = ImageUtil.serializeImage( (BufferedImage)obj, "png" );
+		}
 		return obj;
 	}
 
@@ -580,22 +585,27 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		if( pi == null ) pi = request.getRequestURI();
 		if( pi == null ) pi = "/";
 		
-		Object page = get(pi.substring(1), request);
-		if( page == null ) page = "Nothing found!";
-		if( page instanceof HttpServletRequestHandler ) {
-			((HttpServletRequestHandler)page).handle(request, response);
-		} else if( page instanceof Blob ) {
-			String contentType = guessContentType((Blob)page);
-			if( contentType != null ) response.setHeader("Content-Type", contentType);
-			else response.setHeader("Content-Type", "");
-			
-			long mtime = guessLastModified((Blob)page);
-			if( mtime > 0 ) response.setDateHeader("Last-Modified", mtime);
-			
-			BlobUtil.writeBlobToOutputStream(((Blob)page), response.getOutputStream());
-		} else {
-			response.setHeader("Content-Type", "text/plain");			
-			response.getWriter().println(page.toString());
+		try {
+			Object page = get(pi.substring(1), request);
+			if( page == null ) page = "Nothing found!";
+			if( page instanceof HttpServletRequestHandler ) {
+				((HttpServletRequestHandler)page).handle(request, response);
+			} else if( page instanceof Blob ) {
+				String contentType = guessContentType((Blob)page);
+				if( contentType != null ) response.setHeader("Content-Type", contentType);
+				else response.setHeader("Content-Type", "");
+				
+				long mtime = guessLastModified((Blob)page);
+				if( mtime > 0 ) response.setDateHeader("Last-Modified", mtime);
+				
+				BlobUtil.writeBlobToOutputStream(((Blob)page), response.getOutputStream());
+			} else {
+				response.setHeader("Content-Type", "text/plain");			
+				response.getWriter().println(page.toString());
+			}
+		} catch( RuntimeException e ) {
+			response.setHeader("Content-Type", "text/plain");
+			e.printStackTrace(response.getWriter());
 		}
 	}
 	

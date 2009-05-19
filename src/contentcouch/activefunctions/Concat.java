@@ -3,23 +3,24 @@ package contentcouch.activefunctions;
 import java.util.Iterator;
 import java.util.Map;
 
-import contentcouch.active.ActiveFunction;
+import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Expression;
-import contentcouch.blob.BlobUtil;
+import contentcouch.misc.ValueUtil;
 
-public class Concat implements ActiveFunction {
+public class Concat extends BaseActiveFunction {
 
 	public Object call(Map context, Map argumentExpressions) {
 		String result = "";
 		boolean prev = false;
-		Expression separatorExpression = (Expression)argumentExpressions.get("separator");		
-		String separator = (separatorExpression != null) ? separatorExpression.eval(context).toString() : "";
+		
+		String separator = getArgumentValue( context, argumentExpressions, "separator", "" ).toString();
+		
 		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
 			String key = (String)e.getKey();
 			if( key.startsWith("operand") ) {
 				if( prev ) result += separator;
-				result += BlobUtil.getString(((Expression)e.getValue()).eval(context));
+				result += ValueUtil.getString(((Expression)e.getValue()).eval(context));
 				prev = true;
 			}
 			

@@ -1,7 +1,9 @@
 package contentcouch.blob;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,11 +12,12 @@ import java.io.UnsupportedEncodingException;
 
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
+import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.Blob;
 
 public class BlobUtil {
-	//// Conversions to Bytes ////
+	//// Convert blobs to other things ////
 	
 	public static byte[] getBytes(Blob blob) {
 		long len = blob.getLength();
@@ -24,28 +27,25 @@ public class BlobUtil {
 		return blob.getData(0, (int)blob.getLength());
 	}
 	
-	//// Conversion to String ////
+	public static String getString(Blob blob) {
+		return ValueUtil.getString(getBytes(blob));
+	}
 	
-	public static String getString(byte[] bytes) {
-		try {
-			return new String(bytes, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
+	public static InputStream getInputStream( Blob b ) {
+		if( b instanceof FileBlob ) {
+			try {
+				return new FileInputStream((FileBlob)b);
+			} catch( FileNotFoundException e ) {
+				throw new RuntimeException(e);
+			}
+		} else if( b instanceof ByteArrayBlob ) {
+			return new ByteArrayInputStream(((ByteArrayBlob)b).getBackingData());
+		} else {
+			return new BlobInputStream( b );
 		}
 	}
 	
-	public static String getString(Blob blob) {
-		return getString(getBytes(blob));
-	}
-	
-	public static String getString(Object obj) {
-		if( obj instanceof String ) return (String)obj;
-		if( obj instanceof byte[] ) return getString((byte[])obj);
-		if( obj instanceof Blob ) return getString((Blob)obj);
-		return obj.toString();
-	}
-	
-	//// Conversions to Blob ////
+	//// Convert things to blobs ////
 	
 	public static ByteArrayBlob getBlob(String s) {
 		try {
