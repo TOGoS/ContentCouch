@@ -7,8 +7,8 @@ import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.MetadataHaver;
 
 public class TypeOf extends BaseActiveFunction {
-	public Object call(Map context, Map argumentExpressions) {
-		Object obj = getArgumentValue(context, argumentExpressions, "operand", null);
+	public Object call( Map argumentExpressions ) {
+		Object obj = getArgumentValue(argumentExpressions, "operand", null);
 		
 		if( obj instanceof MetadataHaver ) {
 			String format = (String)((MetadataHaver)obj).getMetadata(RdfNamespace.DC_FORMAT);

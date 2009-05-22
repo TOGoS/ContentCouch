@@ -21,10 +21,10 @@ public class ActiveUriResolver implements Getter {
 	public Object get( String uri ) {
 		if( uri.startsWith(ACTIVE_URI_PREFIX) || uri.startsWith("(") || uri.startsWith("\"") ) {
 			Expression e = parseExpression( uri );
-			Map context = new HashMap();
-			context.put(ResolveUriExpression.URI_RESOLVER_VARNAME, getter);
+			Map context = Context.getInstance();
+			context.put(Context.URI_RESOLVER_VARNAME, getter);
 			context.put(GetFunctionByNameExpression.FUNCTION_MAP_VARNAME, this.namedActiveFunctions);
-			return e.eval(context);
+			return e.eval();
 		}
 		return null;
 	}
@@ -32,7 +32,7 @@ public class ActiveUriResolver implements Getter {
 	protected Expression parseActiveUriExpression( String uri ) {
 		String[] parts = uri.substring(ACTIVE_URI_PREFIX.length()).split("\\+");
 		String funcName = UriUtil.uriDecode(parts[0]);
-		Map argumentExpressions = new TreeMap();
+		TreeMap argumentExpressions = new TreeMap();
 		for( int i=1; i<parts.length; ++i ) {
 			String[] kv = parts[i].split("@",2);
 			argumentExpressions.put(kv[0], parseExpression(UriUtil.uriDecode(kv[1])));
@@ -129,7 +129,7 @@ public class ActiveUriResolver implements Getter {
 			throw new RuntimeException("Found end of expression where function expected at " + pp.lastTokenPos + " in " + new String(pp.source) );
 		}
 		functionExpression = processFunctionExpression(functionExpression);
-		Map argumentExpressions = new TreeMap();
+		TreeMap argumentExpressions = new TreeMap();
 
 		Expression e = parseParenExpression(pp, true);
 		int operandCounter = 0;

@@ -6,8 +6,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
@@ -43,28 +47,43 @@ public class ImageUtil {
 			throw new RuntimeException("Can't convert " + o.getClass().getName() + " to Image");
 		}
 	}
-	
-	public static Blob serializeImage( final BufferedImage img, final String formatName ) {
-		final String longFormatName;
-		final String shortFormatName;
+		
+	public static String getShortFormatName(final String formatName) {
 		if( "image/png".equals(formatName) || "png".equals(formatName)) {
-			shortFormatName = "png";
-			longFormatName = "image/png";
+			return "png";
 		} else if( "image/jpeg".equals(formatName) || "jpg".equals(formatName) || "jpeg".equals(formatName) ) {
-			shortFormatName = "jpeg";
-			longFormatName = "image/jpeg";
+			return "jpeg";
 		} else if( formatName.indexOf('/') == -1 ) {
-			shortFormatName = formatName;
-			longFormatName = "image/" + formatName;
+			return formatName; 
 		} else {
-			shortFormatName = formatName.substring(formatName.indexOf('/')+1);
-			longFormatName = formatName;
+			return formatName.substring(formatName.indexOf('/')+1);
+		}
+	}
+	
+	public static String getLongFormatName( final String formatName ) {
+		return "image/" + getShortFormatName(formatName);
+	}
+	
+	public static Blob serializeImage( final BufferedImage img, final String formatName, Number quality ) {
+		final String longFormatName = getLongFormatName(formatName);
+		final String shortFormatName = getShortFormatName(formatName);
+		
+		Iterator writerIter = ImageIO.getImageWritersByFormatName(shortFormatName);
+		if( !writerIter.hasNext() ) {
+			throw new RuntimeException("No ImageWriter for format: " + shortFormatName);
+		}
+		ImageWriter writer = (ImageWriter)writerIter.next();
+		ImageWriteParam iwp = writer.getDefaultWriteParam();
+		if( quality != null ) {
+			iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+			iwp.setCompressionQuality(quality.floatValue() / 100);
 		}
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		
 		try {
-			ImageIO.write(img, shortFormatName, baos);
+			writer.setOutput(ImageIO.createImageOutputStream(baos));
+			writer.write(null, new IIOImage(img,null,null), iwp);
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}

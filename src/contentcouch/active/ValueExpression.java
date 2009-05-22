@@ -1,6 +1,6 @@
 package contentcouch.active;
 
-import java.util.Map;
+import contentcouch.misc.UriUtil;
 
 public class ValueExpression implements Expression {
 	public Object value;
@@ -9,7 +9,7 @@ public class ValueExpression implements Expression {
 		this.value = value;
 	}
 	
-	public Object eval(Map context) {
+	public Object eval() {
 		return value;
 	}
 
@@ -28,5 +28,9 @@ public class ValueExpression implements Expression {
 		} else {
 			throw new RuntimeException("Don't know how to toString thie value: " + value.toString());
 		}
+	}
+	
+	public String toUri() {
+		return "data:," + UriUtil.uriEncode(value.toString());
 	}
 }

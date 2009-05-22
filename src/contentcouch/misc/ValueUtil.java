@@ -6,6 +6,16 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.value.Blob;
 
 public class ValueUtil {
+	//// Get bytes ////
+	
+	public static byte[] getBytes(String s) {
+		try {
+			return s.getBytes("UTF-8");
+		} catch( UnsupportedEncodingException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	//// Get strings ////
 	
 	public static String getString(byte[] bytes) {
@@ -17,6 +27,7 @@ public class ValueUtil {
 	}
 	
 	public static String getString(Object obj) {
+		if( obj == null ) return null;
 		if( obj instanceof String ) return (String)obj;
 		if( obj instanceof byte[] ) return getString((byte[])obj);
 		if( obj instanceof Blob ) return BlobUtil.getString((Blob)obj);

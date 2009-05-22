@@ -1,7 +1,5 @@
 package contentcouch.active;
 
-import java.util.Map;
-
 public class Bareword implements Expression {
 	
 	public String text;
@@ -13,8 +11,12 @@ public class Bareword implements Expression {
 	public String toString() {
 		return text;
 	}
+	
+	public String toUri() {
+		throw new RuntimeException("Bareword cannot be converted to URIs!");
+	}
 
-	public Object eval(Map context) {
+	public Object eval() {
 		throw new RuntimeException("Bareword cannot be evaluated!");
 	}
 }

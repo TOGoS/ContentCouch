@@ -4,27 +4,25 @@ import java.util.Iterator;
 import java.util.Map;
 
 import contentcouch.active.BaseActiveFunction;
-import contentcouch.active.Expression;
 import contentcouch.misc.ValueUtil;
 
 public class Concat extends BaseActiveFunction {
 
-	public Object call(Map context, Map argumentExpressions) {
+	public Object call( Map argumentExpressions ) {
 		String result = "";
 		boolean prev = false;
 		
-		String separator = getArgumentValue( context, argumentExpressions, "separator", "" ).toString();
+		String separator = getArgumentValue( argumentExpressions, "separator", "" ).toString();
 		
-		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
-			Map.Entry e = (Map.Entry)i.next();
-			String key = (String)e.getKey();
-			if( key.startsWith("operand") ) {
+		for( Iterator i=getPositionalArgumentValues(argumentExpressions).iterator(); i.hasNext(); ) {
+			Object v = i.next();
+			if( v != null ) {
 				if( prev ) result += separator;
-				result += ValueUtil.getString(((Expression)e.getValue()).eval(context));
+				result += ValueUtil.getString(v);
 				prev = true;
 			}
-			
 		}
+
 		return result;
 	}
 }

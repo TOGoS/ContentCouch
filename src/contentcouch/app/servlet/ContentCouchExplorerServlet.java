@@ -520,7 +520,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			obj = new DirectoryPageGenerator(path, (Directory)obj);
 		}
 		if( obj instanceof BufferedImage ) {
-			obj = ImageUtil.serializeImage( (BufferedImage)obj, "png" );
+			obj = ImageUtil.serializeImage( (BufferedImage)obj, "png", null );
 		}
 		return obj;
 	}

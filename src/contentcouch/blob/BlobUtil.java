@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
@@ -47,14 +46,14 @@ public class BlobUtil {
 	
 	//// Convert things to blobs ////
 	
+	public static ByteArrayBlob getBlob(String s, String format) {
+		ByteArrayBlob bab = new ByteArrayBlob(ValueUtil.getBytes(s));
+		bab.putMetadata(RdfNamespace.DC_FORMAT, format);
+		return bab;
+	}
+
 	public static ByteArrayBlob getBlob(String s) {
-		try {
-			ByteArrayBlob bab = new ByteArrayBlob(s.getBytes("UTF-8"));
-			bab.putMetadata(RdfNamespace.DC_FORMAT, "text/plain");
-			return bab;
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
+		return getBlob(s, "text/plain");
 	}
 	
 	public static Blob getBlob(Object obj) {

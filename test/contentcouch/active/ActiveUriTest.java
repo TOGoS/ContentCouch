@@ -1,11 +1,10 @@
 package contentcouch.active;
 
-import java.util.Map;
 import java.util.TreeMap;
 
+import junit.framework.TestCase;
 import contentcouch.activefunctions.Hello;
 import contentcouch.misc.UriUtil;
-import junit.framework.TestCase;
 
 public class ActiveUriTest extends TestCase {
 	public void testResolveUriExpressionToString() {
@@ -25,6 +24,7 @@ public class ActiveUriTest extends TestCase {
 		ActiveUriResolver r = new ActiveUriResolver( null );
 		Expression e = r.parseExpression("active:foo+bar@x:baz+quux@x:quuux");
 		assertEquals("(foo bar=x:baz quux=x:quuux)", e.toString());
+		assertEquals("active:foo+bar@x%3Abaz+quux@x%3Aquuux", e.toUri());
 	}
 
 	public void testActiveUriParse2() {
@@ -65,7 +65,7 @@ public class ActiveUriTest extends TestCase {
 
 	/** Test that active URIs get sanitized properly itself on toString() */
 	public void testExpressionSanitization() {
-		Map args = new TreeMap();
+		TreeMap args = new TreeMap();
 		args.put("bar%20* ", new ResolveUriExpression("http://example.org/(%20* )"));
 		Expression e = new CallFunctionExpression( new GetFunctionByNameExpression("foo%20* "), args );
 		assertEquals("(foo%2520%2A%20 bar%2520%2A%20=http://example.org/%28%20%2A%20%29)", e.toString());
@@ -93,15 +93,15 @@ public class ActiveUriTest extends TestCase {
 	}
 	
 	public void testGetFunctionByClassName() {
-		Object f = new GetFunctionByNameExpression("contentcouch.hello").eval(new TreeMap());
+		Object f = new GetFunctionByNameExpression("contentcouch.hello").eval();
 		assertTrue("Got " + (f == null ? "null" : "a " + f.getClass()) + " but expected a Hello", f instanceof Hello);
-		assertEquals("Hello, world", ((ActiveFunction)f).call(new TreeMap(), new TreeMap()));
+		assertEquals("Hello, world", ((ActiveFunction)f).call(new TreeMap()));
 	}
 	
 	public void testParseQuotedString() {
 		ActiveUriResolver r = new ActiveUriResolver( null );
 		Expression e = r.parseExpression("\"foo\nbar\"");
-		assertEquals("foo\nbar", e.eval(null));
+		assertEquals("foo\nbar", e.eval());
 	}
 
 	public void testParseQuotedString2() {

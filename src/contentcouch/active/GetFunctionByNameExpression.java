@@ -17,6 +17,10 @@ public class GetFunctionByNameExpression implements Expression {
 		return UriUtil.uriEncode(funcName);
 	}
 	
+	public String toUri() {
+		return this.funcName;
+	}
+	
 	protected static final Class getClassByNameIfExists(String name) {
 		try {
 			return Class.forName(name);
@@ -71,8 +75,8 @@ public class GetFunctionByNameExpression implements Expression {
 		return getClassByNameIfExists( className );
 	}
 	
-	public Object eval( Map context ) {
-		Map functions = (Map)context.get(FUNCTION_MAP_VARNAME);
+	public Object eval() {
+		Map functions = (Map)Context.getInstance().get(FUNCTION_MAP_VARNAME);
 
 		// Check function map
 		if( functions != null ) {

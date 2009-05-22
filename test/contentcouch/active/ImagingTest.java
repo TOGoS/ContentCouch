@@ -44,6 +44,12 @@ public class ImagingTest extends TestCase {
 		assertInstanceOf( Blob.class, result );
 	}
 	
+	public void testSerializeImageWithQuality() {
+		String uri = "(contentcouch.graphics.serialize-image http://www.nuke24.net/images/bunny.jpg format=\"image/jpeg\" quality=\"50\")";
+		Object result = getGenericGetter().get(uri);
+		assertInstanceOf( Blob.class, result );
+	}
+
 	public void testScaleAndSerializeImage() {
 		String uri = "(contentcouch.graphics.serialize-image (contentcouch.graphics.scale-image http://www.nuke24.net/images/bunny.jpg) format=\"image/jpeg\")";
 		Object result = getGenericGetter().get(uri);

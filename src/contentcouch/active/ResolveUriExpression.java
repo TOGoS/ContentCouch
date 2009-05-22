@@ -1,13 +1,9 @@
 package contentcouch.active;
 
-import java.util.Map;
-
 import contentcouch.misc.UriUtil;
 import contentcouch.store.Getter;
 
 public class ResolveUriExpression implements Expression {
-	public static final String URI_RESOLVER_VARNAME = "ccouch:uri-resolver";
-
 	String uri;
 	
 	public ResolveUriExpression( String uri ) {
@@ -22,11 +18,15 @@ public class ResolveUriExpression implements Expression {
 		return UriUtil.sanitizeUri(uri);
 	}
 	
-	public Object eval( Map context ) {
-		Getter uriResolverObj = (Getter)context.get(URI_RESOLVER_VARNAME);
+	public Object eval() {
+		Getter uriResolverObj = (Getter)Context.getInstance().get(Context.URI_RESOLVER_VARNAME);
 		if( uriResolverObj == null ) {
 			throw new RuntimeException("No ccouch:uri-resolver registered");
 		}
 		return uriResolverObj.get(uri);
+	}
+	
+	public String toUri() {
+		return uri;
 	}
 }

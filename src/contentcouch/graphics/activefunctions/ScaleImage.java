@@ -17,18 +17,18 @@ public class ScaleImage extends BaseActiveFunction {
 	 * height - give new height
 	 */
 	
-	public Object call( Map context, Map argumentExpressions ) {
-		BufferedImage img = ImageUtil.getImage(getArgumentValue(context, argumentExpressions, "operand", null));
+	public Object call( Map argumentExpressions ) {
+		BufferedImage img = ImageUtil.getImage(getArgumentValue(argumentExpressions, "operand", null));
 		if( img == null ) return null;
 
 		int oldWidth = img.getWidth();
 		int oldHeight = img.getHeight();
 		
-		Number scale = ValueUtil.getNumber(getArgumentValue(context, argumentExpressions, "scale", null));
-		Number scaleX = ValueUtil.getNumber(getArgumentValue(context, argumentExpressions, "scalex", null));
-		Number scaleY = ValueUtil.getNumber(getArgumentValue(context, argumentExpressions, "scaley", null));
-		Number width = ValueUtil.getNumber(getArgumentValue(context, argumentExpressions, "width", null));
-		Number height = ValueUtil.getNumber(getArgumentValue(context, argumentExpressions, "height", null));
+		Number scale = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "scale", null));
+		Number scaleX = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "scalex", null));
+		Number scaleY = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "scaley", null));
+		Number width = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "width", null));
+		Number height = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "height", null));
 		
 		int newWidth = oldWidth;
 		int newHeight = oldHeight;
