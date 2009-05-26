@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;
@@ -44,7 +44,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
 			}
 
-			add(RdfNamespace.CCOUCH_NAME, de.getName());
+			add(RdfNamespace.CCOUCH_NAME, de.getKey());
 			add(RdfNamespace.CCOUCH_TARGETTYPE, de.getTargetType());
 
 			long modified = de.getLastModified();
@@ -53,14 +53,14 @@ public class RdfDirectory extends RdfNode implements Directory {
 			long size = de.getSize();
 			if( size != -1 ) add(RdfNamespace.CCOUCH_SIZE, String.valueOf(size) );
 
-			add(RdfNamespace.CCOUCH_TARGET, targetRdfifier.apply(de.getTarget()));
+			add(RdfNamespace.CCOUCH_TARGET, targetRdfifier.apply(de.getValue()));
 		}
 
 		public Entry() {
 			super(RdfNamespace.CCOUCH_DIRECTORYENTRY);
 		}
 		
-		public Object getTarget() {
+		public Object getValue() {
 			return getSingle(RdfNamespace.CCOUCH_TARGET);
 		}
 
@@ -68,7 +68,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 			return (String)getSingle(RdfNamespace.CCOUCH_TARGETTYPE);
 		}
 
-		public String getName() {
+		public String getKey() {
 			return (String)getSingle(RdfNamespace.CCOUCH_NAME);
 		}
 
@@ -96,11 +96,10 @@ public class RdfDirectory extends RdfNode implements Directory {
 	
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
 		this();
-		Map entryMap = dir.getEntries();
-		List entries = new ArrayList(entryMap.values());
+		List entries = new ArrayList(dir.entrySet());
 		Collections.sort( entries, new Comparator() {
 			public int compare( Object o1, Object o2 ) {
-				return ((Directory.Entry)o1).getName().compareTo(((Directory.Entry)o2).getName());
+				return ((Directory.Entry)o1).getKey().compareTo(((Directory.Entry)o2).getKey());
 			}
 		});
 		List rdfEntries = new ArrayList();
@@ -115,14 +114,24 @@ public class RdfDirectory extends RdfNode implements Directory {
 		this( dir, DEFAULT_DIRECTORY_ENTRY_TARGET_RDFIFIER );
 	}
 
-	
-	public Map getEntries() {
+	public Set entrySet() {
 		List entryList = (List)this.getSingle(RdfNamespace.CCOUCH_ENTRIES);
-		HashMap entries = new HashMap();
+		HashSet entries = new HashSet();
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
-			entries.put(e.getName(), e);
+			entries.add(e);
 		}
 		return entries;
+	}
+	
+	public Directory.Entry getEntry(String key) {
+		List entryList = (List)this.getSingle(RdfNamespace.CCOUCH_ENTRIES);
+		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
+			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
+			if( e.getKey() == key ) {
+				return e;
+			}
+		}
+		return null;
 	}
 }

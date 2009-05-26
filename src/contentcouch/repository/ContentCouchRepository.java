@@ -37,6 +37,8 @@ import contentcouch.store.Pusher;
 import contentcouch.store.Putter;
 import contentcouch.store.Sha1BlobStore;
 import contentcouch.store.StoreFileGetter;
+import contentcouch.store.TheGetter;
+import contentcouch.store.TheIdentifier;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
@@ -160,6 +162,11 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	}
 	
 	//// Configuration ////
+	
+	public void registerAsGetterAndIdentifier() {
+		TheGetter.globalInstance = getGenericGetter();
+		TheIdentifier.globalInstance = this;
+	}
 	
 	public String getPath() {
 		return path;
@@ -526,8 +533,9 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			Object dir = exploratGetter.get("heads/"+dirPath);
 			if( dir instanceof Directory ) {
 				String highestKey = null;
-				for( Iterator i=((Directory)dir).getEntries().keySet().iterator(); i.hasNext(); ) {
-					String k = (String)i.next();
+				for( Iterator i=((Directory)dir).entrySet().iterator(); i.hasNext(); ) {
+					Directory.Entry e = (Directory.Entry)i.next();
+					String k = e.getKey();
 					if( highestKey == null || Strings.compareNatural(k,highestKey) > 0 ) highestKey = k;
 				}
 				if( highestKey != null ) {

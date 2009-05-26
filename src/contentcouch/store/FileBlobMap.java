@@ -8,6 +8,7 @@ import java.util.Date;
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileUtil;
 import contentcouch.misc.MetadataUtil;
+import contentcouch.misc.UriUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.Blob;
 
@@ -19,8 +20,30 @@ public class FileBlobMap implements PutterGetter, StoreFileGetter {
 		this.filenamePrefix = filenamePrefix;
 	}
 	
+	protected String resolvePath( String pathOrUri ) {
+		if( pathOrUri.startsWith("//") || pathOrUri.startsWith("\\\\") ) {
+			return pathOrUri;
+		} else if( pathOrUri.startsWith("file://") ) {
+			String localPart = pathOrUri.substring(7);
+			if( localPart.matches("^/[A-Za-z]:.*")) {
+				// Windows path
+				return UriUtil.uriDecode(localPart.substring(1));
+			} else if( localPart.startsWith("/") ) {
+				// Unix path
+				return localPart;
+			} else {
+				// Includes host
+				return UriUtil.uriDecode("//" + localPart); 
+			}
+		} else if( pathOrUri.startsWith("file:") ) {
+			return filenamePrefix + UriUtil.uriDecode(pathOrUri.substring(5));
+		} else {
+			return filenamePrefix + pathOrUri;
+		}
+	}
+	
 	public File getStoreFile( String filename ) {
-		return new File(filenamePrefix + filename);
+		return new File(resolvePath(filename));
 	}
 	
 	public File getStoreFile( Blob blob ) {

@@ -1,7 +1,7 @@
 package contentcouch.active;
 
 import contentcouch.misc.UriUtil;
-import contentcouch.store.Getter;
+import contentcouch.store.TheGetter;
 
 public class ResolveUriExpression implements Expression {
 	String uri;
@@ -19,11 +19,7 @@ public class ResolveUriExpression implements Expression {
 	}
 	
 	public Object eval() {
-		Getter uriResolverObj = (Getter)Context.getInstance().get(Context.URI_RESOLVER_VARNAME);
-		if( uriResolverObj == null ) {
-			throw new RuntimeException("No ccouch:uri-resolver registered");
-		}
-		return uriResolverObj.get(uri);
+		return TheGetter.get(uri);
 	}
 	
 	public String toUri() {

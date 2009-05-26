@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +34,7 @@ import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
+import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.repository.ContentCouchRepository;
@@ -238,8 +239,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			if( url.startsWith(RdfNamespace.URI_PARSE_PREFIX) ) {
 				// Then show 2 links
 				String noParsePart = url.substring(RdfNamespace.URI_PARSE_PREFIX.length());
-				return formatLink2("/explore/" + url, RdfNamespace.URI_PARSE_PREFIX.substring(0,RdfNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
-					formatLink2("/explore/"+noParsePart, noParsePart);
+				return formatLink2("/explore?uri="+UriUtil.uriEncode(url), RdfNamespace.URI_PARSE_PREFIX.substring(0,RdfNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
+					formatLink2("/explore?uri="+UriUtil.uriEncode(noParsePart), noParsePart);
 			} else {
 				if( url.startsWith("http:") ) {
 					return formatLink2(url, url);
@@ -249,7 +250,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					if( colonIdx < 0 || (slashIdx > 0 && slashIdx < colonIdx) ) {
 						return formatLink2(url, url);
 					} else {	
-						return formatLink2("/explore/" + url, url);
+						return formatLink2("/explore?uri="+UriUtil.uriEncode(url), url);
 					}
 				}
 			}
@@ -285,21 +286,32 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		final Directory dir;
 		public String title;
 
-		public DirectoryPageGenerator(String path, Directory dir) {
+		public DirectoryPageGenerator(String path, Directory dir ) {
 			this.path = path;
 			this.dir = dir;
 			this.title = (String)MetadataUtil.getMetadataFrom(dir, RdfNamespace.DC_TITLE);
 		}
 		
+		protected String getHref(String path) {
+			if( this.path != null && PathUtil.isUri(this.path) ) {
+				path = PathUtil.appendPath(this.path, path);
+			}
+			if( PathUtil.isUri(path) ) {
+				return "?uri=" + UriUtil.uriEncode(path);
+			} else {
+				return path;
+			}
+		}
+		
 		public void write(PrintWriter w) throws IOException {
-			Map entries = dir.getEntries();
-			ArrayList entryList = new ArrayList(entries.values());
+			Set entries = dir.entrySet();
+			ArrayList entryList = new ArrayList(entries);
 			Collections.sort(entryList, new Comparator() {
 				public int compare(Object o1, Object o2) {
 					Entry e1 = (Entry)o1;
 					Entry e2 = (Entry)o2;
 					if( e1.getTargetType().equals(e2.getTargetType()) ) {
-						return Strings.compareNatural(e1.getName(),e2.getName());
+						return Strings.compareNatural(e1.getKey(),e2.getKey());
 					} else {
 						if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e1.getTargetType()) ) {
 							return -1;
@@ -331,9 +343,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 				Entry e = (Entry)i.next();
 				String href;
-				String name = e.getName(); 
-				if( e.getTarget() instanceof Ref ) {
-					href = "/explore/" + (((Ref)e.getTarget()).targetUri);
+				String name = e.getKey(); 
+				if( e.getValue() instanceof Ref ) {
+					href = ((Ref)e.getValue()).targetUri;
 				} else {
 					href = name;
 				}
@@ -341,6 +353,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
 					if( !name.endsWith("/") ) name += "/";
 				}
+				href = getHref(href);
 				w.write("<tr>");
 				w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
 				w.write("<td align=\"right\">" + (e.getSize() > -1 ? Long.toString(e.getSize()) : "") + "</td>");
@@ -383,6 +396,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				}
 			}
 			repoCache.isMainRepo = true;
+			repoCache.registerAsGetterAndIdentifier();
 			try {
 				repoCache.loadConfig(configFile);
 			} catch( IOException e ) {
@@ -436,6 +450,20 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		return false;
 	}
 	
+	static final Pattern HTMLPATTERN = Pattern.compile(".*<html.*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+	
+	protected boolean looksLikeHtml( Blob b ) {
+		if( b.getLength() >= 20 ) {
+			byte[] data = b.getData(0, 20);
+			try {
+				String text = UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
+				return HTMLPATTERN.matcher(text).matches();
+			} catch( CharacterCodingException e ) {
+			}
+		}
+		return false;
+	}
+	
 	protected long guessLastModified( Blob b ) {
 		Date date = (Date)MetadataUtil.getMetadataFrom(b, RdfNamespace.DC_MODIFIED);
 		if( date != null ) return date.getTime();
@@ -458,7 +486,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			if( n.endsWith(".slf") ) return CT_SLF;
 		}
 		if( looksLikeRdfBlob(b)) return CT_RDF;
-		if( looksLikePlainText(b)) return CT_TEXT;
+		if( looksLikePlainText(b)) {
+			if( looksLikeHtml(b)) return CT_HTML;
+			return CT_TEXT;
+		}
 		
 		if( b.getLength() >= 4 ) {
 			byte[] magic = b.getData(0, 4);
@@ -490,9 +521,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			} else if( root instanceof Directory ) {
 				String[] parts = path.split("/", 2);
 				Object nextRoot;
-				Directory.Entry nextPart = (Directory.Entry)((Directory)root).getEntries().get(parts[0]);
+				Directory.Entry nextPart = (Directory.Entry)((Directory)root).getEntry(parts[0]);
 				if( nextPart == null ) return null;
-				nextRoot = nextPart.getTarget();
+				nextRoot = nextPart.getValue();
 				root = nextRoot;
 				rootPath = rootPath + "/" + parts[0];
 				if( parts.length == 1 ) {
@@ -512,12 +543,12 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		return getLocalGetter().get(path);
 	}
 	
-	public Object getGenericResponse(Object obj, String path) {
+	public Object getGenericResponse( Object obj, String path ) {
 		if( obj instanceof ContentCouchRepository && !(obj instanceof Directory) ) {
 			obj = ((ContentCouchRepository)obj).getExplorat("");
 		}
 		if( obj instanceof Directory ) {
-			obj = new DirectoryPageGenerator(path, (Directory)obj);
+			obj = new DirectoryPageGenerator( path, (Directory)obj );
 		}
 		if( obj instanceof BufferedImage ) {
 			obj = ImageUtil.serializeImage( (BufferedImage)obj, "png", null );
@@ -525,7 +556,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		return obj;
 	}
 
-	protected Object exploreObject(Object obj, String path) {
+	protected Object exploreObject( Object obj, String path ) {
 		if( obj instanceof Blob ) {
 			Blob b = (Blob)obj;
 			String ct = guessContentType(b);
@@ -535,14 +566,14 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				return new RdfSourcePageGenerator((Blob)obj, path);
 			}
 		}
-		return getGenericResponse(obj, path);
+		return getGenericResponse( obj, path );
 	}
 
-	public Object explore(String path) {		
-		return exploreObject(getObject(path), path);
+	public Object explore( String path ) {		
+		return exploreObject( getObject(path), path );
 	}
 
-	protected Object rawObject(Object obj, String path) {
+	protected Object rawObject( Object obj, String path ) {
 		if( obj instanceof Blob ) {
 			return obj;
 		} else {
@@ -550,8 +581,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 	}
 	
-	protected Object raw(String path) {
-		return rawObject(getObject(path), path);
+	protected Object raw( String path ) {
+		return rawObject( getObject(path), path );
 	}
 	
 	public Object get(String path, HttpServletRequest request) {
@@ -559,13 +590,13 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			path = "_index";
 		}
 		if( path.startsWith("explore/") ) {
-			return explore(path.substring(8));
+			return explore(path.substring(8) );
 		} else if( path.equals("explore") ) {
-			return explore((String)request.getParameter("uri"));
+			return explore((String)request.getParameter("uri") );
 		} else if( path.startsWith("raw/") ) {
-			return raw(path.substring(4));
-		} else if( path.equals("explore") ) {
-			return raw((String)request.getParameter("uri"));
+			return raw(path.substring(4) );
+		} else if( path.equals("raw") ) {
+			return raw((String)request.getParameter("uri") );
 		} else {
 			String webPath = this.getServletContext().getRealPath("");
 			File f;

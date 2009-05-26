@@ -21,9 +21,9 @@ public class ActiveUriResolver implements Getter {
 	public Object get( String uri ) {
 		if( uri.startsWith(ACTIVE_URI_PREFIX) || uri.startsWith("(") || uri.startsWith("\"") ) {
 			Expression e = parseExpression( uri );
-			Map context = Context.getInstance();
-			context.put(Context.URI_RESOLVER_VARNAME, getter);
-			context.put(GetFunctionByNameExpression.FUNCTION_MAP_VARNAME, this.namedActiveFunctions);
+			//Map context = Context.getInstance();
+			//context.put(Context.GENERIC_GETTER_VAR, getter);
+			//context.put(GetFunctionByNameExpression.FUNCTION_MAP_VARNAME, this.namedActiveFunctions);
 			return e.eval();
 		}
 		return null;

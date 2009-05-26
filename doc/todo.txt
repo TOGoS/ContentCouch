@@ -1,4 +1,14 @@
+- Use TheGetter to get the generic getter.
+
 - While caching heads, should store heads in cache datastore, not just heads dir
 
 - RdfNodes ought to read relative URIs as relative to the node's source URI.
   I don't think I ever did this.
+
+- Centralize path handling
+  - Be able to create a URI to follow a path into any Directory
+  - appendPath('active:xyz', 'ferb/gerb') = 'active:follow-path+source@active:xyz+path@data:,ferb/gerb' 
+  - appendPath('foo/bar', 'ferb/gerb') = 'foo/bar/ferb/gerb'
+  - option to require '/' after last directory or not for path-based URIs
+
+- When downloading blobs from remote repos, if one repo gives a bad blob, try the next one. 

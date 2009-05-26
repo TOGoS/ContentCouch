@@ -86,7 +86,7 @@ public class Exporter {
 	}
 	
 	protected void exportDirectoryEntry( Directory.Entry entry, File destDir, String entrySourceLocation ) {
-		String name = entry.getName();
+		String name = entry.getKey();
 		if( name.endsWith("/") ) name = name.substring(0, name.length()-1);
 		if( (name.indexOf('/') != -1) || (name.indexOf('\\') != -1) ) {
 			throw new RuntimeException("Invalid characters in directory entry name: " + name);
@@ -94,7 +94,7 @@ public class Exporter {
 		
 		File destination = new File(destDir + "/" + name);
 		
-		Object target = entry.getTarget();
+		Object target = entry.getValue();
 		if( target == null ) {
 			throw new RuntimeException( "Entry has no target: " + entrySourceLocation );
 		}
@@ -119,7 +119,7 @@ public class Exporter {
 		if( !destination.exists() ) {
 			destination.mkdirs();
 		}
-		for( Iterator i = dir.getEntries().values().iterator(); i.hasNext(); ) {
+		for( Iterator i = dir.entrySet().iterator(); i.hasNext(); ) {
 			exportDirectoryEntry( (Directory.Entry)i.next(), destination, directorySourceLocation );
 		}
 	}

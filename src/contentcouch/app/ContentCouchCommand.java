@@ -155,6 +155,7 @@ public class ContentCouchCommand {
 					}
 				}
 			});
+			repositoryCache.registerAsGetterAndIdentifier();
 		}
 		return repositoryCache;
 	}
@@ -614,10 +615,10 @@ public class ContentCouchCommand {
 			//reportCacheStatus(uri, verbosity, true);
 			boolean success = true;
 			Directory d = (Directory)o;
-			for( Iterator i=d.getEntries().values().iterator(); i.hasNext(); ) {
+			for( Iterator i=d.entrySet().iterator(); i.hasNext(); ) {
 				Directory.Entry e = (Directory.Entry)i.next();
-				if( e.getTarget() instanceof Ref ) {
-					if( !cache( ((Ref)e.getTarget()).targetUri ) ) success = false;
+				if( e.getValue() instanceof Ref ) {
+					if( !cache( ((Ref)e.getValue()).targetUri ) ) success = false;
 				}
 			}
 			return success;

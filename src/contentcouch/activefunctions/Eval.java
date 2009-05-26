@@ -13,7 +13,7 @@ public class Eval extends BaseActiveFunction {
 		if( resolveThis == null ) return null;
 		String uri = ValueUtil.getString(resolveThis);
 		
-		Getter uriResolverObj = (Getter)Context.getInstance().get(Context.URI_RESOLVER_VARNAME);
+		Getter uriResolverObj = (Getter)Context.getInstance().get(Context.GENERIC_GETTER_VAR);
 		if( uriResolverObj == null ) {
 			throw new RuntimeException("No ccouch:uri-resolver registered");
 		}

@@ -1,12 +1,16 @@
 package contentcouch.misc;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import contentcouch.rdf.RdfNamespace;
+import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.MetadataHaver;
+import contentcouch.value.Ref;
 
 public class SimpleDirectory implements Directory, MetadataHaver {
 	public static class Entry implements Directory.Entry, MetadataHaver {
@@ -18,9 +22,9 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 		public Map metadata;
 
 		public long getLastModified() { return lastModified; }
-		public String getName() { return name; }
+		public String getKey() { return name; }
 		public long getSize() { return size; }
-		public Object getTarget() { return target; }
+		public Object getValue() { return target; }
 		public String getTargetType() { return targetType; }
 		
 		public Map getMetadata() { return metadata; }
@@ -35,11 +39,72 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 			metadata.put(key,value);
 		}
 	}
+
+	public static final int DEEPCLONE_NEVER = 0;
+	public static final int DEEPCLONE_SIMPLEDIRECTORY = 1;
+	public static final int DEEPCLONE_ALWAYS = 2;
 	
-	public Map entries = new HashMap();
+	public static Object cloneTarget( Object target, int depth ) {
+		if( depth == DEEPCLONE_NEVER ) return target;
+		if( target instanceof Ref ) {
+			target = TheGetter.get( ((Ref)target).targetUri );
+		}
+		if( target instanceof Directory && depth == DEEPCLONE_ALWAYS ) {
+			return new SimpleDirectory((Directory)target, depth);
+		} else if( target instanceof SimpleDirectory && depth == DEEPCLONE_SIMPLEDIRECTORY ) {
+			return new SimpleDirectory((Directory)target, depth);
+		} else {
+			return target;	
+		}
+	}
+	
+	public static void cloneMetadataInto( SimpleDirectory.Entry destEntry, Directory.Entry srcEntry ) {
+		destEntry.name = srcEntry.getKey();
+		destEntry.targetType = srcEntry.getTargetType();
+		destEntry.size = srcEntry.getSize();
+		destEntry.lastModified = srcEntry.getLastModified();
+		MetadataUtil.copyMetadata(destEntry, srcEntry);
+	}
+	
+	public static void cloneInto( SimpleDirectory.Entry destEntry, Directory.Entry srcEntry, int depth ) {
+		Object srcTarget = srcEntry.getValue();
+		if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(srcEntry.getTargetType()) ) {
+			boolean clone;
+			switch( depth ) {
+			case( DEEPCLONE_NEVER ): clone = false; break;
+			case( DEEPCLONE_SIMPLEDIRECTORY ): clone = srcTarget instanceof SimpleDirectory; break;
+			case( DEEPCLONE_ALWAYS ): clone = true;
+			default: throw new RuntimeException("Invalid value for depth: " + depth);
+			}
+			destEntry.target = clone ? cloneTarget( srcTarget, depth ) : srcTarget;
+		} else {
+			destEntry.target = srcTarget; 
+		}
+		cloneMetadataInto( destEntry, srcEntry );
+	}
+
+	protected static SimpleDirectory.Entry cloneEntry( Directory.Entry e, int depth ) {
+		SimpleDirectory.Entry newEntry = new SimpleDirectory.Entry();
+		cloneInto( newEntry, e, depth );
+		return newEntry;
+	}
+	
+	public Map entryMap = new HashMap();
 	public Map metadata;
 	
 	public SimpleDirectory() {
+	}
+	
+	public SimpleDirectory( SimpleDirectory sd ) {
+		this.entryMap = new HashMap(sd.entryMap);
+	}
+	
+	public SimpleDirectory( Directory d, int depth ) {
+		for( Iterator i=d.entrySet().iterator(); i.hasNext(); ) {
+			Directory.Entry entry = (Directory.Entry)i.next();
+			entry = cloneEntry(entry, depth);
+			addEntry(entry); 
+		}
 	}
 	
 	public SimpleDirectory(Map m) {
@@ -55,9 +120,17 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 		}
 	}
 	
-	public Map getEntries() { return entries; }
+	public Set entrySet() {
+		return new HashSet(entryMap.values());
+	}
 	
-	public void addEntry(Directory.Entry e) { entries.put(e.getName(), e); }
+	public Directory.Entry getEntry(String name) {
+		return (Directory.Entry)entryMap.get(name);
+	}
+	
+	public void addEntry(Directory.Entry e) {
+		entryMap.put(e.getKey(), e);
+	}
 	
 	//// MetadataHaver implementation ////
 	

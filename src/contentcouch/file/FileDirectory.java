@@ -1,8 +1,8 @@
 package contentcouch.file;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.Directory;
@@ -13,12 +13,16 @@ public class FileDirectory extends File implements Directory {
 			super(file.getPath());
 		}
 
+		public String getKey() {
+			return getName();
+		}
+		
 		public long getLastModified() {
 			if( isFile() ) return lastModified();
 			return -1; // Mtime on a directory doesn't necessarily mean much, so let's ignore
 		}
 
-		public Object getTarget() {
+		public Object getValue() {
 			return FileUtil.getContentCouchObject(this);
 		}
 		
@@ -36,18 +40,28 @@ public class FileDirectory extends File implements Directory {
 		}
 	}
 	
+	public FileDirectory( String path ) {
+		super(path);
+	}
+	
 	public FileDirectory( File file ) {
 		super(file.getPath());
 	}
 	
-	public Map getEntries() {
+	public Set entrySet() {
 		File[] subFiles = listFiles();
-		HashMap entries = new HashMap();
+		HashSet entries = new HashSet();
 		if( subFiles != null ) for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
 			if( subFile.getName().startsWith(".") ) continue;
-			entries.put(subFile.getName(), new FileDirectoryEntry(subFile));
+			entries.add(new FileDirectoryEntry(subFile));
 		}
 		return entries;
+	}
+	
+	public Entry getEntry(String key) {
+		File f = new File(this.getPath() + "/" + key);
+		if( !f.exists() ) return null;
+		return new FileDirectoryEntry(f);
 	}
 }
