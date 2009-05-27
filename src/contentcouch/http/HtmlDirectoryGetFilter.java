@@ -37,7 +37,6 @@ public class HtmlDirectoryGetFilter implements Getter {
 						String href = lineMatcher.group(1);
 						href = XML.xmlUnescape(href);
 						String fullPath = PathUtil.appendPath(identifier, href);
-						System.err.println(fullPath);
 						if( fullPath.startsWith(identifier) ) {
 							String subPath = fullPath.substring(identifier.length());
 							if( subPath.startsWith("?") ) continue;
