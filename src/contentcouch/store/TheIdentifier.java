@@ -19,4 +19,8 @@ public class TheIdentifier {
 	public static String identify(Object o) {
 		return getGenericIdentifier().identify(o);
 	}
+	
+	public static String identifyAt(String uri) {
+		return getGenericIdentifier().identifyAt(uri);
+	}
 }

@@ -510,6 +510,11 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		return null;
 	}
 	
+	public String identifyAt( String uri ) {
+		if( identifier != null ) return identifier.identifyAt( uri );
+		return null;
+	}
+	
 	public File getStoreFile(String identifier) {
 		if( blobStore instanceof StoreFileGetter ) {
 			return ((StoreFileGetter)blobStore).getStoreFile(identifier);

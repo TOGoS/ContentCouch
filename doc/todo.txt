@@ -1,5 +1,3 @@
-- Use TheGetter to get the generic getter.
-
 - While caching heads, should store heads in cache datastore, not just heads dir
 
 - RdfNodes ought to read relative URIs as relative to the node's source URI.
@@ -11,4 +9,16 @@
   - appendPath('foo/bar', 'ferb/gerb') = 'foo/bar/ferb/gerb'
   - option to require '/' after last directory or not for path-based URIs
 
-- When downloading blobs from remote repos, if one repo gives a bad blob, try the next one. 
+- When downloading blobs from remote repos, if one repo gives a bad blob, try the next one.
+
+- Create functions to help make photo album pages:
+  - active: -> urn:sha1:
+  - urn:sha1: -> http:
+  
+== Done ==
+
+* URIs stored in .ccouch-commit-uris should be like x-parse-rdf:urn:sha1:..., not like
+  x-parse-rdf:x-ccouch-head:togos-win/togos-image-archives/latest 
+
+* Use TheGetter to get the generic getter.
+ 

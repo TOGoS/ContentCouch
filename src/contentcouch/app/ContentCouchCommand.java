@@ -21,7 +21,8 @@ import contentcouch.rdf.RdfNode;
 import contentcouch.repository.ContentCouchRepository;
 import contentcouch.repository.ContentCouchRepository.DownloadInfo;
 import contentcouch.repository.ContentCouchRepository.GetAttemptListener;
-import contentcouch.store.Getter;
+import contentcouch.store.TheGetter;
+import contentcouch.store.TheIdentifier;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
@@ -155,7 +156,6 @@ public class ContentCouchCommand {
 					}
 				}
 			});
-			repositoryCache.registerAsGetterAndIdentifier();
 		}
 		return repositoryCache;
 	}
@@ -167,10 +167,6 @@ public class ContentCouchCommand {
 	// TODO: Move all this URI resolution setup stuff to repository so it
 	// can be configured there and easily used by other apps.
 	
-	
-	public Getter getLocalGetter() {
-		return getRepository().getGenericGetter();
-	}
 	
 	protected String[] concat( String[] s1, String[] s2 ) {
 		String[] r = new String[s1.length+s2.length];
@@ -440,10 +436,9 @@ public class ContentCouchCommand {
 			return;
 		}
 		
-		Getter lg = getLocalGetter();
 		for( Iterator i=files.iterator(); i.hasNext(); ) {
 			String uri = (String)i.next();
-			Object o = lg.get(uri);
+			Object o = TheGetter.get(uri);
 			if( o == null ) throw new RuntimeException("Couldn't find " + uri);
 			Ref ref = importer.importObject(o);
 			
@@ -476,7 +471,7 @@ public class ContentCouchCommand {
 				
 				if( parentCommitUris.length == 1 && !forceCommit ) {
 					// Cancel the commit if the old one points to the same thing
-					Commit oldCommit = (Commit)getLocalGetter().get(parentCommitUris[0]);
+					Commit oldCommit = (Commit)TheGetter.get(parentCommitUris[0]);
 					if( oldCommit == null ) {
 						System.err.println("Error: Could not load old commit " + parentCommitUris[0]);
 						System.exit(1);
@@ -504,6 +499,13 @@ public class ContentCouchCommand {
 				}
 			}
 		}
+	}
+	
+	protected String getUrn( String uri ) {
+		if( uri.startsWith(RdfNamespace.URI_PARSE_PREFIX) ) {
+			return RdfNamespace.URI_PARSE_PREFIX + getUrn(uri.substring(RdfNamespace.URI_PARSE_PREFIX.length()));
+		}
+		return TheIdentifier.identifyAt(uri);			
 	}
 	
 	public void runCheckoutCmd( String[] args ) {
@@ -563,7 +565,7 @@ public class ContentCouchCommand {
 			System.err.println(CHECKOUT_USAGE);
 			System.exit(1);
 		}
-		final Exporter exporter = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
+		final Exporter exporter = new Exporter(TheGetter.getGenericGetter(), getRepository().getBlobIdentifier());
 		exporter.link = link;
 		exporter.exportFiles = exportFiles;
 		exporter.replaceFiles = replaceFiles;
@@ -579,7 +581,7 @@ public class ContentCouchCommand {
 		File destFile = new File(dest);
 		Object exportThis = exporter.followRedirects(new Ref(source), null);
 		
-		if( exportThis instanceof String || exportThis instanceof byte[] ) {
+		if( exportThis instanceof String || exportThis instanceof byte[] || exportThis instanceof Blob ) {
 			exportThis = BlobUtil.getBlob(exportThis);
 		}
 		
@@ -601,13 +603,13 @@ public class ContentCouchCommand {
 			System.exit(1);
 		}
 		if( exportThis instanceof Commit ) {
-			addParentCommitUri(destFile, ((Commit)exportThis).getUri());
+			addParentCommitUri(destFile, getUrn( ((Commit)exportThis).getUri() ) );
 		}
 		exporter.exportObject(exportThis, destFile, null);
 	}
 	
 	public boolean cache( String uri ) {
-		Object o = getLocalGetter().get(uri);
+		Object o = TheGetter.get(uri);
 		if( o == null ) {
 			//reportCacheStatus(uri, verbosity, false);
 			return false;
@@ -678,7 +680,7 @@ public class ContentCouchCommand {
 	
 	protected boolean cacheHeads( ContentCouchRepository remote, String remotePath,
 			ContentCouchRepository cache, String cachePath ) {
-		Exporter e = new Exporter(getLocalGetter(), getRepository().getBlobIdentifier());
+		Exporter e = new Exporter(TheGetter.getGenericGetter(), getRepository().getBlobIdentifier());
 		if( remotePath == null ) throw new RuntimeException("Can't get null path head!");
 		Object ro = remote.getHead(remotePath);
 		if( ro == null ) {
@@ -842,7 +844,7 @@ public class ContentCouchCommand {
 			System.exit(1);
 		}
 
-		Object o = getLocalGetter().get(dir);
+		Object o = TheGetter.get(dir);
 		if( o == null ) {
 			System.err.println("ccouch rdfify: Could not find " + dir);
 			System.exit(1);
@@ -887,6 +889,7 @@ public class ContentCouchCommand {
 		for( int j=0; j<cmdArgs.length; ++i, ++j ) {
 			cmdArgs[j] = args[i];
 		}
+		getRepository().registerAsGetterAndIdentifier();
 		if( "config".equals(cmd) ) {
 			System.out.println("Repo configuration:");
 			dumpRepoConfig(getRepository(), System.out, "  ");

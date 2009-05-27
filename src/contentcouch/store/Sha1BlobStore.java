@@ -70,6 +70,18 @@ public class Sha1BlobStore implements BlobStore, StoreFileGetter, Identifier {
 		}
 	}
 	
+	public String identifyAt( String uri ) {
+		if( uri.startsWith("urn:sha1:") ) {
+			if( uri.length() < 41 ) throw new RuntimeException("Badly formed SHA-1 URN: " + uri);
+			return uri;
+		} else if( uri.startsWith("urn:bitprint:") ) {
+			if( uri.length() < 13+32 ) throw new RuntimeException("Badly formed bitprint URN: " + uri);
+			return "urn:sha1:" + uri.substring(13, 13+32);
+		} else {
+			return identify(TheGetter.get(uri));
+		}
+	}
+	
 	public String push( Object obj ) {
 		if( blobPutter == null ) {
 			throw new RuntimeException("Can't store blob because I lack a blob store");
@@ -91,10 +103,10 @@ public class Sha1BlobStore implements BlobStore, StoreFileGetter, Identifier {
 	
 	protected byte[] getSha1FromUrn( String urn ) {
 		if( urn.startsWith("urn:sha1:") ) {
-			if( urn.length() < 41 ) throw new RuntimeException("Badly formed sha-1 urn: " + urn);
+			if( urn.length() < 41 ) throw new RuntimeException("Badly formed SHA-1 URN: " + urn);
 			return Base32.decode(urn.substring(9, 9+32));
 		} else if( urn.startsWith("urn:bitprint:") ) {
-			if( urn.length() < 13+32 ) throw new RuntimeException("Badly formed bitprint urn: " + urn);
+			if( urn.length() < 13+32 ) throw new RuntimeException("Badly formed bitprint URN: " + urn);
 			return Base32.decode(urn.substring(13, 13+32));
 		} else {
 			return null;
