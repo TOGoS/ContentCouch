@@ -40,7 +40,7 @@ public class HtmlDirectoryGetFilterTest extends TestCase {
 	public void testGetDirectory() {
 		Object shouldBeDir = getWookie().get("http://www.example.com/");
 		assertTrue( shouldBeDir instanceof Directory );
-		assertEquals( 2, ((Directory)shouldBeDir).entrySet().size() ); 
+		assertEquals( 2, ((Directory)shouldBeDir).getDirectoryEntrySet().size() ); 
 	}
 
 	public void testGetFile() {

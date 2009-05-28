@@ -9,6 +9,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.digest.DigestUtil;
 import contentcouch.file.FileBlob;
 import contentcouch.hashcache.FileHashCache;
+import contentcouch.path.PathUtil;
 import contentcouch.value.Blob;
 import contentcouch.value.MetadataHaver;
 
@@ -26,8 +27,16 @@ public class Sha1BlobStore implements BlobStore, StoreFileGetter, Identifier {
 		this( fbs, fbs );
 	}
 
-	public Sha1BlobStore( String filenamePrefix ) {
-		this(new FileBlobMap(filenamePrefix));
+	public Sha1BlobStore( String uriPrefix ) {
+		// TODO: Remove this dumb ambiguous constructor
+		if( PathUtil.isUri(uriPrefix) ) {
+			this.blobGetter = new PrefixGetFilter(TheGetter.getGenericGetter(), uriPrefix);
+			this.blobPutter = null;
+		} else {
+			PutterGetter bbb = new FileBlobMap(uriPrefix);
+			this.blobGetter = bbb;
+			this.blobPutter = bbb; 
+		}
 	}
 	
 	protected String getFilenameForSha1( byte[] sha1 ) {

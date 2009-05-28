@@ -10,7 +10,6 @@
 #
 #   -repo-name wookie13
 #   -remote-repo http://www.example.com/r3p0/
-#   -use-main-repo-as-cache
 #
 #   [checkout]
 #   # I want to always hardlink when I check out files!

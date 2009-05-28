@@ -96,7 +96,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
 		this();
-		List entries = new ArrayList(dir.entrySet());
+		List entries = new ArrayList(dir.getDirectoryEntrySet());
 		Collections.sort( entries, new Comparator() {
 			public int compare( Object o1, Object o2 ) {
 				return ((Directory.Entry)o1).getKey().compareTo(((Directory.Entry)o2).getKey());
@@ -114,7 +114,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 		this( dir, DEFAULT_DIRECTORY_ENTRY_TARGET_RDFIFIER );
 	}
 
-	public Set entrySet() {
+	public Set getDirectoryEntrySet() {
 		List entryList = (List)this.getSingle(RdfNamespace.CCOUCH_ENTRIES);
 		HashSet entries = new HashSet();
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
@@ -124,7 +124,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 		return entries;
 	}
 	
-	public Directory.Entry getEntry(String key) {
+	public Directory.Entry getDirectoryEntry(String key) {
 		List entryList = (List)this.getSingle(RdfNamespace.CCOUCH_ENTRIES);
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();

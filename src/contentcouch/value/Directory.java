@@ -19,6 +19,6 @@ public interface Directory {
 	}
 	
 	//public Map getEntries();
-	public Set entrySet();
-	public Entry getEntry(String key);
+	public Set getDirectoryEntrySet();
+	public Entry getDirectoryEntry(String key);
 }

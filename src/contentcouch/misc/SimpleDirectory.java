@@ -100,7 +100,7 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 	}
 	
 	public SimpleDirectory( Directory d, int depth ) {
-		for( Iterator i=d.entrySet().iterator(); i.hasNext(); ) {
+		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry entry = (Directory.Entry)i.next();
 			entry = cloneEntry(entry, depth);
 			addEntry(entry); 
@@ -120,11 +120,11 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 		}
 	}
 	
-	public Set entrySet() {
+	public Set getDirectoryEntrySet() {
 		return new HashSet(entryMap.values());
 	}
 	
-	public Directory.Entry getEntry(String name) {
+	public Directory.Entry getDirectoryEntry(String name) {
 		return (Directory.Entry)entryMap.get(name);
 	}
 	

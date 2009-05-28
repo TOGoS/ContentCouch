@@ -8,7 +8,7 @@ import contentcouch.misc.UriUtil;
 
 
 public class PathUtil {
-	static Pattern URIPATTERN = Pattern.compile("^\\(.*|^\".*|^[^/]+:.*", Pattern.DOTALL);
+	static Pattern URIPATTERN = Pattern.compile("^\\(.*|^\".*|^[^:/][^:/]+:.*", Pattern.DOTALL);
 	
 	public static boolean isUri( String pathOrUri ) {
 		return URIPATTERN.matcher(pathOrUri).matches();
@@ -36,7 +36,7 @@ public class PathUtil {
 		// If p2 is absolute, return it
 		if( isAbsolute(p2) ) return p2;
 
-		if( isAbsolute(p1) && !p1.matches("^file:.*|^[^/]+://.*") ) {
+		if( isAbsolute(p1) && !p1.matches("^file:.*|^[^/]+://.*|^[A-Za-z]:.*") ) {
 			// It is a non-hierarchical URI scheme and we cannot simply append.
 			return "active:contentcouch.follow-path+source@" + UriUtil.uriEncode(p1) + "+path@" + UriUtil.uriEncode("data:,"+UriUtil.uriEncode(p2));
 		}

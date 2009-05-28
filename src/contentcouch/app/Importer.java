@@ -56,8 +56,8 @@ public class Importer implements Pusher, StoreFileGetter {
 		this.namedStore = namedStore;
 	}
 	
-	public Importer( ContentCouchRepository repo ) {
-		this( repo, (FileBlobMap)repo.headPutter );
+	public Importer( ContentCouchRepository repo, String storeSector ) {
+		this( repo.getBlobStore(storeSector), (FileBlobMap)repo.headPutter );
 		if( !repo.initialized ) throw new RuntimeException("Repo is not yet initialized");
 	}
 	
@@ -165,6 +165,12 @@ public class Importer implements Pusher, StoreFileGetter {
 		}
 	}
 	
+	/** Imports a blob and returns a Ref to its contents.
+	 * 
+	 * @param b the blob to be store.
+	 * @param store whether or not to actually store it.  If false, will still return what it would have been stored as.
+	 * @return Ref with a URN identifying the blob.  
+	 */
 	public Ref importBlob( Blob b, boolean store ) {
 		String contentUri;
 		File dest;

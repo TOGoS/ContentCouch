@@ -32,7 +32,7 @@ public class CCouchHeadGetter implements Getter {
 			maybeLatest = r.findHead(headName);
 			if( latest == null || (maybeLatest != null && Strings.compareNatural(maybeLatest, latest) > 0) ) latest = maybeLatest;
 		}
-		ContentCouchRepository r = mainRepo.cacheRepository;
+		ContentCouchRepository r = mainRepo;
 		if( r != null ) maybeLatest = r.findHead(headName);
 		if( latest == null || (maybeLatest != null && Strings.compareNatural(maybeLatest, latest) > 0) ) latest = maybeLatest;
 		if( latest == null ) return null; // nobody has it
@@ -57,7 +57,7 @@ public class CCouchHeadGetter implements Getter {
 				ContentCouchRepository r = (ContentCouchRepository)i.next();
 				if( (o = r.getHead(headName)) != null ) return o;
 			}
-			ContentCouchRepository r = mainRepo.cacheRepository;
+			ContentCouchRepository r = mainRepo;
 			if( r != null && (o = r.getHead(headName)) != null ) return o;
 			if( checkRemotes ) for( Iterator i=mainRepo.remoteRepositories.iterator(); i.hasNext(); ) {
 				ContentCouchRepository rr = (ContentCouchRepository)i.next();

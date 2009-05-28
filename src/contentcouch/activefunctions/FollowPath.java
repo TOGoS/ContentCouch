@@ -21,7 +21,7 @@ public class FollowPath extends BaseActiveFunction {
 				source = TheGetter.get( ((Ref)source).targetUri );
 			}
 			if( source instanceof Directory ) {
-				Directory.Entry e = ((Directory)source).getEntry(pathParts[i]);
+				Directory.Entry e = ((Directory)source).getDirectoryEntry(pathParts[i]);
 				if( e == null ) return "Not found for " + pathParts[i];
 				source = e.getValue();
 			} else {

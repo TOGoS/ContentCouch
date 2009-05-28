@@ -304,7 +304,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		
 		public void write(PrintWriter w) throws IOException {
-			Set entries = dir.entrySet();
+			Set entries = dir.getDirectoryEntrySet();
 			ArrayList entryList = new ArrayList(entries);
 			Collections.sort(entryList, new Comparator() {
 				public int compare(Object o1, Object o2) {
@@ -521,7 +521,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			} else if( root instanceof Directory ) {
 				String[] parts = path.split("/", 2);
 				Object nextRoot;
-				Directory.Entry nextPart = (Directory.Entry)((Directory)root).getEntry(parts[0]);
+				Directory.Entry nextPart = (Directory.Entry)((Directory)root).getDirectoryEntry(parts[0]);
 				if( nextPart == null ) return null;
 				nextRoot = nextPart.getValue();
 				root = nextRoot;

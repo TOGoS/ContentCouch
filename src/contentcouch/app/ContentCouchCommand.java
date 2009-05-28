@@ -58,6 +58,7 @@ public class ContentCouchCommand {
 		"  -dirs-only         ; store only directory listings (no file content)\n" +
 		"  -dont-store        ; store nothing (same as using 'ccocuch id')\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
+		"  -sector            ; data/sub-directory to store data (defaults to \"user\")\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
 		"  -q                 ; quiet - show nothing\n" +
 		"  -?                 ; display help and exit\n" +
@@ -93,8 +94,9 @@ public class ContentCouchCommand {
 	public static String CACHE_USAGE =
 		"Usage: ccouch [general options] cache [options] <urn> <urn> ...\n" +
 		"Options:\n" +
-		"  -v  ; show all URNs being followed\n" +
-		"  -q  ; show nothing - not even failures\n" +
+		"  -v       ; show all URNs being followed\n" +
+		"  -q       ; show nothing - not even failures\n" +
+		"  -sector  ; data/sub-directory to store data (defaults to \"remote\")\n" +
 		"\n" +
 		"Attempts to cache any objects that are not already in a local repository\n" +
 		"into your cache repository.  Directories, Commits, and Redirects will\n" +
@@ -159,14 +161,6 @@ public class ContentCouchCommand {
 		}
 		return repositoryCache;
 	}
-		
-	public Importer getImporter() {
-		return new Importer(getRepository());
-	}
-	
-	// TODO: Move all this URI resolution setup stuff to repository so it
-	// can be configured there and easily used by other apps.
-	
 	
 	protected String[] concat( String[] s1, String[] s2 ) {
 		String[] r = new String[s1.length+s2.length];
@@ -202,11 +196,6 @@ public class ContentCouchCommand {
 			}
 		}
 
-		if( repo.cacheRepository != null ) {
-			ps.println( pfx + "Cache repository:" );
-			ps.println( pfx + "  " + repo.cacheRepository.getPath() );
-		}
-		
 		if( repo.remoteRepositories != null && repo.remoteRepositories.size() > 0 ) {
 			ps.println( pfx + "Remote repositories:" );
 			for( Iterator i = repo.remoteRepositories.iterator(); i.hasNext(); ) {
@@ -299,13 +288,15 @@ public class ContentCouchCommand {
 		String message = null;
 		String name = null;
 		String author = null;
-		final Importer importer = getImporter();
 		int verbosity = 1;
 		boolean storeFiles = true;
 		boolean storeDirs = true;
 		boolean storeCommits = true;
 		boolean forceCommit = false;
 		boolean dumpConfig = false;
+		boolean shouldLinkStored = false;
+		boolean shouldRelinkImported = false;
+		String storeSector = "user";
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
@@ -330,10 +321,12 @@ public class ContentCouchCommand {
 				storeFiles = false;
 				storeDirs = true;
 			} else if( "-link".equals(arg) ) {
-				importer.shouldLinkStored = true;
+				shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
-				importer.shouldLinkStored = true;
-				importer.shouldRelinkImported = true;
+				shouldLinkStored = true;
+				shouldRelinkImported = true;
+			} else if( "-sector".equals(arg) ) {
+				storeSector = args[++i];
 			} else if( "-m".equals(arg) ) {
 				message = args[++i];
 			} else if( "-n".equals(arg) ) {
@@ -355,6 +348,10 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
+		
+		final Importer importer = new Importer(getRepository(), storeSector);
+		importer.shouldLinkStored = shouldLinkStored;
+		importer.shouldRelinkImported = shouldRelinkImported; 
 		
 		final boolean showIntermediateFiles;
 		final boolean showIntermediateDirs;
@@ -609,6 +606,7 @@ public class ContentCouchCommand {
 	}
 	
 	public boolean cache( String uri ) {
+		// Hopefully getting stuff wil make it be cached...
 		Object o = TheGetter.get(uri);
 		if( o == null ) {
 			//reportCacheStatus(uri, verbosity, false);
@@ -617,7 +615,7 @@ public class ContentCouchCommand {
 			//reportCacheStatus(uri, verbosity, true);
 			boolean success = true;
 			Directory d = (Directory)o;
-			for( Iterator i=d.entrySet().iterator(); i.hasNext(); ) {
+			for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 				Directory.Entry e = (Directory.Entry)i.next();
 				if( e.getValue() instanceof Ref ) {
 					if( !cache( ((Ref)e.getValue()).targetUri ) ) success = false;
@@ -643,18 +641,18 @@ public class ContentCouchCommand {
 	public void runCacheCmd( String[] args ) {
 		args = mergeConfiguredArgs("cache", args);
 		List cacheUris = new ArrayList();
-		boolean cacheless = false;
+		String storeSector = "remote";
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
 				cacheVerbosity = 0;
 			} else if( "-v".equals(arg) ) {
 				cacheVerbosity = GetAttemptListener.GOT_FROM_LOCAL;
+			} else if( "-sector".equals(arg) ) {
+				storeSector = args[++i];
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_USAGE);
 				System.exit(0);
-			} else if( "-cacheless".equals(arg) ) {
-				cacheless = true;
 			} else if( !arg.startsWith("-") ) {
 				cacheUris.add(arg);
 			} else {
@@ -663,12 +661,7 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
-		if( getRepository().cacheRepository == null && !cacheless ) {
-			System.err.println("ccouch cache: The currently selected repository (" + getRepository().getPath() + ")");
-			System.err.println("  has no cache repository set up.  'ccouch cache' is pretty pointless!");
-			System.err.println("  Use -cacheless to run anyway");
-			System.exit(1);
-		}
+		getRepository().cacheSector = storeSector;
 		boolean success = true;
 		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
 			if( !cache( (String)i.next() ) ) success = false;
@@ -691,7 +684,7 @@ public class ContentCouchCommand {
 	}
 	
 	protected boolean cacheHeads( String path ) {
-		ContentCouchRepository cache = getRepository().cacheRepository;
+		ContentCouchRepository repo = getRepository();
 		
 		if( path.startsWith(RdfNamespace.URI_PARSE_PREFIX)) path = path.substring(RdfNamespace.URI_PARSE_PREFIX.length());
 		if( path.startsWith("x-ccouch-head:") ) path = path.substring("x-ccouch-head:".length());
@@ -702,7 +695,7 @@ public class ContentCouchCommand {
 			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
 				ContentCouchRepository rr = (ContentCouchRepository)rri.next();
 				if( rr.name != null ) {
-					if( !cacheHeads( rr, rr.name + "/", cache, rr.name + "/" ) ) success = false;
+					if( !cacheHeads( rr, rr.name + "/", repo, rr.name + "/" ) ) success = false;
 				}
 			}
 		} else if( path.startsWith("//") ) {
@@ -721,7 +714,7 @@ public class ContentCouchCommand {
 					return false;
 				}
 			}
-			success = cacheHeads( rr, subPath, cache, subPath );
+			success = cacheHeads( rr, subPath, repo, subPath );
 		} else {
 			success = false;
 
@@ -739,7 +732,7 @@ public class ContentCouchCommand {
 			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
 				ContentCouchRepository rr = (ContentCouchRepository)rri.next();
 				if( rr.name != null ) {
-					if( cacheHeads( rr, path, cache, path) ) success = true;
+					if( cacheHeads( rr, path, repo, path) ) success = true;
 				}
 			}
 		}
@@ -769,11 +762,6 @@ public class ContentCouchCommand {
 				System.err.println(CACHE_HEADS_USAGE);
 				System.exit(1);
 			}
-		}
-		if( getRepository().cacheRepository == null ) {
-			System.err.println("ccouch cache: The currently selected repository (" + getRepository().getPath() + ")");
-			System.err.println("  has no cache repository set up.  'ccouch cache-heads' is pretty pointless!");
-			System.exit(1);
 		}
 		boolean success = true;
 		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
@@ -818,11 +806,14 @@ public class ContentCouchCommand {
 		args = mergeConfiguredArgs("rdfify", args);
 		String dir = args[0];
 		boolean nested = false;
+		String storeSector = "rdfify"; // This shouldn't actually show up...
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
 				System.err.println(RDFIFY_USAGE);
 				System.exit(1);
+			} else if( "-sector".equals(arg) ) {
+				storeSector = args[++i];
 			} else if( "-nested".equals(arg) ) {
 				nested = true;
 			} else if( arg.charAt(0) != '-' ) {
@@ -834,7 +825,7 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		Importer imp = new Importer(getRepository());
+		Importer imp = new Importer(getRepository(), storeSector);
 		imp.shouldStoreFiles = false;
 		imp.shouldStoreDirs = false;
 		imp.shouldNestSubdirs = nested;

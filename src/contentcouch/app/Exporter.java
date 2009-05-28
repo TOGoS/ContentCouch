@@ -119,7 +119,7 @@ public class Exporter {
 		if( !destination.exists() ) {
 			destination.mkdirs();
 		}
-		for( Iterator i = dir.entrySet().iterator(); i.hasNext(); ) {
+		for( Iterator i = dir.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			exportDirectoryEntry( (Directory.Entry)i.next(), destination, directorySourceLocation );
 		}
 	}

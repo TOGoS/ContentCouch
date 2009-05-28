@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,11 +23,15 @@ import com.eekboom.utils.Strings;
 
 import contentcouch.active.ActiveUriResolver;
 import contentcouch.active.DataUriResolver;
+import contentcouch.app.Log;
+import contentcouch.directory.DirectoryUtil;
 import contentcouch.file.FileUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.http.HtmlDirectoryGetFilter;
 import contentcouch.http.HttpBlobGetter;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.RdfNamespace;
+import contentcouch.store.BlobStore;
 import contentcouch.store.FileBlobMap;
 import contentcouch.store.Getter;
 import contentcouch.store.Identifier;
@@ -42,7 +47,7 @@ import contentcouch.store.TheIdentifier;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
-public class ContentCouchRepository implements Getter, Pusher, Identifier, StoreFileGetter {
+public class ContentCouchRepository implements Getter {
 	public static class DownloadInfo {
 		public ContentCouchRepository sourceRepo;
 		public String sourceUrl;
@@ -125,7 +130,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	
 	protected String path;
 	
-	public Sha1BlobStore blobStore;
 	public Pusher dataPusher;
 	public Getter headGetter;
 	public Putter headPutter;
@@ -134,8 +138,8 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public boolean initialized = false;
 	public boolean isMainRepo = false;
 	public String name = "unnamed";
+	public String cacheSector = "remote";
 	
-	public ContentCouchRepository cacheRepository; 
 	public List localRepositories = new ArrayList();
 	public List remoteRepositories = new ArrayList();
 	
@@ -165,7 +169,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	
 	public void registerAsGetterAndIdentifier() {
 		TheGetter.globalInstance = getGenericGetter();
-		TheIdentifier.globalInstance = this;
+		TheIdentifier.globalInstance = new Sha1BlobStore(null, null);
 	}
 	
 	public String getPath() {
@@ -173,7 +177,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	}
 	
 	public Identifier getBlobIdentifier() {
-		return blobStore;
+		return new Sha1BlobStore(null, null);
 	}
 	
 	public void writeDefaultConfig(File configFile) throws IOException {
@@ -196,7 +200,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		
 		if( path.startsWith("http:") ) {
 			exploratGetter = new PrefixGetFilter(new HtmlDirectoryGetFilter(new HttpBlobGetter()), path);
-			blobStore = new Sha1BlobStore( new PrefixGetFilter(exploratGetter, "data/"), null );
+			//blobStore = new Sha1BlobStore( new PrefixGetFilter(exploratGetter, "data/"), null );
 			headGetter = new PrefixGetFilter(exploratGetter, "heads/");
 		} else {
 			FileUtil.mkdirs( new File(path) );
@@ -211,7 +215,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 
 			exploratGetter = new FileBlobMap(path + "/");
 			Sha1BlobStore bs = new Sha1BlobStore( new FileBlobMap(path + "data/") );
-			blobStore = bs;
+			//blobStore = bs;
 			dataPusher = bs;
 			identifier = bs;
 			FileBlobMap hs = new FileBlobMap(path + "heads/");
@@ -240,6 +244,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		if( rp != null ) {
 			++offset;
 			String path = PathUtil.appendPath(basePath, args[offset]);
+			//System.err.println(basePath + " + " + args[offset] + " = " + path);
 			++offset;
 			if( isMainRepo ) {
 				ContentCouchRepository repo;
@@ -254,8 +259,9 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 					repo = new ContentCouchRepository(path, false);
 					addLocal(repo);
 				} else if( rp.disposition == RepoParameters.DISPOSITION_CACHE ) {
+					Log.log(Log.LEVEL_WARNINGS, "Cache repo specified, but cache repositories are no longer used.  Treating as a local repo.");
 					repo = new ContentCouchRepository(path, false);
-					cacheRepository = repo;
+					addLocal(repo);
 				} else if( rp.disposition == RepoParameters.DISPOSITION_REMOTE ) {
 					repo = new ContentCouchRepository(path, false);
 					addRemote(repo);
@@ -271,9 +277,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			++offset;
 			this.name = name;
 			namedRepositories.put(name, this);
-		} else if( "-use-main-repo-as-cache".equals(arg) ) {
-			++offset;
-			cacheRepository = this;
 		}
 		return offset;
 	}
@@ -408,11 +411,32 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	}
 
 	//// Get stuff ////
+
+	protected BlobStore getBlobStoreAt( String uri ) {
+		return new Sha1BlobStore( uri );
+	}
+	
+	public BlobStore getBlobStore( String name ) {
+		return getBlobStoreAt( this.path + "data/" + name + "/" ); 	
+	}
 	
 	public Object getReallyLocal( String identifier ) {
-		Object obj = blobStore.get(identifier);
-		if( obj != null ) getAttempted( identifier, GetAttemptListener.GOT_FROM_LOCAL, this, obj );
-		return obj;
+		String dataDirPath = this.path + "data/";
+		// TODO: Use new getter arch. to get actual metadata instead of empty map
+		Directory dataDir = DirectoryUtil.getDirectory(TheGetter.get(dataDirPath), Collections.EMPTY_MAP, dataDirPath);
+		for( Iterator i=dataDir.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
+			Directory.Entry e = (Directory.Entry)i.next();
+			if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+				String bsUri = dataDirPath + e.getKey() + "/";
+				Log.log(Log.LEVEL_CHATTIER, "Looking for " + identifier + " under " + bsUri);
+				Object obj = getBlobStoreAt(bsUri).get(identifier);
+				if( obj != null ) {
+					getAttempted( identifier, GetAttemptListener.GOT_FROM_LOCAL, this, obj );
+					return obj;
+				}
+			}
+		}
+		return null;
 	}
 	
 	public Object getLocal( String identifier ) {
@@ -431,14 +455,23 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 		return null;
 	}
 	
-	public Object getRemote( String identifier ) {
+	public Object getRemote( String identifier, boolean cache ) {
 		Object obj;
 		for( Iterator i=remoteRepositories.iterator(); i.hasNext(); ) {
 			ContentCouchRepository remoteRepo = (ContentCouchRepository)i.next();
 			obj = remoteRepo.getReallyLocal(identifier);
 			if( obj != null ) {
 				getAttempted( identifier, GetAttemptListener.GOT_FROM_REMOTE, remoteRepo, obj );
-				return obj;
+				if( cache ) {
+					String cachedId = getBlobStore(cacheSector).push(obj);
+					if( cachedId == null || !(cachedId.equals(identifier)) ) {
+						obj = null;
+						Log.log(Log.LEVEL_WARNINGS, "Calculated identifier (" + cachedId + ") does not match requested identifier (" + identifier + "), downloaded from " + remoteRepo.path);
+					} else {
+						obj = getReallyLocal(cachedId);
+					}
+				}
+				if( obj != null ) return obj;
 			}
 		}
 		return null;
@@ -446,7 +479,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	
 	public Object getExplorat( String identifier ) {
 		Object o = exploratGetter.get(identifier);
-		//throw new RuntimeException("Get '" + path + "'+'" + identifier + "' = " + (o == null ? "null " : o.getClass().getName()));
 		return o;
 	}
 	
@@ -475,30 +507,19 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	}
 	
 	public Object get( String identifier ) {
+		if( !identifier.startsWith("urn:sha1:") ) {
+			// Not the repository's job to get anything else.
+			return null;
+		}
+		
 		Object obj;
 		
 		// Check this repo
 		obj = getLocal(identifier);
 		if( obj != null ) return obj;
 		
-		// Check cache repo
-		if( cacheRepository != null ) {
-			obj = cacheRepository.getReallyLocal(identifier);
-			if( obj != null ) {
-				getAttempted( identifier, GetAttemptListener.GOT_FROM_CACHE, cacheRepository, obj );
-				return obj;
-			}
-		}
-		
 		// Check remote repos
-		obj = getRemote(identifier);
-		if( obj != null && cacheRepository != null ) {
-			String cachedId = cacheRepository.push(obj);
-			if( cachedId == null || !(cachedId.equals(identifier)) ) {
-				throw new RuntimeException("Calculated identifier (" + cachedId + ") does not match requested identifier (" + identifier + ")");
-			}
-			obj = cacheRepository.get(cachedId);
-		}
+		obj = getRemote(identifier, true);
 	
 		if( obj == null ) getAttempted( identifier, GetAttemptListener.GET_FAILED, null );
 		
@@ -513,14 +534,6 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 	public String identifyAt( String uri ) {
 		if( identifier != null ) return identifier.identifyAt( uri );
 		return null;
-	}
-	
-	public File getStoreFile(String identifier) {
-		if( blobStore instanceof StoreFileGetter ) {
-			return ((StoreFileGetter)blobStore).getStoreFile(identifier);
-		} else {
-			return null;
-		}
 	}
 
 	public File getStoreFile(Blob blob) {
@@ -538,7 +551,7 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			Object dir = exploratGetter.get("heads/"+dirPath);
 			if( dir instanceof Directory ) {
 				String highestKey = null;
-				for( Iterator i=((Directory)dir).entrySet().iterator(); i.hasNext(); ) {
+				for( Iterator i=((Directory)dir).getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 					Directory.Entry e = (Directory.Entry)i.next();
 					String k = e.getKey();
 					if( highestKey == null || Strings.compareNatural(k,highestKey) > 0 ) highestKey = k;
@@ -561,11 +574,5 @@ public class ContentCouchRepository implements Getter, Pusher, Identifier, Store
 			return exploratGetter.get("heads/" + path);
 		}
 		return res;
-	}
-	
-	//// Put stuff ////
-	
-	public String push( Object obj ) {
-		return dataPusher.push(obj);
 	}
 }

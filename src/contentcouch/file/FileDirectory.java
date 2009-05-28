@@ -48,7 +48,7 @@ public class FileDirectory extends File implements Directory {
 		super(file.getPath());
 	}
 	
-	public Set entrySet() {
+	public Set getDirectoryEntrySet() {
 		File[] subFiles = listFiles();
 		HashSet entries = new HashSet();
 		if( subFiles != null ) for( int i=0; i<subFiles.length; ++i ) {
@@ -59,7 +59,7 @@ public class FileDirectory extends File implements Directory {
 		return entries;
 	}
 	
-	public Entry getEntry(String key) {
+	public Entry getDirectoryEntry(String key) {
 		File f = new File(this.getPath() + "/" + key);
 		if( !f.exists() ) return null;
 		return new FileDirectoryEntry(f);
