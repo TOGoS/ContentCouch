@@ -59,6 +59,7 @@ public class DirectoryUtil {
 	}
 	
 	public static Directory getDirectory( Object o, Map metadata, String identifier ) {
+		if( o == null ) return null;
 		if( o instanceof Directory ) {
 			return (Directory)o;
 		}

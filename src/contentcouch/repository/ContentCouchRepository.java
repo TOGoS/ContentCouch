@@ -424,6 +424,10 @@ public class ContentCouchRepository implements Getter {
 		String dataDirPath = this.path + "data/";
 		// TODO: Use new getter arch. to get actual metadata instead of empty map
 		Directory dataDir = DirectoryUtil.getDirectory(TheGetter.get(dataDirPath), Collections.EMPTY_MAP, dataDirPath);
+		if( dataDir == null ) {
+			Log.log(Log.LEVEL_WARNINGS, "Could not load dir " + dataDirPath);
+			return null;
+		}
 		for( Iterator i=dataDir.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
