@@ -1,5 +1,28 @@
 - While caching heads, should store heads in cache datastore, not just heads dir
 
+- A single repository should be able to store separately:
+  - data/user   (what the user tells it to store)
+  - data/remote (blobs cached from remote repositories)
+  - data/active (cached function call results)
+  so that users don't have to set up 10 different repositories
+
+- RequestHandlers as a more featurified alternative to Getters
+  - Allow requests with more information that only an identifier
+    - verb (GET, POST, PUT)
+    - identifier
+    - ? content
+    - ? content metadata
+    - transaction metadata
+      - URI as it appears to end-user (for generating relative links) 
+  - Responses could contain
+    - content
+    - content metadata
+      - last-modified
+      - format/mime-type
+    - transaction metadata
+      - is the result cacheable?
+  - This should make MetadataHaver uneccessary, so delete it.
+      
 - RdfNodes ought to read relative URIs as relative to the node's source URI.
   I don't think I ever did this.
 
@@ -14,7 +37,7 @@
 - Create functions to help make photo album pages:
   - active: -> urn:sha1:
   - urn:sha1: -> http:
-  
+
 == Done ==
 
 * URIs stored in .ccouch-commit-uris should be like x-parse-rdf:urn:sha1:..., not like
