@@ -24,11 +24,6 @@ Repository roles:
     A 'local repository' is a lical repository that will be checked for data
     that is not found in the main repo.
     
-  -cache-repo[:[<my-name>@]<their-name>] <cache repo>
-    A 'cache repository' is a local repository that we cache objects
-    downloaded from remote repos into.  By default this is the same as the
-    main repo.
-    
   -remote-repo[:[<my-name>@]<their-name>]
     A remote repository.  The main difference between a remote repository
     and a local one is that objects requested from a remote repository
