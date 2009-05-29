@@ -2,10 +2,11 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
+import togos.rra.Getter;
+
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Context;
 import contentcouch.misc.ValueUtil;
-import contentcouch.store.Getter;
 
 public class Eval extends BaseActiveFunction {
 	public Object call( Map argumentExpressions ) {

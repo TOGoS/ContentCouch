@@ -11,8 +11,9 @@ import contentcouch.blob.BlobInputStream;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfIO;
-import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -39,13 +40,13 @@ public class DirectoryUtil {
 						if( si == -1 ) {
 							SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 							e.name = subPath;
-							e.targetType = RdfNamespace.OBJECT_TYPE_BLOB;
+							e.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
 							e.target = new Ref(PathUtil.appendPath(identifier, subPath));
 							dir.addEntry(e);
 						} else {
 							SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 							e.name = subPath.substring(0, si);
-							e.targetType = RdfNamespace.OBJECT_TYPE_DIRECTORY;
+							e.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
 							e.target = new Ref(PathUtil.appendPath(identifier, e.name) + "/");
 							dir.addEntry(e);
 						}
@@ -65,7 +66,7 @@ public class DirectoryUtil {
 		}
 		if( o instanceof Blob ) {
 			Blob blob = (Blob)o;
-			String type = (String)metadata.get(RdfNamespace.DC_FORMAT);
+			String type = (String)metadata.get(DcNamespace.DC_FORMAT);
 			if( type == null || type.startsWith("text/html") ) {
 				return parseHtmlDirectory(blob, identifier);
 			}

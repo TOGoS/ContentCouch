@@ -103,6 +103,8 @@ public class PathUtil {
 	}
 	
 	public static String uriUnescapePath( String path ) {
+		return UriUtil.uriDecode(path);
+		/*
 		byte[] bites = new byte[path.length()];
 		int bi = 0;
 		for( int ci=0; ci<path.length(); ++ci ) {
@@ -117,6 +119,68 @@ public class PathUtil {
 			return new String(bites, 0, bi, "UTF-8");
 		} catch( UnsupportedEncodingException e ) {
 			throw new RuntimeException(e);
+		}
+		*/
+	}
+	
+	public static class Path {
+		public String path;
+		
+		public Path() {
+			path = "NO PATH HERE WTF";
+		}
+		
+		public Path( String path ) {
+			this.path = path;
+		}
+		
+		public boolean isAbsolute() {
+			return path.startsWith("/") || path.matches("^[A-Za-z]:.*");
+		}
+		
+		public String toString() {
+			return path;
+		}
+	}
+	
+	public static class UncPath extends Path {
+		public static String LOCALHOST = "localhost";
+		
+		public String host, path;
+		
+		public UncPath( String host, String path ) {
+			this.host = host;
+			this.path = path;
+		}
+		
+		public boolean isAbsolute() {
+			return true;
+		}
+		
+		public boolean isLocal() {
+			return LOCALHOST.equals(host);
+		}
+		
+		public String toString() {
+			return isLocal() ? path : ("//" + host + path);
+		}
+	}
+	
+	public static Path parseFilePathOrUri( String pathOrUri ) {
+		if( pathOrUri.startsWith("file:") ) {
+			return parseFilePathOrUri( uriUnescapePath(pathOrUri.substring(5)) );
+		} else if( pathOrUri.startsWith("//") ) {
+			String[] serverAndPath = pathOrUri.substring(2).split("/",2);
+			return new UncPath( serverAndPath[0], "/" + (serverAndPath.length >= 2 ? serverAndPath[1] : ""));
+		} else if( pathOrUri.matches("^[A-Za-z]:.*") ) {
+			// Windows path!
+			return new UncPath( UncPath.LOCALHOST, pathOrUri );
+		} else if( pathOrUri.startsWith("/") ) {
+			// Unix path!
+			return new UncPath( UncPath.LOCALHOST, pathOrUri );
+		} else {
+			// Relative path!
+			return new Path( pathOrUri );
 		}
 	}
 }

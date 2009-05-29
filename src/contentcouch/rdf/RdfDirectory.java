@@ -38,49 +38,49 @@ public class RdfDirectory extends RdfNode implements Directory {
 	public static class Entry extends RdfNode implements Directory.Entry {
 		public Entry( Directory.Entry de, Function1 targetRdfifier ) {
 			this();
-			if( RdfNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
-			} else if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(de.getTargetType()) ) {
+			if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
+			} else if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(de.getTargetType()) ) {
 			} else {
 				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
 			}
 
-			add(RdfNamespace.CCOUCH_NAME, de.getKey());
-			add(RdfNamespace.CCOUCH_TARGETTYPE, de.getTargetType());
+			add(CcouchNamespace.CCOUCH_NAME, de.getKey());
+			add(CcouchNamespace.CCOUCH_TARGETTYPE, de.getTargetType());
 
 			long modified = de.getLastModified();
-			if( modified != -1 ) add(RdfNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			if( modified != -1 ) add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
 			
 			long size = de.getSize();
-			if( size != -1 ) add(RdfNamespace.CCOUCH_SIZE, String.valueOf(size) );
+			if( size != -1 ) add(CcouchNamespace.CCOUCH_SIZE, String.valueOf(size) );
 
-			add(RdfNamespace.CCOUCH_TARGET, targetRdfifier.apply(de.getValue()));
+			add(CcouchNamespace.CCOUCH_TARGET, targetRdfifier.apply(de.getValue()));
 		}
 
 		public Entry() {
-			super(RdfNamespace.CCOUCH_DIRECTORYENTRY);
+			super(CcouchNamespace.CCOUCH_DIRECTORYENTRY);
 		}
 		
 		public Object getValue() {
-			return getSingle(RdfNamespace.CCOUCH_TARGET);
+			return getSingle(CcouchNamespace.CCOUCH_TARGET);
 		}
 
 		public String getTargetType() {
-			return (String)getSingle(RdfNamespace.CCOUCH_TARGETTYPE);
+			return (String)getSingle(CcouchNamespace.CCOUCH_TARGETTYPE);
 		}
 
 		public String getKey() {
-			return (String)getSingle(RdfNamespace.CCOUCH_NAME);
+			return (String)getSingle(CcouchNamespace.CCOUCH_NAME);
 		}
 
 		public long getSize() {
-			String lm = (String)getSingle(RdfNamespace.CCOUCH_SIZE);
+			String lm = (String)getSingle(CcouchNamespace.CCOUCH_SIZE);
 			if( lm == null ) return -1;
 			return Long.parseLong(lm);
 		}
 
 		public long getLastModified() {
 			try {
-				String lm = (String)this.getSingle(RdfNamespace.DC_MODIFIED);
+				String lm = (String)this.getSingle(DcNamespace.DC_MODIFIED);
 				if( lm == null ) return -1;
 				return DateUtil.parseDate(lm).getTime();
 			} catch( ParseException e ) {
@@ -91,7 +91,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public RdfDirectory() {
-		super(RdfNamespace.CCOUCH_DIRECTORY);
+		super(CcouchNamespace.CCOUCH_DIRECTORY);
 	}
 	
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
@@ -107,7 +107,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 			Directory.Entry entry = (Directory.Entry)i.next();
 			rdfEntries.add( new RdfDirectory.Entry(entry, targetRdfifier) );
 		}
-		add(RdfNamespace.CCOUCH_ENTRIES, rdfEntries);
+		add(CcouchNamespace.CCOUCH_ENTRIES, rdfEntries);
 	}
 	
 	public RdfDirectory( Directory dir ) {
@@ -115,7 +115,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 
 	public Set getDirectoryEntrySet() {
-		List entryList = (List)this.getSingle(RdfNamespace.CCOUCH_ENTRIES);
+		List entryList = (List)this.getSingle(CcouchNamespace.CCOUCH_ENTRIES);
 		HashSet entries = new HashSet();
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
@@ -125,7 +125,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public Directory.Entry getDirectoryEntry(String key) {
-		List entryList = (List)this.getSingle(RdfNamespace.CCOUCH_ENTRIES);
+		List entryList = (List)this.getSingle(CcouchNamespace.CCOUCH_ENTRIES);
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
 			if( e.getKey() == key ) {

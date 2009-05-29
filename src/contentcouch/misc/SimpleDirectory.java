@@ -6,14 +6,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import contentcouch.rdf.RdfNamespace;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
-import contentcouch.value.MetadataHaver;
 import contentcouch.value.Ref;
 
-public class SimpleDirectory implements Directory, MetadataHaver {
-	public static class Entry implements Directory.Entry, MetadataHaver {
+public class SimpleDirectory implements Directory {
+	public static class Entry implements Directory.Entry {
 		public long lastModified = -1;
 		public String name;
 		public long size = -1;
@@ -63,12 +62,11 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 		destEntry.targetType = srcEntry.getTargetType();
 		destEntry.size = srcEntry.getSize();
 		destEntry.lastModified = srcEntry.getLastModified();
-		MetadataUtil.copyMetadata(destEntry, srcEntry);
 	}
 	
 	public static void cloneInto( SimpleDirectory.Entry destEntry, Directory.Entry srcEntry, int depth ) {
 		Object srcTarget = srcEntry.getValue();
-		if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(srcEntry.getTargetType()) ) {
+		if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(srcEntry.getTargetType()) ) {
 			boolean clone;
 			switch( depth ) {
 			case( DEEPCLONE_NEVER ): clone = false; break;
@@ -115,7 +113,7 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 			sde.lastModified = -1;
 			sde.target = e.getValue();
 			sde.size = -1;
-			sde.targetType = RdfNamespace.OBJECT_TYPE_DIRECTORY;
+			sde.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
 			addEntry(sde);
 		}
 	}
@@ -130,19 +128,5 @@ public class SimpleDirectory implements Directory, MetadataHaver {
 	
 	public void addEntry(Directory.Entry e) {
 		entryMap.put(e.getKey(), e);
-	}
-	
-	//// MetadataHaver implementation ////
-	
-	public Map getMetadata() { return metadata; }
-	
-	public Object getMetadata(String key) {
-		if( metadata == null ) return null;
-		return metadata.get(key);
-	}
-	
-	public void putMetadata(String key, Object value) {
-		if( metadata == null ) metadata = new HashMap();
-		metadata.put(key,value);
 	}
 }

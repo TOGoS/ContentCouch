@@ -13,7 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import contentcouch.rdf.RdfNamespace.Description;
+import contentcouch.rdf.CcouchNamespace.Description;
 import contentcouch.value.Ref;
 import contentcouch.xml.XML;
 
@@ -23,7 +23,7 @@ public class RdfIO {
 	{
 		if( value instanceof RdfNode ) {
 			RdfNode desc = (RdfNode)value;
-			String valueNodeName = XML.longToShort(desc.typeName, RdfNamespace.standardNsAbbreviations, usedNsAbbreviations );
+			String valueNodeName = XML.longToShort(desc.typeName, CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations );
 			w.write(padding + "<" + valueNodeName + ">\n");
 			writeRdfProperties( w, desc, padding + "\t", usedNsAbbreviations);
 			w.write(padding + "</" + valueNodeName + ">\n");
@@ -35,7 +35,7 @@ public class RdfIO {
 	public static void writeRdfProperty( Writer w, String propName, Object value, String padding, Map usedNsAbbreviations )
 		throws IOException
 	{
-		String propNodeName = XML.longToShort(propName, RdfNamespace.standardNsAbbreviations, usedNsAbbreviations);
+		String propNodeName = XML.longToShort(propName, CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
 		
 		if( value == null ) {
 			// Then we just skip it!
@@ -93,13 +93,13 @@ public class RdfIO {
 	
 				Writer subWriter = new StringWriter();
 				Map usedNsAbbreviations = new HashMap();
-				usedNsAbbreviations.put("rdf", RdfNamespace.standardNsAbbreviations.get("rdf"));
+				usedNsAbbreviations.put("rdf", CcouchNamespace.standardNsAbbreviations.get("rdf"));
 				if( defaultNamespace != null ) {
 					usedNsAbbreviations.put("", defaultNamespace);
 				}
 				writeRdfProperties( subWriter, desc, "\t", usedNsAbbreviations );
 	
-				String nodeName = XML.longToShort(desc.typeName, RdfNamespace.standardNsAbbreviations, usedNsAbbreviations);
+				String nodeName = XML.longToShort(desc.typeName, CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
 				Writer outerWriter = new StringWriter();
 				outerWriter.write( "<" + nodeName );
 				XML.writeXmlns( outerWriter, usedNsAbbreviations );
@@ -140,13 +140,13 @@ public class RdfIO {
 				 desc = new Description();
 				 String about = (String)descOpenTag.attributes.get(RdfNamespace.RDF_ABOUT);
 				 if( about != null ) ((Description)desc).about = new Ref(about);
-			} else if( RdfNamespace.CCOUCH_DIRECTORY.equals(descOpenTag.name) ) {
+			} else if( CcouchNamespace.CCOUCH_DIRECTORY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory();
 				desc.typeName = descOpenTag.name;
-			} else if( RdfNamespace.CCOUCH_DIRECTORYENTRY.equals(descOpenTag.name) ) {
+			} else if( CcouchNamespace.CCOUCH_DIRECTORYENTRY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory.Entry();
 				desc.typeName = descOpenTag.name;
-			} else if( RdfNamespace.CCOUCH_COMMIT.equals(descOpenTag.name) ) {
+			} else if( CcouchNamespace.CCOUCH_COMMIT.equals(descOpenTag.name) ) {
 				desc = new RdfCommit();
 				desc.typeName = descOpenTag.name;
 			} else {
@@ -223,7 +223,7 @@ public class RdfIO {
 	public static Object parseRdf( String rdf, String sourceUri ) {
 		char[] chars = new char[rdf.length()];
 		rdf.getChars(0, chars.length, chars, 0);
-		Map nsAbbreviations = RdfNamespace.standardNsAbbreviations;
+		Map nsAbbreviations = CcouchNamespace.standardNsAbbreviations;
 		XML.ParseResult rdfParseResult = parseRdf( chars, 0, nsAbbreviations, sourceUri );
 		if( rdfParseResult.value instanceof RdfNode ) {
 			((RdfNode)rdfParseResult.value).sourceUri = sourceUri;

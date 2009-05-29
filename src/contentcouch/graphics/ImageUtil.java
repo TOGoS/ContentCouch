@@ -15,7 +15,7 @@ import javax.imageio.ImageWriter;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
-import contentcouch.rdf.RdfNamespace;
+import contentcouch.rdf.DcNamespace;
 import contentcouch.value.Blob;
 
 public class ImageUtil {
@@ -88,9 +88,7 @@ public class ImageUtil {
 			throw new RuntimeException(e);
 		}
 		
-		ByteArrayBlob bab = new ByteArrayBlob(baos.toByteArray());
-		bab.putMetadata(RdfNamespace.DC_FORMAT, longFormatName);
-		return bab;
+		return new ByteArrayBlob(baos.toByteArray());
 	}
 	
 	public static BufferedImage scaleImage( final BufferedImage img, final int newWidth, final int newHeight ) {

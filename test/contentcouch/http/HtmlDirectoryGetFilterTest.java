@@ -1,7 +1,11 @@
 package contentcouch.http;
 
+import togos.rra.BaseRequestHandler;
+import togos.rra.BaseResponse;
+import togos.rra.Getter;
+import togos.rra.Request;
+import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
-import contentcouch.store.Getter;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import junit.framework.TestCase;
@@ -18,22 +22,22 @@ public class HtmlDirectoryGetFilterTest extends TestCase {
 	
 	Blob INDEX_BLOB = BlobUtil.getBlob(INDEX_STRING);
 	
-	public Getter getWhoopie() {
-		return new Getter() {
-			public Object get(String id) {
-				if( "http://www.example.com/".equals(id) ) {
-					return INDEX_BLOB;
-				} else if( "http://www.example.com/file.html".equals(id) ) {
-					return INDEX_BLOB;
+	public BaseRequestHandler getWhoopie() {
+		return new BaseRequestHandler() {
+			public Response handleRequest(Request req) {
+				if( "http://www.example.com/".equals(req.getUri()) ) {
+					return new BaseResponse(Response.STATUS_NORMAL, INDEX_BLOB);
+				} else if( "http://www.example.com/file.html".equals(req.getUri()) ) {
+					return new BaseResponse(Response.STATUS_NORMAL, INDEX_BLOB);
 				} else {
-					return null;
+					return BaseResponse.RESPONSE_UNHANDLED;
 				}
 			}
 		};
 	}
 	
 	public Getter getWookie() {
-		return new HtmlDirectoryGetFilter(getWhoopie());
+		return new HtmlDirectoryResponseFilter(getWhoopie());
 	}
 	
 	

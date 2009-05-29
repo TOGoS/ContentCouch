@@ -3,10 +3,9 @@ package contentcouch.active;
 import java.io.IOException;
 
 import sun.misc.BASE64Decoder;
+import togos.rra.Getter;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.misc.UriUtil;
-import contentcouch.rdf.RdfNamespace;
-import contentcouch.store.Getter;
 
 public class DataUriResolver implements Getter {
 	public static final String DATA_URI_PREFIX = "data:";
@@ -36,8 +35,6 @@ public class DataUriResolver implements Getter {
 		} else {
 			data = UriUtil.uriDecodeBytes( identifier.substring(commaPos+1) );
 		}
-		ByteArrayBlob b = new ByteArrayBlob(data);
-		if( type != null && type.length() > 0 ) b.putMetadata(RdfNamespace.DC_FORMAT, type);
-		return b;
+		return new ByteArrayBlob(data);
 	}
 }

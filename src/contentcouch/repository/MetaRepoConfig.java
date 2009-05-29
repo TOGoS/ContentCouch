@@ -1,0 +1,155 @@
+package contentcouch.repository;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import togos.rra.MultiRequestHandler;
+import contentcouch.app.Log;
+import contentcouch.file.FileRequestHandler;
+import contentcouch.http.HtmlDirectoryResponseFilter;
+import contentcouch.http.HttpRequestHandler;
+import contentcouch.path.PathUtil;
+
+public class MetaRepoConfig {
+	public Map namedRepoConfigs = new HashMap();
+	public Map cmdArgs = new HashMap();
+	public RepoConfig defaultRepoConfig = new RepoConfig();
+	public List localRepoConfigs = new ArrayList();
+	public List remoteRepoConfigs = new ArrayList();
+	
+	protected void addLocalRepo( String uri ) {
+		localRepoConfigs.add(0, uri);
+	}
+	
+	protected void addRemoteRepo( String uri ) {
+		remoteRepoConfigs.add(0, uri);
+	}
+
+	static final String[] emptyArgString = new String[] {};
+	public String[] getCommandArgs(String commandName) {
+		List ca = (List)cmdArgs.get(commandName);
+		if( ca == null ) return emptyArgString;
+		String[] args = new String[ca.size()];
+		for( int i=0; i<args.length; ++i ) {
+			args[i] = (String)ca.get(i);
+		}
+		return args;
+	}
+	
+	public int handleArguments( String[] args, int offset, String baseUri ) {
+		if( offset >= args.length ) return offset;
+		String arg = args[offset];
+		RepoConfig rp = RepoConfig.parse(arg);
+		if( rp != null ) {
+			++offset;
+			rp.uri = PathUtil.appendPath(baseUri, args[offset]);
+			//System.err.println(basePath + " + " + args[offset] + " = " + path);
+			++offset;
+
+			if( rp.disposition == RepoConfig.DISPOSITION_MAIN ) {
+				if( rp.name != null ) defaultRepoConfig.name = rp.name;
+				if( rp.uri != null ) defaultRepoConfig.uri = rp.uri;
+			} else if( rp.disposition == RepoConfig.DISPOSITION_LOCAL ) {
+				addLocalRepo(rp.uri);
+			} else if( rp.disposition == RepoConfig.DISPOSITION_CACHE ) {
+				Log.log(Log.LEVEL_WARNINGS, "Cache repo specified, but cache repositories are no longer used.  Treating as a local repo.");
+				addLocalRepo(rp.uri);
+			} else if( rp.disposition == RepoConfig.DISPOSITION_REMOTE ) {
+				addRemoteRepo(rp.uri);
+			} else {
+				throw new RuntimeException("unknown repo disposition: " + rp.disposition);
+			}
+			if( rp.name != null ) namedRepoConfigs.put(rp.name, rp.uri);
+		} else if( "-repo-name".equals(arg) ) {
+			++offset;
+			String name = args[offset];
+			++offset;
+			defaultRepoConfig.name = name;
+			namedRepoConfigs.put(name, defaultRepoConfig);
+		}
+		return offset;
+	}
+
+	static Pattern argPattern = Pattern.compile("(?:\\S|\"(?:[^\\\\\"]|\\\\\\\\|\\\\\")*\")+");
+	
+	protected static String unescape(String arg) {
+		StringBuffer res = new StringBuffer();
+		for( int i=0; i<arg.length(); ++i ) {
+			char c = arg.charAt(i);
+			if( c == '\\' && i<arg.length()-1 ) {
+				++i;
+				switch(c = arg.charAt(i)) {
+				case('n'): c = '\n'; break;
+				case('t'): c = '\t'; break;
+				case('r'): c = '\r'; break;
+				}
+			}
+			res.append(c);
+		}
+		return res.toString();
+	}
+	
+	protected void _loadConfig( BufferedReader fr, String configUri ) throws IOException {
+		ArrayList args = new ArrayList();
+		String line;
+		String cmdName = null;
+		lines: while( (line = fr.readLine()) != null ) {
+			Matcher m = argPattern.matcher(line);
+			while( m.find() ) {
+				String arg = m.group();
+				if( arg.charAt(0) == '#' ) continue lines;
+				if( arg.charAt(0) == '[' ) {
+					cmdName = arg.substring(1,arg.length()-1);
+					continue;
+				}
+				if( arg.charAt(0) == '"' ) arg = unescape(arg.substring(1,arg.length()-1));
+				if( cmdName == null ) {
+					args.add(arg);
+				} else {
+					List cas = (List)cmdArgs.get(cmdName);
+					if( cas == null ) cmdArgs.put(cmdName, cas = new ArrayList());
+					cas.add(arg);
+				}
+			}
+		}
+		String[] argar = new String[args.size()];
+		argar = (String[])args.toArray(argar);
+		int endupat;
+		int offset = 0;
+		while( (endupat = handleArguments( argar, offset, configUri )) > offset ) {
+		    offset = endupat;
+		}
+		if( endupat < argar.length ) {
+			System.err.println("Unrecognised arg in " + configUri + ": " + argar[endupat]);
+		}
+	}
+	
+	
+	//// Set up stuff to make us useful ////
+	
+	protected MetaRepository metaRepositoryCache;
+	protected MultiRequestHandler requestKernelCache;
+	
+	public MetaRepository getMetaRepository() {
+		if( metaRepositoryCache == null ) {
+			metaRepositoryCache = new MetaRepository(this);
+		}
+		return metaRepositoryCache;
+	}
+	
+	public MultiRequestHandler getRequestKernel() {
+		if( requestKernelCache == null ) {
+			requestKernelCache = new MultiRequestHandler();
+			requestKernelCache.addRequestHandler(getMetaRepository());
+			requestKernelCache.addRequestHandler(new HtmlDirectoryResponseFilter(new HttpRequestHandler()));
+			requestKernelCache.addRequestHandler(new FileRequestHandler());
+		}
+		return requestKernelCache;
+	}
+}

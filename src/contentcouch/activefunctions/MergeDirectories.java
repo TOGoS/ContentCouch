@@ -6,8 +6,7 @@ import java.util.Map;
 
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.misc.SimpleDirectory;
-import contentcouch.rdf.RdfNamespace;
-import contentcouch.store.TheIdentifier;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
 
 public class MergeDirectories extends BaseActiveFunction {
@@ -22,8 +21,8 @@ public class MergeDirectories extends BaseActiveFunction {
 			return;
 		}
 		
-		if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(destEntry.getTargetType()) &&
-		    RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(srcEntry.getTargetType())
+		if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(destEntry.getTargetType()) &&
+		    CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(srcEntry.getTargetType())
 		) {
 			// Both Directories
 			if( !(destEntry.target instanceof SimpleDirectory) ) {
@@ -32,8 +31,8 @@ public class MergeDirectories extends BaseActiveFunction {
 			}
 			mergeInto( (SimpleDirectory)destEntry.target, (Directory)srcEntry.getValue(), flags );
 		} else if(
-			RdfNamespace.OBJECT_TYPE_BLOB.equals(destEntry.getTargetType()) &&
-			RdfNamespace.OBJECT_TYPE_BLOB.equals(srcEntry.getTargetType())
+			CcouchNamespace.OBJECT_TYPE_BLOB.equals(destEntry.getTargetType()) &&
+			CcouchNamespace.OBJECT_TYPE_BLOB.equals(srcEntry.getTargetType())
 		) {
 			// Both Blobs
 			switch( flags & MERGE_MASK ) {

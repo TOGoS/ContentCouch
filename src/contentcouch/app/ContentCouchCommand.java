@@ -8,27 +8,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import contentcouch.blob.BlobUtil;
-import contentcouch.directory.DirectoryUtil;
-import contentcouch.file.FileDirectory;
-import contentcouch.rdf.RdfIO;
-import contentcouch.rdf.RdfNamespace;
-import contentcouch.rdf.RdfNode;
-import contentcouch.repository.ContentCouchRepository;
-import contentcouch.repository.ContentCouchRepository.DownloadInfo;
-import contentcouch.repository.ContentCouchRepository.GetAttemptListener;
+import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
-import contentcouch.store.TheIdentifier;
 import contentcouch.value.Blob;
-import contentcouch.value.Commit;
-import contentcouch.value.Directory;
-import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
 	public String USAGE =
@@ -142,27 +128,7 @@ public class ContentCouchCommand {
 	
 	////
 	
-	protected ContentCouchRepository repositoryCache = null;
-	protected int cacheVerbosity = GetAttemptListener.GOT_FROM_REMOTE;
-	
-	public ContentCouchRepository getRepository() {
-		if( repositoryCache == null ) {
-			repositoryCache = new ContentCouchRepository(null, true);
-			repositoryCache.addGetAttemptListener(new GetAttemptListener() {
-				public void getAttempted( String uri, int status, DownloadInfo info ) {
-					if( cacheVerbosity >= status ) {
-						switch( status ) {
-						case( 1 ): System.err.println("! Couldn't find  " + uri); break;
-						case( 2 ): System.err.println("  Downloading    " + uri + info.getShortDesc() ); break;
-						case( 3 ): System.err.println("  Already cached " + uri); break;
-						case( 4 ): System.err.println("  Already local  " + uri); break;
-						}
-					}
-				}
-			});
-		}
-		return repositoryCache;
-	}
+	protected MetaRepoConfig metaRepoConfig = new MetaRepoConfig();
 	
 	protected String[] concat( String[] s1, String[] s2 ) {
 		String[] r = new String[s1.length+s2.length];
@@ -173,12 +139,14 @@ public class ContentCouchCommand {
 	}
 	
 	protected String[] mergeConfiguredArgs( String commandName, String[] commandLineArgs ) {
-		return concat( getRepository().getCommandArgs(commandName), commandLineArgs );
+		return concat( metaRepoConfig.getCommandArgs(commandName), commandLineArgs );
 	}
 	
 	//// Dump stuff ////
 	
-	protected void dumpRepoConfig( ContentCouchRepository repo, PrintStream ps, String pfx ) {
+	protected void dumpRepoConfig( MetaRepoConfig repo, PrintStream ps, String pfx ) {
+		// TODO
+		/*
 		ps.println( pfx + "Repository path: " + repo.getPath() );
 		ps.println( pfx );
 		
@@ -186,7 +154,7 @@ public class ContentCouchCommand {
 			ps.println( pfx + "Named repositories:" );
 			for( Iterator i = repo.namedRepositories.entrySet().iterator(); i.hasNext(); ) {
 				Map.Entry e = (Map.Entry)i.next();
-				ps.println( pfx + "  " + e.getKey() + ": " + ((ContentCouchRepository)e.getValue()).getPath() );
+				ps.println( pfx + "  " + e.getKey() + ": " + ((MetaRepository)e.getValue()).getPath() );
 			}
 		}
 		ps.println( pfx );
@@ -194,14 +162,14 @@ public class ContentCouchCommand {
 		if( repo.localRepositories != null && repo.localRepositories.size() > 0 ) {
 			ps.println( pfx + "Local repositories:" );
 			for( Iterator i = repo.localRepositories.iterator(); i.hasNext(); ) {
-				ps.println( pfx + "  " + ((ContentCouchRepository)i.next()).getPath() );
+				ps.println( pfx + "  " + ((MetaRepository)i.next()).getPath() );
 			}
 		}
 
 		if( repo.remoteRepositories != null && repo.remoteRepositories.size() > 0 ) {
 			ps.println( pfx + "Remote repositories:" );
 			for( Iterator i = repo.remoteRepositories.iterator(); i.hasNext(); ) {
-				ps.println( pfx + "  " + ((ContentCouchRepository)i.next()).getPath() );
+				ps.println( pfx + "  " + ((MetaRepository)i.next()).getPath() );
 			}
 		}
 
@@ -214,6 +182,7 @@ public class ContentCouchCommand {
 				ps.println( pfx + "    " + argListI.next() );
 			}
 		}
+		*/
 	}
 	
 	//// Commit tracking ////
@@ -351,160 +320,10 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		final Importer importer = new Importer(getRepository(), storeSector);
-		importer.shouldLinkStored = shouldLinkStored;
-		importer.shouldRelinkImported = shouldRelinkImported; 
+		// TODO:
 		
-		final boolean showIntermediateFiles;
-		final boolean showIntermediateDirs;
-		if( verbosity >= 3 ) {
-			showIntermediateFiles = true;
-			showIntermediateDirs = true;
-		} else if( verbosity >= 2 ) {
-			showIntermediateFiles = storeFiles;
-			showIntermediateDirs = storeDirs;
-		} else {
-			showIntermediateFiles = false;
-			showIntermediateDirs = false;			
-		}
-		
-		if( files.size() == 0 ) {
-			System.err.println("ccouch store: No files given");
-			System.err.println(STORE_USAGE);
-			System.exit(1);
-		}
-		boolean createCommit;
-		if( name != null || message != null || author != null ) {
-			createCommit = true;
-			if( files.size() != 1 ) {
-				System.err.println("Cannot use -m or -n with more than one file");
-				System.exit(1);
-			}
-		} else {
-			createCommit = false;
-		}
-		
-		importer.importListener = new ImportListener() {
-			public void objectImported(Object obj, String urn) {
-				String uri;
-				if( obj instanceof File ) {
-					uri = importer.getFileUri((File)obj);
-					if( ((File)obj).isDirectory() ) {
-						if( !showIntermediateDirs ) uri = null;
-					} else {
-						if( !showIntermediateFiles ) uri = null;
-					}
-				} else {
-					uri = "??";
-					if( obj instanceof Directory ) {
-						if( !showIntermediateDirs ) uri = null;
-					} else {
-						if( !showIntermediateFiles ) uri = null;
-					}
-				}
-				if( uri != null ) System.out.println(uri + "\t" + urn);
-			}
-		};
-		
-		importer.shouldStoreFiles = storeFiles;
-		importer.shouldStoreDirs = storeDirs;
-		importer.shouldStoreHeads = storeCommits;
-		
-		if( dumpConfig ) {
-			System.out.print("Store arguments:");
-			for( int i=0; i<args.length; ++i ) {
-				System.out.print(" " + args[i]);
-			}
-			System.out.println("");
-			System.out.println("");
-			System.out.println("Storing files:       " + (storeFiles ? "yes" : "no"));
-			System.out.println("Storing directories: " + (storeDirs ? "yes" : "no"));
-			System.out.println("Storing heads:       " + (storeCommits ? "yes" : "no"));
-			System.out.println("Create commit:       " + (createCommit ? "yes" : "no"));
-			System.out.println("Force commit:        " + (forceCommit ? "yes" : "no"));
-			System.out.println("Link:                " + importer.shouldLinkStored );
-			System.out.println("Relink:              " + importer.shouldRelinkImported );
-			if( createCommit ) {
-				System.out.println("Commit message:      " + message);
-				System.out.println("Commit author:       " + author);
-				System.out.println("Commit name:         " + name);
-			}
-			System.out.println("");
-			System.out.println("Repository:");
-			dumpRepoConfig( getRepository(), System.out, "  " );
-			return;
-		}
-		
-		for( Iterator i=files.iterator(); i.hasNext(); ) {
-			String uri = (String)i.next();
-			Object o = TheGetter.get(uri);
-			if( o == null ) throw new RuntimeException("Couldn't find " + uri);
-			Ref ref = importer.importObject(o);
-			
-			boolean showFinal;
-			if( o instanceof Directory ) {
-				showFinal = !showIntermediateDirs;
-			} else {
-				showFinal = !showIntermediateFiles;
-			}
-			
-			if( showFinal && verbosity > 0 ) {
-				System.out.println(uri + "\t" + ref.targetUri);
-			}
-			if( createCommit ) {
-				String targetType;
-				if( ref.targetUri.charAt(0) == '@' || ref.targetUri.startsWith(RdfNamespace.URI_PARSE_PREFIX) ) {
-					targetType = RdfNamespace.OBJECT_TYPE_DIRECTORY;
-				} else {
-					targetType = RdfNamespace.OBJECT_TYPE_BLOB;
-				}
-				if( name != null ) name = getRepository().name + "/" + name;
-				
-				String[] parentCommitUris;
-				if( o instanceof File ) {
-					parentCommitUris = getParentCommitUris((File)o);
-					if(parentCommitUris == null) throw new RuntimeException("getParentCommitUris returned null.  Not too cool.");
-				} else {
-					parentCommitUris = new String[0];
-				}
-				
-				if( parentCommitUris.length == 1 && !forceCommit ) {
-					// Cancel the commit if the old one points to the same thing
-					Commit oldCommit = (Commit)TheGetter.get(parentCommitUris[0]);
-					if( oldCommit == null ) {
-						System.err.println("Error: Could not load old commit " + parentCommitUris[0]);
-						System.exit(1);
-					}
-					Object oldTarget = oldCommit.getTarget();
-					if( oldTarget instanceof Ref ) {
-						if( ((Ref)oldTarget).targetUri.equals(ref.targetUri) ) {
-							System.err.println("No changes since last commit.  Use -force-commit to commit anyway.");
-							createCommit = false;
-						}
-					}
-				}
-				
-				// If after those checks, we still want to create it, then go ahead and do so:
-				if( createCommit ) {				
-					RdfNode commit = importer.getCommitRdfNode(targetType, ref.targetUri, new Date(), author, message, parentCommitUris);
-					String commitUri;
-					commitUri = importer.saveHead(commit, name);
-					if( verbosity > 0 ) {
-						System.out.println( "Commit\t" + commitUri );
-					}
-					if( o instanceof File && commitUri != null ) {
-						setParentCommitUri((File)o, commitUri);
-					}
-				}
-			}
-		}
-	}
-	
-	protected String getUrn( String uri ) {
-		if( uri.startsWith(RdfNamespace.URI_PARSE_PREFIX) ) {
-			return RdfNamespace.URI_PARSE_PREFIX + getUrn(uri.substring(RdfNamespace.URI_PARSE_PREFIX.length()));
-		}
-		return TheIdentifier.identifyAt(uri);			
+		System.err.println("store unimplemented!");
+		System.exit(1);
 	}
 	
 	public void runCheckoutCmd( String[] args ) {
@@ -564,80 +383,25 @@ public class ContentCouchCommand {
 			System.err.println(CHECKOUT_USAGE);
 			System.exit(1);
 		}
-		final Exporter exporter = new Exporter(TheGetter.getGenericGetter(), getRepository().getBlobIdentifier());
-		exporter.link = link;
-		exporter.exportFiles = exportFiles;
-		exporter.replaceFiles = replaceFiles;
-		if( keepFiles ) {
-			exporter.mergeConflictHandler = new Exporter.MergeConflictHandler() {
-				public boolean handleMergeConflict(String path, String localUrn,
-						Object localObj, String remoteUrn, Object remoteObj) {
-					Log.log( Log.LEVEL_WARNINGS, Log.TYPE_SKIP, path + "; " + localUrn + " != " + remoteUrn );
-					return false;
-				}
-			};
-		}
-		File destFile = new File(dest);
-		Object exportThis = exporter.followRedirects(new Ref(source), null);
-		
-		if( exportThis instanceof String || exportThis instanceof byte[] || exportThis instanceof Blob ) {
-			exportThis = BlobUtil.getBlob(exportThis);
-		}
 		
 		if( "-".equals(dest) ) {
-			if( exportThis instanceof Blob ) {
-				BlobUtil.writeBlobToOutputStream((Blob)exportThis, System.out);
-				return;
-			} else {
-				Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Can't export " + exportThis.getClass().getName() + " to stdout");
+			Object value = TheGetter.get(source);
+			if( value == null ) {
+				System.err.println("Could not find " + source);
 				System.exit(1);
+			} else if( value instanceof Blob ) {
+				BlobUtil.writeBlobToOutputStream((Blob)value, System.out);
+				System.exit(0);
+			} else {
+				System.out.println(value.toString());
+				System.exit(0);
 			}
-		}
-		if( destFile.exists() && destFile.isDirectory() && !merge ) {
-			Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Destination '" + destFile + "' already exists.  Use -merge to merge directory trees.");
-			System.exit(1);
-		}
-		if( destFile.exists() && !destFile.isDirectory() && !replaceFiles ) {
-			Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Destination '" + destFile + "' already exists.  Use -replace-existing to replace existing files.");
-			System.exit(1);
-		}
-		if( exportThis instanceof Commit ) {
-			addParentCommitUri(destFile, getUrn( ((Commit)exportThis).getUri() ) );
-		}
-		exporter.exportObject(exportThis, destFile, null);
-	}
-	
-	public boolean cache( String uri ) {
-		// Hopefully getting stuff wil make it be cached...
-		Object o = TheGetter.get(uri);
-		if( o == null ) {
-			//reportCacheStatus(uri, verbosity, false);
-			return false;
-		} else if( o instanceof Directory ) {
-			//reportCacheStatus(uri, verbosity, true);
-			boolean success = true;
-			Directory d = (Directory)o;
-			for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
-				Directory.Entry e = (Directory.Entry)i.next();
-				if( e.getValue() instanceof Ref ) {
-					if( !cache( ((Ref)e.getValue()).targetUri ) ) success = false;
-				}
-			}
-			return success;
-		} else if( o instanceof Commit ) {
-			//reportCacheStatus(uri, verbosity, true);
-			Commit c = (Commit)o;
-			o = c.getTarget();
-		} else if( o instanceof RdfNode && RdfNamespace.CCOUCH_REDIRECT.equals(((RdfNode)o).typeName) ) {
-			//reportCacheStatus(uri, verbosity, true);
-			o = ((RdfNode)o).getSingle(RdfNamespace.CCOUCH_TARGET);
 		}
 		
-		if( o instanceof Ref ) {
-			return cache( ((Ref)o).targetUri );
-		} else {
-			return true;
-		}
+		// TODO
+		
+		System.err.println("checkout unimplemented!");
+		System.exit(1);
 	}
 	
 	public void runCacheCmd( String[] args ) {
@@ -647,9 +411,7 @@ public class ContentCouchCommand {
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
-				cacheVerbosity = 0;
 			} else if( "-v".equals(arg) ) {
-				cacheVerbosity = GetAttemptListener.GOT_FROM_LOCAL;
 			} else if( "-sector".equals(arg) ) {
 				storeSector = args[++i];
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
@@ -663,110 +425,13 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
-		getRepository().cacheSector = storeSector;
-		boolean success = true;
-		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
-			if( !cache( (String)i.next() ) ) success = false;
-		}
-		System.exit(success ? 0 : 1);
-	}
-
-	protected static final String ALL_REMOTE_HEADS_PATH = "-all-remotes";
-	
-	protected void cacheHeads( Exporter e, Object o, String remotePath, String localPath ) {
-		if( o instanceof Blob ) {
-			getRepository().cache((Blob)o);
-			e.exportObject(o, new File(localPath), remotePath );
-		} else if( o instanceof Directory ) {
-			for( Iterator i=((Directory)o).getDirectoryEntrySet().iterator(); i.hasNext(); ) {
-				Directory.Entry entry = (Directory.Entry)i.next();
-				Object v = entry.getValue();
-				String subRemotePath;
-				if( v instanceof Ref ) {
-					subRemotePath = ((Ref)v).targetUri;
-					v = e.followRedirects(v, remotePath);
-				} else {
-					subRemotePath = remotePath + entry.getKey();
-				}
-				if( subRemotePath.endsWith("/") ) {
-					v = DirectoryUtil.getDirectory(v, Collections.EMPTY_MAP, subRemotePath);
-				}
-				cacheHeads( e, v, subRemotePath, localPath + "/" + entry.getKey() );
-			}
-		}
-	}
-	
-	protected boolean cacheHeads( ContentCouchRepository remote, String remotePath,
-			ContentCouchRepository cache, String cachePath ) {
-		Exporter e = new Exporter(TheGetter.getGenericGetter(), getRepository().getBlobIdentifier());
-		if( remotePath == null ) throw new RuntimeException("Can't get null path head!");
-		Object ro = remote.getHead(remotePath);
-		if( ro == null ) return false;
-		//e.exportObject(ro, new File(cache.getPath() + "heads/" + cachePath), "x-ccouch-head://" + remote.name + "/" + remotePath );
-		cacheHeads( e, ro, "x-ccouch-head://" + remote.name + "/" + remotePath, cache.getPath() + "heads/" + cachePath );
-		return true;
-	}
-	
-	protected boolean cacheHeads( String path ) {
-		ContentCouchRepository repo = getRepository();
 		
-		if( path.startsWith(RdfNamespace.URI_PARSE_PREFIX)) path = path.substring(RdfNamespace.URI_PARSE_PREFIX.length());
-		if( path.startsWith("x-ccouch-head:") ) path = path.substring("x-ccouch-head:".length());
+		// TODO
 		
-		boolean success;
-		if( ALL_REMOTE_HEADS_PATH.equals(path) ) {
-			success = true;
-			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
-				ContentCouchRepository rr = (ContentCouchRepository)rri.next();
-				if( rr.name != null ) {
-					if( !cacheHeads( rr, rr.name + "/", repo, rr.name + "/" ) ) success = false;
-				}
-			}
-		} else if( path.startsWith("//") ) {
-			String subPath = path.substring(2);
-			int si = subPath.indexOf('/');
-			if( si == -1 ) throw new RuntimeException("Malformed head path (contains '//' but no '/'): " + path);
-			String repoName = subPath.substring(0,si);
-			subPath = subPath.substring(si+1);
-			ContentCouchRepository rr = (ContentCouchRepository)getRepository().namedRepositories.get(repoName);
-			if( rr == null ) throw new RuntimeException("No such repository: " + repoName);
-			if( subPath.endsWith("/latest") ) {
-				String oPath = subPath;
-				subPath = rr.findHead(subPath);
-				if( subPath == null ) {
-					Log.log( Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not find latest head of " + oPath + " at //" + repoName);
-					return false;
-				}
-			}
-			success = cacheHeads( rr, subPath, repo, subPath );
-		} else {
-			success = false;
-
-			if( path.startsWith("/") ) path = path.substring(1);
-			
-			if( path.endsWith("/latest") ) {
-				String oPath = path;
-				path = getRepository().getHeadGetter(true).findHead(path);
-				if( path == null ) {
-					Log.log( Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, "Could not find latest head of " + oPath);
-					return false;
-				}
-			}
-			
-			for( Iterator rri = getRepository().remoteRepositories.iterator(); rri.hasNext(); ) {
-				ContentCouchRepository rr = (ContentCouchRepository)rri.next();
-				if( rr.name != null ) {
-					if( cacheHeads( rr, path, repo, path) ) success = true;
-				}
-			}
-		}
-		if( !success ) {
-			Log.log( Log.LEVEL_ERRORS, Log.TYPE_NOTFOUND, "Could not find head: " + path);
-		}
-
-		return success;
+		System.err.println("cache unimplemented!");
+		System.exit(1);
 	}
-	
+
 	public void runCacheHeadsCmd( String[] args ) {
 		args = mergeConfiguredArgs("cache-heads", args);
 		List cacheUris = new ArrayList();
@@ -779,7 +444,7 @@ public class ContentCouchCommand {
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_HEADS_USAGE);
 				System.exit(0);
-			} else if( !arg.startsWith("-") || ALL_REMOTE_HEADS_PATH.equals(arg) ) {
+			} else if( !arg.startsWith("-") ) {
 				cacheUris.add(arg);
 			} else {
 				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
@@ -787,11 +452,9 @@ public class ContentCouchCommand {
 				System.exit(1);
 			}
 		}
-		boolean success = true;
-		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
-			if( !cacheHeads( (String)i.next() ) ) success = false;
-		}
-		System.exit(success ? 0 : 1);
+		// TODO: implement
+		System.err.println("cache-heads unimplemented!");
+		System.exit(1);
 	}
 
 	public void runIdCmd( String[] args ) {
@@ -814,7 +477,7 @@ public class ContentCouchCommand {
 		}
 		
 		if( checkPaths.size() == 0 ) {
-			checkPaths.add(getRepository().getPath() + "data/");
+			checkPaths.add(metaRepoConfig.defaultRepoConfig.uri + "data/");
 		}
 		
 		RepoChecker rc = new RepoChecker();
@@ -849,27 +512,8 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		Importer imp = new Importer(getRepository(), storeSector);
-		imp.shouldStoreFiles = false;
-		imp.shouldStoreDirs = false;
-		imp.shouldNestSubdirs = nested;
-		
-		if( dir == null ) {
-			System.err.println("ccouch rdfify: No object specified" );
-			System.exit(1);
-		}
-
-		Object o = TheGetter.get(dir);
-		if( o == null ) {
-			System.err.println("ccouch rdfify: Could not find " + dir);
-			System.exit(1);
-		}
-		if( !(o instanceof Directory) ) {
-			System.err.println("ccouch rdfify: Object specified is not a directory: " + dir);
-			System.exit(1);
-		}
-		
-		System.out.println(RdfIO.xmlEncodeRdf(imp.rdfifyDirectory(new FileDirectory(new File(dir))), RdfNamespace.CCOUCH_NS));
+		System.err.println("rdfify unimplemented!");
+		System.exit(1);
 	}
 	
 	public void run( String[] args ) {
@@ -884,7 +528,7 @@ public class ContentCouchCommand {
 			if( "-h".equals(args[i]) || "-?".equals(args[i]) ) {
 				System.out.println(USAGE);
 				System.exit(0);
-			} else if( (ni = getRepository().handleArguments(args, i)) > i ) {
+			} else if( (ni = metaRepoConfig.handleArguments(args, i, "./")) > i ) {
 				i = ni;
 			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
 				cmd = args[i++];
@@ -904,10 +548,12 @@ public class ContentCouchCommand {
 		for( int j=0; j<cmdArgs.length; ++i, ++j ) {
 			cmdArgs[j] = args[i];
 		}
-		getRepository().registerAsGetterAndIdentifier();
+		
+		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
+		
 		if( "config".equals(cmd) ) {
 			System.out.println("Repo configuration:");
-			dumpRepoConfig(getRepository(), System.out, "  ");
+			dumpRepoConfig( metaRepoConfig, System.out, "  ");
 		} else if( "store".equals(cmd) ) {
 			runStoreCmd( cmdArgs );
 		} else if( "checkout".equals(cmd) ) {

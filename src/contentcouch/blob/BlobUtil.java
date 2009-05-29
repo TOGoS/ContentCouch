@@ -9,10 +9,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import contentcouch.app.Linker;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.RdfNamespace;
+import contentcouch.rdf.DcNamespace;
 import contentcouch.value.Blob;
 
 public class BlobUtil {
@@ -46,16 +47,10 @@ public class BlobUtil {
 	
 	//// Convert things to blobs ////
 	
-	public static ByteArrayBlob getBlob(String s, String format) {
-		ByteArrayBlob bab = new ByteArrayBlob(ValueUtil.getBytes(s));
-		bab.putMetadata(RdfNamespace.DC_FORMAT, format);
-		return bab;
+	public static ByteArrayBlob getBlob(String s) {
+		return new ByteArrayBlob(ValueUtil.getBytes(s));
 	}
 
-	public static ByteArrayBlob getBlob(String s) {
-		return getBlob(s, "text/plain");
-	}
-	
 	public static Blob getBlob(Object obj) {
 		if( obj == null ) {
 			return null;
@@ -117,6 +112,14 @@ public class BlobUtil {
 			}
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	public static void linkBlobToFile( Blob blob, File f ) {
+		if( blob instanceof File ) {
+			Linker.getInstance().link(f, (File)blob);
+		} else {
+			writeBlobToFile(blob, f);
 		}
 	}
 }

@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
-import contentcouch.rdf.RdfNamespace;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
 
 public class FileDirectory extends File implements Directory {
@@ -33,9 +33,9 @@ public class FileDirectory extends File implements Directory {
 
 		public String getTargetType() {
 			if( isDirectory() ) {
-				return RdfNamespace.OBJECT_TYPE_DIRECTORY;
+				return CcouchNamespace.OBJECT_TYPE_DIRECTORY;
 			} else {
-				return RdfNamespace.OBJECT_TYPE_BLOB;
+				return CcouchNamespace.OBJECT_TYPE_BLOB;
 			}
 		}
 	}

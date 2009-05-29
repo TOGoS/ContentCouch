@@ -1,12 +1,16 @@
 package contentcouch.store;
 
+import togos.rra.BaseRequest;
+import togos.rra.Request;
+import togos.rra.RequestHandler;
+import togos.rra.Response;
 import contentcouch.active.Context;
 
 public class TheGetter {
-	public static Getter globalInstance;
+	public static RequestHandler globalInstance;
 	
-	public static Getter getGenericGetter() {
-		Getter theGetter = (Getter)Context.getInstance().get(Context.GENERIC_GETTER_VAR);
+	public static RequestHandler getGenericGetter() {
+		RequestHandler theGetter = (RequestHandler)Context.getInstance().get(Context.GENERIC_GETTER_VAR);
 		if( theGetter == null ) {
 			theGetter = globalInstance;
 		}
@@ -17,6 +21,12 @@ public class TheGetter {
 	}
 	
 	public static Object get(String uri) {
-		return getGenericGetter().get(uri);
+		Response res = handleRequest(new BaseRequest("GET",uri));
+		if( res.getStatus() == Response.STATUS_NORMAL ) return res.getContent();
+		return null;
+	}
+	
+	public static Response handleRequest( Request req ) {
+		return getGenericGetter().handleRequest(req);
 	}
 }

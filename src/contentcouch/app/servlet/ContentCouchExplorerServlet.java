@@ -24,6 +24,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import togos.rra.Getter;
+
 import com.eekboom.utils.Strings;
 
 import contentcouch.blob.BlobUtil;
@@ -32,13 +34,13 @@ import contentcouch.file.FileBlob;
 import contentcouch.graphics.ImageUtil;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
-import contentcouch.misc.MetadataUtil;
+import contentcouch.misc.MapUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.RdfNamespace;
-import contentcouch.repository.ContentCouchRepository;
-import contentcouch.store.Getter;
+import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.DcNamespace;
+import contentcouch.repository.MetaRepository;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -236,10 +238,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		
 		protected String formatLink(String url) {
-			if( url.startsWith(RdfNamespace.URI_PARSE_PREFIX) ) {
+			if( url.startsWith(CcouchNamespace.URI_PARSE_PREFIX) ) {
 				// Then show 2 links
-				String noParsePart = url.substring(RdfNamespace.URI_PARSE_PREFIX.length());
-				return formatLink2("/explore?uri="+UriUtil.uriEncode(url), RdfNamespace.URI_PARSE_PREFIX.substring(0,RdfNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
+				String noParsePart = url.substring(CcouchNamespace.URI_PARSE_PREFIX.length());
+				return formatLink2("/explore?uri="+UriUtil.uriEncode(url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
 					formatLink2("/explore?uri="+UriUtil.uriEncode(noParsePart), noParsePart);
 			} else {
 				if( url.startsWith("http:") ) {
@@ -289,7 +291,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		public DirectoryPageGenerator(String path, Directory dir ) {
 			this.path = path;
 			this.dir = dir;
-			this.title = (String)MetadataUtil.getMetadataFrom(dir, RdfNamespace.DC_TITLE);
+			this.title = (String)MapUtil.getMetadataFrom(dir, DcNamespace.DC_TITLE);
 		}
 		
 		protected String getHref(String path) {
@@ -313,7 +315,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					if( e1.getTargetType().equals(e2.getTargetType()) ) {
 						return Strings.compareNatural(e1.getKey(),e2.getKey());
 					} else {
-						if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e1.getTargetType()) ) {
+						if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e1.getTargetType()) ) {
 							return -1;
 						} else {
 							return 1;
@@ -349,7 +351,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				} else {
 					href = name;
 				}
-				if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+				if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
 					if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
 					if( !name.endsWith("/") ) name += "/";
 				}
@@ -381,10 +383,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 	}
 	
-	protected ContentCouchRepository repoCache;
-	protected ContentCouchRepository getRepo() {
+	protected MetaRepository repoCache;
+	protected MetaRepository getRepo() {
 		if( repoCache == null ) { 
-			repoCache = new ContentCouchRepository();
+			repoCache = new MetaRepository();
 			String webPath = this.getServletContext().getRealPath("");
 			File configFile = new File(webPath + "/repo-config");
 			File configTemplateFile = new File(webPath + "/repo-config.template");
@@ -405,8 +407,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		return repoCache;
 	}
-	protected ContentCouchRepository getRepo(String name) {
-		return (ContentCouchRepository)getRepo().namedRepositories.get(name);
+	protected MetaRepository getRepo(String name) {
+		return (MetaRepository)getRepo().namedRepositories.get(name);
 	}
 	
 	protected Getter getLocalGetter() {
@@ -465,7 +467,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	}
 	
 	protected long guessLastModified( Blob b ) {
-		Date date = (Date)MetadataUtil.getMetadataFrom(b, RdfNamespace.DC_MODIFIED);
+		Date date = (Date)MapUtil.getMetadataFrom(b, DcNamespace.DC_MODIFIED);
 		if( date != null ) return date.getTime();
 		
 		if( b instanceof FileBlob ) {
@@ -476,7 +478,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	}
 	
 	protected String guessContentType( Blob b ) {
-		String type = (String)MetadataUtil.getMetadataFrom(b, RdfNamespace.DC_FORMAT);
+		String type = (String)MapUtil.getMetadataFrom(b, DcNamespace.DC_FORMAT);
 		if( type != null ) return type;
 		
 		if( b instanceof FileBlob ) {
@@ -514,8 +516,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		while( true ) {
 			if( root == null || path == null || "".equals(path) || "/".equals(path) ) {
 				return root;
-			} else if( root instanceof ContentCouchRepository ) {
-				return ((ContentCouchRepository)root).getExplorat(path);
+			} else if( root instanceof MetaRepository ) {
+				return ((MetaRepository)root).getExplorat(path);
 			} else if( root instanceof Getter ) {
 				return ((Getter)root).get(path);
 			} else if( root instanceof Directory ) {
@@ -537,15 +539,15 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 
 	public Object getObject(String path) {
 		SimpleDirectory sd = new SimpleDirectory(getRepo().namedRepositories);
-		sd.putMetadata(RdfNamespace.DC_TITLE, "All named repositories");
+		sd.putMetadata(DcNamespace.DC_TITLE, "All named repositories");
 		Object obj = getObject(sd, path, "");
 		if( obj != null ) return obj;
 		return getLocalGetter().get(path);
 	}
 	
 	public Object getGenericResponse( Object obj, String path ) {
-		if( obj instanceof ContentCouchRepository && !(obj instanceof Directory) ) {
-			obj = ((ContentCouchRepository)obj).getExplorat("");
+		if( obj instanceof MetaRepository && !(obj instanceof Directory) ) {
+			obj = ((MetaRepository)obj).getExplorat("");
 		}
 		if( obj instanceof Directory ) {
 			obj = new DirectoryPageGenerator( path, (Directory)obj );

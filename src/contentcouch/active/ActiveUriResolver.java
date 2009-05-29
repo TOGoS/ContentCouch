@@ -4,8 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import togos.rra.Getter;
+
 import contentcouch.misc.UriUtil;
-import contentcouch.store.Getter;
 
 public class ActiveUriResolver implements Getter {
 	public static final String ACTIVE_URI_PREFIX = "active:";
