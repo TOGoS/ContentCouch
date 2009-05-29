@@ -40,13 +40,13 @@ public class DirectoryUtil {
 							SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 							e.name = subPath;
 							e.targetType = RdfNamespace.OBJECT_TYPE_BLOB;
-							e.target = new Ref(subPath);
+							e.target = new Ref(PathUtil.appendPath(identifier, subPath));
 							dir.addEntry(e);
 						} else {
 							SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 							e.name = subPath.substring(0, si);
 							e.targetType = RdfNamespace.OBJECT_TYPE_DIRECTORY;
-							e.target = new Ref(e.name + "/");
+							e.target = new Ref(PathUtil.appendPath(identifier, e.name) + "/");
 							dir.addEntry(e);
 						}
 					}

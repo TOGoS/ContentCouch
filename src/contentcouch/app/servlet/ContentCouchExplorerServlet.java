@@ -297,7 +297,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				path = PathUtil.appendPath(this.path, path);
 			}
 			if( PathUtil.isUri(path) ) {
-				return "?uri=" + UriUtil.uriEncode(path);
+				return "/explore?uri=" + UriUtil.uriEncode(path);
 			} else {
 				return path;
 			}
@@ -344,7 +344,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				Entry e = (Entry)i.next();
 				String href;
 				String name = e.getKey(); 
-				if( e.getValue() instanceof Ref ) {
+				if( e.getValue() instanceof Ref && PathUtil.isUri(this.path) ) {
 					href = ((Ref)e.getValue()).targetUri;
 				} else {
 					href = name;

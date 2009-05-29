@@ -467,7 +467,7 @@ public class ContentCouchRepository implements Getter {
 			if( obj != null ) {
 				getAttempted( identifier, GetAttemptListener.GOT_FROM_REMOTE, remoteRepo, obj );
 				if( cache ) {
-					String cachedId = getBlobStore(cacheSector).push(obj);
+					String cachedId = cache((Blob)obj);
 					if( cachedId == null || !(cachedId.equals(identifier)) ) {
 						obj = null;
 						Log.log(Log.LEVEL_WARNINGS, "Calculated identifier (" + cachedId + ") does not match requested identifier (" + identifier + "), downloaded from " + remoteRepo.path);
@@ -479,6 +479,10 @@ public class ContentCouchRepository implements Getter {
 			}
 		}
 		return null;
+	}
+	
+	public String cache( Blob blob ) {
+		return getBlobStore(cacheSector).push(blob);
 	}
 	
 	public Object getExplorat( String identifier ) {

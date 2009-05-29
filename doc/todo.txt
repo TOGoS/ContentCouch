@@ -1,4 +1,5 @@
-- While caching heads, should store heads in cache datastore, not just heads dir
+- Remember the repository most recently successfuly downloaded from and
+  download from it first.
 
 - RequestHandlers as a more featurified alternative to Getters
   - Allow requests with more information that only an identifier
@@ -31,6 +32,8 @@
   - urn:sha1: -> http:
 
 == Done ==
+
+* While caching heads, should store heads in cache datastore, not just heads dir
 
 * When downloading blobs from remote repos, if one repo gives a bad blob, try the next repo instead of just dying.
 

@@ -8,12 +8,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import contentcouch.blob.BlobUtil;
+import contentcouch.directory.DirectoryUtil;
 import contentcouch.file.FileDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNamespace;
@@ -671,15 +673,37 @@ public class ContentCouchCommand {
 
 	protected static final String ALL_REMOTE_HEADS_PATH = "-all-remotes";
 	
+	protected void cacheHeads( Exporter e, Object o, String remotePath, String localPath ) {
+		if( o instanceof Blob ) {
+			getRepository().cache((Blob)o);
+			e.exportObject(o, new File(localPath), remotePath );
+		} else if( o instanceof Directory ) {
+			for( Iterator i=((Directory)o).getDirectoryEntrySet().iterator(); i.hasNext(); ) {
+				Directory.Entry entry = (Directory.Entry)i.next();
+				Object v = entry.getValue();
+				String subRemotePath;
+				if( v instanceof Ref ) {
+					subRemotePath = ((Ref)v).targetUri;
+					v = e.followRedirects(v, remotePath);
+				} else {
+					subRemotePath = remotePath + entry.getKey();
+				}
+				if( subRemotePath.endsWith("/") ) {
+					v = DirectoryUtil.getDirectory(v, Collections.EMPTY_MAP, subRemotePath);
+				}
+				cacheHeads( e, v, subRemotePath, localPath + "/" + entry.getKey() );
+			}
+		}
+	}
+	
 	protected boolean cacheHeads( ContentCouchRepository remote, String remotePath,
 			ContentCouchRepository cache, String cachePath ) {
 		Exporter e = new Exporter(TheGetter.getGenericGetter(), getRepository().getBlobIdentifier());
 		if( remotePath == null ) throw new RuntimeException("Can't get null path head!");
 		Object ro = remote.getHead(remotePath);
-		if( ro == null ) {
-			return false;
-		}
-		e.exportObject(ro, new File(cache.getPath() + "heads/" + cachePath), "x-ccouch-head://" + remote.name + "/" + remotePath );
+		if( ro == null ) return false;
+		//e.exportObject(ro, new File(cache.getPath() + "heads/" + cachePath), "x-ccouch-head://" + remote.name + "/" + remotePath );
+		cacheHeads( e, ro, "x-ccouch-head://" + remote.name + "/" + remotePath, cache.getPath() + "heads/" + cachePath );
 		return true;
 	}
 	
