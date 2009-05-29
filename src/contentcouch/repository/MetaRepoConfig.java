@@ -23,6 +23,14 @@ public class MetaRepoConfig {
 	public List localRepoConfigs = new ArrayList();
 	public List remoteRepoConfigs = new ArrayList();
 	
+	public List getAllRepoConfigs() {
+		ArrayList l = new ArrayList();
+		l.add(defaultRepoConfig);
+		l.addAll(localRepoConfigs);
+		l.addAll(remoteRepoConfigs);
+		return l;
+	}
+	
 	protected void addLocalRepo( String uri ) {
 		localRepoConfigs.add(0, uri);
 	}
@@ -48,11 +56,12 @@ public class MetaRepoConfig {
 		RepoConfig rp = RepoConfig.parse(arg);
 		if( rp != null ) {
 			++offset;
-			rp.uri = PathUtil.appendPath(baseUri, args[offset]);
+			rp.uri = PathUtil.maybeNormalizeFileUri(PathUtil.appendPath(baseUri, args[offset]));
+			if( !rp.uri.endsWith("/") ) rp.uri += "/";
 			//System.err.println(basePath + " + " + args[offset] + " = " + path);
 			++offset;
 
-			if( rp.disposition == RepoConfig.DISPOSITION_MAIN ) {
+			if( rp.disposition == RepoConfig.DISPOSITION_DEFAULT ) {
 				if( rp.name != null ) defaultRepoConfig.name = rp.name;
 				if( rp.uri != null ) defaultRepoConfig.uri = rp.uri;
 			} else if( rp.disposition == RepoConfig.DISPOSITION_LOCAL ) {

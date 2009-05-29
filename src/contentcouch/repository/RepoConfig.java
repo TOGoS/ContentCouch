@@ -4,12 +4,12 @@
 package contentcouch.repository;
 
 public class RepoConfig {
-	public static final String DISPOSITION_MAIN = "main";
+	public static final String DISPOSITION_DEFAULT = "default";
 	public static final String DISPOSITION_LOCAL = "local";
 	public static final String DISPOSITION_CACHE = "cache";
 	public static final String DISPOSITION_REMOTE = "remote";
 	
-	public String disposition = DISPOSITION_MAIN;
+	public String disposition = DISPOSITION_DEFAULT;
 	public String name = "junky-unnamed-repository";
 	public String uri = "file:junk-repository/";
 	public String userStoreSector   = "user";
@@ -22,7 +22,7 @@ public class RepoConfig {
 		
 		String disposition;
 		if( "-repo".equals(parts[0]) ) {
-			disposition = DISPOSITION_MAIN;
+			disposition = DISPOSITION_DEFAULT;
 		} else if( "-remote-repo".equals(parts[0]) ) {
 			disposition = DISPOSITION_REMOTE;
 		} else if( "-cache-repo".equals(parts[0]) ) {

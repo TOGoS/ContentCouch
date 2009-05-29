@@ -123,6 +123,15 @@ public class PathUtil {
 		*/
 	}
 	
+	/** If the given string is not a URI, treat it as a file path and turn it into a file: URI */
+	public static String maybeNormalizeFileUri( String uriOrPath ) {
+		if( isUri(uriOrPath) ) return uriOrPath;
+		if( uriOrPath.startsWith("//") ) return "file:" + uriEscapePath(uriOrPath);
+		if( uriOrPath.startsWith("/") ) return "file://" + uriEscapePath(uriOrPath);
+		if( uriOrPath.matches("^[A-Za-z]:.*") ) return "file:///" + uriEscapePath(uriOrPath); 
+		return "file:" + uriEscapePath(uriOrPath);
+	}
+	
 	public static class Path {
 		public String path;
 		

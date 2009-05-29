@@ -27,6 +27,7 @@ public class TheGetter {
 	}
 	
 	public static Response handleRequest( Request req ) {
+		//System.err.println(req.getVerb() + " " + req.getUri());
 		return getGenericGetter().handleRequest(req);
 	}
 }
