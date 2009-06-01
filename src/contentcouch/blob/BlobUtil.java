@@ -13,7 +13,6 @@ import contentcouch.app.Linker;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.DcNamespace;
 import contentcouch.value.Blob;
 
 public class BlobUtil {

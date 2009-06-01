@@ -11,7 +11,6 @@ import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
