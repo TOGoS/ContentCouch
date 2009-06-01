@@ -3,14 +3,18 @@ package contentcouch.active;
 import java.io.IOException;
 
 import sun.misc.BASE64Decoder;
-import togos.rra.Getter;
+import togos.rra.BaseResponse;
+import togos.rra.Request;
+import togos.rra.RequestHandler;
+import togos.rra.Response;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.misc.UriUtil;
 
-public class DataUriResolver implements Getter {
+public class DataUriResolver implements RequestHandler {
 	public static final String DATA_URI_PREFIX = "data:";
 
-	public Object get(String identifier) {
+	public Response handleRequest( Request req ) {
+		String identifier = req.getUri();
 		if( !identifier.startsWith(DATA_URI_PREFIX) ) return null;
 		int commaPos = identifier.indexOf(',');
 		if( commaPos == -1 ) throw new RuntimeException("Invalid data URI has no comma: " + identifier);
@@ -35,6 +39,6 @@ public class DataUriResolver implements Getter {
 		} else {
 			data = UriUtil.uriDecodeBytes( identifier.substring(commaPos+1) );
 		}
-		return new ByteArrayBlob(data);
+		return new BaseResponse(Response.STATUS_NORMAL, new ByteArrayBlob(data), type );
 	}
 }

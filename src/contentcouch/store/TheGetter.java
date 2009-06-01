@@ -5,6 +5,8 @@ import togos.rra.Request;
 import togos.rra.RequestHandler;
 import togos.rra.Response;
 import contentcouch.active.Context;
+import contentcouch.misc.UriUtil;
+import contentcouch.value.Directory;
 
 public class TheGetter {
 	public static RequestHandler globalInstance;
@@ -29,5 +31,9 @@ public class TheGetter {
 	public static Response handleRequest( Request req ) {
 		System.err.println(req.getVerb() + " " + req.getUri());
 		return getGenericGetter().handleRequest(req);
+	}
+	
+	public static Directory getDirectory( String uri ) {
+		return (Directory)get("active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(uri));
 	}
 }

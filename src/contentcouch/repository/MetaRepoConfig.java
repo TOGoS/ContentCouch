@@ -2,6 +2,7 @@ package contentcouch.repository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,12 +11,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import togos.rra.MultiRequestHandler;
+import contentcouch.active.ActiveUriResolver;
 import contentcouch.app.Log;
+import contentcouch.blob.BlobInputStream;
 import contentcouch.file.FileRequestHandler;
-import contentcouch.http.HtmlDirectoryResponseFilter;
 import contentcouch.http.HttpRequestHandler;
 import contentcouch.path.PathUtil;
+import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
+import contentcouch.value.Blob;
 
 public class MetaRepoConfig {
 	public Map namedRepoConfigs = new HashMap();
@@ -32,12 +36,12 @@ public class MetaRepoConfig {
 		return l;
 	}
 	
-	protected void addLocalRepo( String uri ) {
-		localRepoConfigs.add(0, uri);
+	protected void addLocalRepo( RepoConfig cfg ) {
+		localRepoConfigs.add(0,cfg);
 	}
 	
-	protected void addRemoteRepo( String uri ) {
-		remoteRepoConfigs.add(0, uri);
+	protected void addRemoteRepo( RepoConfig cfg ) {
+		remoteRepoConfigs.add(0,cfg);
 	}
 
 	static final String[] emptyArgString = new String[] {};
@@ -65,13 +69,23 @@ public class MetaRepoConfig {
 			if( rp.disposition == RepoConfig.DISPOSITION_DEFAULT ) {
 				if( rp.name != null ) defaultRepoConfig.name = rp.name;
 				if( rp.uri != null ) defaultRepoConfig.uri = rp.uri;
+				String cfgUri = rp.uri + "ccouch-config";
+				Blob cfgBlob = (Blob)TheGetter.get(cfgUri);
+				if( cfgBlob != null ) {
+					BufferedReader brd = new BufferedReader(new InputStreamReader(new BlobInputStream(cfgBlob)));
+					try {
+						_loadConfig(brd, cfgUri);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
 			} else if( rp.disposition == RepoConfig.DISPOSITION_LOCAL ) {
-				addLocalRepo(rp.uri);
+				addLocalRepo(rp);
 			} else if( rp.disposition == RepoConfig.DISPOSITION_CACHE ) {
 				Log.log(Log.LEVEL_WARNINGS, "Cache repo specified, but cache repositories are no longer used.  Treating as a local repo.");
-				addLocalRepo(rp.uri);
+				addLocalRepo(rp);
 			} else if( rp.disposition == RepoConfig.DISPOSITION_REMOTE ) {
-				addRemoteRepo(rp.uri);
+				addRemoteRepo(rp);
 			} else {
 				throw new RuntimeException("unknown repo disposition: " + rp.disposition);
 			}
@@ -157,7 +171,8 @@ public class MetaRepoConfig {
 		if( requestKernelCache == null ) {
 			requestKernelCache = new MultiRequestHandler();
 			requestKernelCache.addRequestHandler(getMetaRepository());
-			requestKernelCache.addRequestHandler(new HtmlDirectoryResponseFilter(new HttpRequestHandler()));
+			requestKernelCache.addRequestHandler(new ActiveUriResolver());
+			requestKernelCache.addRequestHandler(new HttpRequestHandler());
 			requestKernelCache.addRequestHandler(new FileRequestHandler());
 			requestKernelCache.addRequestHandler(InternalStreamRequestHandler.getInstance());
 		}

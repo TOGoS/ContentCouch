@@ -52,7 +52,6 @@ public class CcouchNamespace {
 	public static final String RR_STORE_SECTOR     = NS + "RR/storeSector";
 	public static final String RR_HARDLINK_DESIRED = NS + "RR/hardlinkDesired";
 	public static final String RR_REHARDLINK_DESIRED = NS + "RR/rehardlinkDesired";
-	public static final String RR_HTTP_DIRECTORIES_DESIRED = NS + "RR/httpDirectoriesDesired";
 	
 	public static final String RR_FILEMERGE_METHOD    = NS + "RR/fileMergeMethod";
 	public static final String RR_FILEMERGE_FAIL      = "Fail";

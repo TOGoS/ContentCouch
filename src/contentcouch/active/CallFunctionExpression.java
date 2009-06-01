@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 
+import togos.rra.Response;
 import contentcouch.misc.UriUtil;
 
 public class CallFunctionExpression implements Expression {
@@ -47,10 +48,10 @@ public class CallFunctionExpression implements Expression {
 		return s;
 	}
 
-	public Object eval() {
-		Object f = funcExpression.eval();
-		if( f == null ) throw new RuntimeException("No such function: " + funcExpression.toString() );
-		if( !(f instanceof ActiveFunction) ) throw new RuntimeException( "Object returned by " + funcExpression.toString() + " is not an ActiveFunction");
-		return ((ActiveFunction)f).call(argumentExpressions);
+	public Response eval() {
+		Response fRes = funcExpression.eval();
+		if( fRes.getStatus() != Response.STATUS_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getContent() );
+		if( !(fRes.getContent() instanceof ActiveFunction) ) throw new RuntimeException( "Object returned by " + funcExpression.toString() + " is not an ActiveFunction");
+		return ((ActiveFunction)fRes.getContent()).call(argumentExpressions);
 	}
 }

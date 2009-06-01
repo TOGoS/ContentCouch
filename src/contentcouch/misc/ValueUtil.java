@@ -52,7 +52,7 @@ public class ValueUtil {
 		return getNumber( o, null );
 	}
 	
-	//// Gett booleans ////
+	//// Get booleans ////
 	
 	static Map boolStringValues = new HashMap();
 	static {

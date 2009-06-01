@@ -17,6 +17,14 @@ public class RepoConfig {
 	public String activeCacheSector = "active";
 	public ContentAddressingScheme dataScheme = Sha1Scheme.getInstance();
 	
+	public RepoConfig() {
+	}
+	
+	public RepoConfig( String disposition, String uri ) {
+		this.disposition = disposition;
+		this.uri = uri;
+	}
+	
 	public static RepoConfig parse(String arg) {
 		String[] parts = arg.split(":");
 		

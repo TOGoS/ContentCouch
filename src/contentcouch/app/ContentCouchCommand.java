@@ -278,7 +278,6 @@ public class ContentCouchCommand {
 		String destUri;
 		args = mergeConfiguredArgs("copy", args);
 		
-		int verbosity = 1;
 		boolean shouldLinkStored = false;
 		boolean shouldRelinkImported = false;
 		boolean dumpConfig = false;
@@ -289,10 +288,6 @@ public class ContentCouchCommand {
 			if( arg.length() == 0 ) {
 				System.err.println(STORE_USAGE);
 				System.exit(1);
-			} else if( "-v".equals(arg) ) {
-				verbosity = 2;
-			} else if( arg.startsWith("-v") ) {
-				verbosity = Integer.parseInt(arg.substring(2));
 			} else if( "-link".equals(arg) ) {
 				shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
@@ -345,6 +340,7 @@ public class ContentCouchCommand {
 			
 			BaseRequest putReq = new BaseRequest( Request.VERB_PUT, destUri );
 			putReq.content = getRes.getContent();
+			putReq.contentMetadata = getRes.getContentMetadata(); 
 			if( shouldLinkStored ) putReq.putMetadata(CcouchNamespace.RR_HARDLINK_DESIRED, Boolean.TRUE);
 			if( shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.RR_REHARDLINK_DESIRED, Boolean.TRUE);
 			putReq.putMetadata(CcouchNamespace.RR_DIRMERGE_METHOD, dirMergeMethod);
@@ -625,6 +621,11 @@ public class ContentCouchCommand {
 			System.err.println(USAGE);
 			System.exit(1);
 		}
+
+		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
+		InternalStreamRequestHandler.getInstance().addInputStream("stdin",System.in);
+		InternalStreamRequestHandler.getInstance().addOutputStream("stdout",System.out);
+		
 		String cmd = null;
 		int i;
 		for( i=0; i<args.length; ) {
@@ -652,10 +653,6 @@ public class ContentCouchCommand {
 		for( int j=0; j<cmdArgs.length; ++i, ++j ) {
 			cmdArgs[j] = args[i];
 		}
-		
-		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
-		InternalStreamRequestHandler.getInstance().addInputStream("stdin",System.in);
-		InternalStreamRequestHandler.getInstance().addOutputStream("stdout",System.out);
 		
 		if( "config".equals(cmd) ) {
 			System.out.println("Repo configuration:");

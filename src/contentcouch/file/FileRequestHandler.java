@@ -1,12 +1,14 @@
 package contentcouch.file;
 
 import java.io.File;
+import java.util.Date;
 
 import togos.rra.BaseRequestHandler;
 import togos.rra.BaseResponse;
 import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
+import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
@@ -49,6 +51,10 @@ public class FileRequestHandler extends BaseRequestHandler {
 			BlobUtil.linkBlobToFile(blobToWrite, dest);
 		} else {
 			BlobUtil.writeBlobToFile(blobToWrite, dest);
+			Date lastModified = MetadataUtil.getLastModified(req);
+			if( lastModified != null ) {
+				dest.setLastModified(lastModified.getTime());
+			}
 		}
 		return new BaseResponse();
 	}

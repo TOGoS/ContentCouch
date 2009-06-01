@@ -1,16 +1,30 @@
 package contentcouch.active;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import togos.rra.BaseResponse;
+import togos.rra.Response;
 import contentcouch.misc.UriUtil;
 
 public class ValueExpression implements Expression {
 	public Object value;
+	public Map metadata = Collections.EMPTY_MAP;
 	
 	public ValueExpression( Object value ) {
 		this.value = value;
 	}
 	
-	public Object eval() {
-		return value;
+	public void putMetadata(String key, Object value) {
+		if( metadata == Collections.EMPTY_MAP ) metadata = new HashMap();
+		metadata.put(key, value);
+	}
+
+	public Response eval() {
+		BaseResponse bre = new BaseResponse( Response.STATUS_NORMAL, value );
+		bre.metadata = metadata;
+		return bre;
 	}
 
 	public String toString() {

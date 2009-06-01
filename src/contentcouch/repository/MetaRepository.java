@@ -11,9 +11,11 @@ import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
+import contentcouch.value.Directory;
 
 public class MetaRepository extends BaseRequestHandler {
 	protected static class RepoRef {
@@ -80,8 +82,14 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	protected List getRepoDataSectorUrls( RepoConfig repoConfig ) {
 		ArrayList l = new ArrayList();
-		// TODO: actually find them!
-		l.add(PathUtil.appendPath(repoConfig.uri,"data/user/"));
+		String dataDirUri = PathUtil.appendPath(repoConfig.uri,"data/");
+		Directory d = TheGetter.getDirectory( dataDirUri );
+		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
+			Directory.Entry e = (Directory.Entry)i.next();
+			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+				l.add(PathUtil.appendPath(dataDirUri, e.getKey() + "/"));
+			}
+		}
 		return l;
 	}
 	

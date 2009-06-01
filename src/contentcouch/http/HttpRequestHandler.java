@@ -51,7 +51,7 @@ public class HttpRequestHandler extends BaseRequestHandler {
 			File tempFile = File.createTempFile("httpdownload", null);
 			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), length));			
 			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, fcb);
-			if( urlConn.getLastModified() > 0 ) { 
+			if( urlConn.getLastModified() > 0 ) {
 				res.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
 			}
 			if( urlConn.getContentType() != null ) {

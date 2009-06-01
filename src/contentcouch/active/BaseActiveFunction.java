@@ -5,12 +5,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import togos.rra.BaseResponse;
+import togos.rra.Response;
+
 
 public abstract class BaseActiveFunction implements ActiveFunction {
+	protected Response getArgumentResponse( Map argumentExpressions, String name ) {
+		Expression e = (Expression)argumentExpressions.get(name);
+		if( e == null ) return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Missing argument " + name, "text/plain");
+		return e.eval();
+	}
+	
 	protected Object getArgumentValue( Map argumentExpressions, String name, Object defaultValue ) {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return defaultValue;
-		return e.eval();
+		return e.eval().getContent();
 	}
 	
 	protected List getPositionalArgumentExpressions( Map argumentExpressions ) {

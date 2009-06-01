@@ -1,6 +1,8 @@
 package contentcouch.active;
 
+import togos.rra.Response;
+
 public interface Expression {
-	public Object eval();
+	public Response eval();
 	public String toUri();
 }

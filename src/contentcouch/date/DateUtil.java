@@ -6,6 +6,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import contentcouch.misc.ValueUtil;
+
 public class DateUtil {
 
 	public static final DateFormat DATEFORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
@@ -27,5 +29,18 @@ public class DateUtil {
 		} catch(ParseException e) {}
 		
 		return OLDDATEFORMAT.parse(date);
+	}
+	
+	public static Date getDate( Object o ) {
+		if( o == null ) return null;
+		if( o instanceof Date ) return (Date)o;
+		if( o instanceof String ) {
+			try {
+				return parseDate((String)o);
+			} catch (ParseException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return getDate( ValueUtil.getString(o) );
 	}
 }

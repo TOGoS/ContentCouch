@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import togos.rra.ContentAndMetadata;
+
 import contentcouch.blob.BlobInputStream;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
@@ -59,7 +61,7 @@ public class DirectoryUtil {
 		return dir;
 	}
 	
-	public static Directory getDirectory( Object o, Map metadata, String identifier ) {
+	public static Directory getDirectory( Object o, Map metadata, String uri ) {
 		if( o == null ) return null;
 		if( o instanceof Directory ) {
 			return (Directory)o;
@@ -68,13 +70,17 @@ public class DirectoryUtil {
 			Blob blob = (Blob)o;
 			String type = (String)metadata.get(DcNamespace.DC_FORMAT);
 			if( type == null || type.startsWith("text/html") ) {
-				return parseHtmlDirectory(blob, identifier);
+				return parseHtmlDirectory(blob, uri);
 			}
 			if( type.startsWith("application/rdf+xml") ) {
-				return (Directory)RdfIO.parseRdf(ValueUtil.getString(blob), identifier);
+				return (Directory)RdfIO.parseRdf(ValueUtil.getString(blob), uri);
 			}
-			return parseHtmlDirectory(blob, identifier);
+			return parseHtmlDirectory(blob, uri);
 		}
 		throw new RuntimeException("Don't know how to turn " + o.getClass().getName() + " into Directory");	
+	}
+	
+	public static Directory getDirectory( ContentAndMetadata res, String uri ) {
+		return getDirectory(res.getContent(), res.getContentMetadata(), uri);
 	}
 }

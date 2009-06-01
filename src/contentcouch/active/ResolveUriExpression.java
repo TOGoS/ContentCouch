@@ -1,5 +1,8 @@
 package contentcouch.active;
 
+import togos.rra.BaseRequest;
+import togos.rra.Request;
+import togos.rra.Response;
 import contentcouch.misc.UriUtil;
 import contentcouch.store.TheGetter;
 
@@ -18,8 +21,9 @@ public class ResolveUriExpression implements Expression {
 		return UriUtil.sanitizeUri(uri);
 	}
 	
-	public Object eval() {
-		return TheGetter.get(uri);
+	public Response eval() {
+		BaseRequest req = new BaseRequest( Request.VERB_GET, uri );
+		return TheGetter.handleRequest(req);
 	}
 	
 	public String toUri() {

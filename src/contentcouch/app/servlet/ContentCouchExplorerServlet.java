@@ -35,6 +35,7 @@ import contentcouch.graphics.ImageUtil;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.MapUtil;
+import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
@@ -413,58 +414,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	
 	protected Getter getLocalGetter() {
 		return getRepo().getGenericGetter();
-	}
-	
-	protected String CT_RDF  = "application/rdf+xml";
-	protected String CT_SLF  = "application/x-simple-list-file";
-	protected String CT_HTML = "text/html";
-	protected String CT_TEXT = "text/plain";
-	protected String CT_PNG  = "image/png";
-	protected String CT_JPEG = "image/jpeg";
-	
-	protected CharsetDecoder UTF_8_DECODER = Charset.forName("UTF-8").newDecoder();
-	
-	protected boolean looksLikeRdfBlob( Blob b ) {
-		if( b.getLength() >= 20 ) {
-			byte[] data = b.getData(0, 20);
-			try {
-				String s = UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
-				return s.startsWith("<RDF") ||
-					s.startsWith("<Commit") ||
-					s.startsWith("<Directory") ||
-					s.startsWith("<Redirect") ||
-					s.startsWith("<Description");
-			} catch( CharacterCodingException e ) {
-			}
-		}
-		return false;
-	}
-	
-	protected boolean looksLikePlainText( Blob b ) {
-		if( b.getLength() >= 20 ) {
-			byte[] data = b.getData(0, 20);
-			try {
-				UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
-				return true;
-			} catch( CharacterCodingException e ) {
-			}
-		}
-		return false;
-	}
-	
-	static final Pattern HTMLPATTERN = Pattern.compile(".*<html.*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
-	
-	protected boolean looksLikeHtml( Blob b ) {
-		if( b.getLength() >= 20 ) {
-			byte[] data = b.getData(0, 20);
-			try {
-				String text = UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
-				return HTMLPATTERN.matcher(text).matches();
-			} catch( CharacterCodingException e ) {
-			}
-		}
-		return false;
-	}
+	}	
 	
 	protected long guessLastModified( Blob b ) {
 		Date date = (Date)MapUtil.getMetadataFrom(b, DcNamespace.DC_MODIFIED);
@@ -475,41 +425,6 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		
 		return 0;
-	}
-	
-	protected String guessContentType( Blob b ) {
-		String type = (String)MapUtil.getMetadataFrom(b, DcNamespace.DC_FORMAT);
-		if( type != null ) return type;
-		
-		if( b instanceof FileBlob ) {
-			String n = ((FileBlob)b).getName();
-			if( n.endsWith(".rdf") ) return CT_RDF;
-			if( n.endsWith(".html") ) return CT_HTML;
-			if( n.endsWith(".slf") ) return CT_SLF;
-		}
-		if( looksLikeRdfBlob(b)) return CT_RDF;
-		if( looksLikePlainText(b)) {
-			if( looksLikeHtml(b)) return CT_HTML;
-			return CT_TEXT;
-		}
-		
-		if( b.getLength() >= 4 ) {
-			byte[] magic = b.getData(0, 4);
-			int magicN =
-				((magic[0] & 0xFF) << 24) |
-				((magic[1] & 0xFF) << 16) |
-				((magic[2] & 0xFF) <<  8) |
-				((magic[3] & 0xFF) <<  0);
-			switch( magicN ) {
-			case( 0x89504E47 ): return CT_PNG;
-			}
-
-			switch( (magicN >> 16) & 0xFFFF ) {
-			case( 0xFFD8 ): return CT_JPEG;
-			}
-		}
-
-		return null;
 	}
 	
 	public Object getObject(Object root, String path, String rootPath) {
@@ -561,10 +476,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	protected Object exploreObject( Object obj, String path ) {
 		if( obj instanceof Blob ) {
 			Blob b = (Blob)obj;
-			String ct = guessContentType(b);
-			if( CT_SLF.equals(ct) ) {
+			String ct = MetadataUtil.guessContentType(b);
+			if( MetadataUtil.CT_SLF.equals(ct) ) {
 				return new SlfSourcePageGenerator(b, path);
-			} else if( CT_RDF.equals(ct) ) {
+			} else if( MetadataUtil.CT_RDF.equals(ct) ) {
 				return new RdfSourcePageGenerator((Blob)obj, path);
 			}
 		}

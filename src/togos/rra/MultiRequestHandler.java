@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 
-public class MultiRequestHandler implements RequestHandler {
+public class MultiRequestHandler extends BaseRequestHandler {
 	protected List requestHandlers = new ArrayList();
 	
 	public void addRequestHandler(RequestHandler requestHandler) {

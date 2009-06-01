@@ -2,6 +2,9 @@ package contentcouch.active;
 
 import java.util.Map;
 
+import togos.rra.BaseResponse;
+import togos.rra.Response;
+
 import contentcouch.misc.UriUtil;
 
 public class GetFunctionByNameExpression implements Expression {
@@ -75,19 +78,19 @@ public class GetFunctionByNameExpression implements Expression {
 		return getClassByNameIfExists( className );
 	}
 	
-	public Object eval() {
+	public Response eval() {
 		Map functions = (Map)Context.getInstance().get(FUNCTION_MAP_VARNAME);
 
 		// Check function map
 		if( functions != null ) {
 			Object f = functions.get(funcName);
-			if( f != null ) return f;
+			if( f != null ) return new BaseResponse(Response.STATUS_NORMAL, f);
 		}
 		
 		Class c = getClassForFunction( funcName );
 		if( c != null ) {
 			try {
-				return c.newInstance();
+				return new BaseResponse(Response.STATUS_NORMAL, c.newInstance());
 			} catch( InstantiationException e ) {
 				throw new RuntimeException(e);
 			} catch( IllegalAccessException e ) {
