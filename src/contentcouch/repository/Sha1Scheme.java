@@ -15,7 +15,7 @@ public class Sha1Scheme implements ContentAddressingScheme {
 		return "Base32-encoded SHA-1";
 	}
 	public String getRdfKey() {
-		return CcouchNamespace.CCOUCH_BASE32SHA1;
+		return CcouchNamespace.BASE32SHA1;
 	}
 	
 	protected static String SHA1URNPREFIX = "urn:sha1:";

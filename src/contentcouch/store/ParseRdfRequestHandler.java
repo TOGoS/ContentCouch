@@ -25,7 +25,7 @@ public class ParseRdfRequestHandler extends BaseRequestHandler {
 		Blob blob = BlobUtil.getBlob(subRes.getContent());
 		Object value = RdfIO.parseRdf(ValueUtil.getString(blob), subReq.getUri());
 		BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, value, subRes);
-		res.putMetadata(CcouchNamespace.CCOUCH_PARSED_FROM, blob);
+		res.putMetadata(CcouchNamespace.PARSED_FROM, blob);
 		return res;
 	}
 }

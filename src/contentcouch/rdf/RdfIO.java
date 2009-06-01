@@ -140,13 +140,13 @@ public class RdfIO {
 				 desc = new Description();
 				 String about = (String)descOpenTag.attributes.get(RdfNamespace.RDF_ABOUT);
 				 if( about != null ) ((Description)desc).about = new Ref(about);
-			} else if( CcouchNamespace.CCOUCH_DIRECTORY.equals(descOpenTag.name) ) {
+			} else if( CcouchNamespace.DIRECTORY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory();
 				desc.typeName = descOpenTag.name;
-			} else if( CcouchNamespace.CCOUCH_DIRECTORYENTRY.equals(descOpenTag.name) ) {
+			} else if( CcouchNamespace.DIRECTORYENTRY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory.Entry();
 				desc.typeName = descOpenTag.name;
-			} else if( CcouchNamespace.CCOUCH_COMMIT.equals(descOpenTag.name) ) {
+			} else if( CcouchNamespace.COMMIT.equals(descOpenTag.name) ) {
 				desc = new RdfCommit();
 				desc.typeName = descOpenTag.name;
 			} else {

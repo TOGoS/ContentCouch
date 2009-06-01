@@ -24,14 +24,14 @@ public class HtmlDirectoryResponseFilter extends BaseRequestHandler {
 		Response pres = parent.handleRequest(req);
 		if( pres.getStatus() != Response.STATUS_NORMAL ) return pres;
 		
-		if( pres.getContent() instanceof Blob && req.getUri().endsWith("/") && ValueUtil.getBoolean(req.getMetadata().get(CcouchNamespace.CCOUCH_RRA_HTTP_DIRECTORIES_DESIRED), false)) {
+		if( pres.getContent() instanceof Blob && req.getUri().endsWith("/") && ValueUtil.getBoolean(req.getMetadata().get(CcouchNamespace.RR_HTTP_DIRECTORIES_DESIRED), false)) {
 			Directory dir = DirectoryUtil.parseHtmlDirectory( (Blob)pres.getContent(), req.getUri() );
 			
 			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, dir);
 			if( ValueUtil.getBoolean(MapUtil.getKeyed(pres.getMetadata(), RraNamespace.CACHEABLE), false) ) {
 				res.putMetadata(RraNamespace.CACHEABLE, Boolean.TRUE);
 			}
-			res.putContentMetadata(CcouchNamespace.CCOUCH_PARSED_FROM, pres.getContent());
+			res.putContentMetadata(CcouchNamespace.PARSED_FROM, pres.getContent());
 			return res;
 		}
 		

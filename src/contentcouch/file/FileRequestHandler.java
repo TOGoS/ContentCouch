@@ -10,10 +10,49 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
+import contentcouch.repository.TheIdentifier;
 import contentcouch.value.Blob;
 
 public class FileRequestHandler extends BaseRequestHandler {
 
+	protected Response put( Request req, File dest, Blob blob, String mergeMethod ) {
+		if( dest.exists() ) {
+			// TODO: Mind some kind of merge-type metadata.
+			if( mergeMethod == null || mergeMethod.equals(CcouchNamespace.RR_FILEMERGE_FAIL) ) {
+				throw new RuntimeException( "Cannot PUT at " + req.getUri() + "; file already exists" );
+			} else if( mergeMethod.equals(CcouchNamespace.RR_FILEMERGE_IGNORE ) ) {
+				return new BaseResponse(Response.STATUS_NORMAL, null);
+			} else if( mergeMethod.equals(CcouchNamespace.RR_FILEMERGE_REPLACE ) ) {
+				if( !dest.delete() ) {
+					throw new RuntimeException( "Could not delete " + req.getUri() + " to replace it.");
+				}
+			} else if( mergeMethod.startsWith(CcouchNamespace.RR_FILEMERGE_IFSAME ) ) {
+				String[] options = mergeMethod.substring(CcouchNamespace.RR_FILEMERGE_IFSAME.length()).split(":");
+				if( options.length != 2 ) {
+					throw new RuntimeException( "IfSame merge method must be of the form IfSame?<then>:<otherwise>");
+				}
+				String oldId = TheIdentifier.identify(BlobUtil.getBlob(dest));
+				String newId = TheIdentifier.identify(BlobUtil.getBlob(req.getContent()));
+				if( oldId.equals(newId) ) {
+					mergeMethod = options[0]; 
+				} else {
+					mergeMethod = options[1];
+				}
+				return put( req, dest, blob, mergeMethod );
+			} else {
+				throw new RuntimeException( "Unrecognised merge method: " + mergeMethod );
+			}
+		}
+		
+		Blob blobToWrite = BlobUtil.getBlob(blob);
+		if( ValueUtil.getBoolean(req.getMetadata().get(CcouchNamespace.RR_HARDLINK_DESIRED), false) ) {
+			BlobUtil.linkBlobToFile(blobToWrite, dest);
+		} else {
+			BlobUtil.writeBlobToFile(blobToWrite, dest);
+		}
+		return new BaseResponse();
+	}
+	
 	public Response handleRequest( Request req ) {
 		if( !req.getUri().startsWith("file:") ) {
 			return BaseResponse.RESPONSE_UNHANDLED;
@@ -32,13 +71,14 @@ public class FileRequestHandler extends BaseRequestHandler {
 			}
 		} else if( "PUT".equals(req.getVerb()) ) {
 			File f = new File(path);
-			Blob blobToWrite = BlobUtil.getBlob(req.getContent());
-			if( ValueUtil.getBoolean(req.getMetadata().get(CcouchNamespace.CCOUCH_RRA_HARDLINK_DESIRED), false) ) {
-				BlobUtil.linkBlobToFile(blobToWrite, f);
+			Object content = req.getContent();
+			if( (!f.exists() || f.isFile()) && (content instanceof Blob || content instanceof byte[] || content instanceof String ) ) {
+				String mergeMethod = ValueUtil.getString(req.getMetadata().get(CcouchNamespace.RR_FILEMERGE_METHOD));
+				return put( req, f, (Blob)req.getContent(), mergeMethod );
 			} else {
-				BlobUtil.writeBlobToFile(blobToWrite, f);
+				// TODO: handle merging directories
+				throw new RuntimeException("I don't merge dirs!");
 			}
-			return new BaseResponse();
 		} else {
 			return BaseResponse.RESPONSE_UNHANDLED;
 		}

@@ -12,11 +12,11 @@ import contentcouch.value.Commit;
 
 public class RdfCommit extends RdfNode implements Commit {	
 	public RdfCommit() {
-		super(CcouchNamespace.CCOUCH_COMMIT);
+		super(CcouchNamespace.COMMIT);
 	}
 	
 	public Object getTarget() {
-		return this.getSingle(CcouchNamespace.CCOUCH_TARGET);
+		return this.getSingle(CcouchNamespace.TARGET);
 	}
 	
 	public Date getDate() {
@@ -39,7 +39,7 @@ public class RdfCommit extends RdfNode implements Commit {
 	}
 
 	public Object[] getParents() {
-		Set s = this.getSet(CcouchNamespace.CCOUCH_PARENT);
+		Set s = this.getSet(CcouchNamespace.PARENT);
 		return s.toArray();
 	}
 	

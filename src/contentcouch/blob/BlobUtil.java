@@ -67,7 +67,7 @@ public class BlobUtil {
 		}
 	}
 	
-	static final int maxChunkLength = 1024*1024;
+	static final int maxChunkLength = 8*1024;
 
 	public static void copyInputToOutput( InputStream is, OutputStream os )
 		throws IOException
@@ -117,7 +117,7 @@ public class BlobUtil {
 
 	public static void linkBlobToFile( Blob blob, File f ) {
 		if( blob instanceof File ) {
-			Linker.getInstance().link(f, (File)blob);
+			Linker.getInstance().link((File)blob, f);
 		} else {
 			writeBlobToFile(blob, f);
 		}

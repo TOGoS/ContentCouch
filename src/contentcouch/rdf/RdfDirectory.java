@@ -44,36 +44,36 @@ public class RdfDirectory extends RdfNode implements Directory {
 				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
 			}
 
-			add(CcouchNamespace.CCOUCH_NAME, de.getKey());
-			add(CcouchNamespace.CCOUCH_TARGETTYPE, de.getTargetType());
+			add(CcouchNamespace.NAME, de.getKey());
+			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
 
 			long modified = de.getLastModified();
 			if( modified != -1 ) add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
 			
 			long size = de.getSize();
-			if( size != -1 ) add(CcouchNamespace.CCOUCH_SIZE, String.valueOf(size) );
+			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
 
-			add(CcouchNamespace.CCOUCH_TARGET, targetRdfifier.apply(de.getValue()));
+			add(CcouchNamespace.TARGET, targetRdfifier.apply(de.getValue()));
 		}
 
 		public Entry() {
-			super(CcouchNamespace.CCOUCH_DIRECTORYENTRY);
+			super(CcouchNamespace.DIRECTORYENTRY);
 		}
 		
 		public Object getValue() {
-			return getSingle(CcouchNamespace.CCOUCH_TARGET);
+			return getSingle(CcouchNamespace.TARGET);
 		}
 
 		public String getTargetType() {
-			return (String)getSingle(CcouchNamespace.CCOUCH_TARGETTYPE);
+			return (String)getSingle(CcouchNamespace.TARGETTYPE);
 		}
 
 		public String getKey() {
-			return (String)getSingle(CcouchNamespace.CCOUCH_NAME);
+			return (String)getSingle(CcouchNamespace.NAME);
 		}
 
 		public long getSize() {
-			String lm = (String)getSingle(CcouchNamespace.CCOUCH_SIZE);
+			String lm = (String)getSingle(CcouchNamespace.SIZE);
 			if( lm == null ) return -1;
 			return Long.parseLong(lm);
 		}
@@ -91,7 +91,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public RdfDirectory() {
-		super(CcouchNamespace.CCOUCH_DIRECTORY);
+		super(CcouchNamespace.DIRECTORY);
 	}
 	
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
@@ -107,7 +107,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 			Directory.Entry entry = (Directory.Entry)i.next();
 			rdfEntries.add( new RdfDirectory.Entry(entry, targetRdfifier) );
 		}
-		add(CcouchNamespace.CCOUCH_ENTRIES, rdfEntries);
+		add(CcouchNamespace.ENTRIES, rdfEntries);
 	}
 	
 	public RdfDirectory( Directory dir ) {
@@ -115,7 +115,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 
 	public Set getDirectoryEntrySet() {
-		List entryList = (List)this.getSingle(CcouchNamespace.CCOUCH_ENTRIES);
+		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
 		HashSet entries = new HashSet();
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
@@ -125,7 +125,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public Directory.Entry getDirectoryEntry(String key) {
-		List entryList = (List)this.getSingle(CcouchNamespace.CCOUCH_ENTRIES);
+		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
 			if( e.getKey() == key ) {

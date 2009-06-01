@@ -9,9 +9,12 @@ import togos.rra.BaseRequestHandler;
 import togos.rra.BaseResponse;
 import togos.rra.Request;
 import togos.rra.Response;
+import contentcouch.blob.BlobUtil;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.store.TheGetter;
+import contentcouch.value.Blob;
 
 public class MetaRepository extends BaseRequestHandler {
 	protected static class RepoRef {
@@ -51,17 +54,29 @@ public class MetaRepository extends BaseRequestHandler {
 			return new RepoRef(repoName, subPath);
 		}
 	}
-	
-	protected String getDataPostSectorPath( RepoConfig repoConfig, String urn ) {
-		if( !repoConfig.dataScheme.wouldHandleUrn(urn) ) return null;
-		byte[] hash = repoConfig.dataScheme.urnToHash(urn);
-		String filename = repoConfig.dataScheme.hashToFilename(hash);
-		
+
+	protected String filenameToPostSectorPath( RepoConfig repoConfig, String filename ) {
 		if( filename.length() >= 2 ) {
 			return filename.substring(0,2) + "/" + filename;
 		} else {
 			return filename;
 		}
+	}
+	
+	public byte[] getHash( Blob blob ) {
+		// TODO: Use file hash cache
+		return config.defaultRepoConfig.dataScheme.getHash( blob );
+	}
+	
+	protected String hashToPostSectorPath( RepoConfig repoConfig, byte[] hash ) {
+		String filename = repoConfig.dataScheme.hashToFilename(hash);
+		return filenameToPostSectorPath(repoConfig, filename);
+	}
+	
+	protected String urnToPostSectorPath( RepoConfig repoConfig, String urn ) {
+		if( !repoConfig.dataScheme.wouldHandleUrn(urn) ) return null;
+		byte[] hash = repoConfig.dataScheme.urnToHash(urn);
+		return hashToPostSectorPath( repoConfig, hash );
 	}
 	
 	protected List getRepoDataSectorUrls( RepoConfig repoConfig ) {
@@ -97,20 +112,49 @@ public class MetaRepository extends BaseRequestHandler {
 				}
 			}
 			
-			// TODO: if posting to //repo/new-data, handle specially
-			
-			BaseRequest subReq = new BaseRequest(req, repoConfig.uri + repoRef.subPath);
-			return TheGetter.handleRequest(subReq);
+			if( Request.VERB_PUT.equals(req.getVerb()) || Request.VERB_POST.equals(req.getVerb()) ) {
+				Blob blobToPut = BlobUtil.getBlob(req.getContent());
+				if( blobToPut == null ) {
+					throw new RuntimeException("Can't PUT/POST without content: " + req.getUri());
+				}
+				
+				
+				
+				if( "identify".equals(repoRef.subPath) ) {
+					String urn = repoConfig.dataScheme.hashToUrn(getHash(blobToPut));
+					return new BaseResponse(Response.STATUS_NORMAL, urn, "text/plain");
+				} else if( repoRef.subPath.startsWith("data") ) {
+					// subPath can be
+					// data - post data to user store sector
+					// data/<sector> - post data to named sector
+					String[] pratz = repoRef.subPath.split("/");
+					String sector;
+					if( pratz.length >= 2 ) sector = pratz[1];
+					else sector = repoConfig.userStoreSector;
+					
+					byte[] hash = repoConfig.dataScheme.getHash(blobToPut);
+					String psp = hashToPostSectorPath(repoConfig, hash);
+					String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
+					
+					BaseRequest subReq = new BaseRequest( req, uri );
+					return TheGetter.handleRequest(subReq);
+				} else {
+					return new BaseResponse( Response.STATUS_DOESNOTEXIST, "Can't PUT to " + req.getUri(), "text/plain");
+				}
+			} else {
+				BaseRequest subReq = new BaseRequest(req, repoConfig.uri + repoRef.subPath);
+				return TheGetter.handleRequest(subReq);
+			}
 			
 			//String sector = MetadataUtil.getKeyed(request.getMetadata(), RdfNamespace.STORE_SECTOR, rc.userStoreSector);
 		} else {
 			String urn = req.getUri(); 
 			for( Iterator i=config.getAllRepoConfigs().iterator(); i.hasNext(); ) {
 				RepoConfig repoConfig = (RepoConfig)i.next();
-				String psp = getDataPostSectorPath(repoConfig, urn);
+				String psp = urnToPostSectorPath(repoConfig, urn);
 				if( psp == null ) continue;
 
-				if( "GET".equals(req.getVerb()) ) {
+				if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
 					List dataSectorUris = getRepoDataSectorUrls(repoConfig);
 					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
 						String dataSectorUri = (String)si.next();
@@ -118,13 +162,9 @@ public class MetaRepository extends BaseRequestHandler {
 						Response res = TheGetter.handleRequest(subReq);
 						if( res.getStatus() == Response.STATUS_NORMAL ) return res;
 					}
-				} else {
-					// TODO: Handle HEADs or EXISTs or whatever.
 				}
 			}
-			// Check if any repo stores data using a matching URI scheme, such as urn:sha1:
 		}
-		// TODO Auto-generated method stub
 		return BaseResponse.RESPONSE_UNHANDLED;
 	}
 }

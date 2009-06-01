@@ -15,6 +15,7 @@ import contentcouch.file.FileRequestHandler;
 import contentcouch.http.HtmlDirectoryResponseFilter;
 import contentcouch.http.HttpRequestHandler;
 import contentcouch.path.PathUtil;
+import contentcouch.stream.InternalStreamRequestHandler;
 
 public class MetaRepoConfig {
 	public Map namedRepoConfigs = new HashMap();
@@ -158,6 +159,7 @@ public class MetaRepoConfig {
 			requestKernelCache.addRequestHandler(getMetaRepository());
 			requestKernelCache.addRequestHandler(new HtmlDirectoryResponseFilter(new HttpRequestHandler()));
 			requestKernelCache.addRequestHandler(new FileRequestHandler());
+			requestKernelCache.addRequestHandler(InternalStreamRequestHandler.getInstance());
 		}
 		return requestKernelCache;
 	}

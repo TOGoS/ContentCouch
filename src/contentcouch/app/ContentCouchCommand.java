@@ -11,9 +11,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import togos.rra.BaseRequest;
+import togos.rra.Request;
+import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
+import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
+import contentcouch.stream.InternalStreamRequestHandler;
 import contentcouch.value.Blob;
 
 public class ContentCouchCommand {
@@ -34,6 +40,10 @@ public class ContentCouchCommand {
 		"  rdfify <dir>          ; print RDF listing of a directory\n" +
 		"  check                 ; check repo integrity and delete bad files";
 	
+	public String COPY_USAGE =
+		"Usage: ccouch [general options] copy [copy options] <src> <src> ... <dest>\n" +
+		"<src> and <dest> can be file paths, URIs, or \"-\"\n";
+
 	public String STORE_USAGE =
 		"Usage: ccouch [general options] store [store options] <file1> <file2> ...\n" +
 		"Store options:\n" +
@@ -251,7 +261,101 @@ public class ContentCouchCommand {
 		writeParentCommitUri(about, commitUri, false);	
 	}
 	
+	protected String normalizeUri( String uriOrPathOrSomething, boolean output ) {
+		if( "-".equals(uriOrPathOrSomething) ) {
+			return output ? "x-internal-stream:stdout" : "x-internal-stream:stdin";
+		}
+		if( PathUtil.isUri(uriOrPathOrSomething) ) {
+			return uriOrPathOrSomething;
+		}
+		return "file:" + uriOrPathOrSomething;
+	}
+	
 	//// Commands ////
+
+	public void runCopyCmd( String[] args ) {
+		ArrayList sourceUris = new ArrayList();
+		String destUri;
+		args = mergeConfiguredArgs("copy", args);
+		
+		int verbosity = 1;
+		boolean shouldLinkStored = false;
+		boolean shouldRelinkImported = false;
+		boolean dumpConfig = false;
+		String fileMergeMethod = null;
+		String dirMergeMethod = null;
+		for( int i=0; i < args.length; ++i ) {
+			String arg = args[i];
+			if( arg.length() == 0 ) {
+				System.err.println(STORE_USAGE);
+				System.exit(1);
+			} else if( "-v".equals(arg) ) {
+				verbosity = 2;
+			} else if( arg.startsWith("-v") ) {
+				verbosity = Integer.parseInt(arg.substring(2));
+			} else if( "-link".equals(arg) ) {
+				shouldLinkStored = true;
+			} else if( "-relink".equals(arg) ) {
+				shouldLinkStored = true;
+				shouldRelinkImported = true;
+			} else if( "-file-merge-method".equals(arg) ) {
+				fileMergeMethod = args[++i];
+			} else if( "-dir-merge-method".equals(arg) ) {
+				dirMergeMethod = args[++i];
+			} else if( "-dump-config".equals(arg) ) {
+				dumpConfig = true;
+			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
+				System.out.println(STORE_USAGE);
+				System.exit(0);
+			} else if( arg.charAt(0) != '-' || "-".equals(arg) ) {
+				sourceUris.add(arg);
+			} else {
+				System.err.println("ccouch store: Unrecognised argument: " + arg);
+				System.err.println(COPY_USAGE);
+				System.exit(1);
+			}
+		}
+		
+		if( dumpConfig ) {
+			dumpRepoConfig(metaRepoConfig, System.out, "");
+			System.exit(0);
+		}
+		
+		if( sourceUris.size() <= 1 ) {
+			System.err.println("Must specify at least source and dest");
+			System.err.println(COPY_USAGE);
+			System.exit(1);
+		}
+
+		destUri = normalizeUri((String)sourceUris.remove(sourceUris.size()-1), true);
+		
+		for( Iterator i=sourceUris.iterator(); i.hasNext(); ) {
+			String sourceUri = normalizeUri((String)i.next(), false);
+			
+			BaseRequest getReq = new BaseRequest( Request.VERB_GET, sourceUri );
+			Response getRes = TheGetter.handleRequest(getReq);
+			if( getRes.getStatus() != Response.STATUS_NORMAL ) {
+				System.err.println("Couldn't find " + sourceUri + ": " + getRes.getContent());
+				System.exit(1);
+			}
+			if( getRes.getContent() == null ) {
+				System.err.println("No content found at " + sourceUri);
+				System.exit(1);
+			}
+			
+			BaseRequest putReq = new BaseRequest( Request.VERB_PUT, destUri );
+			putReq.content = getRes.getContent();
+			if( shouldLinkStored ) putReq.putMetadata(CcouchNamespace.RR_HARDLINK_DESIRED, Boolean.TRUE);
+			if( shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.RR_REHARDLINK_DESIRED, Boolean.TRUE);
+			putReq.putMetadata(CcouchNamespace.RR_DIRMERGE_METHOD, dirMergeMethod);
+			putReq.putMetadata(CcouchNamespace.RR_FILEMERGE_METHOD, fileMergeMethod);
+			Response putRes = TheGetter.handleRequest(putReq);
+			if( putRes.getStatus() != Response.STATUS_NORMAL ) {
+				System.err.println("Couldn't PUT to " + destUri + ": " + putRes.getContent());
+				System.exit(1);
+			}
+		}
+	}
 	
 	public void runStoreCmd( String[] args ) {
 		args = mergeConfiguredArgs("store", args);
@@ -550,10 +654,14 @@ public class ContentCouchCommand {
 		}
 		
 		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
+		InternalStreamRequestHandler.getInstance().addInputStream("stdin",System.in);
+		InternalStreamRequestHandler.getInstance().addOutputStream("stdout",System.out);
 		
 		if( "config".equals(cmd) ) {
 			System.out.println("Repo configuration:");
 			dumpRepoConfig( metaRepoConfig, System.out, "  ");
+		} else if( "copy".equals(cmd) || "cp".equals(cmd) ) {
+			runCopyCmd( cmdArgs );
 		} else if( "store".equals(cmd) ) {
 			runStoreCmd( cmdArgs );
 		} else if( "checkout".equals(cmd) ) {
