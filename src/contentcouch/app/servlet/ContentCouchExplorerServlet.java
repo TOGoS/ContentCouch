@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,6 +39,7 @@ import contentcouch.misc.MapUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.UriUtil;
+import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
@@ -118,7 +120,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		
 		protected void writeBytesAsString(byte[] b, PrintWriter w) {
 			try {
-				String s = UTF_8_DECODER.decode(ByteBuffer.wrap(b)).toString();
+				String s = ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(b)).toString();
 				w.print("<b>");
 				w.print(s);
 				w.print("</b>");
@@ -261,7 +263,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		
 		public void write(PrintWriter w) throws IOException {
 			w.write("<pre>");
-			CharSequence rdf = UTF_8_DECODER.decode(ByteBuffer.wrap(blob.getData(0, (int)blob.getLength())));
+			CharSequence rdf = ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(blob.getData(0, (int)blob.getLength())));
 			Matcher m = RDFRESPAT.matcher(rdf);
 			int at = 0;
 			while( m.find() ) {
@@ -289,10 +291,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		final Directory dir;
 		public String title;
 
-		public DirectoryPageGenerator(String path, Directory dir ) {
+		public DirectoryPageGenerator( String path, Directory dir, Map metadata ) {
 			this.path = path;
 			this.dir = dir;
-			this.title = (String)MapUtil.getMetadataFrom(dir, DcNamespace.DC_TITLE);
+			this.title = (String)metadata.get(DcNamespace.DC_TITLE);
 		}
 		
 		protected String getHref(String path) {

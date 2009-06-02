@@ -1,6 +1,8 @@
 package contentcouch.misc;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +11,8 @@ import contentcouch.value.Blob;
 
 public class ValueUtil {
 	//// Get bytes ////
+
+	public static CharsetDecoder UTF_8_DECODER = Charset.forName("UTF-8").newDecoder();
 	
 	public static byte[] getBytes(String s) {
 		try {

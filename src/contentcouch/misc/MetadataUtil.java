@@ -2,8 +2,6 @@ package contentcouch.misc;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
@@ -36,13 +34,11 @@ public class MetadataUtil {
 		commonTypesByExtension.put("slf", CT_SLF);
 	}
 	
-	protected static CharsetDecoder UTF_8_DECODER = Charset.forName("UTF-8").newDecoder();
-
 	protected static boolean looksLikeRdfBlob( Blob b ) {
 		if( b.getLength() >= 20 ) {
 			byte[] data = b.getData(0, 20);
 			try {
-				String s = UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
+				String s = ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
 				return s.startsWith("<RDF") ||
 					s.startsWith("<Commit") ||
 					s.startsWith("<Directory") ||
@@ -59,7 +55,7 @@ public class MetadataUtil {
 		if( b.getLength() >= 20 ) {
 			byte[] data = b.getData(0, 20);
 			try {
-				UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
+				ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
 				return true;
 			} catch( CharacterCodingException e ) {
 			}
@@ -73,7 +69,7 @@ public class MetadataUtil {
 		if( b.getLength() >= 20 ) {
 			byte[] data = b.getData(0, 20);
 			try {
-				String text = UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
+				String text = ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
 				return HTMLPATTERN.matcher(text).matches();
 			} catch( CharacterCodingException e ) {
 			}
