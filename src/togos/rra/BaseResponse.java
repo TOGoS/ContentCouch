@@ -19,11 +19,9 @@ public class BaseResponse implements Response {
 		this(Response.STATUS_NORMAL, null);
 	}
 	
-	public BaseResponse( int status, Object content, Response inheritFrom ) {
-		this(status, content);
-		if( ValueUtil.getBoolean(inheritFrom.getMetadata().get(RraNamespace.CACHEABLE),false) ) {
-			putMetadata(RraNamespace.CACHEABLE, Boolean.TRUE);
-		}
+	public BaseResponse( Object content ) {
+		this.status = Response.STATUS_NORMAL;
+		this.content = content;
 	}
 	
 	public BaseResponse( int status, Object content ) {
@@ -31,6 +29,13 @@ public class BaseResponse implements Response {
 		this.content = content;
 	}
 
+	public BaseResponse( int status, Object content, Response inheritFrom ) {
+		this(status, content);
+		if( ValueUtil.getBoolean(inheritFrom.getMetadata().get(RraNamespace.CACHEABLE),false) ) {
+			putMetadata(RraNamespace.CACHEABLE, Boolean.TRUE);
+		}
+	}
+	
 	public BaseResponse( int status, Object content, String contentType ) {
 		this(status,content);
 		putContentMetadata(DcNamespace.DC_FORMAT, contentType);

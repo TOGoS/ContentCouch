@@ -8,5 +8,4 @@ public interface Commit {
 	public String getAuthor();
 	public Date getDate();
 	public Object[] getParents();
-	public String getUri();
 }

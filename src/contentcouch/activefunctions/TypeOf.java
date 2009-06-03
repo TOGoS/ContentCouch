@@ -2,16 +2,15 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
+import togos.rra.BaseResponse;
+import togos.rra.Response;
+
 import contentcouch.active.BaseActiveFunction;
+import contentcouch.misc.MetadataUtil;
 
 public class TypeOf extends BaseActiveFunction {
-	public Object call( Map argumentExpressions ) {
-		Object obj = getArgumentValue(argumentExpressions, "operand", null);
-		
-		if( obj instanceof String ) {
-			return "text/plain";
-		}
-		// TODO: Try to guess type
-		return null;
+	public Response call( Map argumentExpressions ) {
+		Response subRes = getArgumentResponse(argumentExpressions, "operand");
+		return new BaseResponse(MetadataUtil.getContentType(subRes));
 	}
 }

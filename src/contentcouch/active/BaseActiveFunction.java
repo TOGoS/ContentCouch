@@ -19,7 +19,9 @@ public abstract class BaseActiveFunction implements ActiveFunction {
 	protected Object getArgumentValue( Map argumentExpressions, String name, Object defaultValue ) {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return defaultValue;
-		return e.eval().getContent();
+		Response res = e.eval();
+		if( res.getStatus() == Response.STATUS_NORMAL ) return e.eval().getContent();
+		return defaultValue;
 	}
 	
 	protected List getPositionalArgumentExpressions( Map argumentExpressions ) {

@@ -15,7 +15,6 @@ import javax.imageio.ImageWriter;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
-import contentcouch.rdf.DcNamespace;
 import contentcouch.value.Blob;
 
 public class ImageUtil {
@@ -65,7 +64,6 @@ public class ImageUtil {
 	}
 	
 	public static Blob serializeImage( final BufferedImage img, final String formatName, Number quality ) {
-		final String longFormatName = getLongFormatName(formatName);
 		final String shortFormatName = getShortFormatName(formatName);
 		
 		Iterator writerIter = ImageIO.getImageWritersByFormatName(shortFormatName);

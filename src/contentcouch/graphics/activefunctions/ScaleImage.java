@@ -7,6 +7,9 @@ import contentcouch.active.BaseActiveFunction;
 import contentcouch.graphics.ImageUtil;
 import contentcouch.misc.ValueUtil;
 
+import togos.rra.BaseResponse;
+import togos.rra.Response;
+
 public class ScaleImage extends BaseActiveFunction {
 
 	/** Possible arguments:
@@ -17,7 +20,7 @@ public class ScaleImage extends BaseActiveFunction {
 	 * height - give new height
 	 */
 	
-	public Object call( Map argumentExpressions ) {
+	public Response call( Map argumentExpressions ) {
 		BufferedImage img = ImageUtil.getImage(getArgumentValue(argumentExpressions, "operand", null));
 		if( img == null ) return null;
 
@@ -41,7 +44,7 @@ public class ScaleImage extends BaseActiveFunction {
 		if( width != null ) newWidth = width.intValue();
 		if( height != null ) newHeight = height.intValue();
 		
-		return ImageUtil.scaleImage( img, newWidth, newHeight );
+		return new BaseResponse(Response.STATUS_NORMAL, ImageUtil.scaleImage( img, newWidth, newHeight ));
 	}
 
 }

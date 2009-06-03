@@ -2,10 +2,13 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
+import togos.rra.BaseResponse;
+import togos.rra.Response;
+
 import contentcouch.active.BaseActiveFunction;
 
 public class Quote extends BaseActiveFunction {
-	public Object call(Map argumentExpressions) {
-		return argumentExpressions.get("operand");
+	public Response call(Map argumentExpressions) {
+		return new BaseResponse(argumentExpressions.get("operand"));
 	}
 }

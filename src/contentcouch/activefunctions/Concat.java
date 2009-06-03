@@ -5,10 +5,12 @@ import java.util.Map;
 
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.misc.ValueUtil;
+import togos.rra.BaseResponse;
+import togos.rra.Response;
 
 public class Concat extends BaseActiveFunction {
 
-	public Object call( Map argumentExpressions ) {
+	public Response call( Map argumentExpressions ) {
 		String result = "";
 		boolean prev = false;
 		
@@ -23,6 +25,6 @@ public class Concat extends BaseActiveFunction {
 			}
 		}
 
-		return result;
+		return new BaseResponse(Response.STATUS_NORMAL, result);
 	}
 }
