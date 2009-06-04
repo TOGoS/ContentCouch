@@ -68,10 +68,11 @@ public class InternalStreamRequestHandler extends BaseRequestHandler {
 		if( !req.getUri().startsWith(URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
 		String streamName = req.getUri().substring(URI_PREFIX.length());
 		if( Request.VERB_POST.equals(req.getVerb()) || Request.VERB_PUT.equals(req.getVerb()) ) {
-			Blob blob = BlobUtil.getBlob(req.getContent());
-			if( blob == null ) {
+			Object content = req.getContent();
+			if( content == null ) {
 				throw new RuntimeException("Can't PUT or POST to " + req.getUri() + " without content");
 			}
+			Blob blob = BlobUtil.getBlob(content);
 			putBlob(blob, streamName);
 			return new BaseResponse(Response.STATUS_NORMAL, "Written");
 		} else if( Request.VERB_GET.equals(req.getVerb()) ) {

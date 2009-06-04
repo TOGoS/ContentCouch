@@ -5,7 +5,9 @@ import java.util.Map;
 public interface Response extends ContentAndMetadata {
 	public static final int STATUS_UNHANDLED = 0;
 	public static final int STATUS_NORMAL = 200;
+	public static final int STATUS_USERERROR = 400;
 	public static final int STATUS_DOESNOTEXIST = 404;
+	public static final int STATUS_ERROR = 500;
 	
 	public int getStatus();
 	public Object getContent();

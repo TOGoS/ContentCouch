@@ -79,6 +79,12 @@ public class CcouchNamespace {
 		standardNsAbbreviations.put("dc", DcNamespace.DC_NS);
 		standardNsAbbreviations.put("ccouch", NS);
 		standardNsAbbreviations.put("xmlns", "http://www.w3.org/2000/xmlns/");
+		
+		// Some other common namespaces:
+		standardNsAbbreviations.put("xhtml", "http://www.w3.org/1999/xhtml");
+		standardNsAbbreviations.put("svg", "http://www.w3.org/2000/svg");
+		standardNsAbbreviations.put("xlink", "http://www.w3.org/1999/xlink");
+		standardNsAbbreviations.put("foaf", "http://xmlns.com/foaf/0.1/");
 	}
 	public static final String STORE_SECTOR = RraNamespace.RRA_NS + "storeSector";
 }

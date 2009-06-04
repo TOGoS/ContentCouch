@@ -1,6 +1,3 @@
-/**
- * 
- */
 package contentcouch.rdf;
 
 public class RdfNode extends MultiMap {

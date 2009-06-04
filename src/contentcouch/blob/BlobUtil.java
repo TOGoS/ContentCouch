@@ -50,7 +50,7 @@ public class BlobUtil {
 		return new ByteArrayBlob(ValueUtil.getBytes(s));
 	}
 
-	public static Blob getBlob(Object obj) {
+	public static Blob getBlob(Object obj, boolean failOnFailure) {
 		if( obj == null ) {
 			return null;
 		} else if( obj instanceof Blob ) {
@@ -60,10 +60,20 @@ public class BlobUtil {
 		} else if( obj instanceof String ) {
 			return getBlob((String)obj);
 		} else if( obj instanceof File ) {
-			return new FileBlob((File)obj);
-		} else {
-			throw new RuntimeException("Don't know how to turn " + obj.getClass().getName() + " into a Blob");
+			File f = (File)obj;
+			if( f.exists() && f.isFile() ) {
+				return new FileBlob(f);
+			}
+			if( failOnFailure ) throw new RuntimeException("Don't know how to directory File into a Blob");
+			return null;
 		}
+		
+		if( failOnFailure ) throw new RuntimeException("Don't know how to turn " + obj.getClass().getName() + " into a Blob");
+		return null;
+	}
+	
+	public static Blob getBlob(Object obj) {
+		return getBlob(obj, true);
 	}
 	
 	static final int maxChunkLength = 8*1024;

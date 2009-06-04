@@ -1,20 +1,27 @@
 package contentcouch.repository;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import togos.rra.BaseRequest;
 import togos.rra.BaseRequestHandler;
 import togos.rra.BaseResponse;
 import togos.rra.Request;
 import togos.rra.Response;
+
+import com.eekboom.utils.Strings;
+
 import contentcouch.blob.BlobUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
+import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 
 public class MetaRepository extends BaseRequestHandler {
@@ -93,6 +100,110 @@ public class MetaRepository extends BaseRequestHandler {
 		return l;
 	}
 	
+	Pattern entryKeyNumberExtractionPattern = Pattern.compile("^(\\d+).*$");
+	
+	protected String getHighestEntryKey( String uri ) {
+		Directory d = TheGetter.getDirectory(uri);
+		if( d == null ) return null;
+		String highest = null;
+		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
+			Directory.Entry e = (Directory.Entry)i.next();
+			if( entryKeyNumberExtractionPattern.matcher(e.getKey()).matches() ) {
+				if( highest == null ) {
+					highest = e.getKey();
+				} else {
+					if( Strings.compareNatural(e.getKey(), highest) > 0 ) {
+						highest = e.getKey();
+					}
+				}
+			}
+		}
+		return highest;
+	}
+	
+	protected String getNextEntryKey( String uri ) {
+		String highest = getHighestEntryKey(uri);
+		if( highest == null ) return "0";
+		Matcher m = entryKeyNumberExtractionPattern.matcher(highest);
+		if( m.matches() ) { // It'd better!
+			long l = Long.parseLong(m.group(1));
+			return String.valueOf(l+1);
+		} else {
+			throw new RuntimeException("Somehow found a highest key that is not numeric!");
+		}
+	}
+	
+	protected String resolveHeadPath( RepoConfig repoConfig, String path, String defaultBaseName ) {
+		int dLast = path.lastIndexOf('/');
+		String baseName = path.substring(dLast+1);
+		if( baseName.length() == 0 ) {
+			baseName = defaultBaseName;
+		}
+		String dirPath = repoConfig.uri + path.substring(0,dLast+1);
+		if( "new".equals(baseName) ) {
+			return dirPath + getNextEntryKey(dirPath); 
+		} else if( "latest".equals(baseName) ) {
+			return dirPath + getHighestEntryKey(dirPath);
+		} else {
+			return repoConfig.uri + path;
+		}
+	}
+	
+	protected Response put( Request req, RepoConfig repoConfig, String path ) {
+		Blob blob = BlobUtil.getBlob(req.getContent(), false);
+		if( blob != null ) {
+			if( path.startsWith("data") ) {
+				// subPath can be
+				// data - post data to user store sector
+				// data/<sector> - post data to named sector
+				String[] pratz = path.split("/");
+				String sector;
+				if( pratz.length >= 2 ) sector = pratz[1];
+				else if( (sector = (String)req.getMetadata().get(CcouchNamespace.RR_STORE_SECTOR)) != null );
+				else sector = repoConfig.userStoreSector;
+				
+				byte[] hash = repoConfig.dataScheme.getHash(blob);
+				String psp = hashToPostSectorPath(repoConfig, hash);
+				String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
+				
+				BaseRequest subReq = new BaseRequest( req, uri );
+				subReq.putMetadata(CcouchNamespace.RR_FILEMERGE_METHOD, CcouchNamespace.RR_FILEMERGE_IGNORE);
+				return TheGetter.handleRequest(subReq);
+			} else if( path.startsWith("heads/") ) {
+				put( req, repoConfig, "data" );	// Put blob in data, too
+				BaseRequest subReq = new BaseRequest( req, resolveHeadPath( repoConfig, path, "new") );
+				return TheGetter.handleRequest(subReq);
+			} else {
+				throw new RuntimeException( "Can't PUT to " + req.getUri() + ": unrecognised post-repo path" );
+			}
+		} else if( req.getContent() instanceof Commit ) {
+			throw new RuntimeException("Commits not implemented!");
+		} else if( req.getContent() instanceof Directory ) {
+			throw new RuntimeException("Directories not implemented!");
+		} else if( req.getContent() instanceof Collection ) {
+			int count = 0;
+			for( Iterator i=((Collection)req.getContent()).iterator(); i.hasNext(); ) {
+				put( new BaseRequest(req, repoConfig.uri + path), repoConfig, path );
+				++count;
+			}
+			return new BaseResponse(Response.STATUS_NORMAL, count + " items inserted at " + repoConfig.uri + path);
+		} else if( req.getContent() == null ) {
+			throw new RuntimeException( "PUT/POST to " + req.getUri() + " requires content, null given.");
+		} else {
+			throw new RuntimeException( "Don't know how to PUT/POST " + req.getContent().getClass().getName() );
+		}
+	}
+	
+	protected Response identifyBlob( Request req, Blob blob, RepoConfig repoConfig ) {
+		return new BaseResponse(Response.STATUS_NORMAL, repoConfig.dataScheme.hashToUrn(getHash(blob)), "text/plain");
+	}
+	
+	protected Response identify( Request req, Object obj, RepoConfig repoConfig ) {
+		throw new RuntimeException("Can't identify ");
+	}
+	
+	//
+	
 	MetaRepoConfig config;
 	
 	public MetaRepository( MetaRepoConfig config ) {
@@ -120,36 +231,19 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			
 			if( Request.VERB_PUT.equals(req.getVerb()) || Request.VERB_POST.equals(req.getVerb()) ) {
-				Blob blobToPut = BlobUtil.getBlob(req.getContent());
-				if( blobToPut == null ) {
-					throw new RuntimeException("Can't PUT/POST without content: " + req.getUri());
-				}
-				
-				
-				
 				if( "identify".equals(repoRef.subPath) ) {
-					String urn = repoConfig.dataScheme.hashToUrn(getHash(blobToPut));
-					return new BaseResponse(Response.STATUS_NORMAL, urn, "text/plain");
-				} else if( repoRef.subPath.startsWith("data") ) {
-					// subPath can be
-					// data - post data to user store sector
-					// data/<sector> - post data to named sector
-					String[] pratz = repoRef.subPath.split("/");
-					String sector;
-					if( pratz.length >= 2 ) sector = pratz[1];
-					else sector = repoConfig.userStoreSector;
-					
-					byte[] hash = repoConfig.dataScheme.getHash(blobToPut);
-					String psp = hashToPostSectorPath(repoConfig, hash);
-					String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
-					
-					BaseRequest subReq = new BaseRequest( req, uri );
-					return TheGetter.handleRequest(subReq);
+					return identify( req, req.getContent(), repoConfig );
 				} else {
-					return new BaseResponse( Response.STATUS_DOESNOTEXIST, "Can't PUT to " + req.getUri(), "text/plain");
+					return put( req, repoConfig, repoRef.subPath );
 				}
 			} else {
-				BaseRequest subReq = new BaseRequest(req, repoConfig.uri + repoRef.subPath);
+				String path = repoRef.subPath;
+				if( path.startsWith("heads/") ) {
+					path = resolveHeadPath(repoConfig, path, "");
+				} else {
+					path = repoConfig.uri + path;
+				}
+				BaseRequest subReq = new BaseRequest(req, path);
 				return TheGetter.handleRequest(subReq);
 			}
 			

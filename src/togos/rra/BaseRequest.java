@@ -21,6 +21,13 @@ public class BaseRequest implements Request {
 		this.metadata = req.getMetadata();
 	}
 
+	public BaseRequest( Request req, String uri, Object content ) {
+		this.verb = req.getVerb();
+		this.uri = uri;
+		this.content = content;
+		this.metadata = req.getMetadata();
+	}
+
 	public BaseRequest( Request req ) {
 		this( req, req.getUri() );
 	}
