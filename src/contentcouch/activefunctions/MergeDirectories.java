@@ -4,7 +4,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import togos.rra.BaseResponse;
+import togos.rra.Response;
+
 import contentcouch.active.BaseActiveFunction;
+import contentcouch.blob.BlobUtil;
+import contentcouch.digest.DigestUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
@@ -14,6 +19,10 @@ public class MergeDirectories extends BaseActiveFunction {
 	protected static final int MERGE_KEEP_EXISTING = 1; // When there is a merge conflict, take the existing directory entry
 	protected static final int MERGE_TAKE_INCOMING = 2; // When there is a merge conflict, take the incoming directory entry
 	protected static final int MERGE_MASK = 3;
+	
+	protected static String identify( Object o ) {
+		return DigestUtil.getSha1Urn(BlobUtil.getBlob(o));
+	}
 	
 	protected static void mergeIntoEntry( SimpleDirectory.Entry destEntry, Directory.Entry srcEntry, int flags ) {
 		if( destEntry.target == null ) {
@@ -37,8 +46,8 @@ public class MergeDirectories extends BaseActiveFunction {
 			// Both Blobs
 			switch( flags & MERGE_MASK ) {
 			case( MERGE_STRICT ):
-				String srcId = TheIdentifier.identify(srcEntry.getValue());
-				String destId = TheIdentifier.identify(destEntry.getValue());
+				String srcId = identify(srcEntry.getValue());
+				String destId = identify(destEntry.getValue());
 				if( srcId == null || destId == null ) {
 					throw new RuntimeException("Could not identify object for strict merge");
 				}
@@ -60,8 +69,8 @@ public class MergeDirectories extends BaseActiveFunction {
 			// Type mismatch
 			switch( flags & MERGE_MASK ) {
 			case( MERGE_STRICT ):
-				String srcId = TheIdentifier.identify(srcEntry.getValue());
-				String destId = TheIdentifier.identify(destEntry.getValue());
+				String srcId = identify(srcEntry.getValue());
+				String destId = identify(destEntry.getValue());
 				if( srcId == null || destId == null ) {
 					throw new RuntimeException("Could not identify object for strict merge (type check already failed)");
 				}
@@ -95,20 +104,14 @@ public class MergeDirectories extends BaseActiveFunction {
 		}
 	}
 	
-	public Object call(Map argumentExpressions) {
+	public Response call(Map argumentExpressions) {
 		List dirs = getPositionalArgumentValues(argumentExpressions);
 		SimpleDirectory result = new SimpleDirectory();
-		
-		/*
-		SimpleDirectory.Entry fakeEntry = new SimpleDirectory.Entry(); 
-		SimpleDirectory.cloneInto(fakeEntry, new FileDirectory.FileDirectoryEntry(new File("C:/stuff/proj/ContentCouch/README")), 0);
-		result.addEntry(fakeEntry);
-		*/
 		
 		for( Iterator i=dirs.iterator(); i.hasNext(); ) {
 			Directory indir = (Directory)i.next();
 			mergeInto( result, indir, 0 );
 		}
-		return result;
+		return new BaseResponse(Response.STATUS_NORMAL, result);
 	}
 }

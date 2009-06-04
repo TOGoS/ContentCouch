@@ -20,17 +20,17 @@ public abstract class BaseActiveFunction implements ActiveFunction {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return defaultValue;
 		Response res = e.eval();
-		if( res.getStatus() == Response.STATUS_NORMAL ) return e.eval().getContent();
-		return defaultValue;
+		if( res.getStatus() == Response.STATUS_NORMAL ) return res.getContent();
+		throw new RuntimeException( "Couldn't load " + e.toString() + ": " + res.getStatus() + ": " + res.getContent());
 	}
 	
-	protected List getPositionalArgumentExpressions( Map argumentExpressions ) {
+	protected List getPositionalArgumentExpressions( Map argumentExpressions, String startingWith ) {
 		List l = new ArrayList();
 		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
 			String s = (String)e.getKey();
-			if( s.startsWith("operand") ) {
-				String numericPart = s.substring(7);
+			if( s.startsWith(startingWith) ) {
+				String numericPart = s.substring(startingWith.length());
 				int pos;
 				if( numericPart.length() == 0 ) {
 					pos = 0;
@@ -44,28 +44,34 @@ public abstract class BaseActiveFunction implements ActiveFunction {
 		}
 		return l;
 	}
+	
+	protected List getPositionalArgumentExpressions( Map argumentExpressions ) {
+		return getPositionalArgumentExpressions( argumentExpressions, "operand" );
+	}
 
-	protected List getPositionalArgumentValues( Map argumentExpressions ) {
-		List l = new ArrayList();
-		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
-			Map.Entry e = (Map.Entry)i.next();
-			String s = (String)e.getKey();
-			if( s.startsWith("operand") ) {
-				String numericPart = s.substring(7);
-				int pos;
-				if( numericPart.length() == 0 ) {
-					pos = 0;
+	protected List getArgumentExpressionValues( List argumentExpressions ) {
+		List values = new ArrayList();
+		for( Iterator i=argumentExpressions.iterator(); i.hasNext(); ) {
+			Expression exp = (Expression)i.next();
+			Response res = exp != null ? exp.eval() : null;
+			if( res != null ) {
+				if( res != null && res.getStatus() == Response.STATUS_NORMAL ) {
+					values.add( res.getContent() );
 				} else {
-					pos = Integer.parseInt(numericPart);
+					throw new RuntimeException( "Couldn't load " + exp.toString() + ": " + res.getStatus() + ": " + res.getContent());
 				}
-				if( pos > 128 ) throw new RuntimeException("Too many positional arguments");
-				Expression exp = (Expression)e.getValue();
-				if( exp != null ) {
-					while( l.size() < pos ) l.add(null);
-					l.add(pos, exp.eval());
-				}
+			} else {
+				values.add( null );
 			}
 		}
-		return l;
+		return values;
+	}
+	
+	protected List getPositionalArgumentValues( Map argumentExpressions ) {
+		return getArgumentExpressionValues( getPositionalArgumentExpressions( argumentExpressions ) );
+	}
+
+	protected List getPositionalArgumentValues( Map argumentExpressions, String startingWith ) {
+		return getArgumentExpressionValues( getPositionalArgumentExpressions( argumentExpressions, startingWith ) );
 	}
 }

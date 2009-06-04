@@ -16,9 +16,11 @@ import togos.rra.Response;
 import com.eekboom.utils.Strings;
 
 import contentcouch.blob.BlobUtil;
+import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
+import contentcouch.rdf.RdfNode;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
@@ -194,12 +196,22 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 	}
 	
-	protected Response identifyBlob( Request req, Blob blob, RepoConfig repoConfig ) {
+	protected Response identifyBlob( Blob blob, RepoConfig repoConfig ) {
 		return new BaseResponse(Response.STATUS_NORMAL, repoConfig.dataScheme.hashToUrn(getHash(blob)), "text/plain");
 	}
 	
 	protected Response identify( Request req, Object obj, RepoConfig repoConfig ) {
-		throw new RuntimeException("Can't identify ");
+		if( obj instanceof RdfNode ) {
+			Object parsedFrom = (req == null) ? null : req.getContentMetadata().get(CcouchNamespace.PARSED_FROM);
+			if( parsedFrom == null ) parsedFrom = BlobUtil.getBlob( obj.toString() );
+			String parsedFromUri = ValueUtil.getString(identify( null, parsedFrom, repoConfig ).getContent());
+			return new BaseResponse(Response.STATUS_NORMAL,	"x-parse-rdf:" + parsedFromUri, "text/plain");
+		}
+
+		Blob blob = BlobUtil.getBlob(obj, false);
+		if( blob != null ) return identifyBlob( blob, repoConfig );
+		
+		throw new RuntimeException("I don't know how to identify " + obj.getClass().getName());
 	}
 	
 	//

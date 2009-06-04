@@ -60,9 +60,7 @@ public class FileRequestHandler extends BaseRequestHandler {
 	}
 	
 	public Response handleRequest( Request req ) {
-		if( !req.getUri().startsWith("file:") ) {
-			return BaseResponse.RESPONSE_UNHANDLED;
-		}
+		if( !req.getUri().startsWith("file:") ) return BaseResponse.RESPONSE_UNHANDLED;
 		
 		String path = PathUtil.parseFilePathOrUri(req.getUri()).toString();
 		
@@ -80,7 +78,7 @@ public class FileRequestHandler extends BaseRequestHandler {
 			Object content = req.getContent();
 			if( (!f.exists() || f.isFile()) && (content instanceof Blob || content instanceof byte[] || content instanceof String ) ) {
 				String mergeMethod = ValueUtil.getString(req.getMetadata().get(CcouchNamespace.RR_FILEMERGE_METHOD));
-				return put( req, f, (Blob)req.getContent(), mergeMethod );
+				return put( req, f, BlobUtil.getBlob(req.getContent()), mergeMethod );
 			} else {
 				// TODO: handle merging directories
 				throw new RuntimeException("I don't merge dirs!");

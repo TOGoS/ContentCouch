@@ -11,30 +11,39 @@ public class BaseRequest implements Request {
 	public Map contentMetadata = Collections.EMPTY_MAP;
 	public Map metadata = Collections.EMPTY_MAP;
 	
+	/** Make a blank one */
 	public BaseRequest() { }
-	
+
+	/** Make one with the given verb and URI */
+	public BaseRequest( String verb, String uri ) {
+		this.verb = verb;
+		this.uri = uri;
+	}
+
+	/** Make one with the given verb, URI, content, and content metadata */
+	public BaseRequest( String verb, String uri, Object content, Map contentMetadata ) {
+		this.verb = verb;
+		this.uri = uri;
+		this.content = content;
+		this.contentMetadata = contentMetadata;
+	}
+
+	/** Make one just like req */
+	public BaseRequest( Request req ) {
+		this.verb = req.getVerb();
+		this.uri = req.getUri();
+		this.content = req.getContent();
+		this.contentMetadata = req.getContentMetadata();
+		this.metadata = req.getMetadata();
+	}
+
+	/** Make one just like req, but with a different URI */
 	public BaseRequest( Request req, String uri ) {
 		this.verb = req.getVerb();
 		this.uri = uri;
 		this.content = req.getContent();
 		this.contentMetadata = req.getContentMetadata();
 		this.metadata = req.getMetadata();
-	}
-
-	public BaseRequest( Request req, String uri, Object content ) {
-		this.verb = req.getVerb();
-		this.uri = uri;
-		this.content = content;
-		this.metadata = req.getMetadata();
-	}
-
-	public BaseRequest( Request req ) {
-		this( req, req.getUri() );
-	}
-
-	public BaseRequest( String verb, String uri ) {
-		this.verb = verb;
-		this.uri = uri;
 	}
 	
 	public String getVerb() {  return verb;  }

@@ -12,11 +12,13 @@ import java.util.regex.Pattern;
 
 import togos.rra.MultiRequestHandler;
 import contentcouch.active.ActiveUriResolver;
+import contentcouch.active.DataUriResolver;
 import contentcouch.app.Log;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.file.FileRequestHandler;
 import contentcouch.http.HttpRequestHandler;
 import contentcouch.path.PathUtil;
+import contentcouch.store.ParseRdfRequestHandler;
 import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
 import contentcouch.value.Blob;
@@ -172,9 +174,11 @@ public class MetaRepoConfig {
 			requestKernelCache = new MultiRequestHandler();
 			requestKernelCache.addRequestHandler(getMetaRepository());
 			requestKernelCache.addRequestHandler(new ActiveUriResolver());
+			requestKernelCache.addRequestHandler(new DataUriResolver());
 			requestKernelCache.addRequestHandler(new HttpRequestHandler());
 			requestKernelCache.addRequestHandler(new FileRequestHandler());
 			requestKernelCache.addRequestHandler(InternalStreamRequestHandler.getInstance());
+			requestKernelCache.addRequestHandler(new ParseRdfRequestHandler());
 		}
 		return requestKernelCache;
 	}

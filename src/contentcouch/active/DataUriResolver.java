@@ -15,7 +15,7 @@ public class DataUriResolver implements RequestHandler {
 
 	public Response handleRequest( Request req ) {
 		String identifier = req.getUri();
-		if( !identifier.startsWith(DATA_URI_PREFIX) ) return null;
+		if( !identifier.startsWith(DATA_URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
 		int commaPos = identifier.indexOf(',');
 		if( commaPos == -1 ) throw new RuntimeException("Invalid data URI has no comma: " + identifier);
 		String[] junk = identifier.substring(DATA_URI_PREFIX.length(),commaPos).split(";");

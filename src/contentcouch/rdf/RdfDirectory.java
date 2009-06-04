@@ -1,6 +1,3 @@
-/**
- * 
- */
 package contentcouch.rdf;
 
 import java.text.ParseException;
@@ -21,9 +18,11 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class RdfDirectory extends RdfNode implements Directory {
-	public static Function1 DEFAULT_DIRECTORY_ENTRY_TARGET_RDFIFIER = new Function1() {
+	public static Function1 DEFAULT_TARGET_RDFIFIER = new Function1() {
 		public Object apply(Object input) {
-			if( input instanceof Ref || input instanceof RdfNode ) {
+			if( input == null ) {
+				return null;
+			} else if( input instanceof Ref || input instanceof RdfNode ) {
 				return input;
 			} else if( input instanceof Directory ) {
 				return new RdfDirectory( (Directory)input, this );
@@ -96,6 +95,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
 		this();
+		if( targetRdfifier == null ) targetRdfifier = DEFAULT_TARGET_RDFIFIER;
 		List entries = new ArrayList(dir.getDirectoryEntrySet());
 		Collections.sort( entries, new Comparator() {
 			public int compare( Object o1, Object o2 ) {
@@ -111,7 +111,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public RdfDirectory( Directory dir ) {
-		this( dir, DEFAULT_DIRECTORY_ENTRY_TARGET_RDFIFIER );
+		this( dir, null );
 	}
 
 	public Set getDirectoryEntrySet() {

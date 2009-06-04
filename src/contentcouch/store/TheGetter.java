@@ -23,9 +23,12 @@ public class TheGetter {
 	}
 	
 	public static Object get(String uri) {
-		Response res = handleRequest(new BaseRequest("GET",uri));
+		return getResponseValue(handleRequest(new BaseRequest("GET",uri)), uri);
+	}
+	
+	public static Object getResponseValue( Response res, String uri ) {
 		if( res.getStatus() == Response.STATUS_NORMAL ) return res.getContent();
-		return null;
+		throw new RuntimeException( "Couldn't load " + uri + ": " + res.getStatus() + ": " + res.getContent());
 	}
 	
 	public static Response handleRequest( Request req ) {

@@ -13,6 +13,7 @@ import contentcouch.app.Linker;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
 import contentcouch.misc.ValueUtil;
+import contentcouch.rdf.RdfNode;
 import contentcouch.value.Blob;
 
 public class BlobUtil {
@@ -59,6 +60,8 @@ public class BlobUtil {
 			return new ByteArrayBlob((byte[])obj);
 		} else if( obj instanceof String ) {
 			return getBlob((String)obj);
+		} else if( obj instanceof RdfNode ) {
+			return getBlob( obj.toString() );
 		} else if( obj instanceof File ) {
 			File f = (File)obj;
 			if( f.exists() && f.isFile() ) {

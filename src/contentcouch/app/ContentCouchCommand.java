@@ -15,6 +15,7 @@ import togos.rra.BaseRequest;
 import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
+import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
@@ -44,6 +45,11 @@ public class ContentCouchCommand {
 		"Usage: ccouch [general options] copy [copy options] <src> <src> ... <dest>\n" +
 		"<src> and <dest> can be file paths, URIs, or \"-\"\n";
 
+	public String ID_USAGE =
+		"Usage: ccouch [general options] id <uri> <uri> ...\n" +
+		"Options:\n" +
+		"  -hide-inputs  ; do not show input URIs";
+	
 	public String STORE_USAGE =
 		"Usage: ccouch [general options] store [store options] <file1> <file2> ...\n" +
 		"Store options:\n" +
@@ -295,6 +301,10 @@ public class ContentCouchCommand {
 				shouldRelinkImported = true;
 			} else if( "-file-merge-method".equals(arg) ) {
 				fileMergeMethod = args[++i];
+			} else if( "-replace-existing".equals(arg) ) {
+				fileMergeMethod = CcouchNamespace.RR_FILEMERGE_REPLACE;
+			} else if( "-keep-existing".equals(arg) ) {
+				fileMergeMethod = CcouchNamespace.RR_FILEMERGE_IGNORE;
 			} else if( "-dir-merge-method".equals(arg) ) {
 				dirMergeMethod = args[++i];
 			} else if( "-dump-config".equals(arg) ) {
@@ -349,6 +359,48 @@ public class ContentCouchCommand {
 			if( putRes.getStatus() != Response.STATUS_NORMAL ) {
 				System.err.println("Couldn't PUT to " + destUri + ": " + putRes.getContent());
 				System.exit(1);
+			}
+		}
+	}
+	
+	public void runIdCmd( String[] args ) {
+		args = mergeConfiguredArgs("id", args);
+		List inputUris = new ArrayList();
+		boolean reportInputs = true;
+		boolean dumpConfig = false;
+		for( int i=0; i<args.length; ++i ) {
+			String arg = args[i];
+			if( "-hide-inputs".equals(arg) ) {
+				reportInputs = false;
+			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
+				System.out.println(ID_USAGE);
+				System.exit(0);
+			} else if( "-dump-config".equals(arg) ) {
+				dumpConfig = true;
+			} else if( !arg.startsWith("-") ) {
+				inputUris.add(arg);
+			} else {
+				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
+				System.err.println(CACHE_HEADS_USAGE);
+				System.exit(1);
+			}
+		}
+		
+		if( dumpConfig ) {
+			dumpRepoConfig(metaRepoConfig, System.out, "");
+			System.exit(0);
+		}
+
+		for( Iterator i=inputUris.iterator(); i.hasNext(); ) {
+			String input = (String)i.next();
+			BaseRequest getReq = new BaseRequest(Request.VERB_GET, input);
+			Response getRes = TheGetter.handleRequest(getReq);
+			BaseRequest idReq = new BaseRequest(Request.VERB_POST, "x-ccouch-repo:identify", getRes.getContent(), getRes.getContentMetadata());
+			String id = ValueUtil.getString(TheGetter.getResponseValue(TheGetter.handleRequest(idReq), idReq.uri));
+			if( reportInputs ) {
+				System.out.println( input + "\t" + id );
+			} else {
+				System.out.println( id );
 			}
 		}
 	}
@@ -555,11 +607,6 @@ public class ContentCouchCommand {
 		// TODO: implement
 		System.err.println("cache-heads unimplemented!");
 		System.exit(1);
-	}
-
-	public void runIdCmd( String[] args ) {
-		args = mergeConfiguredArgs("id", args);
-		runStoreCmd(concat(new String[]{"-dont-store"},args));
 	}
 	
 	public void runCheckCmd( String[] args ) {
