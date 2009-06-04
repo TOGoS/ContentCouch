@@ -20,11 +20,11 @@ public class FileRequestHandler extends BaseRequestHandler {
 	protected Response put( Request req, File dest, Blob blob, String mergeMethod ) {
 		if( dest.exists() ) {
 			// TODO: Mind some kind of merge-type metadata.
-			if( mergeMethod == null || mergeMethod.equals(CcouchNamespace.RR_FILEMERGE_FAIL) ) {
+			if( mergeMethod == null || mergeMethod.equalsIgnoreCase(CcouchNamespace.RR_FILEMERGE_FAIL) ) {
 				throw new RuntimeException( "Cannot PUT at " + req.getUri() + "; file already exists" );
-			} else if( mergeMethod.equals(CcouchNamespace.RR_FILEMERGE_IGNORE ) ) {
+			} else if( mergeMethod.equalsIgnoreCase(CcouchNamespace.RR_FILEMERGE_IGNORE ) ) {
 				return new BaseResponse(Response.STATUS_NORMAL, null);
-			} else if( mergeMethod.equals(CcouchNamespace.RR_FILEMERGE_REPLACE ) ) {
+			} else if( mergeMethod.equalsIgnoreCase(CcouchNamespace.RR_FILEMERGE_REPLACE ) ) {
 				if( !dest.delete() ) {
 					throw new RuntimeException( "Could not delete " + req.getUri() + " to replace it.");
 				}

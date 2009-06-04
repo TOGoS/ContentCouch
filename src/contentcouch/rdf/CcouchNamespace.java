@@ -58,6 +58,8 @@ public class CcouchNamespace {
 	public static final String RR_FILEMERGE_REPLACE   = "Replace";
 	public static final String RR_FILEMERGE_IGNORE    = "Ignore";
 	public static final String RR_FILEMERGE_IFSAME    = "Same?";
+	public static final String RR_FILEMERGE_STRICTIG  = "Same?Ignore:Fail";
+	public static final String RR_FILEMERGE_STRICTRE  = "Same?Replace:Fail";
 
 	public static final String RR_DIRMERGE_METHOD     = NS + "RR/dirMergeMethod";
 	public static final String RR_DIRMERGE_FAIL       = "Fail";
