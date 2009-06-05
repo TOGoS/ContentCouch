@@ -50,7 +50,7 @@ public class CallFunctionExpression implements Expression {
 
 	public Response eval() {
 		Response fRes = funcExpression.eval();
-		if( fRes.getStatus() != Response.STATUS_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getContent() );
+		if( fRes.getStatus() != Response.STATUS_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
 		if( !(fRes.getContent() instanceof ActiveFunction) ) throw new RuntimeException( "Object returned by " + funcExpression.toString() + " is not an ActiveFunction");
 		return ((ActiveFunction)fRes.getContent()).call(argumentExpressions);
 	}

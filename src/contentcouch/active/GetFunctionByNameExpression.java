@@ -98,6 +98,6 @@ public class GetFunctionByNameExpression implements Expression {
 			}
 		}
 		
-		return null;
+		return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Couldn't find function " + funcName, "text/plain");
 	}
 }

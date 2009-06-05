@@ -17,6 +17,7 @@ import contentcouch.app.Log;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.file.FileRequestHandler;
 import contentcouch.http.HttpRequestHandler;
+import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.store.ParseRdfRequestHandler;
 import contentcouch.store.TheGetter;
@@ -65,6 +66,9 @@ public class MetaRepoConfig {
 			++offset;
 			rp.uri = PathUtil.maybeNormalizeFileUri(PathUtil.appendPath(baseUri, args[offset]));
 			if( !rp.uri.endsWith("/") ) rp.uri += "/";
+			if( rp.uri.matches("^https?:.*") ) {
+				rp.uri = "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(rp.uri);
+			}
 			//System.err.println(basePath + " + " + args[offset] + " = " + path);
 			++offset;
 
@@ -91,7 +95,7 @@ public class MetaRepoConfig {
 			} else {
 				throw new RuntimeException("unknown repo disposition: " + rp.disposition);
 			}
-			if( rp.name != null ) namedRepoConfigs.put(rp.name, rp.uri);
+			if( rp.name != null ) namedRepoConfigs.put(rp.name, rp);
 		} else if( "-repo-name".equals(arg) ) {
 			++offset;
 			String name = args[offset];

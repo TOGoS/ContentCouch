@@ -16,6 +16,7 @@ import togos.rra.Response;
 import com.eekboom.utils.Strings;
 
 import contentcouch.blob.BlobUtil;
+import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
@@ -25,6 +26,7 @@ import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
+import contentcouch.value.Ref;
 
 public class MetaRepository extends BaseRequestHandler {
 	protected static class RepoRef {
@@ -92,7 +94,7 @@ public class MetaRepository extends BaseRequestHandler {
 	protected List getRepoDataSectorUrls( RepoConfig repoConfig ) {
 		ArrayList l = new ArrayList();
 		String dataDirUri = PathUtil.appendPath(repoConfig.uri,"data/");
-		Directory d = TheGetter.getDirectory( dataDirUri );
+		Directory d = (Directory)TheGetter.get( dataDirUri );
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
@@ -223,7 +225,18 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	public Response handleRequest( Request req ) {
-		if( req.getUri().startsWith("x-ccouch-head:") || req.getUri().startsWith("x-ccouch-repo:") ) {
+		if( "x-ccouch-repo:all-repos-dir".equals(req.getUri()) ) {
+			SimpleDirectory sd = new SimpleDirectory();
+			for( Iterator i=this.config.getAllRepoConfigs().iterator(); i.hasNext(); ) {
+				RepoConfig repoConfig = (RepoConfig)i.next();
+				SimpleDirectory.Entry entry = new SimpleDirectory.Entry();
+				entry.name = repoConfig.name;
+				entry.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+				entry.target = new Ref(repoConfig.uri);
+				sd.addEntry(entry);
+			}
+			return new BaseResponse(Response.STATUS_NORMAL, sd);
+		} else if( req.getUri().startsWith("x-ccouch-head:") || req.getUri().startsWith("x-ccouch-repo:") ) {
 			RepoRef repoRef = RepoRef.parse(req.getUri(), false);
 			RepoConfig repoConfig;
 			if( repoRef.repoName == null ) {

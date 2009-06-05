@@ -1,6 +1,5 @@
 package contentcouch.app.servlet;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -9,8 +8,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -21,36 +18,39 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import togos.rra.Getter;
+import togos.rra.BaseRequest;
+import togos.rra.BaseResponse;
+import togos.rra.Request;
+import togos.rra.RequestHandler;
+import togos.rra.Response;
 
 import com.eekboom.utils.Strings;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
-import contentcouch.file.FileBlob;
-import contentcouch.graphics.ImageUtil;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
-import contentcouch.misc.MapUtil;
 import contentcouch.misc.MetadataUtil;
-import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
-import contentcouch.repository.MetaRepository;
+import contentcouch.repository.MetaRepoConfig;
+import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
-public class ContentCouchExplorerServlet extends HttpServlet {
+public class ContentCouchExplorerServlet extends HttpServlet implements RequestHandler {
 	public interface HttpServletRequestHandler {
 		public void handle( HttpServletRequest request, HttpServletResponse response ) throws IOException;
 	}
@@ -370,6 +370,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			w.println("</html>");
 		}
 	};
+	
+	//////
+	
+	protected MetaRepoConfig metaRepoConfig;
 
 	protected void copyFile( File src, File dest ) throws IOException {
 		FileInputStream is = new FileInputStream(src);
@@ -386,93 +390,26 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 	}
 	
-	protected MetaRepository repoCache;
-	protected MetaRepository getRepo() {
-		if( repoCache == null ) { 
-			repoCache = new MetaRepository();
-			String webPath = this.getServletContext().getRealPath("");
-			File configFile = new File(webPath + "/repo-config");
-			File configTemplateFile = new File(webPath + "/repo-config.template");
-			if( !configFile.exists() ) {
-				try {
-					copyFile(configTemplateFile, configFile);
-				} catch( IOException e ) {
-					throw new RuntimeException("Failed to copy " + configTemplateFile.getPath() + " to " + configFile.getPath(), e);
-				}
-			}
-			repoCache.isMainRepo = true;
-			repoCache.registerAsGetterAndIdentifier();
+	public void init(ServletConfig config) throws ServletException {
+		super.init(config);
+		metaRepoConfig = new MetaRepoConfig();
+		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
+		File configFile = getConfigFile();
+		metaRepoConfig.handleArguments(new String[]{"-file",configFile.getPath()}, 0, ".");
+	}
+	
+	protected File getConfigFile() {
+		String webPath = getServletContext().getRealPath("");
+		File configFile = new File(webPath + "/repo-config");
+		File configTemplateFile = new File(webPath + "/repo-config.template");
+		if( !configFile.exists() ) {
 			try {
-				repoCache.loadConfig(configFile);
+				copyFile(configTemplateFile, configFile);
 			} catch( IOException e ) {
-				throw new RuntimeException("Error while loading repo config " + configFile.getPath(), e);
+				throw new RuntimeException("Failed to copy " + configTemplateFile.getPath() + " to " + configFile.getPath(), e);
 			}
 		}
-		return repoCache;
-	}
-	protected MetaRepository getRepo(String name) {
-		return (MetaRepository)getRepo().namedRepositories.get(name);
-	}
-	
-	protected Getter getLocalGetter() {
-		return getRepo().getGenericGetter();
-	}	
-	
-	protected long guessLastModified( Blob b ) {
-		Date date = (Date)MapUtil.getMetadataFrom(b, DcNamespace.DC_MODIFIED);
-		if( date != null ) return date.getTime();
-		
-		if( b instanceof FileBlob ) {
-			return ((FileBlob)b).lastModified();
-		}
-		
-		return 0;
-	}
-	
-	public Object getObject(Object root, String path, String rootPath) {
-		while( true ) {
-			if( root == null || path == null || "".equals(path) || "/".equals(path) ) {
-				return root;
-			} else if( root instanceof MetaRepository ) {
-				return ((MetaRepository)root).getExplorat(path);
-			} else if( root instanceof Getter ) {
-				return ((Getter)root).get(path);
-			} else if( root instanceof Directory ) {
-				String[] parts = path.split("/", 2);
-				Object nextRoot;
-				Directory.Entry nextPart = (Directory.Entry)((Directory)root).getDirectoryEntry(parts[0]);
-				if( nextPart == null ) return null;
-				nextRoot = nextPart.getValue();
-				root = nextRoot;
-				rootPath = rootPath + "/" + parts[0];
-				if( parts.length == 1 ) {
-					path = null;
-				} else {
-					path = parts[1];
-				}
-			}
-		}
-	}
-
-	public Object getObject(String path) {
-		SimpleDirectory sd = new SimpleDirectory(getRepo().namedRepositories);
-		sd.putMetadata(DcNamespace.DC_TITLE, "All named repositories");
-		Object obj = getObject(sd, path, "");
-		if( obj != null ) return obj;
-		return getLocalGetter().get(path);
-	}
-	
-	public Object getGenericResponse( Object obj, String path ) {
-		if( obj instanceof MetaRepository && !(obj instanceof Directory) ) {
-			obj = ((MetaRepository)obj).getExplorat("");
-		}
-		if( obj instanceof Directory ) {
-			obj = new DirectoryPageGenerator( path, (Directory)obj );
-		}
-		if( obj instanceof BufferedImage ) {
-			obj = ImageUtil.serializeImage( (BufferedImage)obj, "png", null );
-		}
-		return obj;
+		return configFile;
 	}
 
 	protected Object exploreObject( Object obj, String path ) {
@@ -485,49 +422,11 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				return new RdfSourcePageGenerator((Blob)obj, path);
 			}
 		}
-		return getGenericResponse( obj, path );
+		return obj;
 	}
-
-	public Object explore( String path ) {		
-		return exploreObject( getObject(path), path );
-	}
-
-	protected Object rawObject( Object obj, String path ) {
-		if( obj instanceof Blob ) {
-			return obj;
-		} else {
-			return getGenericResponse(obj, path);
-		}
-	}
-	
-	protected Object raw( String path ) {
-		return rawObject( getObject(path), path );
-	}
-	
-	public Object get(String path, HttpServletRequest request) {
-		if( path.equals("") ) {
-			path = "_index";
-		}
-		if( path.startsWith("explore/") ) {
-			return explore(path.substring(8) );
-		} else if( path.equals("explore") ) {
-			return explore((String)request.getParameter("uri") );
-		} else if( path.startsWith("raw/") ) {
-			return raw(path.substring(4) );
-		} else if( path.equals("raw") ) {
-			return raw((String)request.getParameter("uri") );
-		} else {
-			String webPath = this.getServletContext().getRealPath("");
-			File f;
-			
-			f = new File(webPath + "/" + path);
-			if( f.exists() ) { return new FileBlob(f); }
-			
-			f = new File(webPath + "/" + path + ".html");
-			if( f.exists() ) { return new FileBlob(f); }
-			
-			return "I don't know about '" + path + "'";
-		}
+		
+	public Response handleRequest( Request req ) {
+		return BaseResponse.RESPONSE_UNHANDLED;
 	}
 	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -536,23 +435,33 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		if( pi == null ) pi = "/";
 		
 		try {
-			Object page = get(pi.substring(1), request);
-			if( page == null ) page = "Nothing found!";
-			if( page instanceof HttpServletRequestHandler ) {
-				((HttpServletRequestHandler)page).handle(request, response);
-			} else if( page instanceof Blob ) {
-				String contentType = guessContentType((Blob)page);
-				if( contentType != null ) response.setHeader("Content-Type", contentType);
-				else response.setHeader("Content-Type", "");
-				
-				long mtime = guessLastModified((Blob)page);
-				if( mtime > 0 ) response.setDateHeader("Last-Modified", mtime);
-				
-				BlobUtil.writeBlobToOutputStream(((Blob)page), response.getOutputStream());
+			Response res;
+			String exploreMode;
+			String exploreUri;
+			if( pi.equals("/explore") ) {
+				exploreMode = "explore";
+				exploreUri = request.getParameter("uri");
+			} else if( pi.startsWith("/explore/") ) {
+				exploreMode = "explore";
+				exploreUri = pi.substring("/explore/".length());
+				if( exploreUri.length() == 0 ) {
+					exploreUri = "x-ccouch-repo:all-repos-dir";
+				} else {
+					exploreUri = "x-ccouch-repo://" + exploreUri;
+				}
 			} else {
-				response.setHeader("Content-Type", "text/plain");			
-				response.getWriter().println(page.toString());
+				exploreUri = "http://www.nuke24.net/";
+				exploreMode = "raw";
 			}
+			
+			BaseRequest req = new BaseRequest(Request.VERB_GET,
+				"active:contentcouch.explore+operand@" + UriUtil.uriEncode(exploreUri) + "+" +
+				"exploreMode@" + UriUtil.uriEncode( UriUtil.makeDataUri(exploreMode))
+			);
+			Response subRes = TheGetter.handleRequest(req);
+
+			response.setHeader("Content-Type", ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT)));
+			BlobUtil.writeBlobToOutputStream( BlobUtil.getBlob( subRes.getContent() ), response.getOutputStream() );
 		} catch( RuntimeException e ) {
 			response.setHeader("Content-Type", "text/plain");
 			e.printStackTrace(response.getWriter());

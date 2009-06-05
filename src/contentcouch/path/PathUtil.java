@@ -36,6 +36,17 @@ public class PathUtil {
 		// If p2 is absolute, return it
 		if( isAbsolute(p2) ) return p2;
 
+		// This seems like a horrible hack.
+		// TODO: Maybe let active functions tell how to append path themselves?
+		// Or maybe do away with 'directoryize' somehow.
+		if( p1.startsWith("active:contentcouch.directoryize+operand@") ) {
+			String subUri = UriUtil.uriDecode(p1.substring("active:contentcouch.directoryize+operand@".length()));
+			String appendedSubUri = appendPath( subUri, p2 );
+			if( appendedSubUri.startsWith(subUri) ) {
+				return "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(appendedSubUri);
+			}
+		}
+		
 		if( isAbsolute(p1) && !p1.matches("^file:.*|^[^/]+://.*|^[A-Za-z]:.*") ) {
 			// It is a non-hierarchical URI scheme and we cannot simply append.
 			return "active:contentcouch.follow-path+source@" + UriUtil.uriEncode(p1) + "+path@" + UriUtil.uriEncode("data:,"+UriUtil.uriEncode(p2));

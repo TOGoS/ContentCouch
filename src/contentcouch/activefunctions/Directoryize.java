@@ -8,6 +8,7 @@ import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Expression;
 import contentcouch.active.ResolveUriExpression;
 import contentcouch.directory.DirectoryUtil;
+import contentcouch.misc.UriUtil;
 import contentcouch.value.Directory;
 
 public class Directoryize extends BaseActiveFunction {
@@ -17,7 +18,7 @@ public class Directoryize extends BaseActiveFunction {
 		if( e instanceof ResolveUriExpression ) {
 			String uri = ((ResolveUriExpression)e).getUri();
 			if( uri.matches("^https?://.*/$") ) {
-				Directory d = DirectoryUtil.getDirectory(subRes, uri);
+				Directory d = DirectoryUtil.getDirectory(subRes, "active:contentcouch.directoryize+operand@"+UriUtil.uriEncode(uri) );
 				return new BaseResponse( Response.STATUS_NORMAL, d );
 			}
 		}

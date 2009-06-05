@@ -80,4 +80,8 @@ public class UriUtil {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public static String makeDataUri( String data ) {
+		return "data:," + uriEncode(data);
+	}
 }
