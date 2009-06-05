@@ -4,14 +4,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import contentcouch.active.expression.Expression;
+import java.util.TreeMap;
 
 import togos.rra.BaseResponse;
 import togos.rra.Response;
+import contentcouch.active.expression.CallFunctionExpression;
+import contentcouch.active.expression.Expression;
+import contentcouch.path.PathSimplifiableActiveFunction;
+import contentcouch.path.PathSimplifiableExpression;
 
 
-public abstract class BaseActiveFunction implements ActiveFunction {
+public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifiableActiveFunction {
 	protected Response getArgumentResponse( Map argumentExpressions, String name ) {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Missing argument " + name, "text/plain");
@@ -75,5 +78,31 @@ public abstract class BaseActiveFunction implements ActiveFunction {
 
 	protected List getPositionalArgumentValues( Map argumentExpressions, String startingWith ) {
 		return getArgumentExpressionValues( getPositionalArgumentExpressions( argumentExpressions, startingWith ) );
+	}
+	
+	//// Path simplification ////
+	
+	protected String getPathArgumentName() {
+		return null;
+	}
+	
+	public Expression appendPath(Expression funcExpression, Map argumentExpressions, String path) {
+		String pathArgName = getPathArgumentName();
+		if( pathArgName == null ) return null;
+
+		Expression pathExpression = (Expression)argumentExpressions.get(pathArgName);
+		if( pathExpression == null || !(pathExpression instanceof PathSimplifiableExpression) ) return null;		
+
+		pathExpression = ((PathSimplifiableExpression)pathExpression).appendPath(path);
+		if( pathExpression == null ) return null;
+		
+		TreeMap newArgs = new TreeMap(argumentExpressions);
+		newArgs.put(pathArgName, pathExpression);
+		
+		return new CallFunctionExpression(funcExpression, newArgs);
+	}
+	
+	public Expression simplify(Map argumentExpressions) {
+		return null;
 	}
 }

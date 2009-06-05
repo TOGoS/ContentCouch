@@ -24,4 +24,10 @@ public class Directoryize extends BaseActiveFunction {
 		}
 		return subRes;
 	}
+
+	//// Path simplification ////
+	
+	public String getPathArgumentName() {
+		return "operand";
+	}	
 }

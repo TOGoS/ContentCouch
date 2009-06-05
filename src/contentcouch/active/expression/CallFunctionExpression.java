@@ -3,9 +3,11 @@ package contentcouch.active.expression;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.TreeMap;
 
 import togos.rra.Response;
 import contentcouch.active.ActiveFunction;
+import contentcouch.active.ActiveUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathSimplifiableActiveFunction;
 import contentcouch.path.PathSimplifiableExpression;
@@ -62,7 +64,7 @@ public class CallFunctionExpression implements Expression, PathSimplifiableExpre
 		return false;
 	}
 
-	protected ActiveFunction getStaticActiveFunction() {
+	protected ActiveFunction getStaticActiveFunction( Expression funcExpression ) {
 		if( funcExpression.isConstant() ) {
 			Response fRes = funcExpression.eval();
 			if( fRes.getStatus() != Response.STATUS_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
@@ -73,19 +75,34 @@ public class CallFunctionExpression implements Expression, PathSimplifiableExpre
 	}
 	
 	public Expression appendPath(String path) {
-		ActiveFunction f = getStaticActiveFunction();
+		ActiveFunction f = getStaticActiveFunction(funcExpression);
 		if( f != null && f instanceof PathSimplifiableActiveFunction ) {
-			return ((PathSimplifiableActiveFunction)f).appendPath(argumentExpressions, path);
+			return ((PathSimplifiableActiveFunction)f).appendPath(funcExpression, argumentExpressions, path);
 		}
 		return null;
 	}
 
 	public Expression simplify() {
-		ActiveFunction f = getStaticActiveFunction();
+		boolean simplified = false;
+		Expression simplifiedFuncExpression = ActiveUtil.simplify(funcExpression);
+		if( simplifiedFuncExpression != funcExpression ) simplified = true;
+		TreeMap simplifiedArgumentExpressions = new TreeMap();
+		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
+			Map.Entry e = (Map.Entry)i.next();
+			Expression simplifiedArgExpression = ActiveUtil.simplify((Expression)e.getValue());
+			if( simplifiedArgExpression != e.getValue() ) simplified = true;
+			simplifiedArgumentExpressions.put(e.getKey(), simplifiedArgExpression);
+		}
+		
+		ActiveFunction f = getStaticActiveFunction(simplifiedFuncExpression);
 		if( f != null && f instanceof PathSimplifiableActiveFunction ) {
-			Expression e = ((PathSimplifiableActiveFunction)f).simplify(argumentExpressions);
+			Expression e = ((PathSimplifiableActiveFunction)f).simplify(simplifiedArgumentExpressions);
 			if( e != null ) return e;			
 		}
-		return this;
+		if( simplified ) {
+			return new CallFunctionExpression(simplifiedFuncExpression, simplifiedArgumentExpressions);
+		} else {
+			return this;
+		}
 	}
 }

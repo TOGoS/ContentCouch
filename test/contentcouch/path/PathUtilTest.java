@@ -1,5 +1,7 @@
 package contentcouch.path;
 
+import contentcouch.active.ActiveUtil;
+import contentcouch.misc.UriUtil;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
 import junit.framework.TestCase;
@@ -60,5 +62,67 @@ public class PathUtilTest extends TestCase {
 
 	public void testReplaceFollowPath() {
 		assertEquals("http://slashdot.org/", PathUtil.appendPath("active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/", "http://slashdot.org/"));
+	}
+	
+	public void testExpressionPathFollowing() {
+		assertEquals("active:contentcouch.directoryize+operand@" + UriUtil.uriEncode("http://nuke24.net/images/bunny.jpg"),
+				PathUtil.appendPath("active:contentcouch.directoryize+operand@" + UriUtil.uriEncode("http://nuke24.net/images/"), "bunny.jpg"));
+	}
+
+	public void testPathFollowingSimplifiesSubExpressions() {
+		assertEquals(
+			"active:contentcouch.directoryize+operand@" + UriUtil.uriEncode( "http://www.nuke24.net/images/bunny.jpg"),
+			PathUtil.appendPath(
+				"active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(
+					"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/"),
+				"bunny.jpg"
+			)
+		);
+
+		assertEquals(
+			"active:contentcouch.explore+operand@" + UriUtil.uriEncode( "http://www.nuke24.net/images/bunny.jpg"),
+			PathUtil.appendPath(
+				"active:contentcouch.explore+operand@" + UriUtil.uriEncode(
+					"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/"),
+				"bunny.jpg"
+			)
+		);
+
+		assertEquals(
+			"http://www.nuke24.net/images/bunny.jpg",
+			ActiveUtil.simplify(
+				"active:contentcouch.follow-path+source@" + UriUtil.uriEncode(
+					"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/") + "+" +
+				"path@data:,bunny.jpg"
+			)
+		);
+
+		assertEquals(
+			"http://www.nuke24.net/style/green.css",
+			ActiveUtil.simplify(
+				"active:contentcouch.follow-path+source@" + UriUtil.uriEncode(
+					"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/") + "+" +
+				"path@data:,../style/green.css"
+			)
+		);
+
+		assertEquals(
+			"http://www.nuke24.net/style/green.css",
+			ActiveUtil.simplify(
+				"active:contentcouch.follow-path+source@" + UriUtil.uriEncode(
+					"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/") + "+" +
+				"path@data:,/style/green.css"
+			)
+		);
+
+		assertEquals(
+			"active:contentcouch.directoryize+operand@" + UriUtil.uriEncode("http://www.nuke24.net/images/bunny.jpg"),
+			ActiveUtil.simplify(
+				"active:contentcouch.follow-path+source@" + UriUtil.uriEncode(
+					"active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(
+						"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/")) + "+" +
+				"path@data:,bunny.jpg"
+			)
+		);
 	}
 }
