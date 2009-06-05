@@ -5,7 +5,7 @@ import java.util.Map;
 import togos.rra.BaseResponse;
 import togos.rra.Response;
 import contentcouch.active.BaseActiveFunction;
-import contentcouch.active.Expression;
+import contentcouch.active.expression.Expression;
 
 public class ToUri extends BaseActiveFunction {
 	public Response call(Map argumentExpressions) {

@@ -4,11 +4,12 @@ import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import contentcouch.active.ActiveUtil;
 import contentcouch.misc.UriUtil;
 
 
 public class PathUtil {
-	static Pattern URIPATTERN = Pattern.compile("^\\(.*|^\".*|^[^:/][^:/]+:.*", Pattern.DOTALL);
+	static Pattern URIPATTERN = Pattern.compile("^\\(.*|^\".*|^[^:/]+:.*", Pattern.DOTALL);
 	
 	public static boolean isUri( String pathOrUri ) {
 		return URIPATTERN.matcher(pathOrUri).matches();
@@ -26,6 +27,54 @@ public class PathUtil {
 	}
 
 	protected static Pattern SOMETHINGDOTDOT = Pattern.compile("(?:/[^/]+/\\.\\./)|(?:/\\./)", 0);
+	protected static Pattern HIERARCHICAL = Pattern.compile("^(file:).*|^([^/:]+:)/.*");
+	protected static Pattern AUTHORITY = Pattern.compile("([^/]+://[^/]*)/.*");
+	
+	public static boolean isHierarchicalUri( String uri ) {
+		// File URIs and anything starting with "<scheme>:/"
+		return HIERARCHICAL.matcher(uri).matches();
+	}
+	
+	public static String appendHierarchicalPath( String p1, String p2, boolean ignoreLastInHierarchical ) {
+		if( p2.startsWith("/") ) {
+			if( !isUri(p1) ) return p2;
+			Matcher authMatch = AUTHORITY.matcher(p1);
+			if( authMatch.matches() ) {
+				return authMatch.group(1) + p2;
+			}
+			
+			Matcher hierMatch = HIERARCHICAL.matcher(p1);
+			if( !hierMatch.matches() ) throw new RuntimeException("Looks like non-hierarchical source URI fed to appendHierarchicalPath: " + p1 );
+			String pfx = hierMatch.group(1);
+			if( pfx == null ) pfx = hierMatch.group(2);
+			return pfx + p2;
+		} else {
+			if( isUri(p1) ) {
+				// Strip off post-path parts
+				int shedx = p1.indexOf('#');
+				if( shedx > 0 ) p1 = p1.substring(0,shedx);
+				int quedx = p1.indexOf('?');
+				if( quedx > 0 ) p1 = p1.substring(0,quedx);
+			}
+			
+			int lastSlash = p1.lastIndexOf('/');
+			if( lastSlash == -1 ) return p2;
+	
+			if( ignoreLastInHierarchical ) {
+				p1 = p1.substring(0,lastSlash+1);
+			} else if( lastSlash != p1.length()-1 ) {
+				p1 += "/";
+			}
+			
+			String fp = p1 + p2;
+			Matcher dotDotMatch = SOMETHINGDOTDOT.matcher(fp);
+			while( dotDotMatch.find() ) {
+				fp = dotDotMatch.replaceAll("/");
+				dotDotMatch = SOMETHINGDOTDOT.matcher(fp);
+			}
+			return fp;
+		}
+	}
 	
 	public static String appendPath( String p1, String p2, boolean ignoreLastInHierarchical ) {
 		if( p1 == null || p1.length() == 0 ) return p2;
@@ -34,40 +83,18 @@ public class PathUtil {
 		p2 = p2.replace('\\', '/');
 
 		// If p2 is absolute, return it
-		if( isAbsolute(p2) ) return p2;
+		if( isUri(p2) ) return p2;
 
-		// This seems like a horrible hack.
-		// TODO: Maybe let active functions tell how to append path themselves?
-		// Or maybe do away with 'directoryize' somehow.
-		if( p1.startsWith("active:contentcouch.directoryize+operand@") ) {
-			String subUri = UriUtil.uriDecode(p1.substring("active:contentcouch.directoryize+operand@".length()));
-			String appendedSubUri = appendPath( subUri, p2 );
-			if( appendedSubUri.startsWith(subUri) ) {
-				return "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(appendedSubUri);
-			}
+		if( !isUri(p1) ) { // TODO: or if is hierarchical scheme to save some time (but should be taken care of below, anyway)
+			// if p1 looks relative or a file path, we assume that it's hierarchical,
+			// and we do simple old path appending.
+			return appendHierarchicalPath(p1,p2,ignoreLastInHierarchical);
 		}
-		
-		if( isAbsolute(p1) && !p1.matches("^file:.*|^[^/]+://.*|^[A-Za-z]:.*") ) {
-			// It is a non-hierarchical URI scheme and we cannot simply append.
-			return "active:contentcouch.follow-path+source@" + UriUtil.uriEncode(p1) + "+path@" + UriUtil.uriEncode("data:,"+UriUtil.uriEncode(p2));
-		}
-		
-		int lastSlash = p1.lastIndexOf('/');
-		if( lastSlash == -1 ) return p2;
 
-		if( ignoreLastInHierarchical ) {
-			p1 = p1.substring(0,lastSlash+1);
-		} else if( lastSlash != p1.length()-1 ) {
-			p1 += "/";
-		}
-		
-		String fp = p1 + p2;
-		Matcher dotDotMatch = SOMETHINGDOTDOT.matcher(fp);
-		while( dotDotMatch.find() ) {
-			fp = dotDotMatch.replaceAll("/");
-			dotDotMatch = SOMETHINGDOTDOT.matcher(fp);
-		}
-		return fp;
+		String unoptimized = "active:contentcouch.follow-path+" +
+			"source@" + UriUtil.uriEncode(p1) + "+" +
+			"path@" + UriUtil.uriEncode(UriUtil.makeDataUri(p2));
+		return ActiveUtil.simplify(unoptimized);
 	}
 	
 	public static String appendPath( String p1, String p2 ) {

@@ -1,4 +1,4 @@
-package contentcouch.active;
+package contentcouch.active.expression;
 
 import togos.rra.Response;
 
@@ -20,5 +20,9 @@ public class Bareword implements Expression {
 
 	public Response eval() {
 		throw new RuntimeException("Bareword cannot be evaluated!");
+	}
+	
+	public boolean isConstant() {
+		return true;
 	}
 }

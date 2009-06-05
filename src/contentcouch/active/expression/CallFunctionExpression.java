@@ -1,13 +1,16 @@
-package contentcouch.active;
+package contentcouch.active.expression;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 
 import togos.rra.Response;
+import contentcouch.active.ActiveFunction;
 import contentcouch.misc.UriUtil;
+import contentcouch.path.PathSimplifiableActiveFunction;
+import contentcouch.path.PathSimplifiableExpression;
 
-public class CallFunctionExpression implements Expression {
+public class CallFunctionExpression implements Expression, PathSimplifiableExpression {
 	Expression funcExpression;
 	SortedMap argumentExpressions;
 	
@@ -53,5 +56,36 @@ public class CallFunctionExpression implements Expression {
 		if( fRes.getStatus() != Response.STATUS_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
 		if( !(fRes.getContent() instanceof ActiveFunction) ) throw new RuntimeException( "Object returned by " + funcExpression.toString() + " is not an ActiveFunction");
 		return ((ActiveFunction)fRes.getContent()).call(argumentExpressions);
+	}
+	
+	public boolean isConstant() {
+		return false;
+	}
+
+	protected ActiveFunction getStaticActiveFunction() {
+		if( funcExpression.isConstant() ) {
+			Response fRes = funcExpression.eval();
+			if( fRes.getStatus() != Response.STATUS_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
+			if( !(fRes.getContent() instanceof ActiveFunction) ) throw new RuntimeException( "Object returned by " + funcExpression.toString() + " is not an ActiveFunction");
+			return (ActiveFunction)fRes.getContent();
+		}
+		return null;
+	}
+	
+	public Expression appendPath(String path) {
+		ActiveFunction f = getStaticActiveFunction();
+		if( f != null && f instanceof PathSimplifiableActiveFunction ) {
+			return ((PathSimplifiableActiveFunction)f).appendPath(argumentExpressions, path);
+		}
+		return null;
+	}
+
+	public Expression simplify() {
+		ActiveFunction f = getStaticActiveFunction();
+		if( f != null && f instanceof PathSimplifiableActiveFunction ) {
+			Expression e = ((PathSimplifiableActiveFunction)f).simplify(argumentExpressions);
+			if( e != null ) return e;			
+		}
+		return this;
 	}
 }

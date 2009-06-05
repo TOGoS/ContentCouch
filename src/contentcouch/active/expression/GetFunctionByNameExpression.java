@@ -1,10 +1,11 @@
-package contentcouch.active;
+package contentcouch.active.expression;
 
 import java.util.Map;
 
 import togos.rra.BaseResponse;
 import togos.rra.Response;
 
+import contentcouch.active.Context;
 import contentcouch.misc.UriUtil;
 
 public class GetFunctionByNameExpression implements Expression {
@@ -99,5 +100,9 @@ public class GetFunctionByNameExpression implements Expression {
 		}
 		
 		return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Couldn't find function " + funcName, "text/plain");
+	}
+
+	public boolean isConstant() {
+		return true;
 	}
 }

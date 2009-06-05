@@ -1,4 +1,4 @@
-package contentcouch.active;
+package contentcouch.active.expression;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,5 +46,9 @@ public class ValueExpression implements Expression {
 	
 	public String toUri() {
 		return "data:," + UriUtil.uriEncode(value.toString());
+	}
+	
+	public boolean isConstant() {
+		return true;
 	}
 }

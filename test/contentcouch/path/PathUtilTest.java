@@ -1,8 +1,14 @@
 package contentcouch.path;
 
+import contentcouch.repository.MetaRepoConfig;
+import contentcouch.store.TheGetter;
 import junit.framework.TestCase;
 
 public class PathUtilTest extends TestCase {
+	public void setUp() {
+		TheGetter.globalInstance = new MetaRepoConfig().getRequestKernel();
+	}
+	
 	public void testAppendPath1() {
 		assertEquals("foo/bar", PathUtil.appendPath("foo/", "bar"));
 	}
@@ -10,6 +16,7 @@ public class PathUtilTest extends TestCase {
 		assertEquals("/bar", PathUtil.appendPath("foo/", "/bar"));
 	}
 	public void testAppendPath3() {
+		// This should work because E will be interpreted as a URI scheme!
 		assertEquals("E:/junk", PathUtil.appendPath("foo/", "E:/junk"));
 	}
 	public void testAppendPath4() {
@@ -22,7 +29,36 @@ public class PathUtilTest extends TestCase {
 	public void testAppendPath6() {
 		// Handling of this kind of relative URI ain't implemented, yet.
 		// Expect this test to fail.
-		assertEquals("http://wwww.nuke24.net/",
+		assertEquals("http://www.nuke24.net/",
 				PathUtil.appendPath("http://www.nuke24.net/music/whatever", "/"));
+	}
+	
+	public void testIdentifyAbsolutePaths() {
+		assertTrue( PathUtil.isAbsolute("file:/gopher") );
+		assertTrue( PathUtil.isAbsolute("E:/gopher") );
+		assertTrue( PathUtil.isAbsolute("/gopher") );
+		assertTrue( PathUtil.isAbsolute("http://gopher/food") );
+		assertTrue( PathUtil.isAbsolute("file:gopher/food") );
+		
+		assertFalse( PathUtil.isAbsolute("gopher/food") );
+	}
+	
+	public void testIdentifyHierarchicalUris() {
+		assertTrue( PathUtil.isHierarchicalUri("file:poopyscoopy") );
+		assertTrue( PathUtil.isHierarchicalUri("file:/poopyscoopy") );
+		assertTrue( PathUtil.isHierarchicalUri("file://poopy/scoopy") );
+		assertTrue( PathUtil.isHierarchicalUri("marg:/poopy/scoopy") );
+		assertTrue( PathUtil.isHierarchicalUri("http:/poopy/scoopy") );
+		assertFalse( PathUtil.isHierarchicalUri("marg:poopy/scoopy") );
+		assertFalse( PathUtil.isHierarchicalUri("urn:sha1:POOPSKOOP") );
+		assertFalse( PathUtil.isHierarchicalUri("data:,POOPSKOOP") );
+	}
+	
+	public void testAppendFollowPath() {
+		assertEquals("http://www.nuke24.net/images/bunny.png", PathUtil.appendPath("active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/", "bunny.png"));
+	}
+
+	public void testReplaceFollowPath() {
+		assertEquals("http://slashdot.org/", PathUtil.appendPath("active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/", "http://slashdot.org/"));
 	}
 }
