@@ -38,6 +38,9 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 				return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Cannot follow path " + path);
 			}
 		}
+		if( source instanceof Ref ) {
+			source = TheGetter.get( ((Ref)source).targetUri );
+		}
 		return new BaseResponse(source);
 	}
 	

@@ -96,6 +96,17 @@ public class MetaRepoConfig {
 				throw new RuntimeException("unknown repo disposition: " + rp.disposition);
 			}
 			if( rp.name != null ) namedRepoConfigs.put(rp.name, rp);
+		} else if( "-file".equals(arg) ) {
+			++offset;
+			String configFile = args[offset];
+			++offset;
+			Blob cfgBlob = (Blob)TheGetter.get(configFile);
+			BufferedReader brd = new BufferedReader(new InputStreamReader(new BlobInputStream(cfgBlob)));
+			try {
+				_loadConfig(brd, configFile);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		} else if( "-repo-name".equals(arg) ) {
 			++offset;
 			String name = args[offset];

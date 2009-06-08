@@ -75,6 +75,10 @@ public class CcouchNamespace {
 	/** Indicates a miscellaneous RDF structure */
 	public static final String OBJECT_TYPE_RDF = "RDF";
 	
+	//// Web page stuff ////
+
+	public static final String WP_URI_WRAPPER = "WP/uriWrapper";
+	
 	static Map standardNsAbbreviations = new HashMap();
 	static {
 		standardNsAbbreviations.put("rdf", RdfNamespace.RDF_NS);

@@ -34,24 +34,23 @@ public class DirectoryUtil {
 				while( lineMatcher.find() ) {
 					String href = lineMatcher.group(1);
 					href = XML.xmlUnescape(href);
-					String fullPath = PathUtil.appendPath(identifier, href);
-					if( fullPath.startsWith(identifier) ) {
-						String subPath = fullPath.substring(identifier.length());
-						if( subPath.startsWith("?") ) continue;
-						int si = subPath.indexOf('/');
-						if( si == -1 ) {
-							SimpleDirectory.Entry e = new SimpleDirectory.Entry();
-							e.name = subPath;
-							e.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
-							e.target = new Ref(PathUtil.appendPath(identifier, subPath));
-							dir.addEntry(e);
-						} else {
-							SimpleDirectory.Entry e = new SimpleDirectory.Entry();
-							e.name = subPath.substring(0, si);
-							e.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
-							e.target = new Ref(PathUtil.appendPath(identifier, e.name) + "/");
-							dir.addEntry(e);
-						}
+					if( href.startsWith("./") ) href = href.substring(2);
+					if( href.startsWith("?") ) continue;
+					if( PathUtil.isAbsolute(href) ) continue;
+					int si = href.indexOf('/');
+					if( si != -1 ) href = href.substring(0,si+1);
+					if( !href.endsWith("/") ) {
+						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
+						e.name = href;
+						e.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
+						e.target = new Ref(PathUtil.appendPath(identifier, href));
+						dir.addEntry(e);
+					} else {
+						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
+						e.name = href.substring(0, href.length()-1);
+						e.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+						e.target = new Ref(PathUtil.appendPath(identifier, e.name) + "/");
+						dir.addEntry(e);
 					}
 				}
 			}

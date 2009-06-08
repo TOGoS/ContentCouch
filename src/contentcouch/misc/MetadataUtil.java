@@ -110,7 +110,7 @@ public class MetadataUtil {
 	
 	public static String getContentType( ContentAndMetadata res ) {
 		String type = (String)res.getContentMetadata().get(DcNamespace.DC_FORMAT);
-		if( type != null ) return type;
+		if( type != null ) return type.split(";")[0];
 		if( res.getContent() instanceof Blob ) return guessContentType((Blob)res.getContent());
 		return null;
 	}
