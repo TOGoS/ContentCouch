@@ -23,10 +23,10 @@ import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.TheGetter;
+import contentcouch.value.BaseRef;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
-import contentcouch.value.Ref;
 
 public class MetaRepository extends BaseRequestHandler {
 	protected static class RepoRef {
@@ -225,14 +225,14 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	public Response handleRequest( Request req ) {
-		if( "x-ccouch-repo:all-repos-dir".equals(req.getUri()) ) {
+		if( "x-ccouch-repo://".equals(req.getUri()) ) {
 			SimpleDirectory sd = new SimpleDirectory();
 			for( Iterator i=this.config.getAllRepoConfigs().iterator(); i.hasNext(); ) {
 				RepoConfig repoConfig = (RepoConfig)i.next();
 				SimpleDirectory.Entry entry = new SimpleDirectory.Entry();
 				entry.name = repoConfig.name;
 				entry.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
-				entry.target = new Ref(repoConfig.uri);
+				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.uri);
 				sd.addEntry(entry);
 			}
 			return new BaseResponse(Response.STATUS_NORMAL, sd);

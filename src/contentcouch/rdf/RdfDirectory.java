@@ -13,6 +13,7 @@ import java.util.Set;
 import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;
 import contentcouch.misc.Function1;
+import contentcouch.value.BaseRef;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -27,7 +28,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 			} else if( input instanceof Directory ) {
 				return new RdfDirectory( (Directory)input, this );
 			} else if( input instanceof Blob ) {
-				return new Ref(DigestUtil.getSha1Urn((Blob)input));
+				return new BaseRef(DigestUtil.getSha1Urn((Blob)input));
 			} else {
 				throw new RuntimeException("Don't know how to rdf-ify " + input.getClass().getName() );
 			}

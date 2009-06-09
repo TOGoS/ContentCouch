@@ -25,6 +25,10 @@ public class PathUtil {
 		//   F:/windows/paths
 		return slashi == 0 || (coloni > 0 && (slashi > coloni || slashi < 0));
 	}
+	
+	public static boolean isRelative( String pathOrUri ) {
+		return !isAbsolute(pathOrUri);
+	}
 
 	protected static Pattern SOMETHINGDOTDOT = Pattern.compile("(?:/[^/]+/\\.\\./)|(?:/\\./)", 0);
 	protected static Pattern HIERARCHICAL = Pattern.compile("^(file:).*|^([^/:]+:)/.*");

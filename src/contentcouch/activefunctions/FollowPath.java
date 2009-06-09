@@ -28,7 +28,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 		String[] pathParts = path.split("/+");
 		for( int i=0; i<pathParts.length; ++i ) {
 			if( source instanceof Ref ) {
-				source = TheGetter.get( ((Ref)source).targetUri );
+				source = TheGetter.get( ((Ref)source).getTargetUri() );
 			}
 			if( source instanceof Directory ) {
 				Directory.Entry e = ((Directory)source).getDirectoryEntry(pathParts[i]);
@@ -39,7 +39,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 			}
 		}
 		if( source instanceof Ref ) {
-			source = TheGetter.get( ((Ref)source).targetUri );
+			source = TheGetter.get( ((Ref)source).getTargetUri() );
 		}
 		return new BaseResponse(source);
 	}

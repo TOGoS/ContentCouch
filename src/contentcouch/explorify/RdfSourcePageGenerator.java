@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import contentcouch.misc.Function1;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Blob;
@@ -15,7 +14,7 @@ import contentcouch.xml.XML;
 public class RdfSourcePageGenerator extends PageGenerator {
 	Blob blob;
 	
-	public RdfSourcePageGenerator( Blob b, Function1 uriProcessor ) {
+	public RdfSourcePageGenerator( Blob b, UriProcessor uriProcessor ) {
 		this.blob = b;
 		this.uriProcessor = uriProcessor;
 	}

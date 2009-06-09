@@ -46,7 +46,7 @@ public class SimpleDirectory implements Directory {
 	public static Object cloneTarget( Object target, int depth ) {
 		if( depth == DEEPCLONE_NEVER ) return target;
 		if( target instanceof Ref ) {
-			target = TheGetter.get( ((Ref)target).targetUri );
+			target = TheGetter.get( ((Ref)target).getTargetUri() );
 		}
 		if( target instanceof Directory && depth == DEEPCLONE_ALWAYS ) {
 			return new SimpleDirectory((Directory)target, depth);

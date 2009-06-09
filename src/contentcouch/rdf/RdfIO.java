@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import contentcouch.rdf.CcouchNamespace.Description;
+import contentcouch.value.BaseRef;
 import contentcouch.value.Ref;
 import contentcouch.xml.XML;
 
@@ -40,7 +41,7 @@ public class RdfIO {
 		if( value == null ) {
 			// Then we just skip it!
 		} else if( value instanceof Ref ) {
-			w.write(padding + "<" + propNodeName + " rdf:resource=\"" + XML.xmlEscapeAttributeValue(((Ref)value).targetUri) + "\"/>\n");
+			w.write(padding + "<" + propNodeName + " rdf:resource=\"" + XML.xmlEscapeAttributeValue(((Ref)value).getTargetUri()) + "\"/>\n");
 		} else if( value instanceof String ) {
 			w.write(padding + "<" + propNodeName + ">" + XML.xmlEscapeText((String)value) + "</" + propNodeName + ">\n");
 		} else if( value instanceof Collection ) {
@@ -104,7 +105,7 @@ public class RdfIO {
 				outerWriter.write( "<" + nodeName );
 				XML.writeXmlns( outerWriter, usedNsAbbreviations );
 				if( desc instanceof Description && ((Description)desc).about != null ) {
-					outerWriter.write(" rdf:about=\"" + XML.xmlEscapeAttributeValue(((Description)desc).about.targetUri) + "\"");
+					outerWriter.write(" rdf:about=\"" + XML.xmlEscapeAttributeValue(((Description)desc).about.getTargetUri()) + "\"");
 				}
 				outerWriter.write( ">\n" );
 				outerWriter.write( subWriter.toString() );
@@ -139,7 +140,7 @@ public class RdfIO {
 			if( RdfNamespace.RDF_DESCRIPTION.equals(descOpenTag.name) ) {
 				 desc = new Description();
 				 String about = (String)descOpenTag.attributes.get(RdfNamespace.RDF_ABOUT);
-				 if( about != null ) ((Description)desc).about = new Ref(about);
+				 if( about != null ) ((Description)desc).about = new BaseRef(about);
 			} else if( CcouchNamespace.DIRECTORY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory();
 				desc.typeName = descOpenTag.name;
@@ -175,7 +176,7 @@ public class RdfIO {
 					
 					String resourceUri = (String)predicateOpenTag.attributes.get(RdfNamespace.RDF_RESOURCE);
 					if( resourceUri != null ) {
-						desc.add(predicateOpenTag.name, new Ref(resourceUri));
+						desc.add(predicateOpenTag.name, new BaseRef(resourceUri));
 					}
 					
 					if( !predicateOpenTag.closed ) {

@@ -34,7 +34,7 @@ public class MetadataUtil {
 		commonTypesByExtension.put("slf", CT_SLF);
 	}
 	
-	protected static boolean looksLikeRdfBlob( Blob b ) {
+	public static boolean looksLikeRdfBlob( Blob b ) {
 		if( b.getLength() >= 20 ) {
 			byte[] data = b.getData(0, 20);
 			try {
@@ -51,7 +51,7 @@ public class MetadataUtil {
 	}
 	
 
-	protected static boolean looksLikePlainText( Blob b ) {
+	public static boolean looksLikePlainText( Blob b ) {
 		if( b.getLength() >= 20 ) {
 			byte[] data = b.getData(0, 20);
 			try {
@@ -65,7 +65,7 @@ public class MetadataUtil {
 	
 	static final Pattern HTMLPATTERN = Pattern.compile(".*<html.*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
-	protected static boolean looksLikeHtml( Blob b ) {
+	public static boolean looksLikeHtml( Blob b ) {
 		if( b.getLength() >= 20 ) {
 			byte[] data = b.getData(0, 20);
 			try {

@@ -1,0 +1,31 @@
+Should directoryize rewrite all target Refs to also be directoryized?
+Or only relative ones?
+
+Currently, due to the way PathUtil.appendPath works, only relative URIs will
+inherit activefunction wrappings.  This maybe is more expected, anyway.
+
+If all:
+	directoryize(
+	  dir @ 'http://www.nuke24.net/stuff/' (
+	    'foo' => 'urn:sha1:BLAH',
+	    'bar' => 'http://www.nuke24.net/',
+	    'baz' => 'juff/',
+	  )
+	) -> dir(
+	  'foo' => 'active:directoryize+operand@urn:sha1:BLAH',
+	  'bar' => 'active:directoryize+operand@http://www.nuke24.net/',
+	  'baz' => 'active:directoryize+operand@http://www.nuke24.net/stuff/juff/',
+	)
+
+If only relative:
+	directoryize(
+	  dir @ 'http://www.nuke24.net/stuff/' (
+	    'foo' => 'urn:sha1:BLAH',
+	    'bar' => 'http://www.nuke24.net/',
+	    'baz' => 'juff/',
+	  )
+	) -> dir(
+	  'foo' => 'urn:sha1:BLAH',
+	  'bar' => 'http://www.nuke24.net/',
+	  'baz' => 'active:directoryize+operand@http://www.nuke24.net/stuff/juff/',
+	)

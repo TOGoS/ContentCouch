@@ -16,13 +16,13 @@ import java.util.Set;
 import com.eekboom.utils.Strings;
 
 import contentcouch.date.DateUtil;
-import contentcouch.misc.Function1;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
+import contentcouch.value.RelativeRef;
 import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
@@ -30,7 +30,8 @@ public class DirectoryPageGenerator extends PageGenerator {
 	final Directory dir;
 	final Map metadata;
 
-	public DirectoryPageGenerator( Directory dir, Map metadata, Function1 uriProcessor ) {
+	public DirectoryPageGenerator( String uri, Directory dir, Map metadata, UriProcessor uriProcessor ) {
+		this.uri = uri;
 		this.dir = dir;
 		this.metadata = metadata;
 		this.uriProcessor = uriProcessor;
@@ -77,8 +78,10 @@ public class DirectoryPageGenerator extends PageGenerator {
 			Entry e = (Entry)i.next();
 			String href;
 			String name = e.getKey();
-			if( e.getValue() instanceof Ref ) {
-				href = ((Ref)e.getValue()).targetUri;
+			if( e.getValue() instanceof RelativeRef && ((RelativeRef)e.getValue()).isRelative() ) {
+				href = ((RelativeRef)e.getValue()).getTargetRelativeUri();
+			} else if( e.getValue() instanceof Ref ) {
+				href = ((Ref)e.getValue()).getTargetUri();
 			} else {
 				href = name;
 			}
@@ -86,7 +89,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 				if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
 				if( !name.endsWith("/") ) name += "/";
 			}
-			href = processUri(href);
+			href = processRelativeUri(uri, href);
 			w.write("<tr>");
 			w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
 			w.write("<td align=\"right\">" + (e.getSize() > -1 ? Long.toString(e.getSize()) : "") + "</td>");

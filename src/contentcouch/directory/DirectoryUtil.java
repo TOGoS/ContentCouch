@@ -8,7 +8,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import togos.rra.ContentAndMetadata;
-
 import contentcouch.blob.BlobInputStream;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
@@ -16,9 +15,9 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfIO;
+import contentcouch.value.BaseRef;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
-import contentcouch.value.Ref;
 import contentcouch.xml.XML;
 
 public class DirectoryUtil {
@@ -43,13 +42,13 @@ public class DirectoryUtil {
 						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 						e.name = href;
 						e.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
-						e.target = new Ref(PathUtil.appendPath(identifier, href));
+						e.target = new BaseRef(identifier, href);
 						dir.addEntry(e);
 					} else {
 						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 						e.name = href.substring(0, href.length()-1);
 						e.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
-						e.target = new Ref(PathUtil.appendPath(identifier, e.name) + "/");
+						e.target = new BaseRef(identifier, e.name + "/");
 						dir.addEntry(e);
 					}
 				}

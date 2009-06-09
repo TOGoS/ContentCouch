@@ -21,39 +21,43 @@ public class CcouchNamespace {
 
 	public static final String URI_PARSE_PREFIX = "x-parse-rdf:";
 	
-	public static final String NS = "http://ns.nuke24.net/ContentCouch/";
+	public static final String CC_NS = "http://ns.nuke24.net/ContentCouch/";
+	public static final String INTERNAL_NS = CC_NS + "Internal/";
 	
-	public static final String NAME             = NS + "name";
-	public static final String TAG              = NS + "tag";
-	public static final String COLLECTOR        = NS + "collector";
-	public static final String IMPORTEDDATE     = NS + "importedDate";
-	public static final String IMPORTEDFROM     = NS + "importedFrom";
-	public static final String ENTRIES          = NS + "entries";
+	public static final String NAME             = CC_NS + "name";
+	public static final String TAG              = CC_NS + "tag";
+	public static final String COLLECTOR        = CC_NS + "collector";
+	public static final String IMPORTEDDATE     = CC_NS + "importedDate";
+	public static final String IMPORTEDFROM     = CC_NS + "importedFrom";
+	public static final String ENTRIES          = CC_NS + "entries";
 	/** What kind of object is target? */
-	public static final String TARGETTYPE       = NS + "targetType";
+	public static final String TARGETTYPE       = CC_NS + "targetType";
 	/** What is target? */
-	public static final String TARGET           = NS + "target";
-	public static final String SIZE             = NS + "size";
+	public static final String TARGET           = CC_NS + "target";
+	public static final String SIZE             = CC_NS + "size";
 	/** If we can't directly represent target, link to its listing */
-	public static final String TARGETLISTING    = NS + "targetListing";
-	public static final String PARENT           = NS + "parent";
+	public static final String TARGETLISTING    = CC_NS + "targetListing";
+	public static final String PARENT           = CC_NS + "parent";
 
-	public static final String HARDLINKABLE     = NS + "hardlinkable";
-	public static final String BASE32SHA1       = NS + "base32Sha1";
-	public static final String PARSED_FROM      = NS + "parsedFrom";
+	public static final String HARDLINKABLE     = CC_NS + "hardlinkable";
+	public static final String BASE32SHA1       = CC_NS + "base32Sha1";
+	public static final String PARSED_FROM      = CC_NS + "parsedFrom";
 
-	public static final String DIRECTORY        = NS + "Directory";
-	public static final String DIRECTORYENTRY   = NS + "DirectoryEntry";
-	public static final String COMMIT           = NS + "Commit";
-	public static final String REDIRECT         = NS + "Redirect";
+	public static final String DIRECTORY        = CC_NS + "Directory";
+	public static final String DIRECTORYENTRY   = CC_NS + "DirectoryEntry";
+	public static final String COMMIT           = CC_NS + "Commit";
+	public static final String REDIRECT         = CC_NS + "Redirect";
 	
 	//// Request/response metadata ////
 	
-	public static final String RR_STORE_SECTOR     = NS + "RR/storeSector";
-	public static final String RR_HARDLINK_DESIRED = NS + "RR/hardlinkDesired";
-	public static final String RR_REHARDLINK_DESIRED = NS + "RR/rehardlinkDesired";
+	/** Namespace for ccouch-specific Request/Response metadata */
+	public static final String CCRR_NS = CC_NS + "RR/";
 	
-	public static final String RR_FILEMERGE_METHOD    = NS + "RR/fileMergeMethod";
+	public static final String RR_STORE_SECTOR       = CCRR_NS + "storeSector";
+	public static final String RR_HARDLINK_DESIRED   = CCRR_NS + "hardlinkDesired";
+	public static final String RR_REHARDLINK_DESIRED = CCRR_NS + "rehardlinkDesired";
+	
+	public static final String RR_FILEMERGE_METHOD    = CCRR_NS + "fileMergeMethod";
 	public static final String RR_FILEMERGE_FAIL      = "Fail";
 	public static final String RR_FILEMERGE_REPLACE   = "Replace";
 	public static final String RR_FILEMERGE_IGNORE    = "Ignore";
@@ -61,7 +65,7 @@ public class CcouchNamespace {
 	public static final String RR_FILEMERGE_STRICTIG  = "Same?Ignore:Fail";
 	public static final String RR_FILEMERGE_STRICTRE  = "Same?Replace:Fail";
 
-	public static final String RR_DIRMERGE_METHOD     = NS + "RR/dirMergeMethod";
+	public static final String RR_DIRMERGE_METHOD     = CCRR_NS + "dirMergeMethod";
 	public static final String RR_DIRMERGE_FAIL       = "Fail";
 	public static final String RR_DIRMERGE_REPLACE    = "Replace";
 	public static final String RR_DIRMERGE_IGNORE     = "Ignore";
@@ -83,7 +87,7 @@ public class CcouchNamespace {
 	static {
 		standardNsAbbreviations.put("rdf", RdfNamespace.RDF_NS);
 		standardNsAbbreviations.put("dc", DcNamespace.DC_NS);
-		standardNsAbbreviations.put("ccouch", NS);
+		standardNsAbbreviations.put("ccouch", CC_NS);
 		standardNsAbbreviations.put("xmlns", "http://www.w3.org/2000/xmlns/");
 		
 		// Some other common namespaces:

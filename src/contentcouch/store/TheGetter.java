@@ -6,18 +6,21 @@ import togos.rra.RequestHandler;
 import togos.rra.Response;
 import contentcouch.active.Context;
 import contentcouch.misc.UriUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
 
 public class TheGetter {
+	public static final String CTXVAR = CcouchNamespace.INTERNAL_NS + "getter"; 
+	
 	public static RequestHandler globalInstance;
 	
 	public static RequestHandler getGenericGetter() {
-		RequestHandler theGetter = (RequestHandler)Context.getInstance().get(Context.GENERIC_GETTER_VAR);
+		RequestHandler theGetter = (RequestHandler)Context.get(CTXVAR);
 		if( theGetter == null ) {
 			theGetter = globalInstance;
 		}
 		if( theGetter == null ) {
-			throw new RuntimeException("No "+Context.GENERIC_GETTER_VAR+" registered");
+			throw new RuntimeException("No "+CTXVAR+" registered");
 		}
 		return theGetter;
 	}

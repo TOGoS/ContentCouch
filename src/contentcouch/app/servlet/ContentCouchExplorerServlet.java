@@ -14,7 +14,9 @@ import javax.servlet.http.HttpServletResponse;
 import togos.rra.BaseRequest;
 import togos.rra.Request;
 import togos.rra.Response;
+import contentcouch.active.Context;
 import contentcouch.blob.BlobUtil;
+import contentcouch.explorify.BaseUriProcessor;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
@@ -75,18 +77,29 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		if( pi == null ) pi = "/";
 		
 		try {
+			final boolean shouldRewriteRelativeUris;
 			String uri = null;
 			if( pi.equals("/explore") ) {
-				uri = request.getParameter("uri");
+				uri = "active:contentcouch.explorify+operand@" + UriUtil.uriEncode(request.getParameter("uri"));
+				shouldRewriteRelativeUris = true;
 			} else if( pi.startsWith("/explore/") ) {
-				uri = "active:contentcouch.explorify+operand@" + UriUtil.uriEncode(PathUtil.appendPath("x-ccouch-repo:all-repos-dir", pi.substring(9)));
+				uri = "active:contentcouch.explorify+operand@" + UriUtil.uriEncode(PathUtil.appendPath("x-ccouch-repo://", pi.substring(9)));
+				shouldRewriteRelativeUris = false;
 			} else if( pi.equals("/") ) {
 				uri = "file:web/_index.html";
+				shouldRewriteRelativeUris = false;
 			} else {
 				uri = "file:web" + pi + ".html";
+				shouldRewriteRelativeUris = false;
 			}
 			
 			BaseRequest subReq = new BaseRequest(Request.VERB_GET, uri);
+			BaseUriProcessor.push( new BaseUriProcessor(BaseUriProcessor.getInstance(), shouldRewriteRelativeUris) {
+				public String processUri(String uri) {
+					return "/explore?uri=" + UriUtil.uriEncode(uri);
+				}
+			});
+			subReq.contextVars = Context.getInstance(); 
 			Response subRes = TheGetter.handleRequest(subReq);
 			
 			response.setHeader("Content-Type", ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT)));
