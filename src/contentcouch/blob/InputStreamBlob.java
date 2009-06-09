@@ -2,6 +2,7 @@ package contentcouch.blob;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import contentcouch.value.Blob;
 
@@ -61,5 +62,27 @@ public class InputStreamBlob implements Blob {
 		int r = inputStream.read(bytes, off, length);
 		position += r;
 		return r;
+	}
+	
+	public void writeTo( OutputStream os, long offset ) throws IOException {
+		if( previousRead == null && offset < position ) throw new RuntimeException("Can't rewind to get data at " + offset);
+		if( previousRead != null && offset < position-previousRead.length ) throw new RuntimeException("Can't rewind to get data at " + offset + " (previous read at " + (position-previousRead.length) + "+" + previousRead.length + ")");
+		if( offset < position ) {
+			//   |             |XXX|YYYYYYYYYYY|            |
+			//   0                 offset      position     length
+			//                 position-previousRead.length
+			//   XXX = offset - (position-previousRead.length)
+			//   YYY = previousRead.length - (offset - (position-previousRead.length))
+			//       = previousRead.length - offset + position -previousRead.length
+			//       = position - offset
+			os.write(previousRead, (int)(offset-(position-previousRead.length)), (int)(position-offset));
+		}
+		BlobUtil.copyInputToOutput(inputStream, os);
+		int br;
+		byte[] readed = new byte[BlobUtil.READ_CHUNK_SIZE];
+		while( (br = inputStream.read(readed)) > 0 ) {
+			position += br;
+			os.write(readed, 0, br);
+		}
 	}
 }

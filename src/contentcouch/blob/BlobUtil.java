@@ -79,12 +79,12 @@ public class BlobUtil {
 		return getBlob(obj, true);
 	}
 	
-	static final int maxChunkLength = 8*1024;
+	public static final int READ_CHUNK_SIZE = 8*1024;
 
 	public static void copyInputToOutput( InputStream is, OutputStream os )
 		throws IOException
 	{
-		byte[] bytes = new byte[maxChunkLength];
+		byte[] bytes = new byte[READ_CHUNK_SIZE];
 		int read;
 		while( (read = is.read(bytes)) > 0 ) {
 			os.write(bytes, 0, read);
@@ -93,7 +93,9 @@ public class BlobUtil {
 	
 	public static void writeBlobToOutputStream( Blob blob, OutputStream os ) {
 		try {
-			if( blob instanceof File ) {
+			if( blob instanceof InputStreamBlob ) {
+				((InputStreamBlob)blob).writeTo(os, 0);
+			} else if( blob instanceof File ) {
 				FileInputStream is = new FileInputStream((File)blob);
 				try {
 					copyInputToOutput(is, os);
@@ -104,8 +106,8 @@ public class BlobUtil {
 				os.write(((ByteArrayBlob)blob).bytes);
 			} else {
 				long len = blob.getLength();
-				for( long i=0; i<len; i+=maxChunkLength ) {
-					os.write(blob.getData(i, (int)(len > i+maxChunkLength ? maxChunkLength : len-i) ));
+				for( long i=0; i<len; i+=READ_CHUNK_SIZE ) {
+					os.write(blob.getData(i, (int)(len > i+READ_CHUNK_SIZE ? READ_CHUNK_SIZE : len-i) ));
 				}
 			}
 		} catch( IOException e ) {

@@ -78,16 +78,16 @@ public class MetadataUtil {
 	}
 	
 	public static String guessContentType( Blob b ) {
-		if( looksLikeRdfBlob(b)) return CT_RDF;
-		if( looksLikeHtml(b)) return CT_HTML;
-		if( looksLikePlainText(b)) return CT_TEXT;
-
 		if( b instanceof FileBlob ) {
 			String n = ((FileBlob)b).getName();
 			if( n.endsWith(".rdf") ) return CT_RDF;
 			if( n.endsWith(".html") ) return CT_HTML;
 			if( n.endsWith(".slf") ) return CT_SLF;
 		}
+
+		if( looksLikeRdfBlob(b)) return CT_RDF;
+		if( looksLikeHtml(b)) return CT_HTML;
+		if( looksLikePlainText(b)) return CT_TEXT;
 		
 		if( b.getLength() >= 4 ) {
 			byte[] magic = b.getData(0, 4);
