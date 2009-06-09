@@ -10,11 +10,13 @@ import java.util.Map;
 import togos.rra.BaseResponse;
 import togos.rra.Response;
 import contentcouch.active.BaseActiveFunction;
+import contentcouch.active.Context;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.explorify.DirectoryPageGenerator;
 import contentcouch.explorify.PageGenerator;
 import contentcouch.explorify.RdfSourcePageGenerator;
+import contentcouch.misc.Function1;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
@@ -35,11 +37,11 @@ public class Explorify extends BaseActiveFunction {
 	}
 	
 	protected Response explorifyDirectory(Directory d, Map m) {
-		return getPageGeneratorResult(new DirectoryPageGenerator("", d, m));
+		return getPageGeneratorResult(new DirectoryPageGenerator(d, m, (Function1)Context.get("uri-processor")));
 	}
 	
 	protected Response explorifyXmlBlob(Blob b) {
-		return getPageGeneratorResult(new RdfSourcePageGenerator(b, ""));
+		return getPageGeneratorResult(new RdfSourcePageGenerator(b, (Function1)Context.get("uri-processor")));
 	}
 		
 	public Response call(Map argumentExpressions) {

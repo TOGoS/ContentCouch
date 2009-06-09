@@ -16,7 +16,8 @@ import java.util.Set;
 import com.eekboom.utils.Strings;
 
 import contentcouch.date.DateUtil;
-import contentcouch.misc.UriUtil;
+import contentcouch.misc.Function1;
+import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
@@ -26,25 +27,13 @@ import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
 public class DirectoryPageGenerator extends PageGenerator {
-	final String path;
 	final Directory dir;
-	public String title;
+	final Map metadata;
 
-	public DirectoryPageGenerator( String path, Directory dir, Map metadata ) {
-		this.path = path;
+	public DirectoryPageGenerator( Directory dir, Map metadata, Function1 uriProcessor ) {
 		this.dir = dir;
-		this.title = (String)metadata.get(DcNamespace.DC_TITLE);
-	}
-	
-	protected String getHref(String path) {
-		if( this.path != null && PathUtil.isUri(this.path) ) {
-			path = PathUtil.appendPath(this.path, path);
-		}
-		if( PathUtil.isUri(path) ) {
-			return "/explore?uri=" + UriUtil.uriEncode(path);
-		} else {
-			return path;
-		}
+		this.metadata = metadata;
+		this.uriProcessor = uriProcessor;
 	}
 	
 	public void write(PrintWriter w) throws IOException {
@@ -66,8 +55,8 @@ public class DirectoryPageGenerator extends PageGenerator {
 			}
 		});
 		
-		String title = this.title;
-		if( title == null ) title = "Index of " + path;
+		String title = ValueUtil.getString(metadata.get(DcNamespace.DC_TITLE));
+		if( title == null ) title = "Index of some directory";
 
 		w.println("<html>");
 		w.println("<head>");
@@ -87,8 +76,8 @@ public class DirectoryPageGenerator extends PageGenerator {
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			Entry e = (Entry)i.next();
 			String href;
-			String name = e.getKey(); 
-			if( e.getValue() instanceof Ref && PathUtil.isUri(this.path) ) {
+			String name = e.getKey();
+			if( e.getValue() instanceof Ref ) {
 				href = ((Ref)e.getValue()).targetUri;
 			} else {
 				href = name;
@@ -97,7 +86,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 				if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
 				if( !name.endsWith("/") ) name += "/";
 			}
-			href = getHref(href);
+			href = processUri(href);
 			w.write("<tr>");
 			w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
 			w.write("<td align=\"right\">" + (e.getSize() > -1 ? Long.toString(e.getSize()) : "") + "</td>");

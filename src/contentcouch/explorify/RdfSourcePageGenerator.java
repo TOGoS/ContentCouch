@@ -6,19 +6,18 @@ import java.nio.ByteBuffer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import contentcouch.misc.UriUtil;
+import contentcouch.misc.Function1;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Blob;
 import contentcouch.xml.XML;
 
 public class RdfSourcePageGenerator extends PageGenerator {
-	String path;
 	Blob blob;
 	
-	public RdfSourcePageGenerator( Blob b, String path ) {
+	public RdfSourcePageGenerator( Blob b, Function1 uriProcessor ) {
 		this.blob = b;
-		this.path = path;
+		this.uriProcessor = uriProcessor;
 	}
 	
 	protected Pattern RDFRESPAT = Pattern.compile("rdf:resource=\"([^\\\"]+)\"|((?:http:|file:|x-parse-rdf:|data:|urn:)[a-zA-Z0-9\\-\\._\\~:/\\?\\#\\[\\]\\@\\!\\$\\&\\'\\(\\)\\*\\+\\,\\;\\=\\%]+)");
@@ -32,24 +31,14 @@ public class RdfSourcePageGenerator extends PageGenerator {
 		return link; 
 	}
 	
-	protected String formatLink(String url) {
+	protected String formatLink( String url ) {
 		if( url.startsWith(CcouchNamespace.URI_PARSE_PREFIX) ) {
 			// Then show 2 links
 			String noParsePart = url.substring(CcouchNamespace.URI_PARSE_PREFIX.length());
-			return formatLink2("/explore?uri="+UriUtil.uriEncode(url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
-				formatLink2("/explore?uri="+UriUtil.uriEncode(noParsePart), noParsePart);
+			return formatLink2(processUri(url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
+				formatLink2(processUri(noParsePart), noParsePart);
 		} else {
-			if( url.startsWith("http:") ) {
-				return formatLink2(url, url);
-			} else {
-				int colonIdx = url.indexOf(':');
-				int slashIdx = url.indexOf('/');
-				if( colonIdx < 0 || (slashIdx > 0 && slashIdx < colonIdx) ) {
-					return formatLink2(url, url);
-				} else {	
-					return formatLink2("/explore?uri="+UriUtil.uriEncode(url), url);
-				}
-			}
+			return formatLink2(processUri(url), url);
 		}
 	}
 	

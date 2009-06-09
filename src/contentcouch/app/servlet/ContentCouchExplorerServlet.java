@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -18,16 +15,12 @@ import togos.rra.BaseRequest;
 import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
-import contentcouch.explorify.RdfSourcePageGenerator;
-import contentcouch.explorify.SlfSourcePageGenerator;
-import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
-import contentcouch.value.Blob;
 
 public class ContentCouchExplorerServlet extends HttpServlet {
 	public interface HttpServletRequestHandler {
@@ -76,30 +69,6 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		return configFile;
 	}
 
-	protected Object exploreObject( Object obj, String path ) {
-		if( obj instanceof Blob ) {
-			Blob b = (Blob)obj;
-			String ct = MetadataUtil.guessContentType(b);
-			if( MetadataUtil.CT_SLF.equals(ct) ) {
-				return new SlfSourcePageGenerator(b, path);
-			} else if( MetadataUtil.CT_RDF.equals(ct) ) {
-				return new RdfSourcePageGenerator((Blob)obj, path);
-			}
-		}
-		return obj;
-	}
-		
-	protected Map getSingularParams(Map multiMap) {
-		HashMap singleMap = new HashMap();
-		for( Iterator i=multiMap.entrySet().iterator(); i.hasNext(); ) {
-			Map.Entry e = (Map.Entry)i.next();
-			Object val = e.getValue();
-			if( val instanceof Object[] ) val = ((Object[])val)[0];
-			singleMap.put(e.getKey(), val);
-		}
-		return singleMap;
-	}
-	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String pi = request.getPathInfo();
 		if( pi == null ) pi = request.getRequestURI();

@@ -1,58 +1,37 @@
 package contentcouch.active;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 
-public class Context extends HashMap {
+public class Context {
 	public static final String GENERIC_GETTER_VAR = "ccouch:getter";
 	public static final String IDENTIFIER_VAR = "ccouch:identifier";
 
-	protected HashMap varStacks = new HashMap();;
-	
-	public Context() {
-		super();
+	protected static Stack instanceStack = new Stack();
+	public static void pushInstance(Map ctx) {
+		instanceVar.set(ctx);
+	}
+	public static void pushInstance() {
+		pushInstance(new HashMap());
+	}
+	public static void popInstance() {
+		instanceVar.set(instanceStack.pop());
 	}
 	
-	public Context( Context cloneFrom ) {
-		super( cloneFrom );
-	}
-	
-	public void push( String name, Object value ) {
-		Stack stack = (Stack)varStacks.get(name);
-		if( stack == null ) {
-			stack = new Stack();
-			varStacks.put(name, stack);
-		}
-		stack.push(get(name));
-		put(name,value);
-	}
-	
-	public Object pop( String name ) {
-		Stack stack = (Stack)varStacks.get(name);
-		if( stack == null || stack.size() == 0 ) return null;
-		Object oldVal = get(get(name));
-		put( name, stack.pop() );
-		return oldVal;
-	}
+	protected HashMap varStacks = new HashMap();
 	
 	public static ThreadLocal instanceVar = new ThreadLocal() {
 		protected Object initialValue() {
-			return new Context();
+			return new HashMap();
 		}
 	};
 
-	public static Context getInstance() {
-		return (Context)instanceVar.get();
+	public static Map getInstance() {
+		return (Map)instanceVar.get();
 	}
 	
-	/** Creates a thread that will have a Context that is a clone of the current thread's. */  
-	public Thread createThread( final Runnable r ) {
-		final Context ctx = new Context(getInstance());
-		return new Thread( new Runnable() {
-			public void run() {
-				Context.instanceVar.set(ctx);
-				r.run();
-			}
-		});
+	public static Object get(String key) {
+		return getInstance().get(key);
 	}
 }

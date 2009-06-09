@@ -2,10 +2,9 @@ package contentcouch.misc;
 
 import java.io.UnsupportedEncodingException;
 
-import contentcouch.active.ActiveUriResolver;
 
 public class UriUtil {
-
+	public static final char[] HEXCHARS = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
 	public static String uriEncode( String text, boolean keepUriSpecialChars ) {
 		byte[] inbytes;
@@ -29,8 +28,8 @@ public class UriUtil {
 				outchars[outidx++] = (char)c;
 			} else {
 				outchars[outidx++] = '%';
-				outchars[outidx++] = ActiveUriResolver.HEXCHARS[(c>>4)&0xF];
-				outchars[outidx++] = ActiveUriResolver.HEXCHARS[ c    &0xF];
+				outchars[outidx++] = HEXCHARS[(c>>4)&0xF];
+				outchars[outidx++] = HEXCHARS[ c    &0xF];
 			}
 		}
 		return new String(outchars,0,outidx);

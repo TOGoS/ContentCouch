@@ -8,8 +8,15 @@ public class BaseRequest implements Request {
 	public String verb;
 	public String uri;
 	public Object content;
+	
 	public Map contentMetadata = Collections.EMPTY_MAP;
+	protected boolean contentMetadataClean = true;
+	
 	public Map metadata = Collections.EMPTY_MAP;
+	protected boolean metadataClean = true;
+	
+	public Map contextVars = Collections.EMPTY_MAP;
+	protected boolean contextVarsClean = true;
 	
 	/** Make a blank one */
 	public BaseRequest() { }
@@ -35,6 +42,7 @@ public class BaseRequest implements Request {
 		this.content = req.getContent();
 		this.contentMetadata = req.getContentMetadata();
 		this.metadata = req.getMetadata();
+		this.contextVars = req.getContextVars();
 	}
 
 	/** Make one just like req, but with a different URI */
@@ -44,6 +52,7 @@ public class BaseRequest implements Request {
 		this.content = req.getContent();
 		this.contentMetadata = req.getContentMetadata();
 		this.metadata = req.getMetadata();
+		this.contextVars = req.getContextVars();
 	}
 	
 	public String getVerb() {  return verb;  }
@@ -51,14 +60,30 @@ public class BaseRequest implements Request {
 	public Object getContent() {  return content;  }
 	public Map getContentMetadata() {  return contentMetadata;  }
 	public Map getMetadata() {  return metadata;  }
+	public Map getContextVars() {  return contextVars;  }
+	
+	public void putContentMetadata(String key, Object value) {
+		if( contentMetadataClean ) {
+			contentMetadata = new HashMap(contentMetadata);
+			contentMetadataClean = false;
+		}
+		contentMetadata.put(key, value);
+	}
 	
 	public void putMetadata(String key, Object value) {
-		if( metadata == Collections.EMPTY_MAP ) metadata = new HashMap();
+		if( metadataClean ) {
+			metadata = new HashMap(metadata);
+			metadataClean = false;
+		}
 		metadata.put(key, value);
 	}
 
-	public void putContentMetadata(String key, Object value) {
-		if( contentMetadata == Collections.EMPTY_MAP ) contentMetadata = new HashMap();
-		contentMetadata.put(key, value);
+	public void putContextVar(String key, Object value) {
+		if( contextVarsClean ) {
+			contextVars = new HashMap(contextVars);
+			contextVarsClean = false;
+		}
+		contextVars.put(key, value);
 	}
+
 }
