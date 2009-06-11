@@ -41,18 +41,23 @@ public class DirectoryPageGenerator extends PageGenerator {
 		Set entries = dir.getDirectoryEntrySet();
 		ArrayList entryList = new ArrayList(entries);
 		Collections.sort(entryList, new Comparator() {
+			protected int compareTargetTypes( String tt1, String tt2 ) {
+				if( tt1 == null && tt2 == null ) return 0;
+				if( tt1 == null ) return 1;
+				if( tt2 == null ) return -1;
+				if( tt1.equals(tt2) ) return 0;
+				if( tt1.equals(CcouchNamespace.OBJECT_TYPE_DIRECTORY) ) return -1;
+				if( tt2.equals(CcouchNamespace.OBJECT_TYPE_DIRECTORY) ) return 1;
+				return 0;
+			}
+			
 			public int compare(Object o1, Object o2) {
 				Entry e1 = (Entry)o1;
 				Entry e2 = (Entry)o2;
-				if( e1.getTargetType().equals(e2.getTargetType()) ) {
-					return Strings.compareNatural(e1.getName(),e2.getName());
-				} else {
-					if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e1.getTargetType()) ) {
-						return -1;
-					} else {
-						return 1;
-					}
-				}
+				
+				int ttc = compareTargetTypes(e1.getTargetType(), e2.getTargetType());
+				if( ttc == 0 ) return Strings.compareNatural(e1.getName(),e2.getName());
+				return ttc;
 			}
 		});
 		
