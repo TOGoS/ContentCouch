@@ -1,19 +1,13 @@
 package contentcouch.active;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import contentcouch.active.expression.Expression;
-
 import togos.rra.BaseResponse;
 import togos.rra.Request;
 import togos.rra.RequestHandler;
 import togos.rra.Response;
+import contentcouch.active.expression.Expression;
 
-public class ActiveUriResolver implements RequestHandler {
-	public Map namedActiveFunctions = new HashMap();
-	
-	public ActiveUriResolver() {
+public class ActiveRequestHandler implements RequestHandler {
+	public ActiveRequestHandler() {
 	}
 	
 	public Response handleRequest( Request req ) {

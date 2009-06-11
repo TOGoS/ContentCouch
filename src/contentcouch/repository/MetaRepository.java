@@ -1,5 +1,6 @@
 package contentcouch.repository;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -16,6 +17,8 @@ import togos.rra.Response;
 import com.eekboom.utils.Strings;
 
 import contentcouch.blob.BlobUtil;
+import contentcouch.file.FileBlob;
+import contentcouch.hashcache.FileHashCache;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
@@ -75,8 +78,22 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 	}
 	
+	protected FileHashCache fileHashCacheCache;
+	protected FileHashCache getFileHashCache() {
+		if( fileHashCacheCache == null && config.defaultRepoConfig.uri.startsWith("file:") ) {
+			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.uri + "cache/file-attrs.slf").toString();
+			System.err.println("Using file hash cache "+ hashCachePath);
+			File cacheFile = new File(hashCachePath);
+			fileHashCacheCache = new FileHashCache(cacheFile);
+		}
+		return fileHashCacheCache;
+	}
+	
 	public byte[] getHash( Blob blob ) {
-		// TODO: Use file hash cache
+		if( blob instanceof FileBlob ) {
+			FileHashCache fileHashCache = getFileHashCache();
+			return fileHashCache.getHash((FileBlob)blob, config.defaultRepoConfig.dataScheme);
+		}
 		return config.defaultRepoConfig.dataScheme.getHash( blob );
 	}
 	

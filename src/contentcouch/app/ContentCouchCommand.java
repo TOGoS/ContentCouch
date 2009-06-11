@@ -395,12 +395,16 @@ public class ContentCouchCommand {
 			String input = (String)i.next();
 			BaseRequest getReq = new BaseRequest(Request.VERB_GET, input);
 			Response getRes = TheGetter.handleRequest(getReq);
-			BaseRequest idReq = new BaseRequest(Request.VERB_POST, "x-ccouch-repo:identify", getRes.getContent(), getRes.getContentMetadata());
-			String id = ValueUtil.getString(TheGetter.getResponseValue(TheGetter.handleRequest(idReq), idReq.uri));
-			if( reportInputs ) {
-				System.out.println( input + "\t" + id );
+			if( getRes.getStatus() != Response.STATUS_NORMAL ) {
+				System.err.println("Couldn't find " + getReq.getUri() + ": " + getRes.getStatus() + ": " + getRes.getContent() );
 			} else {
-				System.out.println( id );
+				BaseRequest idReq = new BaseRequest(Request.VERB_POST, "x-ccouch-repo:identify", getRes.getContent(), getRes.getContentMetadata());
+				String id = ValueUtil.getString(TheGetter.getResponseValue(TheGetter.handleRequest(idReq), idReq.uri));
+				if( reportInputs ) {
+					System.out.println( input + "\t" + id );
+				} else {
+					System.out.println( id );
+				}
 			}
 		}
 	}

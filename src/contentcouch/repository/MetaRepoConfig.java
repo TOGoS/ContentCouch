@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import togos.rra.MultiRequestHandler;
-import contentcouch.active.ActiveUriResolver;
+import contentcouch.active.ActiveRequestHandler;
 import contentcouch.active.DataUriResolver;
 import contentcouch.app.Log;
 import contentcouch.blob.BlobInputStream;
@@ -188,7 +188,7 @@ public class MetaRepoConfig {
 		if( requestKernelCache == null ) {
 			requestKernelCache = new MultiRequestHandler();
 			requestKernelCache.addRequestHandler(getMetaRepository());
-			requestKernelCache.addRequestHandler(new ActiveUriResolver());
+			requestKernelCache.addRequestHandler(new ActiveRequestHandler());
 			requestKernelCache.addRequestHandler(new DataUriResolver());
 			requestKernelCache.addRequestHandler(new HttpRequestHandler());
 			requestKernelCache.addRequestHandler(new FileRequestHandler());

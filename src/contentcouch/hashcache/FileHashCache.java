@@ -5,9 +5,10 @@ import java.io.IOException;
 
 import org.bitpedia.util.Base32;
 
-import contentcouch.digest.DigestUtil;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
+import contentcouch.repository.ContentAddressingScheme;
+import contentcouch.repository.Sha1Scheme;
 
 
 
@@ -15,7 +16,7 @@ public class FileHashCache {
 	public static class Entry {
 		public long size;
 		public long mtime;
-		public byte[] sha1sum;
+		public byte[] hash;
 		
 		protected static void longToBytes(long l, byte[] bytes, int offset) {
 			bytes[offset+0] = (byte)((l >> 56) & 0xFF);
@@ -44,7 +45,7 @@ public class FileHashCache {
 			byte[] bytes = new byte[36];
 			longToBytes(this.size, bytes, 0);
 			longToBytes(this.mtime, bytes, 8);
-			for(int i=0; i<20; ++i) bytes[16+i] = sha1sum[i];
+			for(int i=0; i<hash.length; ++i) bytes[16+i] = hash[i];
 			return bytes;
 		}
 		
@@ -55,8 +56,8 @@ public class FileHashCache {
 			Entry e = new Entry();
 			e.size = bytesToLong( bytes, 0 );
 			e.mtime = bytesToLong( bytes, 8 );
-			e.sha1sum = new byte[20];
-			for( int i=0; i<20; ++i ) e.sha1sum[i] = bytes[16+i];
+			e.hash = new byte[bytes.length-16];
+			for( int i=0; i<e.hash.length; ++i ) e.hash[i] = bytes[16+i];
 			return e;
 		}
 	}
@@ -107,21 +108,21 @@ public class FileHashCache {
 		return (e != null && file.lastModified() == e.mtime && file.length() == e.size) ? e : null;
 	}
 	
-	public byte[] getSha1( FileBlob file ) {
+	public byte[] getHash( FileBlob file, ContentAddressingScheme scheme ) {
 		try {
 			Entry e = getCachedValidEntry(file);
 			if( e != null ) {
-				return e.sha1sum;
+				return e.hash;
 			}
-			byte[] sha1sum = DigestUtil.sha1DigestBlob(file);
+			byte[] hash = scheme.getHash(file);
 			if( getSlf().isWritable() ) {
 				e = new Entry();
 				e.mtime = file.lastModified();
 				e.size = file.length();
-				e.sha1sum = sha1sum;
+				e.hash = hash;
 				getSlf().put(file.getCanonicalPath(), e.toBytes());
 			}
-			return sha1sum;
+			return hash;
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -132,7 +133,7 @@ public class FileHashCache {
 			File slff = new File("C:/stuff/proj/ContentCouch/junk-repo/cache/file-info.slf");
 			FileHashCache fhc = new FileHashCache(slff, "rw");
 			//System.err.println(fhc.getSha1(new FileBlob(new File("F:/archives/apps/Reason/Reason-4.0-AiR/Reason 4.iso"))));
-			System.err.println(Base32.encode(fhc.getSha1(new FileBlob(new File("C:/stuff/proj/ContentCouch/.classpath")))));
+			System.err.println(Base32.encode(fhc.getHash(new FileBlob(new File("C:/stuff/proj/ContentCouch/.classpath")), new Sha1Scheme())));
 		} catch( Exception e ) {
 			throw new RuntimeException(e);
 		}
