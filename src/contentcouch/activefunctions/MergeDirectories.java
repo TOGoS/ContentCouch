@@ -118,10 +118,10 @@ public class MergeDirectories extends BaseActiveFunction {
 	protected static void mergeInto( SimpleDirectory dest, Directory src, int flags ) {
 		for( Iterator ei=src.getDirectoryEntrySet().iterator(); ei.hasNext(); ) {
 			Directory.Entry srcEntry = (Directory.Entry)ei.next();
-			SimpleDirectory.Entry existingEntry = (SimpleDirectory.Entry)dest.getDirectoryEntry(srcEntry.getKey());
+			SimpleDirectory.Entry existingEntry = (SimpleDirectory.Entry)dest.getDirectoryEntry(srcEntry.getName());
 			if( existingEntry == null ) {
 				existingEntry = new SimpleDirectory.Entry();
-				existingEntry.name = srcEntry.getKey();
+				existingEntry.name = srcEntry.getName();
 				dest.addEntry(existingEntry);
 			}
 			mergeIntoEntry( existingEntry, srcEntry, flags );

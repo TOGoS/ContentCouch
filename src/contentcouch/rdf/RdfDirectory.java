@@ -38,13 +38,14 @@ public class RdfDirectory extends RdfNode implements Directory {
 	public static class Entry extends RdfNode implements Directory.Entry {
 		public Entry( Directory.Entry de, Function1 targetRdfifier ) {
 			this();
-			if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
+			if( de.getTargetType() == null ) {
+			} else if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
 			} else if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(de.getTargetType()) ) {
 			} else {
 				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
 			}
 
-			add(CcouchNamespace.NAME, de.getKey());
+			add(CcouchNamespace.NAME, de.getName());
 			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
 
 			long modified = de.getLastModified();
@@ -68,7 +69,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 			return (String)getSingle(CcouchNamespace.TARGETTYPE);
 		}
 
-		public String getKey() {
+		public String getName() {
 			return (String)getSingle(CcouchNamespace.NAME);
 		}
 
@@ -100,7 +101,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 		List entries = new ArrayList(dir.getDirectoryEntrySet());
 		Collections.sort( entries, new Comparator() {
 			public int compare( Object o1, Object o2 ) {
-				return ((Directory.Entry)o1).getKey().compareTo(((Directory.Entry)o2).getKey());
+				return ((Directory.Entry)o1).getName().compareTo(((Directory.Entry)o2).getName());
 			}
 		});
 		List rdfEntries = new ArrayList();
@@ -129,7 +130,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
-			if( e.getKey() == key ) {
+			if( e.getName() == key ) {
 				return e;
 			}
 		}

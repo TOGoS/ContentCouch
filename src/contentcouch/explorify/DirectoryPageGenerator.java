@@ -45,7 +45,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 				Entry e1 = (Entry)o1;
 				Entry e2 = (Entry)o2;
 				if( e1.getTargetType().equals(e2.getTargetType()) ) {
-					return Strings.compareNatural(e1.getKey(),e2.getKey());
+					return Strings.compareNatural(e1.getName(),e2.getName());
 				} else {
 					if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e1.getTargetType()) ) {
 						return -1;
@@ -77,7 +77,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			Entry e = (Entry)i.next();
 			String href;
-			String name = e.getKey();
+			String name = e.getName();
 			if( e.getValue() instanceof RelativeRef && ((RelativeRef)e.getValue()).isRelative() ) {
 				href = ((RelativeRef)e.getValue()).getTargetRelativeUri();
 			} else if( e.getValue() instanceof Ref ) {

@@ -9,7 +9,7 @@ public interface Directory {
 		/** Returns the name of the object type ('Blob' or 'Directory') of the target */
 		public String getTargetType();
 		/** Returns the filename */
-		public String getKey();
+		public String getName();
 		/** Returns the size (in bytes) of the target blob.
 		 * If unknown of not applicable (if target is not a blob), should return -1. */
 		public long getSize();

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package contentcouch.rdf;
 
 import java.util.HashMap;

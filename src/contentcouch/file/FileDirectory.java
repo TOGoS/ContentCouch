@@ -13,7 +13,7 @@ public class FileDirectory extends File implements Directory {
 			super(file.getPath());
 		}
 
-		public String getKey() {
+		public String getName() {
 			return getName();
 		}
 		

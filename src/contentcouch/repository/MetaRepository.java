@@ -115,7 +115,7 @@ public class MetaRepository extends BaseRequestHandler {
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
-				l.add(PathUtil.appendPath(dataDirUri, e.getKey() + "/"));
+				l.add(PathUtil.appendPath(dataDirUri, e.getName() + "/"));
 			}
 		}
 		return l;
@@ -129,12 +129,12 @@ public class MetaRepository extends BaseRequestHandler {
 		String highest = null;
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
-			if( entryKeyNumberExtractionPattern.matcher(e.getKey()).matches() ) {
+			if( entryKeyNumberExtractionPattern.matcher(e.getName()).matches() ) {
 				if( highest == null ) {
-					highest = e.getKey();
+					highest = e.getName();
 				} else {
-					if( Strings.compareNatural(e.getKey(), highest) > 0 ) {
-						highest = e.getKey();
+					if( Strings.compareNatural(e.getName(), highest) > 0 ) {
+						highest = e.getName();
 					}
 				}
 			}
