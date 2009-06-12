@@ -136,4 +136,34 @@ public class BlobUtil {
 			writeBlobToFile(blob, f);
 		}
 	}
+	
+	public static int compareBlobs( Blob b1, Blob b2 ) {
+		long l1 = b1.getLength();
+		long l2 = b2.getLength();
+		long minLength;
+		minLength = ( l1 < l2 ) ? l1 : l2;
+		long ran = 0;
+		int chunkSize;
+		if( b1 instanceof ByteArrayBlob && b2 instanceof ByteArrayBlob ) chunkSize = (int)(b1.getLength());
+		else chunkSize = READ_CHUNK_SIZE;
+		while( ran < minLength ) {
+			int cl = (int)((minLength - ran) < chunkSize ? (minLength - ran) : chunkSize);
+			byte[] chunk1 = b1.getData(ran, cl);
+			byte[] chunk2 = b2.getData(ran, cl);
+			for( int i=0; i<cl; ++i ) {
+				if( chunk1[i] == chunk2[i] ) continue;
+				if( chunk1[i] < chunk2[i] ) return -1;
+				return 1;
+			}
+			ran += cl;
+		}
+		if( l1 == l2 ) return 0;
+		if( l1 < l2 ) return -1;
+		return 1;
+	}
+	
+	public static boolean blobsEqual( Blob b1, Blob b2 ) {
+		// TODO maybe: If both file blobs and a repo set up, use their cached hashes?
+		return compareBlobs(b1, b2) == 0;
+	}
 }

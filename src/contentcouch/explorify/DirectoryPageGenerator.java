@@ -83,10 +83,10 @@ public class DirectoryPageGenerator extends PageGenerator {
 			Entry e = (Entry)i.next();
 			String href;
 			String name = e.getName();
-			if( e.getValue() instanceof RelativeRef && ((RelativeRef)e.getValue()).isRelative() ) {
-				href = ((RelativeRef)e.getValue()).getTargetRelativeUri();
-			} else if( e.getValue() instanceof Ref ) {
-				href = ((Ref)e.getValue()).getTargetUri();
+			if( e.getTarget() instanceof RelativeRef && ((RelativeRef)e.getTarget()).isRelative() ) {
+				href = ((RelativeRef)e.getTarget()).getTargetRelativeUri();
+			} else if( e.getTarget() instanceof Ref ) {
+				href = ((Ref)e.getTarget()).getTargetUri();
 			} else {
 				href = name;
 			}
@@ -97,8 +97,8 @@ public class DirectoryPageGenerator extends PageGenerator {
 			href = processRelativeUri(uri, href);
 			w.write("<tr>");
 			w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
-			w.write("<td align=\"right\">" + (e.getSize() > -1 ? Long.toString(e.getSize()) : "") + "</td>");
-			w.write("<td>" + (e.getLastModified() > -1 ? DateUtil.DISPLAYFORMAT.format(new Date(e.getLastModified())) : "") + "</td>");
+			w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
+			w.write("<td>" + (e.getTargetLastModified() > -1 ? DateUtil.DISPLAYFORMAT.format(new Date(e.getTargetLastModified())) : "") + "</td>");
 			w.write("</tr>\n");
 		}
 		w.println("</table>");

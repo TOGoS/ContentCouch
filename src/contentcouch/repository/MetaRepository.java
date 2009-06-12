@@ -250,7 +250,7 @@ public class MetaRepository extends BaseRequestHandler {
 				entry.name = repoConfig.name;
 				entry.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
 				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.uri);
-				sd.addEntry(entry);
+				sd.addDirectoryEntry(entry);
 			}
 			return new BaseResponse(Response.STATUS_NORMAL, sd);
 		} else if( req.getUri().startsWith("x-ccouch-head:") || req.getUri().startsWith("x-ccouch-repo:") ) {

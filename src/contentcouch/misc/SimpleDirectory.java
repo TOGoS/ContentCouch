@@ -8,12 +8,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import contentcouch.directory.CloneUtil;
+import contentcouch.directory.WritableDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
-public class SimpleDirectory implements Directory, Map {
+public class SimpleDirectory implements WritableDirectory, Map {
 	static class SimpleMapEntry implements Map.Entry {
 		Object k, v;
 		public SimpleMapEntry( Object k, Object v ) {
@@ -29,85 +31,53 @@ public class SimpleDirectory implements Directory, Map {
 	}
 	
 	public static class Entry implements Directory.Entry, Map.Entry {
-		public long lastModified = -1;
+		public long targetLastModified = -1;
 		public String name;
-		public long size = -1;
+		public long targetSize = -1;
 		public Object target;
 		public String targetType;
 
 		public Entry() { }
+
 		public Entry(Directory.Entry e) {
-			this.target = e.getValue();
-			this.targetType = e.getTargetType();
 			this.name = e.getName();
-			this.size = e.getSize();
-			this.lastModified = e.getLastModified();
+			this.target = e.getTarget();
+			this.targetType = e.getTargetType();
+			this.targetSize = e.getTargetSize();
+			this.targetLastModified = e.getTargetLastModified();
 		}
 		
-		//// Directory.Entry implementation ////
-		public long getLastModified() { return lastModified; }
-		public String getName() { return name; }
-		public long getSize() { return size; }
-		public Object getValue() { return target; }
-		public String getTargetType() { return targetType; }
+		public Entry(Directory.Entry e, int cloneFlags ) {
+			this.name = e.getName();
+			this.target = e.getTarget();
+			this.targetType = e.getTargetType();
+			this.targetSize = e.getTargetSize();
+			this.targetLastModified = e.getTargetLastModified();
+		}
 
+		//// Directory.Entry implementation ////
+		public long getTargetLastModified() { return targetLastModified; }
+		public String getName() { return name; }
+		public long getTargetSize() { return targetSize; }
+		public Object getTarget() { return target; }
+		public String getTargetType() { return targetType; }
+		
 		//// Map.Entry implementation ////
 		public Object getKey() { return name; }
-		public Object setValue( Object value ) {
-			Object oldTarget = target;
-			this.target = value;
-			return oldTarget;
-		}
-	}
-
-	public static final int DEEPCLONE_NEVER = 0;
-	public static final int DEEPCLONE_SIMPLEDIRECTORY = 1;
-	public static final int DEEPCLONE_ALWAYS = 2;
-	
-	public static Object cloneTarget( Object target, int depth ) {
-		if( depth == DEEPCLONE_NEVER ) return target;
-		if( target instanceof Ref ) {
-			target = TheGetter.get( ((Ref)target).getTargetUri() );
-		}
-		if( target instanceof Directory && depth == DEEPCLONE_ALWAYS ) {
-			return new SimpleDirectory((Directory)target, depth);
-		} else if( target instanceof SimpleDirectory && depth == DEEPCLONE_SIMPLEDIRECTORY ) {
-			return new SimpleDirectory((Directory)target, depth);
-		} else {
-			return target;	
-		}
-	}
-	
-	public static void cloneMetadataInto( SimpleDirectory.Entry destEntry, Directory.Entry srcEntry ) {
-		destEntry.name = srcEntry.getName();
-		destEntry.targetType = srcEntry.getTargetType();
-		destEntry.size = srcEntry.getSize();
-		destEntry.lastModified = srcEntry.getLastModified();
-	}
-	
-	public static void cloneInto( SimpleDirectory.Entry destEntry, Directory.Entry srcEntry, int depth ) {
-		Object srcTarget = srcEntry.getValue();
-		if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(srcEntry.getTargetType()) ) {
-			boolean clone;
-			switch( depth ) {
-			case( DEEPCLONE_NEVER ): clone = false; break;
-			case( DEEPCLONE_SIMPLEDIRECTORY ): clone = srcTarget instanceof SimpleDirectory; break;
-			case( DEEPCLONE_ALWAYS ): clone = true;
-			default: throw new RuntimeException("Invalid value for depth: " + depth);
+		public Object getValue() {
+			if( target instanceof Ref ) {
+				return TheGetter.get(((Ref)target).getTargetUri());
+			} else {
+				return target;
 			}
-			destEntry.target = clone ? cloneTarget( srcTarget, depth ) : srcTarget;
-		} else {
-			destEntry.target = srcTarget; 
 		}
-		cloneMetadataInto( destEntry, srcEntry );
+		public Object setValue( Object value ) {
+			Object oldValue = this.target;
+			this.target = value;
+			return oldValue;
+		}
 	}
 
-	protected static SimpleDirectory.Entry cloneEntry( Directory.Entry e, int depth ) {
-		SimpleDirectory.Entry newEntry = new SimpleDirectory.Entry();
-		cloneInto( newEntry, e, depth );
-		return newEntry;
-	}
-	
 	public Map entryMap = new HashMap();
 	public Map metadata;
 	
@@ -118,11 +88,16 @@ public class SimpleDirectory implements Directory, Map {
 		this.entryMap = new HashMap(sd.entryMap);
 	}
 	
-	public SimpleDirectory( Directory d, int depth ) {
+	public SimpleDirectory( Directory d, int cloneFlags ) {
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry entry = (Directory.Entry)i.next();
-			entry = cloneEntry(entry, depth);
-			addEntry(entry); 
+			Object target = CloneUtil.clone( entry.getTarget(), entry.getTargetType(), cloneFlags, entry.getName() );
+			if( target == null ) continue;
+			Entry newEntry = new Entry();
+			newEntry.name = entry.getName();
+			newEntry.targetType = entry.getTargetType();
+			newEntry.targetSize = entry.getTargetSize();
+			newEntry.target = target;
 		}
 	}
 	
@@ -131,11 +106,11 @@ public class SimpleDirectory implements Directory, Map {
 			final Map.Entry e = (Map.Entry)i.next();
 			SimpleDirectory.Entry sde = new SimpleDirectory.Entry();
 			sde.name = (String)e.getKey();
-			sde.lastModified = -1;
+			sde.targetLastModified = -1;
 			sde.target = e.getValue();
-			sde.size = -1;
+			sde.targetSize = -1;
 			sde.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
-			addEntry(sde);
+			addDirectoryEntry(sde);
 		}
 	}
 	
@@ -149,7 +124,7 @@ public class SimpleDirectory implements Directory, Map {
 		return (Directory.Entry)entryMap.get(name);
 	}
 	
-	public void addEntry(Directory.Entry e) {
+	public void addDirectoryEntry(Directory.Entry e) {
 		entryMap.put(e.getName(), new Entry(e));
 	}
 	
@@ -168,7 +143,7 @@ public class SimpleDirectory implements Directory, Map {
 	}
 
 	protected Object getActualEntryValue( Directory.Entry e ) {
-		Object value = e.getValue();
+		Object value = e.getTarget();
 		if( value instanceof Ref ) {
 			return TheGetter.get(((Ref)value).getTargetUri());
 		} else {
@@ -228,7 +203,7 @@ public class SimpleDirectory implements Directory, Map {
 	public Object remove(Object key) {
 		Entry e = (Entry)entryMap.remove(key);
 		if( e == null ) return null;
-		return e.getValue();
+		return e.getTarget();
 	}
 
 	public int size() {
@@ -244,12 +219,7 @@ public class SimpleDirectory implements Directory, Map {
 	}
 
 	public Set entrySet() {
-		HashSet mapEntries = new HashSet();
-		for( Iterator i=entryMap.values().iterator(); i.hasNext(); ) {
-			Entry e = (Entry)i.next();
-			mapEntries.add( new SimpleMapEntry( e.getKey(), getActualEntryValue(e) ) );
-		}
-		return mapEntries;
+		return new HashSet(entryMap.values());
 	}
 
 	public Set keySet() {

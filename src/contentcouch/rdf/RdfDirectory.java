@@ -48,20 +48,20 @@ public class RdfDirectory extends RdfNode implements Directory {
 			add(CcouchNamespace.NAME, de.getName());
 			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
 
-			long modified = de.getLastModified();
+			long modified = de.getTargetLastModified();
 			if( modified != -1 ) add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
 			
-			long size = de.getSize();
+			long size = de.getTargetSize();
 			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
 
-			add(CcouchNamespace.TARGET, targetRdfifier.apply(de.getValue()));
+			add(CcouchNamespace.TARGET, targetRdfifier.apply(de.getTarget()));
 		}
 
 		public Entry() {
 			super(CcouchNamespace.DIRECTORYENTRY);
 		}
 		
-		public Object getValue() {
+		public Object getTarget() {
 			return getSingle(CcouchNamespace.TARGET);
 		}
 
@@ -73,13 +73,13 @@ public class RdfDirectory extends RdfNode implements Directory {
 			return (String)getSingle(CcouchNamespace.NAME);
 		}
 
-		public long getSize() {
+		public long getTargetSize() {
 			String lm = (String)getSingle(CcouchNamespace.SIZE);
 			if( lm == null ) return -1;
 			return Long.parseLong(lm);
 		}
 
-		public long getLastModified() {
+		public long getTargetLastModified() {
 			try {
 				String lm = (String)this.getSingle(DcNamespace.DC_MODIFIED);
 				if( lm == null ) return -1;

@@ -15,9 +15,11 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfIO;
+import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
+import contentcouch.value.Ref;
 import contentcouch.xml.XML;
 
 public class DirectoryUtil {
@@ -43,13 +45,13 @@ public class DirectoryUtil {
 						e.name = href;
 						e.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
 						e.target = new BaseRef(identifier, href);
-						dir.addEntry(e);
+						dir.addDirectoryEntry(e);
 					} else {
 						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 						e.name = href.substring(0, href.length()-1);
 						e.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
 						e.target = new BaseRef(identifier, e.name + "/");
-						dir.addEntry(e);
+						dir.addDirectoryEntry(e);
 					}
 				}
 			}
@@ -80,5 +82,9 @@ public class DirectoryUtil {
 	
 	public static Directory getDirectory( ContentAndMetadata res, String uri ) {
 		return getDirectory(res.getContent(), res.getContentMetadata(), uri);
+	}
+
+	protected static Object getTargetValue( Object target ) {
+		return ( target instanceof Ref ) ? TheGetter.get(((Ref)target).getTargetUri()) : target;
 	}
 }

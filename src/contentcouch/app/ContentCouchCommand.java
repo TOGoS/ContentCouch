@@ -287,33 +287,43 @@ public class ContentCouchCommand {
 		boolean shouldLinkStored = false;
 		boolean shouldRelinkImported = false;
 		boolean dumpConfig = false;
-		String fileMergeMethod = null;
+		String fileMergeMethod = CcouchNamespace.RR_FILEMERGE_STRICTIG;
 		String dirMergeMethod = null;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
 				System.err.println(STORE_USAGE);
 				System.exit(1);
+			
+			// Linking options
 			} else if( "-link".equals(arg) ) {
 				shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
 				shouldLinkStored = true;
 				shouldRelinkImported = true;
+
+			// Merging options:
 			} else if( "-file-merge-method".equals(arg) ) {
 				fileMergeMethod = args[++i];
+			} else if( "-dir-merge-method".equals(arg) ) {
+				dirMergeMethod = args[++i];
 			} else if( "-replace-existing".equals(arg) ) {
 				fileMergeMethod = CcouchNamespace.RR_FILEMERGE_REPLACE;
 			} else if( "-keep-existing".equals(arg) ) {
 				fileMergeMethod = CcouchNamespace.RR_FILEMERGE_IGNORE;
-			} else if( "-dir-merge-method".equals(arg) ) {
-				dirMergeMethod = args[++i];
+			} else if( "-merge".equals(arg) ) {
+				dirMergeMethod = CcouchNamespace.RR_DIRMERGE_MERGE;
+
 			} else if( "-dump-config".equals(arg) ) {
 				dumpConfig = true;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
 				System.out.println(STORE_USAGE);
 				System.exit(0);
+			
+			// What to copy to/from
 			} else if( arg.charAt(0) != '-' || "-".equals(arg) ) {
 				sourceUris.add(arg);
+				
 			} else {
 				System.err.println("ccouch store: Unrecognised argument: " + arg);
 				System.err.println(COPY_USAGE);
