@@ -80,9 +80,9 @@ public class PathUtilTest extends TestCase {
 		);
 
 		assertEquals(
-			"active:contentcouch.explore+operand@" + UriUtil.uriEncode( "http://www.nuke24.net/images/bunny.jpg"),
+			"active:contentcouch.explorify+operand@" + UriUtil.uriEncode( "http://www.nuke24.net/images/bunny.jpg"),
 			PathUtil.appendPath(
-				"active:contentcouch.explore+operand@" + UriUtil.uriEncode(
+				"active:contentcouch.explorify+operand@" + UriUtil.uriEncode(
 					"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/"),
 				"bunny.jpg"
 			)
