@@ -2,17 +2,13 @@ package contentcouch.misc;
 
 import java.io.UnsupportedEncodingException;
 
+import contentcouch.value.Blob;
+
 
 public class UriUtil {
 	public static final char[] HEXCHARS = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
-	public static String uriEncode( String text, boolean keepUriSpecialChars ) {
-		byte[] inbytes;
-		try {
-			inbytes = text.getBytes("UTF-8");
-		} catch( UnsupportedEncodingException e ) {
-			throw new RuntimeException(e);
-		}
+	public static String uriEncode( byte[] inbytes, boolean keepUriSpecialChars ) {
 		char[] outchars = new char[inbytes.length*3];
 		int inidx=0, outidx=0;
 		while( inidx < inbytes.length ) {
@@ -33,6 +29,16 @@ public class UriUtil {
 			}
 		}
 		return new String(outchars,0,outidx);
+	}
+	
+	public static String uriEncode( String text, boolean keepUriSpecialChars ) {
+		byte[] inbytes;
+		try {
+			inbytes = text.getBytes("UTF-8");
+		} catch( UnsupportedEncodingException e ) {
+			throw new RuntimeException(e);
+		}
+		return uriEncode( inbytes, keepUriSpecialChars );
 	}
 	
 	public static String uriEncode( String text ) {
@@ -80,7 +86,19 @@ public class UriUtil {
 		}
 	}
 	
+	public static String makeDataUri( byte[] data ) {
+		return "data:," + uriEncode(data, true);
+	}
+
 	public static String makeDataUri( String data ) {
-		return "data:," + uriEncode(data);
+		try {
+			return makeDataUri(data.getBytes("UTF-8"));
+		} catch( UnsupportedEncodingException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public static String makeDataUri( Blob b ) {
+		return makeDataUri( b.getData(0, (int)b.getLength()));
 	}
 }
