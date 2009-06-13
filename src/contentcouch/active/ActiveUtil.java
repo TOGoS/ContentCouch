@@ -3,10 +3,10 @@ package contentcouch.active;
 import java.util.TreeMap;
 
 import contentcouch.active.expression.Bareword;
-import contentcouch.active.expression.CallFunctionExpression;
+import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;
-import contentcouch.active.expression.GetFunctionByNameExpression;
-import contentcouch.active.expression.ResolveUriExpression;
+import contentcouch.active.expression.FunctionByNameExpression;
+import contentcouch.active.expression.UriExpression;
 import contentcouch.active.expression.ValueExpression;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathSimplifiableExpression;
@@ -40,8 +40,8 @@ public class ActiveUtil {
 			String[] kv = parts[i].split("@",2);
 			argumentExpressions.put(kv[0], parseExpression(UriUtil.uriDecode(kv[1])));
 		}
-		Expression funcExpression = (funcName.indexOf(':') == -1) ? new GetFunctionByNameExpression(funcName) : parseExpression(funcName);
-		return new CallFunctionExpression(funcExpression, argumentExpressions);
+		Expression funcExpression = (funcName.indexOf(':') == -1) ? new FunctionByNameExpression(funcName) : parseExpression(funcName);
+		return new FunctionCallExpression(funcExpression, argumentExpressions);
 	}
 	
 	protected static boolean isWhitespace( int c ) {
@@ -103,7 +103,7 @@ public class ActiveUtil {
 	
 	protected static Expression processFunctionExpression( Expression e ) {
 		if( e instanceof Bareword ) {
-			return new GetFunctionByNameExpression(e.toString());
+			return new FunctionByNameExpression(e.toString());
 		}
 		return e;
 	}
@@ -141,7 +141,7 @@ public class ActiveUtil {
 				e = n;
 			}
 		}
-		return new CallFunctionExpression( functionExpression, argumentExpressions );
+		return new FunctionCallExpression( functionExpression, argumentExpressions );
 	}
 	
 	protected static Expression parseParenExpression( ParsePosition pp, boolean stopOnEquals ) {
@@ -164,7 +164,7 @@ public class ActiveUtil {
 		if( uri.indexOf(":") == -1 ) {
 			return new Bareword(uri);
 		} else {
-			return new ResolveUriExpression(uri);
+			return new UriExpression(uri);
 		}
 	}
 	

@@ -12,23 +12,27 @@ import contentcouch.misc.UriUtil;
 import contentcouch.path.PathSimplifiableActiveFunction;
 import contentcouch.path.PathSimplifiableExpression;
 
-public class CallFunctionExpression implements Expression, PathSimplifiableExpression {
+public class FunctionCallExpression implements Expression, PathSimplifiableExpression {
 	Expression funcExpression;
-	SortedMap argumentExpressions;
+	Map argumentExpressions;
 	
-	public CallFunctionExpression( Expression funcExpression, SortedMap argumentExpressions ) {
+	public FunctionCallExpression( Expression funcExpression, Map argumentExpressions ) {
 		this.funcExpression = funcExpression;
 		this.argumentExpressions = argumentExpressions;
 	}
 	
+	protected SortedMap getSortedArgumentExpressions() {
+		return new TreeMap(argumentExpressions);
+	}
+	
 	public String toString() {
 		String res = "(";
-		if( funcExpression instanceof GetFunctionByNameExpression ) {
-			res += UriUtil.uriEncode(((GetFunctionByNameExpression)funcExpression).funcName);
+		if( funcExpression instanceof FunctionByNameExpression ) {
+			res += UriUtil.uriEncode(((FunctionByNameExpression)funcExpression).funcName);
 		} else {
 			res += funcExpression.toString();
 		}
-		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
+		for( Iterator i=getSortedArgumentExpressions().entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
 			res += " " + UriUtil.uriEncode((String)e.getKey()) + "=" + e.getValue().toString(); 
 		}
@@ -38,12 +42,12 @@ public class CallFunctionExpression implements Expression, PathSimplifiableExpre
 	
 	public String toUri() {
 		String s = "active:";
-		if( funcExpression instanceof GetFunctionByNameExpression ) {
-			s += UriUtil.uriEncode(((GetFunctionByNameExpression)funcExpression).funcName);
+		if( funcExpression instanceof FunctionByNameExpression ) {
+			s += UriUtil.uriEncode(((FunctionByNameExpression)funcExpression).funcName);
 		} else {
 			s += UriUtil.uriEncode(funcExpression.toString()); 
 		}
-		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
+		for( Iterator i=getSortedArgumentExpressions().entrySet().iterator(); i.hasNext(); ) {
 			s += "+";
 			Map.Entry e = (Map.Entry)i.next();
 			String k = (String)e.getKey();
@@ -100,7 +104,7 @@ public class CallFunctionExpression implements Expression, PathSimplifiableExpre
 			if( e != null ) return e;			
 		}
 		if( simplified ) {
-			return new CallFunctionExpression(simplifiedFuncExpression, simplifiedArgumentExpressions);
+			return new FunctionCallExpression(simplifiedFuncExpression, simplifiedArgumentExpressions);
 		} else {
 			return this;
 		}

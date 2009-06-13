@@ -8,28 +8,32 @@ import java.util.TreeMap;
 
 import togos.rra.BaseResponse;
 import togos.rra.Response;
-import contentcouch.active.expression.CallFunctionExpression;
+import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;
+import contentcouch.active.expression.FunctionByNameExpression;
 import contentcouch.path.PathSimplifiableActiveFunction;
 import contentcouch.path.PathSimplifiableExpression;
 
 
 public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifiableActiveFunction {
-	protected Response getArgumentResponse( Map argumentExpressions, String name ) {
+	protected static Response getArgumentResponse( Map argumentExpressions, String name ) {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Missing argument " + name, "text/plain");
 		return e.eval();
 	}
 	
-	protected Object getArgumentValue( Map argumentExpressions, String name, Object defaultValue ) {
+	protected static Object getArgumentValue( Map argumentExpressions, String name, Object defaultValue ) {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return defaultValue;
 		Response res = e.eval();
-		if( res.getStatus() == Response.STATUS_NORMAL ) return res.getContent();
+		if( res.getStatus() == Response.STATUS_NORMAL ) {
+			if( res.getContent() == null ) return defaultValue;
+			return res.getContent();
+		}
 		throw new RuntimeException( "Couldn't load " + e.toString() + ": " + res.getStatus() + ": " + res.getContent());
 	}
 	
-	protected List getPositionalArgumentExpressions( Map argumentExpressions, String startingWith ) {
+	protected static List getPositionalArgumentExpressions( Map argumentExpressions, String startingWith ) {
 		List l = new ArrayList();
 		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
@@ -50,11 +54,11 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 		return l;
 	}
 	
-	protected List getPositionalArgumentExpressions( Map argumentExpressions ) {
+	protected static List getPositionalArgumentExpressions( Map argumentExpressions ) {
 		return getPositionalArgumentExpressions( argumentExpressions, "operand" );
 	}
 
-	protected List getArgumentExpressionValues( List argumentExpressions ) {
+	protected static List getArgumentExpressionValues( List argumentExpressions ) {
 		List values = new ArrayList();
 		for( Iterator i=argumentExpressions.iterator(); i.hasNext(); ) {
 			Expression exp = (Expression)i.next();
@@ -72,11 +76,11 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 		return values;
 	}
 	
-	protected List getPositionalArgumentValues( Map argumentExpressions ) {
+	protected static List getPositionalArgumentValues( Map argumentExpressions ) {
 		return getArgumentExpressionValues( getPositionalArgumentExpressions( argumentExpressions ) );
 	}
 
-	protected List getPositionalArgumentValues( Map argumentExpressions, String startingWith ) {
+	protected static List getPositionalArgumentValues( Map argumentExpressions, String startingWith ) {
 		return getArgumentExpressionValues( getPositionalArgumentExpressions( argumentExpressions, startingWith ) );
 	}
 	
@@ -99,10 +103,44 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 		TreeMap newArgs = new TreeMap(argumentExpressions);
 		newArgs.put(pathArgName, pathExpression);
 		
-		return new CallFunctionExpression(funcExpression, newArgs);
+		return new FunctionCallExpression(funcExpression, newArgs);
 	}
 	
 	public Expression simplify(Map argumentExpressions) {
 		return null;
+	}
+	
+	////
+	
+	protected String camelCaseToDashed(String camelCase) {
+		String dashed = "";
+		for( int i=0; i<camelCase.length(); ++i ) {
+			char c = camelCase.charAt(i);
+			if( c >= 'A' && c <= 'Z' ) {
+				dashed += "-";
+				c += ('a'-'A');
+			}
+			dashed += c;
+		}
+		return dashed;
+	}
+	
+	public String getFunctionName() {
+		String cName = this.getClass().getCanonicalName();
+		if( cName == null ) return null;
+		String[] parts = cName.split("\\.");
+		if( parts.length < 2 ) return null;
+		String name = "";
+		for( int i=0; i<parts.length-2; ++i ) {
+			name += parts[i] + ".";
+		}
+		name += camelCaseToDashed(parts[parts.length-1]);
+		return name;
+	}
+	
+	protected FunctionCallExpression toCallExpression( Map argumentExpressions ) {
+		String name = getFunctionName();
+		if( name == null ) throw new RuntimeException("No function name for " + getClass().getName());
+		return new FunctionCallExpression(new FunctionByNameExpression(name), argumentExpressions );
 	}
 }

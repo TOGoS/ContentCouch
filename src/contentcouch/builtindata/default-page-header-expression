@@ -1,0 +1,8 @@
+(contentcouch.concat
+  "<html><head><title>"
+  (contentcouch.xml.escape x-context-var:page-title)
+  "</title><style>/*<![CDATA[*/\n"
+  (contentcouch.builtindata.get "default-page-style")
+  "\n/*]]>*/</style></head><body>"
+  "<h2>" (contentcouch.xml.escape x-context-var:page-title2) "</h2>"
+)

@@ -244,7 +244,7 @@ public class MetaRepository extends BaseRequestHandler {
 	public Response handleRequest( Request req ) {
 		if( "x-ccouch-repo://".equals(req.getUri()) ) {
 			SimpleDirectory sd = new SimpleDirectory();
-			for( Iterator i=this.config.getAllRepoConfigs().iterator(); i.hasNext(); ) {
+			for( Iterator i=this.config.namedRepoConfigs.values().iterator(); i.hasNext(); ) {
 				RepoConfig repoConfig = (RepoConfig)i.next();
 				SimpleDirectory.Entry entry = new SimpleDirectory.Entry();
 				entry.name = repoConfig.name;

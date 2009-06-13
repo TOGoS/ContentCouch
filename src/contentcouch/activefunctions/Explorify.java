@@ -5,12 +5,12 @@ import java.io.OutputStreamWriter;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintWriter;
-import java.util.Collections;
 import java.util.Map;
 
 import togos.rra.BaseResponse;
 import togos.rra.Response;
 import contentcouch.active.BaseActiveFunction;
+import contentcouch.active.Context;
 import contentcouch.active.expression.Expression;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.InputStreamBlob;
@@ -20,12 +20,13 @@ import contentcouch.explorify.PageGenerator;
 import contentcouch.explorify.RdfSourcePageGenerator;
 import contentcouch.explorify.SlfSourcePageGenerator;
 import contentcouch.misc.MetadataUtil;
+import contentcouch.misc.ValueUtil;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
 public class Explorify extends BaseActiveFunction {
 	
-	protected BaseResponse getPageGeneratorResult( final PageGenerator pg ) {
+	protected static BaseResponse getPageGeneratorResult( final PageGenerator pg ) {
 		// TODO: Maybe use some sort of resettable-input-stream blob?
 		try {
 			PipedInputStream pis = new PipedInputStream();
@@ -49,34 +50,51 @@ public class Explorify extends BaseActiveFunction {
 		}
 	}
 	
-	protected Response explorifyDirectory(String uri, Directory d, Map m) {
-		return getPageGeneratorResult(new DirectoryPageGenerator(uri, d, m, BaseUriProcessor.getInstance()));
+	protected static String getHeader(Map argumentExpressions) {
+		return ValueUtil.getString(getArgumentValue(argumentExpressions, "header", null));
 	}
 	
-	protected Response explorifyXmlBlob(Blob b) {
-		return getPageGeneratorResult(new RdfSourcePageGenerator(b, BaseUriProcessor.getInstance()));
+	protected static String getFooter(Map argumentExpressions) {
+		return ValueUtil.getString(getArgumentValue(argumentExpressions, "footer", null));
 	}
 	
-	protected Response explorifySlfBlob(Blob b) {
-		return getPageGeneratorResult(new SlfSourcePageGenerator(b, ""));
+	public static Response explorifyDirectory(String uri, Directory d, String header, String footer ) {
+		return getPageGeneratorResult(new DirectoryPageGenerator(d, uri, BaseUriProcessor.getInstance(), header, footer ));
+	}
+	
+	public static Response explorifyXmlBlob(String uri, Blob b, String header, String footer ) {
+		return getPageGeneratorResult(new RdfSourcePageGenerator(b, uri, BaseUriProcessor.getInstance(), header, footer ));
+	}
+	
+	public static Response explorifySlfBlob(String uri, Blob b, String header, String footer ) {
+		return getPageGeneratorResult(new SlfSourcePageGenerator(b, uri, BaseUriProcessor.getInstance(), header, footer ));
 	}
 		
 	public Response call(Map argumentExpressions) {
 		Expression e = (Expression)argumentExpressions.get("operand");
 		String uri = e.toUri();
 		Response subRes = getArgumentResponse(argumentExpressions, "operand");
-		if( subRes.getContent() instanceof Directory ) {
-			return explorifyDirectory(uri, (Directory)subRes.getContent(), Collections.EMPTY_MAP);
-		} else {
-			Blob blob = BlobUtil.getBlob(subRes.getContent());
-			String type = MetadataUtil.getContentType(subRes);
-			if( (type != null && type.matches("application/(.*\\+)?xml")) ||
-			    MetadataUtil.looksLikeRdfBlob(blob) )
-			{
-				return explorifyXmlBlob( blob );
-			} else if( MetadataUtil.CT_SLF.equals(type) ) {
-				return explorifySlfBlob( blob );
+		if( subRes.getStatus() != Response.STATUS_NORMAL ) return subRes;
+		Context.push("explored-uri", uri);
+		try {
+			if( subRes.getContent() instanceof Directory ) {
+				return explorifyDirectory(uri, (Directory)subRes.getContent(), getHeader(argumentExpressions), getFooter(argumentExpressions));
+			} else {
+				Blob blob = BlobUtil.getBlob(subRes.getContent());
+				String type = MetadataUtil.getContentType(subRes);
+				System.err.println("Type of " + uri + " is " + type );
+				if( (type != null && type.matches("application/(.*\\+)?xml")) ||
+				    MetadataUtil.looksLikeRdfBlob(blob) )
+				{
+					return explorifyXmlBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
+				} else if( MetadataUtil.CT_SLF.equals(type) ) {
+					return explorifySlfBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
+				} else if( type != null ) {
+					return new BaseResponse(Response.STATUS_NORMAL, blob, type);
+				}
 			}
+		} finally {
+			Context.pop("explored-uri");
 		}
 		return subRes;
 	}

@@ -20,9 +20,9 @@ public class SlfSourcePageGenerator extends PageGenerator {
 	Blob blob;
 	String title;
 	
-	public SlfSourcePageGenerator(Blob b, String title) {
+	public SlfSourcePageGenerator( Blob b, String uri, UriProcessor uriProcessor, String header, String footer ) {
+		super( uri, uriProcessor, header, footer );
 		this.blob = b;
-		this.title = title;
 	}
 	
 	protected void writeByteAsHex(byte b, PrintWriter w) {
@@ -77,93 +77,95 @@ public class SlfSourcePageGenerator extends PageGenerator {
 		}
 	}
 
-	protected void openSpan(String color, Writer w) throws IOException {
+	protected void openSpan(String color, PrintWriter w) {
 		w.write("<span style=\"background-color:" + color + "\">");
 	}
 	protected void closeSpan(Writer w) throws IOException {
 		w.write("</span>");
 	}
 	
-	protected void writeChunkAsHtml(SimpleListFile slf, Chunk c, PrintWriter w) throws IOException {
-		w.println("<div class=\"chunk\">");
-		w.print("<h4 class=\"chunk-title\" id=\"chunk-" + intToHex(c.offset) + "\">" +
-				intToHex(c.offset) + " - " + SimpleListFile.intToStr(c.type) + "</h4>");
-		
-		int[] indexItems = null;
-		int filledItems = 0;
-		
-		if( c.type == SimpleListFile.CHUNK_TYPE_PAIR ) {
-			w.println("<div class=\"chunk-summary\">");
-			byte[] key = slf.getPairKey(c.offset);
-			byte[] value = slf.getPairValue(c.offset);
-			writeBytesAsString(key, w);
-			w.print(" = ");
-			writeBytesAsString(value, w);
-			w.println("</div");
-		} else if( c.type == SimpleListFile.CHUNK_TYPE_INDX ) {
-			indexItems = slf.getIndexItems(c);
-			for( int i=0; i<indexItems.length; ++i ) {
-				if( indexItems[i] != 0 ) {
-					++filledItems;
+	protected void writeChunkAsHtml(SimpleListFile slf, Chunk c, PrintWriter w) {
+		try {
+			w.println("<div class=\"chunk\">");
+			w.print("<h4 class=\"chunk-title\" id=\"chunk-" + intToHex(c.offset) + "\">" +
+					intToHex(c.offset) + " - " + SimpleListFile.intToStr(c.type) + "</h4>");
+			
+			int[] indexItems = null;
+			int filledItems = 0;
+			
+			if( c.type == SimpleListFile.CHUNK_TYPE_PAIR ) {
+				w.println("<div class=\"chunk-summary\">");
+				byte[] key = slf.getPairKey(c.offset);
+				byte[] value = slf.getPairValue(c.offset);
+				writeBytesAsString(key, w);
+				w.print(" = ");
+				writeBytesAsString(value, w);
+				w.println("</div");
+			} else if( c.type == SimpleListFile.CHUNK_TYPE_INDX ) {
+				indexItems = slf.getIndexItems(c);
+				for( int i=0; i<indexItems.length; ++i ) {
+					if( indexItems[i] != 0 ) {
+						++filledItems;
+					}
 				}
+				w.println("<div class=\"chunk-summary\">");
+				w.print("<b>" + indexItems.length + "</b> items, <b>" + filledItems + "</b> filled");
+				w.println("</div");
 			}
-			w.println("<div class=\"chunk-summary\">");
-			w.print("<b>" + indexItems.length + "</b> items, <b>" + filledItems + "</b> filled");
-			w.println("</div");
-		}
-		w.println("<div class=\"chunk-content\">");
-		openSpan("#EBB", w); writeIntAsHexLink(w, c.prevOffset, "Prev"); closeSpan(w);
-		openSpan("#BEB", w); writeIntAsHexLink(w, c.nextOffset, "Next"); closeSpan(w);
-		openSpan("#EBB", w); writeIntAsHexLink(w, c.listPrevOffset, "Prev in list"); closeSpan(w);
-		openSpan("#BEB", w); writeIntAsHexLink(w, c.listNextOffset, "Next in list"); closeSpan(w);
-		openSpan("#EEE", w); writeIntAsHex(c.type, w); closeSpan(w);
-		if( indexItems != null ) {
-			openSpan("#BBE", w); writeIntAsHex(indexItems.length, w); closeSpan(w);
-			openSpan("#CCC", w);
-			for( int i=0; i<indexItems.length; ++i ) {
-				int item = indexItems[i];
-				if( item != 0 ) {
-					openSpan("#BEB", w);
-					writeIntAsHexLink(w, item, null);
-					closeSpan(w);
-				} else {
-					writeIntAsHex(item, w);
+			w.println("<div class=\"chunk-content\">");
+			openSpan("#EBB", w); writeIntAsHexLink(w, c.prevOffset, "Prev"); closeSpan(w);
+			openSpan("#BEB", w); writeIntAsHexLink(w, c.nextOffset, "Next"); closeSpan(w);
+			openSpan("#EBB", w); writeIntAsHexLink(w, c.listPrevOffset, "Prev in list"); closeSpan(w);
+			openSpan("#BEB", w); writeIntAsHexLink(w, c.listNextOffset, "Next in list"); closeSpan(w);
+			openSpan("#EEE", w); writeIntAsHex(c.type, w); closeSpan(w);
+			if( indexItems != null ) {
+				openSpan("#BBE", w); writeIntAsHex(indexItems.length, w); closeSpan(w);
+				openSpan("#CCC", w);
+				for( int i=0; i<indexItems.length; ++i ) {
+					int item = indexItems[i];
+					if( item != 0 ) {
+						openSpan("#BEB", w);
+						writeIntAsHexLink(w, item, null);
+						closeSpan(w);
+					} else {
+						writeIntAsHex(item, w);
+					}
 				}
+				closeSpan(w);
+			} else {
+				openSpan("#CCC", w); writeBytesAsHex(slf.getChunkData(c), w); closeSpan(w);
 			}
-			closeSpan(w);
-		} else {
-			openSpan("#CCC", w); writeBytesAsHex(slf.getChunkData(c), w); closeSpan(w);
+			w.println("</div>");
+			w.println("</div>");
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
 		}
-		w.println("</div>");
-		w.println("</div>");
-		
 	}
 	
-	public void write(PrintWriter w) throws IOException {
-		SimpleListFile slf = new SimpleListFile(blob, "r");
-		Chunk c = slf.getFirstChunk();
-		
-		w.println("<html>");
-		w.println("<head>");
-		w.println("<title>" + title + "</title>");
+	public void writeContent(PrintWriter w) {
+		try {
+			SimpleListFile slf = new SimpleListFile(blob, "r");
+			Chunk c = slf.getFirstChunk();
+
+		/*
 		w.println("<style>");
 		w.println("body { background-color: #88B; color: black; }");
+		w.println("body > div, body > table { border:1px solid; margin:4px; padding: 0px; background-color:silver }");
 		w.println(".chunk-title { margin: 0; padding: 2px 4px 2px 4px; background-color: #EEE }");
 		w.println(".chunk-summary { margin: 0; padding: 2px 4px 2px 12px; color: #808; background-color: #FFF }");
 		w.println(".chunk-content { margin: 0; padding: 1px 4px 1px 4px }");
 		w.println(".chunk-content > span, .chunk-summary > span { margin: 0; padding: 1px 0px 1px 0px; }");
 		w.println(".chunk-title, .chunk-content, .chunk-summary { font-family: monospace }");
-		w.println(".chunk { border:1px solid; margin:4px; padding: 0px; background-color:silver }");
 		w.println(".chunk-link { text-decoration: none }");
 		w.println("</style>");
-		w.println("</head>");
-		w.println("<body>");
-		while( c != null ) {
-			writeChunkAsHtml(slf, c, w);
-			c = slf.getChunk(c.nextOffset);
+		*/
+			while( c != null ) {
+				writeChunkAsHtml(slf, c, w);
+				c = slf.getChunk(c.nextOffset);
+			}
+			slf.close();
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
 		}
-		slf.close();
-		w.println("</body>");
-		w.println("</html>");
 	}				
 }

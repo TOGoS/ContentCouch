@@ -10,6 +10,10 @@ import contentcouch.rdf.DcNamespace;
 public class BaseResponse implements Response {
 	public static final BaseResponse RESPONSE_UNHANDLED = new BaseResponse(Response.STATUS_UNHANDLED, "Not handled", "text/plain");
 	
+	public static final String getErrorSummary( Response res ) {
+		return res.getStatus() + ": " + ValueUtil.getString(res.getContent()); 
+	}
+	
 	public int status;
 	public Object content;
 	public Map contentMetadata = Collections.EMPTY_MAP;

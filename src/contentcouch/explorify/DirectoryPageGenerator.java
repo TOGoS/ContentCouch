@@ -1,25 +1,18 @@
-/**
- * 
- */
 package contentcouch.explorify;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 import com.eekboom.utils.Strings;
 
 import contentcouch.date.DateUtil;
-import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.rdf.DcNamespace;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 import contentcouch.value.RelativeRef;
@@ -27,17 +20,14 @@ import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
 public class DirectoryPageGenerator extends PageGenerator {
-	final Directory dir;
-	final Map metadata;
+	Directory dir;
 
-	public DirectoryPageGenerator( String uri, Directory dir, Map metadata, UriProcessor uriProcessor ) {
-		this.uri = uri;
+	public DirectoryPageGenerator( Directory dir, String uri, UriProcessor uriProcessor, String header, String footer ) {
+		super( uri, uriProcessor, header, footer );
 		this.dir = dir;
-		this.metadata = metadata;
-		this.uriProcessor = uriProcessor;
 	}
 	
-	public void write(PrintWriter w) throws IOException {
+	public void writeContent(PrintWriter w) {
 		Set entries = dir.getDirectoryEntrySet();
 		ArrayList entryList = new ArrayList(entries);
 		Collections.sort(entryList, new Comparator() {
@@ -61,6 +51,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 			}
 		});
 		
+		/*
 		String title = ValueUtil.getString(metadata.get(DcNamespace.DC_TITLE));
 		if( title == null ) title = "Index of some directory";
 
@@ -73,6 +64,9 @@ public class DirectoryPageGenerator extends PageGenerator {
 		w.println("</head>");
 		w.println("<body>");
 		w.println("<h2>" + XML.xmlEscapeText(title) + "</h2>");
+		*/
+		
+		w.println("<div class=\"main-content\">");
 		w.println("<table class=\"dir-list\">");
 		w.write("<tr>");
 		w.write("<th>Name</th>");
@@ -102,7 +96,11 @@ public class DirectoryPageGenerator extends PageGenerator {
 			w.write("</tr>\n");
 		}
 		w.println("</table>");
+		w.println("</div>");
+		
+		/*
 		w.println("</body>");
 		w.println("</html>");
+		*/
 	}
 }

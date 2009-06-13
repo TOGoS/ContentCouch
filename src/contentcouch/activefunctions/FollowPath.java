@@ -7,7 +7,7 @@ import togos.rra.BaseResponse;
 import togos.rra.Response;
 import contentcouch.active.ActiveUtil;
 import contentcouch.active.BaseActiveFunction;
-import contentcouch.active.expression.CallFunctionExpression;
+import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;
 import contentcouch.active.expression.ValueExpression;
 import contentcouch.misc.ValueUtil;
@@ -58,7 +58,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 		TreeMap newArgumentExpressions = new TreeMap();
 		newArgumentExpressions.put("source", sourceExpression);
 		newArgumentExpressions.put("path", new ValueExpression(newPath));
-		return new CallFunctionExpression(funcExpression, newArgumentExpressions);
+		return new FunctionCallExpression(funcExpression, newArgumentExpressions);
 	}
 
 	public Expression simplify(Map argumentExpressions) {

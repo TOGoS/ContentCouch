@@ -16,6 +16,10 @@ public class BaseUriProcessor implements UriProcessor {
 		return ( proc == null ) ? BASEINSTANCE : proc;
 	}
 	
+	public static void setInstance( UriProcessor proc ) {
+		Context.put(CTXVAR, proc);
+	}
+	
 	public static void push( UriProcessor proc ) {
 		Context.push( CTXVAR, proc );
 	}

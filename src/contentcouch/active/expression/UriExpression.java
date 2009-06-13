@@ -9,10 +9,10 @@ import contentcouch.path.PathSimplifiableExpression;
 import contentcouch.path.PathUtil;
 import contentcouch.store.TheGetter;
 
-public class ResolveUriExpression implements Expression, PathSimplifiableExpression {
+public class UriExpression implements Expression, PathSimplifiableExpression {
 	String uri;
 	
-	public ResolveUriExpression( String uri ) {
+	public UriExpression( String uri ) {
 		this.uri = uri;
 	}
 	
@@ -42,7 +42,7 @@ public class ResolveUriExpression implements Expression, PathSimplifiableExpress
 	
 	public Expression appendPath(String path) {
 		if( PathUtil.isHierarchicalUri(uri) ) {
-			return new ResolveUriExpression(PathUtil.appendHierarchicalPath(uri, path, true));
+			return new UriExpression(PathUtil.appendHierarchicalPath(uri, path, true));
 		} else {
 			return null;
 		}

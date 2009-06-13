@@ -44,7 +44,7 @@ public class Concat extends BaseActiveFunction {
 		
 		byte[] resultBytes = new byte[(int)totalLength];
 		int offset=0;
-		for( Iterator i=values.iterator(); i.hasNext(); ) {
+		for( Iterator i=blobs.iterator(); i.hasNext(); ) {
 			Blob blob = (Blob)i.next();
 			int len = (int)blob.getLength();
 			byte[] blobBytes = blob.getData(0, len);

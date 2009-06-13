@@ -10,13 +10,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import togos.rra.BaseRequest;
 import togos.rra.MultiRequestHandler;
+import togos.rra.Request;
+import togos.rra.Response;
 import contentcouch.active.ActiveRequestHandler;
 import contentcouch.active.DataUriResolver;
 import contentcouch.app.Log;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.file.FileRequestHandler;
 import contentcouch.http.HttpRequestHandler;
+import contentcouch.misc.ContextVarRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.store.ParseRdfRequestHandler;
@@ -76,8 +80,11 @@ public class MetaRepoConfig {
 				if( rp.name != null ) defaultRepoConfig.name = rp.name;
 				if( rp.uri != null ) defaultRepoConfig.uri = rp.uri;
 				String cfgUri = rp.uri + "ccouch-config";
-				Blob cfgBlob = (Blob)TheGetter.get(cfgUri);
-				if( cfgBlob != null ) {
+
+				BaseRequest cfgRequest = new BaseRequest(Request.VERB_GET, cfgUri);
+				Response cfgResponse = TheGetter.handleRequest(cfgRequest);
+				Blob cfgBlob;
+				if( cfgResponse.getStatus() == Response.STATUS_NORMAL && (cfgBlob = (Blob)cfgResponse.getContent()) != null ) {
 					BufferedReader brd = new BufferedReader(new InputStreamReader(new BlobInputStream(cfgBlob)));
 					try {
 						_loadConfig(brd, cfgUri);
@@ -194,6 +201,7 @@ public class MetaRepoConfig {
 			requestKernelCache.addRequestHandler(new FileRequestHandler());
 			requestKernelCache.addRequestHandler(InternalStreamRequestHandler.getInstance());
 			requestKernelCache.addRequestHandler(new ParseRdfRequestHandler());
+			requestKernelCache.addRequestHandler(new ContextVarRequestHandler());
 		}
 		return requestKernelCache;
 	}

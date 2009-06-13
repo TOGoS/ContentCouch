@@ -3,16 +3,16 @@ package contentcouch.active;
 import java.util.TreeMap;
 
 import junit.framework.TestCase;
-import contentcouch.active.expression.CallFunctionExpression;
+import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;
-import contentcouch.active.expression.GetFunctionByNameExpression;
-import contentcouch.active.expression.ResolveUriExpression;
+import contentcouch.active.expression.FunctionByNameExpression;
+import contentcouch.active.expression.UriExpression;
 import contentcouch.activefunctions.Hello;
 import contentcouch.misc.UriUtil;
 
 public class ActiveUriTest extends TestCase {
 	public void testResolveUriExpressionToString() {
-		assertEquals("http://www.nuke24.net/", new ResolveUriExpression("http://www.nuke24.net/").toString());
+		assertEquals("http://www.nuke24.net/", new UriExpression("http://www.nuke24.net/").toString());
 	}
 	
 	public void testUriEncode() {
@@ -57,15 +57,15 @@ public class ActiveUriTest extends TestCase {
 	
 	/** Test that ResolveUriExpression sanitizes itself on toString() */
 	public void testResolveUriSanitization() {
-		Expression e = new ResolveUriExpression("http://www.nuke24.net/Biggs *(like a cemetary) ++/foobar");
+		Expression e = new UriExpression("http://www.nuke24.net/Biggs *(like a cemetary) ++/foobar");
 		assertEquals("http://www.nuke24.net/Biggs%20%2A%28like%20a%20cemetary%29%20++/foobar", e.toString());
 	}
 
 	/** Test that active URIs get sanitized properly itself on toString() */
 	public void testExpressionSanitization() {
 		TreeMap args = new TreeMap();
-		args.put("bar%20* ", new ResolveUriExpression("http://example.org/(%20* )"));
-		Expression e = new CallFunctionExpression( new GetFunctionByNameExpression("foo%20* "), args );
+		args.put("bar%20* ", new UriExpression("http://example.org/(%20* )"));
+		Expression e = new FunctionCallExpression( new FunctionByNameExpression("foo%20* "), args );
 		assertEquals("(foo%2520%2A%20 bar%2520%2A%20=http://example.org/%28%20%2A%20%29)", e.toString());
 	}
 
@@ -88,7 +88,7 @@ public class ActiveUriTest extends TestCase {
 	}
 	
 	public void testGetFunctionByClassName() {
-		Object f = new GetFunctionByNameExpression("contentcouch.hello").eval().getContent();
+		Object f = new FunctionByNameExpression("contentcouch.hello").eval().getContent();
 		assertTrue("Got " + (f == null ? "null" : "a " + f.getClass()) + " but expected a Hello", f instanceof Hello);
 		assertEquals("Hello, world", ((ActiveFunction)f).call(new TreeMap()).getContent());
 	}

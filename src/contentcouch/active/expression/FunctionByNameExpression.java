@@ -8,12 +8,12 @@ import togos.rra.Response;
 import contentcouch.active.Context;
 import contentcouch.misc.UriUtil;
 
-public class GetFunctionByNameExpression implements Expression {
+public class FunctionByNameExpression implements Expression {
 	public static final String FUNCTION_MAP_VARNAME = "ccouch:functions";
 	
 	String funcName;
 	
-	public GetFunctionByNameExpression( String funcName ) {
+	public FunctionByNameExpression( String funcName ) {
 		this.funcName = funcName;
 	}
 	

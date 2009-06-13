@@ -1,8 +1,8 @@
 package contentcouch.explorify;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,12 +14,12 @@ import contentcouch.xml.XML;
 public class RdfSourcePageGenerator extends PageGenerator {
 	Blob blob;
 	
-	public RdfSourcePageGenerator( Blob b, UriProcessor uriProcessor ) {
+	public RdfSourcePageGenerator( Blob b, String uri, UriProcessor uriProcessor, String header, String footer ) {
+		super( uri, uriProcessor, header, footer );
 		this.blob = b;
-		this.uriProcessor = uriProcessor;
 	}
 	
-	protected Pattern RDFRESPAT = Pattern.compile("rdf:resource=\"([^\\\"]+)\"|((?:http:|file:|x-parse-rdf:|data:|urn:)[a-zA-Z0-9\\-\\._\\~:/\\?\\#\\[\\]\\@\\!\\$\\&\\'\\(\\)\\*\\+\\,\\;\\=\\%]+)");
+	protected Pattern RDFRESPAT = Pattern.compile("rdf:resource=\"([^\\\"]+)\"|((?:http:|file:|x-parse-rdf:|data:|urn:|active:|x-ccouch-head:)[a-zA-Z0-9\\-\\._\\~:/\\?\\#\\[\\]\\@\\!\\$\\&\\'\\(\\)\\*\\+\\,\\;\\=\\%]+)");
 	
 	protected String formatLink2(String href, String text) {
 		String link = "<a href=\"";
@@ -41,9 +41,15 @@ public class RdfSourcePageGenerator extends PageGenerator {
 		}
 	}
 	
-	public void write(PrintWriter w) throws IOException {
-		w.write("<pre>");
-		CharSequence rdf = ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(blob.getData(0, (int)blob.getLength())));
+	public void writeContent(PrintWriter w) {
+		w.println("<div class=\"main-content\">");
+		w.println("<pre class=\"source\">");
+		CharSequence rdf;
+		try {
+			rdf = ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(blob.getData(0, (int)blob.getLength())));
+		} catch( CharacterCodingException e ) {
+			throw new RuntimeException(e);
+		}
 		Matcher m = RDFRESPAT.matcher(rdf);
 		int at = 0;
 		while( m.find() ) {
@@ -62,6 +68,7 @@ public class RdfSourcePageGenerator extends PageGenerator {
 			at = m.end();
 		}
 		w.write(XML.xmlEscapeText(rdf.subSequence(at,rdf.length()).toString()));
-		w.write("</pre>");
+		w.println("</pre>");
+		w.println("</div>");
 	}
 }

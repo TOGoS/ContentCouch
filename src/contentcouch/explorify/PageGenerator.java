@@ -12,6 +12,15 @@ import contentcouch.misc.ValueUtil;
 public abstract class PageGenerator implements HttpServletRequestHandler {
 	public String uri;
 	public UriProcessor uriProcessor;
+	public String header = "<html><body>";
+	public String footer = "</body></html>";
+	
+	public PageGenerator( String uri, UriProcessor uriProcessor, String header, String footer ) {
+		this.uri = uri;
+		this.uriProcessor = uriProcessor;
+		if( header != null ) this.header = header;
+		if( footer != null ) this.footer = footer;
+	}
 	
 	protected String processUri( String uri ) {
 		return uriProcessor == null ? uri : ValueUtil.getString(uriProcessor.processUri(uri));
@@ -26,7 +35,15 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 		return "text/html; charset=utf-8";
 	}
 	
-	public abstract void write(PrintWriter w) throws IOException;
+	public void writeContent(PrintWriter w) {
+		w.println("<p>Nothing to see here.</p>");
+	}
+	
+	public void write(PrintWriter w) {
+		w.println(header);
+		writeContent(w);
+		w.println(footer);
+	}
 	
 	public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.setContentType(getContentType());

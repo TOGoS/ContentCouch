@@ -15,14 +15,19 @@ import togos.rra.BaseRequest;
 import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.active.Context;
+import contentcouch.activefunctions.Explorify;
 import contentcouch.blob.BlobUtil;
+import contentcouch.builtindata.BuiltInData;
 import contentcouch.explorify.BaseUriProcessor;
+import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
+import contentcouch.value.Blob;
+import contentcouch.value.Directory;
 
 public class ContentCouchExplorerServlet extends HttpServlet {
 	public interface HttpServletRequestHandler {
@@ -70,7 +75,22 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		return configFile;
 	}
-
+	
+	protected String getExploreUri(String uri) {
+		return
+			"(contentcouch.explorify\n" +
+			"  " + uri + "\n" +
+			"  header=(contentcouch.let\n" +
+			"    vars/page-title=(contentcouch.concat\n" +
+			"      \"Exploring \" x-context-var:explored-uri \"\")\n" +
+			"    vars/page-title2=(contentcouch.concat\n" +
+			"      \"Exploring \" x-context-var:explored-uri \"\")\n" +
+			"    (contentcouch.eval\n" +
+			"       (contentcouch.builtindata.get \"default-page-header-expression\"))\n" +
+			"  )\n" +
+			")\n";
+	}
+	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String pi = request.getPathInfo();
 		if( pi == null ) pi = request.getRequestURI();
@@ -79,12 +99,23 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		try {
 			final boolean shouldRewriteRelativeUris;
 			String uri = null;
+			String loadPath = null;
 			if( pi.equals("/explore") ) {
-				uri = "active:contentcouch.explorify+operand@" + UriUtil.uriEncode(request.getParameter("uri"));
+				uri = getExploreUri(request.getParameter("uri"));
 				shouldRewriteRelativeUris = true;
+				loadPath = "/explore?uri=";
 			} else if( pi.startsWith("/explore/") ) {
-				uri = "active:contentcouch.explorify+operand@" + UriUtil.uriEncode(PathUtil.appendPath("x-ccouch-repo://", pi.substring(9)));
+				uri = getExploreUri(PathUtil.appendPath("x-ccouch-repo://", pi.substring(9)));
 				shouldRewriteRelativeUris = false;
+				loadPath = "/explore?uri=";
+			} else if( pi.equals("/raw") ) {
+				uri = request.getParameter("uri");
+				shouldRewriteRelativeUris = true;
+				loadPath = "/raw?uri=";
+			} else if( pi.startsWith("/raw/") ) {
+				uri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(5));
+				shouldRewriteRelativeUris = false;
+				loadPath = "/raw?uri=";
 			} else if( pi.equals("/") ) {
 				uri = "file:web/_index.html";
 				shouldRewriteRelativeUris = false;
@@ -94,16 +125,32 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			}
 			
 			BaseRequest subReq = new BaseRequest(Request.VERB_GET, uri);
-			BaseUriProcessor.push( new BaseUriProcessor(BaseUriProcessor.getInstance(), shouldRewriteRelativeUris) {
-				public String processUri(String uri) {
-					return "/explore?uri=" + UriUtil.uriEncode(uri);
+			try {
+				Context.push("funk", "Bring the funk");
+				final String fLoadPath = loadPath;
+				BaseUriProcessor.push( new BaseUriProcessor(BaseUriProcessor.getInstance(), shouldRewriteRelativeUris) {
+					public String processUri(String uri) {
+						return fLoadPath + UriUtil.uriEncode(uri);
+					}
+				});
+				subReq.contextVars = Context.getInstance();
+				Response subRes = TheGetter.handleRequest(subReq);
+				
+				if( subRes.getContent() instanceof Directory ) {
+					subRes = Explorify.explorifyDirectory( uri, (Directory)subRes.getContent(),
+						"<html><head><style>/*<!CDATA[*/\n" + BuiltInData.getString("default-page-style") + "/*]]>*/</style><body>\n", null );
 				}
-			});
-			subReq.contextVars = Context.getInstance(); 
-			Response subRes = TheGetter.handleRequest(subReq);
+								
+				String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
+				if( type == null && subRes.getContent() instanceof Blob ) {
+					type = MetadataUtil.guessContentType((Blob)subRes.getContent());
+				}
 			
-			response.setHeader("Content-Type", ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT)));
-			BlobUtil.writeBlobToOutputStream( BlobUtil.getBlob( subRes.getContent() ), response.getOutputStream() );
+				if( type != null ) response.setHeader("Content-Type", type);
+				BlobUtil.writeBlobToOutputStream( BlobUtil.getBlob( subRes.getContent() ), response.getOutputStream() );
+			} finally {
+				BaseUriProcessor.pop();
+			}				
 		} catch( RuntimeException e ) {
 			response.setHeader("Content-Type", "text/plain");
 			e.printStackTrace(response.getWriter());

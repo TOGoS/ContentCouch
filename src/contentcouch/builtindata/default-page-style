@@ -1,0 +1,17 @@
+body { background-color: #88B; color: black; }
+body > h2 { color:white }
+
+.main-content { border:1px solid; margin:4px; padding: 0px; background-color:#CCC; }
+.main-content > pre { margin: 1em 2em; }
+
+/* SLF Formatting */
+.chunk { border:1px solid; margin:4px; padding: 0px; background-color:silver }
+.chunk-title { margin: 0; padding: 2px 4px 2px 4px; background-color: #EEE }
+.chunk-summary { margin: 0; padding: 2px 4px 2px 12px; color: #808; background-color: #FFF }
+.chunk-content { margin: 0; padding: 1px 4px 1px 4px }
+.chunk-content > span, .chunk-summary > span { margin: 0; padding: 1px 0px 1px 0px; }
+.chunk-title, .chunk-content, .chunk-summary { font-family: monospace }
+.chunk-link { text-decoration: none }
+
+/* Directory List Formatting */
+.dir-list td, .dir-list th { padding-left: 1ex; padding-right: 1ex; font-family: Courier }
