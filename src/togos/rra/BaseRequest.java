@@ -70,6 +70,11 @@ public class BaseRequest implements Request {
 		contentMetadata.put(key, value);
 	}
 	
+	public void clearContentMetadata() {
+		contentMetadata = Collections.EMPTY_MAP;
+		contentMetadataClean = true;
+	}
+	
 	public void putMetadata(String key, Object value) {
 		if( metadataClean ) {
 			metadata = new HashMap(metadata);

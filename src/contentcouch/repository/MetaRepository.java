@@ -173,6 +173,13 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 	}
 	
+	protected Response put( Request req, RepoConfig repoConfig, String path, Object value ) {
+		BaseRequest subReq = new BaseRequest(req);
+		subReq.content = ((Directory.Entry)req.getContent()).getTarget();
+		subReq.clearContentMetadata();
+		return put( req, repoConfig, path );
+	}
+	
 	protected Response put( Request req, RepoConfig repoConfig, String path ) {
 		Blob blob = BlobUtil.getBlob(req.getContent(), false);
 		if( blob != null ) {
@@ -200,17 +207,21 @@ public class MetaRepository extends BaseRequestHandler {
 			} else {
 				throw new RuntimeException( "Can't PUT to " + req.getUri() + ": unrecognised post-repo path" );
 			}
-		} else if( req.getContent() instanceof Commit ) {
-			throw new RuntimeException("Commits not implemented!");
-		} else if( req.getContent() instanceof Directory ) {
-			throw new RuntimeException("Directories not implemented!");
-		} else if( req.getContent() instanceof Collection ) {
+		} else if( req.getContent() instanceof Directory.Entry ) {
+			return put( req, repoConfig, path, ((Directory.Entry)req.getContent()).getTarget() );
+		} else if( req.getContent() instanceof Iterator ) {
 			int count = 0;
 			for( Iterator i=((Collection)req.getContent()).iterator(); i.hasNext(); ) {
 				put( new BaseRequest(req, repoConfig.uri + path), repoConfig, path );
 				++count;
 			}
 			return new BaseResponse(Response.STATUS_NORMAL, count + " items inserted at " + repoConfig.uri + path);
+		} else if( req.getContent() instanceof Collection ) {
+			return put( req, repoConfig, path, ((Collection)req.getContent()).iterator() );
+		} else if( req.getContent() instanceof Commit ) {
+			throw new RuntimeException("PUT into repo of Commits not implemented");
+		} else if( req.getContent() instanceof Directory ) {
+			throw new RuntimeException("PUT into repo of Directories not implemented");
 		} else if( req.getContent() == null ) {
 			throw new RuntimeException( "PUT/POST to " + req.getUri() + " requires content, null given.");
 		} else {

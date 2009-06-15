@@ -3,14 +3,12 @@ package contentcouch.explorify;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.eekboom.utils.Strings;
-
 import contentcouch.date.DateUtil;
+import contentcouch.directory.EntryComparators;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
@@ -30,26 +28,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 	public void writeContent(PrintWriter w) {
 		Set entries = dir.getDirectoryEntrySet();
 		ArrayList entryList = new ArrayList(entries);
-		Collections.sort(entryList, new Comparator() {
-			protected int compareTargetTypes( String tt1, String tt2 ) {
-				if( tt1 == null && tt2 == null ) return 0;
-				if( tt1 == null ) return 1;
-				if( tt2 == null ) return -1;
-				if( tt1.equals(tt2) ) return 0;
-				if( tt1.equals(CcouchNamespace.OBJECT_TYPE_DIRECTORY) ) return -1;
-				if( tt2.equals(CcouchNamespace.OBJECT_TYPE_DIRECTORY) ) return 1;
-				return 0;
-			}
-			
-			public int compare(Object o1, Object o2) {
-				Entry e1 = (Entry)o1;
-				Entry e2 = (Entry)o2;
-				
-				int ttc = compareTargetTypes(e1.getTargetType(), e2.getTargetType());
-				if( ttc == 0 ) return Strings.compareNatural(e1.getName(),e2.getName());
-				return ttc;
-			}
-		});
+		Collections.sort(entryList, EntryComparators.TYPE_THEN_NAME_COMPARATOR);
 		
 		/*
 		String title = ValueUtil.getString(metadata.get(DcNamespace.DC_TITLE));
