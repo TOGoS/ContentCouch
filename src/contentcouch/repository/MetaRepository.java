@@ -19,17 +19,20 @@ import com.eekboom.utils.Strings;
 import contentcouch.blob.BlobUtil;
 import contentcouch.file.FileBlob;
 import contentcouch.hashcache.FileHashCache;
+import contentcouch.misc.Function1;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
+import contentcouch.rdf.RdfDirectory;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Blob;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
+import contentcouch.value.Ref;
 
 public class MetaRepository extends BaseRequestHandler {
 	protected static class RepoRef {
@@ -215,8 +218,8 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 	}
 	
-	protected Response identifyBlob( Blob blob, RepoConfig repoConfig ) {
-		return new BaseResponse(Response.STATUS_NORMAL, repoConfig.dataScheme.hashToUrn(getHash(blob)), "text/plain");
+	protected String identifyBlob( Blob blob, RepoConfig repoConfig ) {
+		return repoConfig.dataScheme.hashToUrn(getHash(blob));
 	}
 	
 	protected Response identify( Request req, Object obj, RepoConfig repoConfig ) {
@@ -228,7 +231,7 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 
 		Blob blob = BlobUtil.getBlob(obj, false);
-		if( blob != null ) return identifyBlob( blob, repoConfig );
+		if( blob != null ) return new BaseResponse(Response.STATUS_NORMAL, identifyBlob( blob, repoConfig ), "text/plain");
 		
 		throw new RuntimeException("I don't know how to identify " + obj.getClass().getName());
 	}
@@ -309,5 +312,30 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 		}
 		return BaseResponse.RESPONSE_UNHANDLED;
+	}
+	
+	public Function1 getTargetRdfifier(final boolean nested, final boolean followRefs) {
+		return new Function1() {
+			public Object apply(Object input) {
+				if( followRefs && input instanceof Ref ) {
+					input = TheGetter.get(((Ref)input).getTargetUri());
+				}
+				
+				if( input instanceof Directory ) {
+					RdfDirectory rdfDir = new RdfDirectory((Directory)input, this); 
+					if( nested ) {
+						return rdfDir;
+					} else {
+						return new BaseRef(identifyBlob(BlobUtil.getBlob(rdfDir.toString()), config.defaultRepoConfig));
+					}
+				} else if( input instanceof Ref ) {
+					return input;
+				} else if( input instanceof Blob ) {
+					return new BaseRef(identifyBlob((Blob)input, config.defaultRepoConfig));
+				} else {
+					throw new RuntimeException("Don't know how to rdf-ify " + input.getClass().getName() );
+				}
+			}
+		};
 	}
 }

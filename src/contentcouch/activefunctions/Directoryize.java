@@ -15,6 +15,7 @@ public class Directoryize extends BaseActiveFunction {
 	public Response call(Map argumentExpressions) {
 		Expression e = (Expression)argumentExpressions.get("operand");
 		Response subRes = getArgumentResponse(argumentExpressions, "operand");
+		if( subRes.getStatus() != Response.STATUS_NORMAL ) return subRes;
 		if( e instanceof UriExpression ) {
 			String uri = ((UriExpression)e).getUri();
 			if( uri.matches("^https?://.*/$") ) {

@@ -36,8 +36,10 @@ public class DirectoryUtil {
 					String href = lineMatcher.group(1);
 					href = XML.xmlUnescape(href);
 					if( href.startsWith("./") ) href = href.substring(2);
+					if( href.startsWith("../") ) continue;
 					if( href.startsWith("?") ) continue;
 					if( PathUtil.isAbsolute(href) ) continue;
+					if( href.equals("") ) continue;
 					int si = href.indexOf('/');
 					if( si != -1 ) href = href.substring(0,si+1);
 					if( !href.endsWith("/") ) {

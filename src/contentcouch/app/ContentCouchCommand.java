@@ -15,13 +15,16 @@ import togos.rra.BaseRequest;
 import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
+import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
 import contentcouch.value.Blob;
+import contentcouch.value.Directory;
 
 public class ContentCouchCommand {
 	public String USAGE =
@@ -267,9 +270,12 @@ public class ContentCouchCommand {
 		writeParentCommitUri(about, commitUri, false);	
 	}
 	
-	protected String normalizeUri( String uriOrPathOrSomething, boolean output ) {
+	protected String normalizeUri( String uriOrPathOrSomething, boolean output, boolean directory ) {
 		if( "-".equals(uriOrPathOrSomething) ) {
 			return output ? "x-internal-stream:stdout" : "x-internal-stream:stdin";
+		}
+		if( directory && uriOrPathOrSomething.matches("^https?://.*/$") ) {
+			return "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(uriOrPathOrSomething);
 		}
 		if( PathUtil.isUri(uriOrPathOrSomething) ) {
 			return uriOrPathOrSomething;
@@ -342,10 +348,10 @@ public class ContentCouchCommand {
 			System.exit(1);
 		}
 
-		destUri = normalizeUri((String)sourceUris.remove(sourceUris.size()-1), true);
+		destUri = normalizeUri((String)sourceUris.remove(sourceUris.size()-1), true, false);
 		
 		for( Iterator i=sourceUris.iterator(); i.hasNext(); ) {
-			String sourceUri = normalizeUri((String)i.next(), false);
+			String sourceUri = normalizeUri((String)i.next(), false, false);
 			
 			BaseRequest getReq = new BaseRequest( Request.VERB_GET, sourceUri );
 			Response getRes = TheGetter.handleRequest(getReq);
@@ -388,7 +394,7 @@ public class ContentCouchCommand {
 			} else if( "-dump-config".equals(arg) ) {
 				dumpConfig = true;
 			} else if( !arg.startsWith("-") ) {
-				inputUris.add(arg);
+				inputUris.add(normalizeUri(arg, false, false));
 			} else {
 				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
 				System.err.println(CACHE_HEADS_USAGE);
@@ -652,20 +658,20 @@ public class ContentCouchCommand {
 	
 	public void runRdfifyCmd( String[] args ) {
 		args = mergeConfiguredArgs("rdfify", args);
-		String dir = args[0];
+		String dir = null;
 		boolean nested = false;
-		String storeSector = "rdfify"; // This shouldn't actually show up...
+		boolean followRefs = false;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
 				System.err.println(RDFIFY_USAGE);
 				System.exit(1);
-			} else if( "-sector".equals(arg) ) {
-				storeSector = args[++i];
 			} else if( "-nested".equals(arg) ) {
 				nested = true;
+			} else if( "-follow-refs".equals(arg) ) {
+				followRefs = true;
 			} else if( arg.charAt(0) != '-' ) {
-				dir = arg;
+				dir = normalizeUri(arg, false, true);
 			} else {
 				System.err.println("ccouch rdfify: Unrecognised argument: " + arg);
 				System.err.println(RDFIFY_USAGE);
@@ -673,8 +679,20 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		System.err.println("rdfify unimplemented!");
-		System.exit(1);
+		if( dir == null ) {
+			System.err.println("No directory specified");
+			System.err.println(RDFIFY_USAGE);
+			System.exit(1);
+		}
+
+		Object o = TheGetter.get(dir);
+		if( !(o instanceof Directory) ) {
+			System.err.println( dir + " does not point to a Directory (found a " + o.getClass().getName() + ")");
+			System.exit(1);
+		}
+		Directory d = (Directory)o;
+		RdfDirectory rdf = new RdfDirectory(d, metaRepoConfig.getMetaRepository().getTargetRdfifier(nested, followRefs));
+		System.out.println(rdf.toString());
 	}
 	
 	public void run( String[] args ) {

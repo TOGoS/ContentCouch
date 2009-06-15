@@ -19,6 +19,7 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class RdfDirectory extends RdfNode implements Directory {
+	/** Turns Blobs into Refs, keeps Refs and RdfNodes as they are, and turns Directories into nested Rdf */
 	public static Function1 DEFAULT_TARGET_RDFIFIER = new Function1() {
 		public Object apply(Object input) {
 			if( input == null ) {
