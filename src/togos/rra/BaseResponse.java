@@ -35,8 +35,8 @@ public class BaseResponse implements Response {
 
 	public BaseResponse( int status, Object content, Response inheritFrom ) {
 		this(status, content);
-		if( ValueUtil.getBoolean(inheritFrom.getMetadata().get(RraNamespace.CACHEABLE),false) ) {
-			putMetadata(RraNamespace.CACHEABLE, Boolean.TRUE);
+		if( ValueUtil.getBoolean(inheritFrom.getMetadata().get(RraNamespace.RES_CACHEABLE),false) ) {
+			putMetadata(RraNamespace.RES_CACHEABLE, Boolean.TRUE);
 		}
 	}
 	

@@ -20,26 +20,26 @@ public class MergeUtil {
 		public String fileMergeMethod;
 		
 		public RegularConflictResolver() {
-			fileMergeMethod = CcouchNamespace.RR_FILEMERGE_FAIL;
-			dirMergeMethod = CcouchNamespace.RR_DIRMERGE_FAIL;
+			fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_FAIL;
+			dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_FAIL;
 		}
 		
 		public RegularConflictResolver( Map options ) {
 			if( options != null ) {
-				dirMergeMethod = ValueUtil.getString(options.get(CcouchNamespace.RR_DIRMERGE_METHOD));
-				fileMergeMethod = ValueUtil.getString(options.get(CcouchNamespace.RR_FILEMERGE_METHOD));
+				dirMergeMethod = ValueUtil.getString(options.get(CcouchNamespace.REQ_DIRMERGE_METHOD));
+				fileMergeMethod = ValueUtil.getString(options.get(CcouchNamespace.REQ_FILEMERGE_METHOD));
 			}
-			if( fileMergeMethod == null ) fileMergeMethod = CcouchNamespace.RR_FILEMERGE_FAIL;
-			if( dirMergeMethod == null ) dirMergeMethod = CcouchNamespace.RR_DIRMERGE_FAIL;
+			if( fileMergeMethod == null ) fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_FAIL;
+			if( dirMergeMethod == null ) dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_FAIL;
 		}
 		
 		protected void mergeBlob(WritableDirectory dir, Entry e1, Entry e2, String mergeMethod) {
-			if( CcouchNamespace.RR_FILEMERGE_IGNORE.equals(mergeMethod) ) {
+			if( CcouchNamespace.REQ_FILEMERGE_IGNORE.equals(mergeMethod) ) {
 				System.err.println("Skipping " + e2.getName());
-			} else if( CcouchNamespace.RR_FILEMERGE_REPLACE.equals(mergeMethod) ) {
+			} else if( CcouchNamespace.REQ_FILEMERGE_REPLACE.equals(mergeMethod) ) {
 				System.err.println("Replacing " + e1.getName());
 				dir.addDirectoryEntry(e2);
-			} else if( CcouchNamespace.RR_FILEMERGE_FAIL.equals(mergeMethod) ) {
+			} else if( CcouchNamespace.REQ_FILEMERGE_FAIL.equals(mergeMethod) ) {
 				throw new RuntimeException( "Can't merge blobs " + e2.getName() + " into " + e1.getName() + "; file merge method = Fail" );
 			} else {
 				throw new RuntimeException( "Can't merge blobs " + e2.getName() + " into " + e1.getName() + "; no merge method given" );
@@ -63,7 +63,7 @@ public class MergeUtil {
 					mergeBlob( dir, e1, e2, fileMergeMethod );
 				}
 			} else if( e1tt == e2tt && e1tt == CloneUtil.CLONE_TARGETTYPE_DIR ) {
-				if( CcouchNamespace.RR_DIRMERGE_MERGE.equals(dirMergeMethod) ) {
+				if( CcouchNamespace.REQ_DIRMERGE_MERGE.equals(dirMergeMethod) ) {
 					Object t = DirectoryUtil.getTargetValue(e1.getTarget());
 					if( !(t instanceof WritableDirectory) ) {
 						throw new RuntimeException( "Can't merge into " + e1.getName() + "; not a WritableDirectory" );
@@ -73,10 +73,10 @@ public class MergeUtil {
 						throw new RuntimeException( "Can't merge from " + e2.getName() + "; not a Directory" );
 					}
 					putAll( (WritableDirectory)t, (Directory)s, this );
-				} else if( CcouchNamespace.RR_DIRMERGE_IGNORE.equals(dirMergeMethod) ) {
-				} else if( CcouchNamespace.RR_DIRMERGE_REPLACE.equals(dirMergeMethod) ) {
+				} else if( CcouchNamespace.REQ_DIRMERGE_IGNORE.equals(dirMergeMethod) ) {
+				} else if( CcouchNamespace.REQ_DIRMERGE_REPLACE.equals(dirMergeMethod) ) {
 					dir.addDirectoryEntry(e2);
-				} else if( CcouchNamespace.RR_DIRMERGE_FAIL.equals(dirMergeMethod) ) {
+				} else if( CcouchNamespace.REQ_DIRMERGE_FAIL.equals(dirMergeMethod) ) {
 					throw new RuntimeException( "Can't merge dirs " + e2.getName() + " into " + e1.getName() + "; dir merge method = Fail" );
 				} else {
 					throw new RuntimeException( "Can't merge dirs " + e2.getName() + " into " + e1.getName() + "; no merge method given" );

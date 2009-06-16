@@ -6,9 +6,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import togos.rra.BaseResponse;
 import togos.rra.ContentAndMetadata;
+import togos.rra.Response;
 import contentcouch.date.DateUtil;
 import contentcouch.file.FileBlob;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.value.Blob;
 
@@ -131,5 +134,18 @@ public class MetadataUtil {
 			lastModified = guessLastModified((Blob)res.getContent());
 		}
 		return lastModified;
+	}
+	
+	////
+	
+	public static String getStoredIdentifier( Response res ) {
+		return ValueUtil.getString(res.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER));
+	}
+	
+	public static void copyStoredIdentifier( Response source, BaseResponse dest, String prefix ) {
+		String storedUri = getStoredIdentifier(source);
+		if( storedUri != null ) {
+			dest.putMetadata( CcouchNamespace.RES_STORED_IDENTIFIER, prefix == null ? storedUri : prefix + storedUri );
+		}
 	}
 }

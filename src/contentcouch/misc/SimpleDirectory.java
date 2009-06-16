@@ -54,6 +54,12 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			this.targetSize = e.getTargetSize();
 			this.targetLastModified = e.getTargetLastModified();
 		}
+		
+		public Entry( String name, Object target, String targetType ) {
+			this.name = name;
+			this.target = target;
+			this.targetType = targetType;
+		}
 
 		//// Directory.Entry implementation ////
 		public long getTargetLastModified() { return targetLastModified; }

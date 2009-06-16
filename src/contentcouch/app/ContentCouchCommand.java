@@ -8,13 +8,20 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 import togos.rra.BaseRequest;
+import togos.rra.BaseResponse;
 import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
+import contentcouch.directory.DirectoryWalker;
+import contentcouch.directory.EntryFilters;
+import contentcouch.directory.FilterIterator;
+import contentcouch.misc.MetadataUtil;
+import contentcouch.misc.SimpleCommit;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
@@ -23,8 +30,11 @@ import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
+import contentcouch.value.BaseRef;
 import contentcouch.value.Blob;
+import contentcouch.value.Commit;
 import contentcouch.value.Directory;
+import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
 	public String USAGE =
@@ -280,6 +290,14 @@ public class ContentCouchCommand {
 		if( PathUtil.isUri(uriOrPathOrSomething) ) {
 			return uriOrPathOrSomething;
 		}
+		if( new File(uriOrPathOrSomething).isDirectory() ) {
+			if( uriOrPathOrSomething.endsWith("/.") ) {
+				uriOrPathOrSomething = uriOrPathOrSomething.substring(0, uriOrPathOrSomething.length()-1);
+			} else if( uriOrPathOrSomething.endsWith("/") ) {
+			} else {
+				uriOrPathOrSomething += "/";				
+			}
+		}
 		return "file:" + uriOrPathOrSomething;
 	}
 	
@@ -293,7 +311,7 @@ public class ContentCouchCommand {
 		boolean shouldLinkStored = false;
 		boolean shouldRelinkImported = false;
 		boolean dumpConfig = false;
-		String fileMergeMethod = CcouchNamespace.RR_FILEMERGE_STRICTIG;
+		String fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_STRICTIG;
 		String dirMergeMethod = null;
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
@@ -314,11 +332,11 @@ public class ContentCouchCommand {
 			} else if( "-dir-merge-method".equals(arg) ) {
 				dirMergeMethod = args[++i];
 			} else if( "-replace-existing".equals(arg) ) {
-				fileMergeMethod = CcouchNamespace.RR_FILEMERGE_REPLACE;
+				fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_REPLACE;
 			} else if( "-keep-existing".equals(arg) ) {
-				fileMergeMethod = CcouchNamespace.RR_FILEMERGE_IGNORE;
+				fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_IGNORE;
 			} else if( "-merge".equals(arg) ) {
-				dirMergeMethod = CcouchNamespace.RR_DIRMERGE_MERGE;
+				dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
 
 			} else if( "-dump-config".equals(arg) ) {
 				dumpConfig = true;
@@ -347,6 +365,8 @@ public class ContentCouchCommand {
 			System.err.println(COPY_USAGE);
 			System.exit(1);
 		}
+		
+		int errorCount = 0;
 
 		destUri = normalizeUri((String)sourceUris.remove(sourceUris.size()-1), true, false);
 		
@@ -356,26 +376,33 @@ public class ContentCouchCommand {
 			BaseRequest getReq = new BaseRequest( Request.VERB_GET, sourceUri );
 			Response getRes = TheGetter.handleRequest(getReq);
 			if( getRes.getStatus() != Response.STATUS_NORMAL ) {
-				System.err.println("Couldn't find " + sourceUri + ": " + getRes.getContent());
-				System.exit(1);
+				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
+				++errorCount;
+				continue;
 			}
 			if( getRes.getContent() == null ) {
 				System.err.println("No content found at " + sourceUri);
-				System.exit(1);
+				++errorCount;
+				continue;
 			}
 			
 			BaseRequest putReq = new BaseRequest( Request.VERB_PUT, destUri );
 			putReq.content = getRes.getContent();
 			putReq.contentMetadata = getRes.getContentMetadata(); 
-			if( shouldLinkStored ) putReq.putMetadata(CcouchNamespace.RR_HARDLINK_DESIRED, Boolean.TRUE);
-			if( shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.RR_REHARDLINK_DESIRED, Boolean.TRUE);
-			putReq.putMetadata(CcouchNamespace.RR_DIRMERGE_METHOD, dirMergeMethod);
-			putReq.putMetadata(CcouchNamespace.RR_FILEMERGE_METHOD, fileMergeMethod);
+			if( shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
+			if( shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
+			putReq.putMetadata(CcouchNamespace.REQ_DIRMERGE_METHOD, dirMergeMethod);
+			putReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, fileMergeMethod);
 			Response putRes = TheGetter.handleRequest(putReq);
 			if( putRes.getStatus() != Response.STATUS_NORMAL ) {
 				System.err.println("Couldn't PUT to " + destUri + ": " + putRes.getContent());
 				System.exit(1);
 			}
+		}
+		
+		if( errorCount > 0 ) {
+			System.err.println(errorCount + " errors occured");
+			System.exit(1);
 		}
 	}
 	
@@ -427,49 +454,32 @@ public class ContentCouchCommand {
 	
 	public void runStoreCmd( String[] args ) {
 		args = mergeConfiguredArgs("store", args);
-		List files = new ArrayList();
+		List sourceUris = new ArrayList();
 		String message = null;
 		String name = null;
 		String author = null;
-		int verbosity = 1;
-		boolean storeFiles = true;
 		boolean storeDirs = true;
-		boolean storeCommits = true;
 		boolean forceCommit = false;
-		boolean dumpConfig = false;
 		boolean shouldLinkStored = false;
 		boolean shouldRelinkImported = false;
+		boolean followRefs = false;
 		String storeSector = "user";
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
 				System.err.println(STORE_USAGE);
 				System.exit(1);
-			} else if( "-v".equals(arg) ) {
-				verbosity = 2;
-			} else if( arg.startsWith("-v") ) {
-				verbosity = Integer.parseInt(arg.substring(2));
-			} else if( "-dont-store".equals(arg) ) {
-				storeFiles = false;
-				storeDirs = false;
-				storeCommits = false;
-			} else if( "-dont-store-files".equals(arg) ) {
-				storeFiles = false;
-			} else if( "-dont-store-dirs".equals(arg) ) {
-				storeDirs = false;
 			} else if( "-files-only".equals(arg) ) {
-				storeFiles = true;
 				storeDirs = false;
-			} else if( "-dirs-only".equals(arg) ) {
-				storeFiles = false;
-				storeDirs = true;
 			} else if( "-link".equals(arg) ) {
 				shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
 				shouldLinkStored = true;
 				shouldRelinkImported = true;
-			} else if( "-sector".equals(arg) ) {
+			} else if( "-store-sector".equals(arg) ) {
 				storeSector = args[++i];
+			} else if( "-follow-refs".equals(arg) ) {
+				followRefs = true;
 			} else if( "-m".equals(arg) ) {
 				message = args[++i];
 			} else if( "-n".equals(arg) ) {
@@ -478,13 +488,11 @@ public class ContentCouchCommand {
 				author = args[++i];
 			} else if( "-force-commit".equals(arg) ) {
 				forceCommit = true;
-			} else if( "-dump-config".equals(arg) ) {
-				dumpConfig = true;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
 				System.out.println(STORE_USAGE);
 				System.exit(0);
 			} else if( arg.charAt(0) != '-' ) {
-				files.add(arg);
+				sourceUris.add(normalizeUri(arg,false,false));
 			} else {
 				System.err.println("ccouch store: Unrecognised argument: " + arg);
 				System.err.println(STORE_USAGE);
@@ -492,10 +500,168 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		// TODO:
+		boolean createCommit = forceCommit || (author != null) || (name != null) || (message != null);
+		int errorCount = 0;
 		
-		System.err.println("store unimplemented!");
-		System.exit(1);
+		if( createCommit ) {
+			if( sourceUris.size() != 1 ) {
+				System.err.println("When creating a commit, exactly one source must be specified");
+				System.exit(1);
+			}
+		}
+		
+		String dataDestUri = "x-ccouch-repo:data/" + (storeSector != null ? storeSector + "/" : "");
+		String storedUri = null;
+		for( Iterator i=sourceUris.iterator(); i.hasNext(); ) {
+			String sourceUri = (String)i.next();
+			
+			Request getReq = new BaseRequest(Request.VERB_GET, sourceUri);
+			Response getRes = TheGetter.handleRequest(getReq);
+			if( getRes.getStatus() != Response.STATUS_NORMAL ) {
+				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
+				++errorCount;
+				continue;
+			}
+			if( getRes.getContent() == null ) {
+				System.err.println("No content found at " + sourceUri);
+				++errorCount;
+				continue;
+			}
+			
+			Object o = getRes.getContent();
+			boolean expectIdentifier = true; 
+			if( o instanceof Directory ) {
+				if( !storeDirs ) {
+					o = new FilterIterator( new DirectoryWalker((Directory)o, followRefs), EntryFilters.BLOBFILTER );
+					getRes = new BaseResponse(Response.STATUS_NORMAL, o);
+					expectIdentifier = false;
+					if( createCommit ) {
+						System.err.println("Cannot create commit when source is a collection");
+						System.exit(1);
+					}
+				}
+			}
+			
+			BaseRequest putReq = new BaseRequest(Request.VERB_PUT, dataDestUri);
+			putReq.content = getRes.getContent();
+			putReq.contentMetadata = getRes.getContentMetadata(); 
+			if( shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
+			if( shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
+			Response putRes = TheGetter.handleRequest(putReq);
+			if( putRes.getStatus() != Response.STATUS_NORMAL ) {
+				System.err.println("Couldn't PUT to " + dataDestUri + ": " + putRes.getContent());
+				++errorCount;
+			}
+			if( expectIdentifier ) {
+				storedUri = MetadataUtil.getStoredIdentifier(putRes);
+				if( storedUri == null ) {
+					Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Did not recieve identifier after storing " + sourceUri);
+					++errorCount;
+				} else {
+					Log.log(Log.LEVEL_CHANGES, Log.TYPE_GENERIC, "Stored " + sourceUri + " as " + storedUri);
+				}
+			}
+		}
+		
+		createCommit: if( createCommit ) {
+			String sourceUri = (String)sourceUris.get(0);
+			String parentCommitListUri = null;
+			if( sourceUri.endsWith("/") ) {
+				parentCommitListUri = PathUtil.appendPath(sourceUri, ".commit-uris");
+			}
+			
+			BaseRef[] parents;
+			if( parentCommitListUri != null ) {
+				// Load parent commits
+				BaseRequest parentCommitListReq = new BaseRequest(Request.VERB_GET, parentCommitListUri);
+				Response parentCommitListRes = TheGetter.handleRequest(parentCommitListReq);
+				List parentCommitUris = new ArrayList();
+				if( parentCommitListRes.getStatus() == Response.STATUS_NORMAL ) {
+					String parentCommitStr = ValueUtil.getString( parentCommitListRes.getContent() );
+					String[] lines = parentCommitStr.split("\\s+");
+					for( int lineNum=0; lineNum<lines.length; ++lineNum ) {
+						String line = lines[lineNum];
+						if( line.startsWith("#") ) continue;
+						
+						if( !forceCommit ) {
+							BaseRequest parentCommitRequest = new BaseRequest(Request.VERB_GET, line);
+							Response parentCommitResponse = TheGetter.handleRequest(parentCommitRequest);
+							if( parentCommitResponse.getStatus() == Response.STATUS_NORMAL ) {
+								if( parentCommitResponse.getContent() instanceof Commit ) {
+									Commit parentCommit = (Commit)parentCommitResponse.getContent();
+									if( parentCommit.getTarget() instanceof Ref && storedUri.equals(((Ref)parentCommit.getTarget()).getTargetUri()) ) {
+										System.err.println("Parent commit " + line + " references the same target as the new commit would: " + sourceUri + " = " + storedUri );
+										System.err.println("Use -force-commit to commit anyway.");
+										break createCommit;
+									}
+								} else { 
+									Log.log(Log.LEVEL_WARNINGS, Log.TYPE_WARNING, line + " (listed in " + parentCommitListUri + ") does not reference a Commit.  Ignoring.");
+									System.err.println("Warning: ");
+								}
+							} else {
+								Log.log(Log.LEVEL_WARNINGS, Log.TYPE_WARNING, "Could not load commit " + line + "(listed in " + parentCommitListUri + ").  Ignoring.");
+							}
+						}
+
+						parentCommitUris.add(line);
+					}
+				}
+					
+				parents = new BaseRef[parentCommitUris.size()];
+				for( int i=0; i<parents.length; ++i ) {
+					parents[i] = new BaseRef((String)parentCommitUris.get(i));
+				}
+			} else {
+				parents = new BaseRef[]{};
+			}
+
+			SimpleCommit commit = new SimpleCommit();
+			commit.author = author;
+			commit.date = new Date();
+			commit.message = message;
+			commit.target = new BaseRef(storedUri);
+			commit.parents = parents;
+			
+			String commitDestUri;
+			if( name != null ) {
+				commitDestUri = "x-ccouch-repo:heads/" + name + "/new";
+			} else {
+				commitDestUri = dataDestUri;
+			}
+			
+			BaseRequest storeCommitReq = new BaseRequest(Request.VERB_PUT, commitDestUri);
+			storeCommitReq.content = commit;
+			Response storeCommitRes = TheGetter.handleRequest(storeCommitReq);
+			if( storeCommitRes.getStatus() != Response.STATUS_NORMAL ) {
+				Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Could not PUT commit to " + commitDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
+				++errorCount;
+				break createCommit;
+			}
+			String commitUrn = MetadataUtil.getStoredIdentifier(storeCommitRes);
+			if( commitUrn == null ) {
+				Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Did not recieve identifier after storing commit.");
+				++errorCount;
+				break createCommit;
+			}
+			
+			Log.log(Log.LEVEL_CHANGES, Log.TYPE_GENERIC, "Stored commit as " + commitUrn);
+
+			if( parentCommitListUri != null ) {
+				BaseRequest storeCommitUriReq = new BaseRequest(Request.VERB_PUT, parentCommitListUri);
+				storeCommitUriReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_REPLACE);
+				storeCommitUriReq.content = commitUrn;
+				Response storeCommitUriRes = TheGetter.handleRequest(storeCommitUriReq);
+				if( storeCommitUriRes.getStatus() != Response.STATUS_NORMAL ) {
+					Log.log(Log.LEVEL_WARNINGS, Log.TYPE_WARNING, "Could not PUT new commit URI list to " + parentCommitListUri + ": " + BaseResponse.getErrorSummary(storeCommitUriRes));
+					break createCommit;
+				}
+			}
+		} // end create commit
+
+		if( errorCount > 0 ) {
+			System.err.println(errorCount + " errors occured");
+			System.exit(1);
+		}
 	}
 	
 	public void runCheckoutCmd( String[] args ) {

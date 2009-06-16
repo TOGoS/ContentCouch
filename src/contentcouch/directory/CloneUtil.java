@@ -69,7 +69,7 @@ public class CloneUtil {
 		} else {
 			if( obj instanceof Directory ) {
 				return CLONE_TARGETTYPE_DIR;
-			} else if( obj instanceof Blob ) {
+			} else if( obj instanceof Blob || obj instanceof String ) {
 				return CLONE_TARGETTYPE_BLOB;
 			}
 		}

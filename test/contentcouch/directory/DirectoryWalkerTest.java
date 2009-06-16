@@ -3,6 +3,10 @@ package contentcouch.directory;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
+import contentcouch.blob.BlobUtil;
+import contentcouch.misc.Function1;
+import contentcouch.misc.SimpleDirectory;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
@@ -24,13 +28,43 @@ public class DirectoryWalkerTest extends TestCase {
 	
 	public void testDirectoryWalk() {
 		Iterator i = new DirectoryWalker(d, false);
+		assertTrue( i.hasNext() );
 		assertEquals("a",  ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
 		assertEquals("ax", ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
 		assertEquals("b",  ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
 		assertEquals("bx", ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
 		assertEquals("c",  ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
 		assertEquals("cx", ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
 		assertEquals("d",  ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
 		assertEquals("dx", ((Directory.Entry)i.next()).getName() );
+		assertFalse( i.hasNext() );
+	}
+	
+	public void testBlobFilter() {
+		Function1 bf = EntryFilters.BLOBFILTER;
+		assertNull( bf.apply(new SimpleDirectory.Entry("x", new SimpleDirectory(), null)) );
+		assertNotNull( bf.apply(new SimpleDirectory.Entry("x", BlobUtil.getBlob("x"), null)) );
+		assertNotNull( bf.apply(new SimpleDirectory.Entry("x", new SimpleDirectory(), CcouchNamespace.OBJECT_TYPE_BLOB)) );
+		assertNull( bf.apply(new SimpleDirectory.Entry("x", BlobUtil.getBlob("x"), CcouchNamespace.OBJECT_TYPE_DIRECTORY)) );
+	}
+	
+	public void testBlobOnlyDirectoryWalk() {
+		Iterator i = new FilterIterator( new DirectoryWalker(d, false), EntryFilters.BLOBFILTER );
+		assertTrue( i.hasNext() );
+		assertEquals("ax", ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
+		assertEquals("bx", ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
+		assertEquals("cx", ((Directory.Entry)i.next()).getName() );
+		assertTrue( i.hasNext() );
+		assertEquals("dx", ((Directory.Entry)i.next()).getName() );
+		assertFalse( i.hasNext() );
 	}
 }

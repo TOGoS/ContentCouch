@@ -3,8 +3,6 @@ package contentcouch.rdf;
 import java.util.HashMap;
 import java.util.Map;
 
-import togos.rra.RraNamespace;
-
 import contentcouch.value.Ref;
 
 public class CcouchNamespace {
@@ -48,29 +46,37 @@ public class CcouchNamespace {
 	public static final String COMMIT           = CC_NS + "Commit";
 	public static final String REDIRECT         = CC_NS + "Redirect";
 	
-	//// Request/response metadata ////
+	//// Request metadata ////
 	
-	/** Namespace for ccouch-specific Request/Response metadata */
-	public static final String CCRR_NS = CC_NS + "RR/";
+	/** Namespace for ccouch-specific Request metadata */
+	public static final String CC_REQ_NS = CC_NS + "Request/";
 	
-	public static final String RR_STORE_SECTOR       = CCRR_NS + "storeSector";
-	public static final String RR_HARDLINK_DESIRED   = CCRR_NS + "hardlinkDesired";
-	public static final String RR_REHARDLINK_DESIRED = CCRR_NS + "rehardlinkDesired";
+	public static final String REQ_STORE_SECTOR       = CC_REQ_NS + "storeSector";
+	public static final String REQ_HARDLINK_DESIRED   = CC_REQ_NS + "hardlinkDesired";
+	public static final String REQ_REHARDLINK_DESIRED = CC_REQ_NS + "rehardlinkDesired";
 	
-	public static final String RR_FILEMERGE_METHOD    = CCRR_NS + "fileMergeMethod";
-	public static final String RR_FILEMERGE_FAIL      = "Fail";
-	public static final String RR_FILEMERGE_REPLACE   = "Replace";
-	public static final String RR_FILEMERGE_IGNORE    = "Ignore";
-	public static final String RR_FILEMERGE_IFSAME    = "Same?";
-	public static final String RR_FILEMERGE_STRICTIG  = "Same?Ignore:Fail";
-	public static final String RR_FILEMERGE_STRICTRE  = "Same?Replace:Fail";
+	public static final String REQ_FILEMERGE_METHOD    = CC_REQ_NS + "fileMergeMethod";
+	public static final String REQ_FILEMERGE_FAIL      = "Fail";
+	public static final String REQ_FILEMERGE_REPLACE   = "Replace";
+	public static final String REQ_FILEMERGE_IGNORE    = "Ignore";
+	public static final String REQ_FILEMERGE_IFSAME    = "Same?";
+	public static final String REQ_FILEMERGE_STRICTIG  = "Same?Ignore:Fail";
+	public static final String REQ_FILEMERGE_STRICTRE  = "Same?Replace:Fail";
 
-	public static final String RR_DIRMERGE_METHOD     = CCRR_NS + "dirMergeMethod";
-	public static final String RR_DIRMERGE_FAIL       = "Fail";
-	public static final String RR_DIRMERGE_REPLACE    = "Replace";
-	public static final String RR_DIRMERGE_IGNORE     = "Ignore";
-	public static final String RR_DIRMERGE_MERGE      = "Merge";
+	public static final String REQ_DIRMERGE_METHOD     = CC_REQ_NS + "dirMergeMethod";
+	public static final String REQ_DIRMERGE_FAIL       = "Fail";
+	public static final String REQ_DIRMERGE_REPLACE    = "Replace";
+	public static final String REQ_DIRMERGE_IGNORE     = "Ignore";
+	public static final String REQ_DIRMERGE_MERGE      = "Merge";
 	
+	//public static final String RR_DESIRED_STORE_SECTOR = CC_REQ_NS + "desiredStoreSector";
+	
+	//// Response metadata ////
+	
+	public static final String CC_RES_NS = CC_NS + "Response/";
+	public static final String RES_STORED_IDENTIFIER = CC_RES_NS + "storedIdentifier";
+	public static final String RES_CACHEABLE = CC_RES_NS + "cacheable";
+
 	//// Object types ////
 	
 	public static final String OBJECT_TYPE_BLOB = "Blob";
@@ -79,9 +85,7 @@ public class CcouchNamespace {
 	/** Indicates a miscellaneous RDF structure */
 	public static final String OBJECT_TYPE_RDF = "RDF";
 	
-	//// Web page stuff ////
-
-	public static final String WP_URI_WRAPPER = "WP/uriWrapper";
+	//// XML Namespaces ////
 	
 	static Map standardNsAbbreviations = new HashMap();
 	static {
@@ -96,5 +100,4 @@ public class CcouchNamespace {
 		standardNsAbbreviations.put("xlink", "http://www.w3.org/1999/xlink");
 		standardNsAbbreviations.put("foaf", "http://xmlns.com/foaf/0.1/");
 	}
-	public static final String STORE_SECTOR = RraNamespace.RRA_NS + "storeSector";
 }

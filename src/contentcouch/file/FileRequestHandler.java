@@ -36,7 +36,8 @@ public class FileRequestHandler extends BaseRequestHandler {
 			if( pf == null ) throw new RuntimeException("No parent of" + f);
 			FileUtil.mkdirs(pf);
 			FileDirectory destDir = new FileDirectory(pf);
-			destDir.shouldUseHardlinks = ValueUtil.getBoolean(req.getMetadata().get(CcouchNamespace.RR_HARDLINK_DESIRED), false);
+			// TODO: handle RR_REHARDLINK_RESIRED
+			destDir.shouldUseHardlinks = ValueUtil.getBoolean(req.getMetadata().get(CcouchNamespace.REQ_HARDLINK_DESIRED), false);
 			SimpleDirectory.Entry newEntry = new SimpleDirectory.Entry();
 			newEntry.name = f.getName();
 			newEntry.target = req.getContent();
