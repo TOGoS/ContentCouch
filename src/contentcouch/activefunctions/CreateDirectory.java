@@ -22,11 +22,9 @@ public class CreateDirectory extends BaseActiveFunction {
 		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
 			String key = (String)e.getKey();
-			System.err.println("Look at arg " + key);
 			final String[] keyParts = key.split("/");
 			if( keyParts.length == 2 && "entries".equals(keyParts[0]) ) {
 				final String entryKey = keyParts[1];
-				System.err.println("Entry: " + entryKey);
 				Expression targetExpression = (Expression)e.getValue();
 				if( lazy ) {
 					SimpleDirectory.Entry newEntry = new SimpleDirectory.Entry();

@@ -12,7 +12,7 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class DirectoryWalker implements Iterator {
-	protected Stack entryIteratorStack;
+	protected Stack entryIteratorStack = new Stack();
 	protected boolean followRefs;
 	protected Comparator entryComparator = EntryComparators.TYPE_THEN_NAME_COMPARATOR;
 	
@@ -23,7 +23,7 @@ public class DirectoryWalker implements Iterator {
 	}
 	
 	public DirectoryWalker(Directory d, boolean followRefs) {
-		entryIteratorStack.push(d.getDirectoryEntrySet().iterator());
+		push(d);
 		this.followRefs = followRefs;
 	}
 	
@@ -46,8 +46,10 @@ public class DirectoryWalker implements Iterator {
 				if( e.getTarget() instanceof Directory ) {
 					push( (Directory)e.getTarget() );
 				}
+				return e;
+			} else {
+				entryIteratorStack.pop();
 			}
-			entryIteratorStack.pop();
 		}
 		return null;
 	}
