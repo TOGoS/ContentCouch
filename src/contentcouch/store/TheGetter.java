@@ -1,6 +1,7 @@
 package contentcouch.store;
 
 import java.util.Collections;
+import java.util.Map;
 
 import togos.rra.BaseRequest;
 import togos.rra.Request;
@@ -42,6 +43,7 @@ public class TheGetter {
 	public static Object getResponseValue( Response res, String verb, String uri ) {
 		switch( res.getStatus() ) {
 		case( Response.STATUS_NORMAL ): return res.getContent();
+		case( Response.STATUS_DOESNOTEXIST ): return null;
 		default:
 			throw new AbnormalResponseException( verb, uri, res.getStatus(), res.getContent() );
 		}
@@ -67,5 +69,10 @@ public class TheGetter {
 
 	public static Directory getDirectory( String uri ) {
 		return (Directory)get("active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(uri));
+	}
+	
+	public static String identify( Object obj, Map metadata ) {
+		BaseRequest idReq = new BaseRequest(Request.VERB_POST, "x-ccouch-repo:identify", obj, metadata );
+		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.handleRequest(idReq), idReq.uri));
 	}
 }

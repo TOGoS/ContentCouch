@@ -387,9 +387,13 @@ public class MetaRepository extends BaseRequestHandler {
 		return new Function1() {
 			public Object apply(Object input) {
 				if( followRefs && input instanceof Ref ) {
-					input = TheGetter.get(((Ref)input).getTargetUri());
+					String targetUri = ((Ref)input).getTargetUri();
+					if( targetUri.startsWith("x-parse-rdf:") || targetUri.startsWith("x-parse-rdf:urn:") ) {
+						// Then leave as is
+					} else {
+						input = TheGetter.get(targetUri);
+					}
 				}
-				
 
 				if( input == null ) {
 					return null;

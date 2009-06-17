@@ -33,7 +33,8 @@ public class FileRequestHandler extends BaseRequestHandler {
 			File f = new File(path);
 
 			File pf = f.getParentFile();
-			if( pf == null ) throw new RuntimeException("No parent of" + f);
+			if( pf == null ) pf = f.getAbsoluteFile().getParentFile();
+			if( pf == null ) throw new RuntimeException("No parent of " + f);
 			FileUtil.mkdirs(pf);
 			FileDirectory destDir = new FileDirectory(pf);
 			// TODO: handle RR_REHARDLINK_RESIRED

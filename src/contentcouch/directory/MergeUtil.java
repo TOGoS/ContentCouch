@@ -35,7 +35,7 @@ public class MergeUtil {
 		
 		protected void mergeBlob(WritableDirectory dir, Entry e1, Entry e2, String mergeMethod) {
 			if( CcouchNamespace.REQ_FILEMERGE_IGNORE.equals(mergeMethod) ) {
-				System.err.println("Skipping " + e2.getName());
+				System.err.println("Skipping " + e2.getName() + " (entry already exists)");
 			} else if( CcouchNamespace.REQ_FILEMERGE_REPLACE.equals(mergeMethod) ) {
 				System.err.println("Replacing " + e1.getName());
 				dir.addDirectoryEntry(e2);
