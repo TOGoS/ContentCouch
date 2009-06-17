@@ -116,7 +116,14 @@ public class MetaRepository extends BaseRequestHandler {
 	protected List getRepoDataSectorUrls( RepoConfig repoConfig ) {
 		ArrayList l = new ArrayList();
 		String dataDirUri = PathUtil.appendPath(repoConfig.uri,"data/");
-		Directory d = (Directory)TheGetter.get( dataDirUri );
+		
+		BaseRequest dirReq = new BaseRequest( Request.VERB_GET, dataDirUri );
+		Response dirRes = TheGetter.handleRequest(dirReq);
+		if( dirRes.getStatus() != Response.STATUS_NORMAL ) return l;
+		if( !(dirRes.getContent() instanceof Directory) ) {
+			System.err.println(dataDirUri + " exists but is not a directory");
+		}
+		Directory d = (Directory)dirRes.getContent();
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
@@ -222,6 +229,7 @@ public class MetaRepository extends BaseRequestHandler {
 				String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
 				
 				BaseRequest subReq = new BaseRequest( req, uri );
+				subReq.content = blob;
 				subReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_IGNORE);
 				BaseResponse res = new BaseResponse( TheGetter.handleRequest(subReq) );
 				res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, repoConfig.dataScheme.hashToUrn(hash));

@@ -20,9 +20,10 @@ public class RepoConfig {
 	public RepoConfig() {
 	}
 	
-	public RepoConfig( String disposition, String uri ) {
+	public RepoConfig( String disposition, String uri, String name ) {
 		this.disposition = disposition;
 		this.uri = uri;
+		this.name = name;
 	}
 	
 	public static RepoConfig parse(String arg) {
