@@ -10,26 +10,12 @@ you want it to be in and what you want to name it.  Each repository is
 a directory containing a set of data files, 'heads' (named pointers to
 notable objects), and cache files.
 
-It is perfectly acceptable to have a single repository that stores objects
-and heads for many projects, but you may want to create other repositories
-to simplify file management.
-
 When deciding on a name for your repository, you should choose something
 unique, as anyone who wants to download files from your repository will need
-to use this name to identify it.  A good convention is to include the name
-of the computer on which the repository resides and the role that it serves.
+to use this name to identify it.  A good convention is to use the name
+of the computer on which the repository resides.
 
 See 'Heads' for more information on how repository names are used.
-
-If you will be using ccouch to download files from other computers, you should
-either set up a second, 'cache', repository, or configure the main repository
-to use itself as a cache by adding the following line to <repo-path>/ccouch-config
-(which will not exist if you have not already run some ccouch commands):
-
-  -use-main-repo-as-cache
-
-See the 'Repository Roles' section for details on other repository roles and why
-it may be useful to have more than one repository on one computer.
 
 == ccouch Command ==
 
@@ -37,10 +23,13 @@ it may be useful to have more than one repository on one computer.
 
 Basically you'll want to copy ccouch.sh or ccouch.bat to a location in
 your path and change the paths within to point at the ContentCouch program
-directory and your local repositories.
+directory and your local repositories.  This way you will be able to type
+ccouch from within any directory and have it automatically reference the
+right class path and repository.
 
-Run 'ccouch -?' to see a list of sub-commands, and 'ccouch <subcommand> -?'
-to see a list of options for the given sub-command.
+Updated documentation about the commands can be found by running 'ccouch -?'.
+Run 'ccouch <subcommand> -?' to see a list of options for the given
+sub-command.
 
 == Servlet ==
 
@@ -60,7 +49,7 @@ ContentCouch project.  This directory contains:
   WEB-INF/web.xml - servlet configuration file
 
 repo-config in the web folder should generally be a single line pointing
-to the actual location of the main repository.
+to the actual location of the primary local repository.
 
 == Repositories and Configuration Files ==
 
@@ -95,28 +84,18 @@ options are given in /home/ted/ccouch/ccouch-config).
 - main - this is the repository that will be checked first when loading
   files, and that files will be stored in when 'ccouch store' is invoked.
   This repository can reference any number of local and remote
-  repositories, and one cache repository (which may be itself).
+  repositories.
 
 - local - these are other repositories that can be accessed quickly
   (i.e. on the same filesystem or computer as the main repository).
-  
-  It could be useful to have several 'main' repositories on a single computer
-  if you wanted to keep data for different purposes separate.  For example,
-  you might have one repository dedicated to storing photos, and one dedicated
-  to storing music.  These separate repositories could reference eachother
-  as '-local-repo:<name>'
-  
-- cache - if one is specified, blobs downloaded from remote repositories
-  are cached in the cache repository for fast access.  The cache repository
-  should, like local repositories, be on the same computer as the main repo.
-  It is useful to have this be separate from the main repository, since the
-  main repository holds files that are important to the user of this computer,
-  but the cache repository is more likely to hold less valuable files and/or
-  files that can be re-downloaded from elsewhere.
 
+  It could be useful to have multiple repositories on one machine if you want
+  to have separate repositories for each user, or for each partition (to
+  allow hardlinks between stored blobs and files on a partition).
+    
 - remote - a repository residing on a machine that is slow or difficult
-  to access, such as one connected only by a low-bandwidth link (such as
-  the internet).  You generally want to cache files that are loaded from
+  to access, such as one connected only by a low-bandwidth link (e.g.
+  the Internet).  You generally want to cache files that are loaded from
   remote repositories rather than downloading them each time they are needed.
 
 == Heads ==
@@ -150,7 +129,7 @@ The ccouch commands and servlet recognise a URI form that looks like:
 
 Using these URIs you can reference specific heads.  If <repo-name> is
 included, the URI references the head in that specific repository. Otherwise,
-only the main, local, and cache repositories are checked (except by the
+only the main, and local repositories are checked (except by the
 'ccouch cache-heads', which will also load remote heads in some cases).
 
 If the URI ends with /latest, it will reference the latest version found
@@ -180,12 +159,10 @@ repositories.  He sets up one repository for the bulk of his files and
 calls it "joe-laptop".  He keeps his work on a separate hard drive, and
 so it makes sense for him to have a separate repository on that hard drive
 for storing work stuff so that he can store and checkout using hardlinks.
-He also wants to use this laptop to back up files from a friend's server,
-and so sets up a cache repository where those files can be stored.
+He also wants to use this laptop to back up files from a friend's server.
 
   joe-laptop       ; catch-all repository for files archived from joe-laptop
   joe-laptop-work  ; a repository storing joe's work-related files
-  joe-laptop-cache ; joe-laptop's cache for files downloaded from elsewhere
 
 Joe's 'work' hard drive is C, and his photos and music are stored on F, so
 he sets up his repositores to be on the same drives as the files they are
@@ -193,14 +170,12 @@ storing (again, so that he can use hardlinks):
 
   C:/ccouch/work/
   F:/ccouch/main/
-  F:/ccouch/cache/
 
 Joe eventually decides that he wants other people to be able to pull from
 his repositories, and so he sets up a web server and maps his ccouch
 repositories to the following URLs:
 
   http://laptop.joe.example.org/ccouch/main/
-  http://laptop.joe.example.org/ccouch/cache/
   http://laptop.joe.example.org/ccouch/work/
 
 Next Joe is going to set up a script that will back up files from his friend
@@ -219,10 +194,8 @@ config file, F:/ccouch/main/ccouch-config:
   # Local stuff:
   -repo-name joe-laptop
   -local-repo C:/ccouch/work
-  -cache-repo F:/ccouch/cache
   # Bill's repositories:
   -remote-repo:bill http://ccouch.billstuff.example.org/bill/
-  -remote-repo:bill-cache http://ccouch.billstuff.example.org/bill-cache/
 
   # I always wanna symlink:
   [checkout]
