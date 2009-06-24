@@ -145,7 +145,16 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				if( type == null && subRes.getContent() instanceof Blob ) {
 					type = MetadataUtil.guessContentType((Blob)subRes.getContent());
 				}
-			
+				
+				switch( subRes.getStatus() ) {
+				case( Response.STATUS_NORMAL ): break;
+				case( Response.STATUS_DOESNOTEXIST ): case( Response.STATUS_UNHANDLED ):
+					response.sendError(404, "Resource Not Found"); break;
+				case( Response.STATUS_USERERROR ):
+					response.sendError(400, "User Error"); break;
+				default:
+					response.sendError(500, "RRA Error " + subRes.getStatus()); break;
+				}
 				if( type != null ) response.setHeader("Content-Type", type);
 				BlobUtil.writeBlobToOutputStream( BlobUtil.getBlob( subRes.getContent() ), response.getOutputStream() );
 			} finally {
