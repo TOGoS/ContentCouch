@@ -71,7 +71,7 @@ public class ContentCouchCommand {
 		"  -dirs-only         ; store only directory listings (no file content)\n" +
 		"  -dont-store        ; store nothing (same as using 'ccocuch id')\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
-		"  -sector            ; data/sub-directory to store data (defaults to \"user\")\n" +
+		"  -store-sector      ; data sub-dir to store data (defaults to \"user\")\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
 		"  -q                 ; quiet - show nothing\n" +
 		"  -?                 ; display help and exit\n" +
@@ -106,9 +106,10 @@ public class ContentCouchCommand {
 	public static String CACHE_USAGE =
 		"Usage: ccouch [general options] cache [options] <urn> <urn> ...\n" +
 		"Options:\n" +
-		"  -v       ; show all URNs being followed\n" +
-		"  -q       ; show nothing - not even failures\n" +
-		"  -sector  ; data/sub-directory to store data (defaults to \"remote\")\n" +
+		"  -v            ; show all URNs being followed\n" +
+		"  -q            ; show nothing - not even failures\n" +
+		"  -link         ; hardlink files from the store instead of copying\n" +
+		"  -store-sector <name> ; data subdir to store data (defaults to \"remote\")\n" +
 		"\n" +
 		"Attempts to cache any objects that are not already in a local repository\n" +
 		"into your cache repository.  Directories, Commits, and Redirects will\n" +
@@ -287,15 +288,17 @@ public class ContentCouchCommand {
 		public boolean showHelp;
 		public boolean shouldLinkStored;
 		public boolean shouldRelinkImported;
-		public boolean dumpConfig;
-		public boolean saveCommitUri; 
+		public boolean shouldDumpConfig;
+		public boolean shouldSaveCommitUri; 
+		public boolean shouldUseCommitTargets = false;
+		public String storeSector;
 		public String fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_STRICTIG;
 		public String dirMergeMethod = null;
 		public List uris = new ArrayList();
 	}
 	
 	protected GeneralOptions getGeneralOptions( String[] args, String commandName ) {
-		args = mergeConfiguredArgs("copy", args);
+		args = mergeConfiguredArgs(commandName, args);
 		
 		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i < args.length; ++i ) {
@@ -321,9 +324,11 @@ public class ContentCouchCommand {
 				opts.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_IGNORE;
 			} else if( "-merge".equals(arg) ) {
 				opts.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
+			} else if( "-use-commit-targets".equals(arg) ) {
+				opts.shouldUseCommitTargets = true;
 
 			} else if( "-dump-config".equals(arg) ) {
-				opts.dumpConfig = true;
+				opts.shouldDumpConfig = true;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
 				opts.showHelp = true;
 				return opts;
@@ -360,7 +365,7 @@ public class ContentCouchCommand {
 				System.err.println("No content found at " + sourceUri);
 				return 1;
 			}
-			if( getRes.getContent() instanceof Commit ) {
+			if( opts.shouldUseCommitTargets && getRes.getContent() instanceof Commit ) {
 				commit = (Commit)getRes.getContent();
 				commitRes = getRes;
 				Object o = commit.getTarget();
@@ -377,7 +382,8 @@ public class ContentCouchCommand {
 		
 		BaseRequest putReq = new BaseRequest( Request.VERB_PUT, destUri );
 		putReq.content = getRes.getContent();
-		putReq.contentMetadata = getRes.getContentMetadata(); 
+		putReq.contentMetadata = getRes.getContentMetadata();
+		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 		if( opts.shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
 		if( opts.shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
 		putReq.putMetadata(CcouchNamespace.REQ_DIRMERGE_METHOD, opts.dirMergeMethod);
@@ -387,7 +393,7 @@ public class ContentCouchCommand {
 			System.err.println("Couldn't PUT to " + destUri + ": " + putRes.getContent());
 			return 1;
 		}
-		if( commit != null && opts.saveCommitUri ) {
+		if( commit != null && opts.shouldSaveCommitUri ) {
 			String commitListUri = getCommitListUri(destUri);
 			if( commitListUri != null ) {
 				addCommitUri(commitListUri, TheGetter.identify( commit, commitRes.getContentMetadata() ) );
@@ -442,7 +448,7 @@ public class ContentCouchCommand {
 				return 0;
 			} else if( "-dump-config".equals(arg) ) {
 				dumpConfig = true;
-			} else if( !arg.startsWith("-") ) {
+			} else if( !arg.startsWith("-") || "-".equals(arg) ) {
 				inputUris.add(normalizeUri(arg, false, false));
 			} else {
 				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
@@ -571,6 +577,7 @@ public class ContentCouchCommand {
 			putReq.contentMetadata = getRes.getContentMetadata(); 
 			if( shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
 			if( shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
+			putReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
 			Response putRes = TheGetter.handleRequest(putReq);
 			if( putRes.getStatus() != Response.STATUS_NORMAL ) {
 				System.err.println("Couldn't PUT to " + dataDestUri + ": " + putRes.getContent());
@@ -582,7 +589,7 @@ public class ContentCouchCommand {
 					Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Did not recieve identifier after storing " + sourceUri);
 					++errorCount;
 				} else {
-					Log.log(Log.LEVEL_CHANGES, Log.TYPE_GENERIC, "Stored " + sourceUri + " as " + storedUri);
+					Log.log(Log.LEVEL_CHANGES, Log.TYPE_GENERIC, sourceUri + "\t" + storedUri);
 				}
 			}
 		}
@@ -679,7 +686,7 @@ public class ContentCouchCommand {
 			System.err.println(CHECKOUT_USAGE);
 			return 1;
 		}
-		opts.saveCommitUri = true;
+		opts.shouldSaveCommitUri = true;
 		
 		if( opts.uris.size() != 2 ) {
 			System.err.println("ccouch checkout: You must specify one source and one destination URI");
@@ -687,21 +694,30 @@ public class ContentCouchCommand {
 			return 1;
 		}
 		String sourceUri = normalizeUri((String)opts.uris.get(0), false, true);
-		String destUri = normalizeUri((String)opts.uris.get(1), false, true);
+		String destUri = normalizeUri((String)opts.uris.get(1), true, true);
 
 		return copy( sourceUri, destUri, opts );
 	}
 	
+	/** This is almost exactly the same as 'store', but with
+	 *  fewer features and a different default store sector */
 	public int runCacheCmd( String[] args ) {
 		args = mergeConfiguredArgs("cache", args);
+		
+		GeneralOptions opts = new GeneralOptions();
+		opts.storeSector = "remote";
 		List cacheUris = new ArrayList();
-		String storeSector = "remote";
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
 			} else if( "-v".equals(arg) ) {
-			} else if( "-sector".equals(arg) ) {
-				storeSector = args[++i];
+			} else if( "-store-sector".equals(arg) ) {
+				opts.storeSector = args[++i];
+			} else if( "-link".equals(arg) ) {
+				opts.shouldLinkStored = true;
+			} else if( "-relink".equals(arg) ) {
+				opts.shouldLinkStored = true;
+				opts.shouldRelinkImported = true;
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_USAGE);
 				return 0;
@@ -714,9 +730,12 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		// TODO: implement
-		System.err.println("cache unimplemented!");
-		return 1;
+		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
+			String uri = (String)i.next();
+			copy( uri, "x-ccouch-repo:data", opts );
+		}
+
+		return 0;
 	}
 
 	public int runCacheHeadsCmd( String[] args ) {

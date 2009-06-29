@@ -17,7 +17,7 @@ public class MultiRequestHandler extends BaseRequestHandler {
 			RequestHandler rh = (RequestHandler)i.next();
 			res = rh.handleRequest(request);
 			if( res.getStatus() > 0 ) {
-				System.err.println("  Handled by " + rh.getClass().getName() );
+				//System.err.println("  Handled by " + rh.getClass().getName() );
 				return res;
 			}
 		}
