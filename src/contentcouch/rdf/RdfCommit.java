@@ -51,6 +51,7 @@ public class RdfCommit extends RdfNode implements Commit {
 
 	public Object[] getParents() {
 		Set s = this.getSet(CcouchNamespace.PARENT);
+		if( s == null ) return new Object[]{};
 		return s.toArray();
 	}
 	
