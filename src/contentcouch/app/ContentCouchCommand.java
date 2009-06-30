@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 
 import togos.rra.BaseRequest;
@@ -188,6 +189,20 @@ public class ContentCouchCommand {
 			ps.println(pfx);
 			printRepoConfig(repoConfig, ps, pfx);
 		}
+		
+		ps.println(pfx);
+		ps.println(pfx + "Default command arguments:");
+		for( Iterator i=mrc.cmdArgs.entrySet().iterator(); i.hasNext(); ) {
+			Map.Entry e = (Map.Entry)i.next();
+			String cmdName = (String)e.getKey();
+			List args = (List)e.getValue();
+			ps.print(pfx + "  " + cmdName + " ");
+			for( int j=0; j<args.size(); ++j ) {
+				ps.print(args.get(j));
+			}
+			ps.println();
+		}
+		
 		return 0;
 	}
 	
