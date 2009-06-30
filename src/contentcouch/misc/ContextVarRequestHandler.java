@@ -12,7 +12,7 @@ public class ContextVarRequestHandler extends BaseRequestHandler {
 		String varName = UriUtil.uriDecode(req.getUri().substring("x-context-var:".length()));
 		
 		if( Request.VERB_GET.equals(req.getVerb()) ) {
-			return new BaseResponse(req.getContextVars().get(varName));
+			return new BaseResponse(Response.STATUS_NORMAL, req.getContextVars().get(varName));
 		} else if( Request.VERB_PUT.equals(req.getVerb()) ) {
 			req.getContextVars().put(varName, req.getContent());
 			return new BaseResponse();

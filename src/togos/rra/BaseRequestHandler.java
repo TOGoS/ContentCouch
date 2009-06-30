@@ -5,8 +5,8 @@ public abstract class BaseRequestHandler implements RequestHandler, Getter {
 	public abstract Response handleRequest( Request req );
 	
 	protected final static Object getResponseValue( Response res ) {
-		if( res.getStatus() == Response.STATUS_UNHANDLED ) return null;
-		return res.getContent();
+		if( res.getStatus() == Response.STATUS_NORMAL ) return res.getContent();
+		return null;
 	}
 	
 	public Object get( String uri ) {

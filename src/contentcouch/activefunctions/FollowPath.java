@@ -32,7 +32,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 			}
 			if( source instanceof Directory ) {
 				Directory.Entry e = ((Directory)source).getDirectoryEntry(pathParts[i]);
-				if( e == null ) return new BaseResponse(pathParts[i] + " not found");
+				if( e == null ) return new BaseResponse(Response.STATUS_NORMAL, pathParts[i] + " not found");
 				source = e.getTarget();
 			} else {
 				return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Cannot follow path " + path);
@@ -41,7 +41,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 		if( source instanceof Ref ) {
 			source = TheGetter.get( ((Ref)source).getTargetUri() );
 		}
-		return new BaseResponse(source);
+		return new BaseResponse(Response.STATUS_NORMAL, source);
 	}
 	
 	//// Path simplification ////

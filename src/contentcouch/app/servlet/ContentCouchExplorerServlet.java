@@ -57,9 +57,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
 		File configFile = getConfigFile();
 		String configFileUri = PathUtil.maybeNormalizeFileUri(configFile.getPath());
-		System.err.println("001: " + configFileUri);
 		metaRepoConfig.handleArguments(new String[]{"-file",configFileUri}, 0, ".");
-		System.err.println("002");
 	}
 	
 	protected File getConfigFile() {

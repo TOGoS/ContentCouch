@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import contentcouch.directory.CloneUtil;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
@@ -94,16 +93,17 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		this.entryMap = new HashMap(sd.entryMap);
 	}
 	
-	public SimpleDirectory( Directory d, int cloneFlags ) {
+	public SimpleDirectory( Directory d, Function1 targetProcessor ) {
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry entry = (Directory.Entry)i.next();
-			Object target = CloneUtil.clone( entry.getTarget(), entry.getTargetType(), cloneFlags, entry.getName() );
+			Object target = targetProcessor.apply(entry.getTarget());
 			if( target == null ) continue;
 			Entry newEntry = new Entry();
 			newEntry.name = entry.getName();
 			newEntry.targetType = entry.getTargetType();
 			newEntry.targetSize = entry.getTargetSize();
 			newEntry.target = target;
+			addDirectoryEntry(newEntry);
 		}
 	}
 	

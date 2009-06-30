@@ -82,7 +82,6 @@ public class Explorify extends BaseActiveFunction {
 			} else {
 				Blob blob = BlobUtil.getBlob(subRes.getContent());
 				String type = MetadataUtil.getContentType(subRes);
-				System.err.println("Type of " + uri + " is " + type );
 				if( (type != null && type.matches("application/(.*\\+)?xml")) ||
 				    MetadataUtil.looksLikeRdfBlob(blob) )
 				{

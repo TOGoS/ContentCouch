@@ -135,7 +135,6 @@ public class ActiveUtil {
 				if( oc == 0 ) {
 					argumentExpressions.put("operand", e);
 				} else {
-					// TODO: Format as 0001 so that it is sorted properly when >= 10
 					argumentExpressions.put("operand" + oc, e);
 				}
 				e = n;

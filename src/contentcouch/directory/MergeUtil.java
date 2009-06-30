@@ -3,6 +3,7 @@ package contentcouch.directory;
 import java.util.Iterator;
 import java.util.Map;
 
+import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
@@ -35,9 +36,9 @@ public class MergeUtil {
 		
 		protected void mergeBlob(WritableDirectory dir, Entry e1, Entry e2, String mergeMethod) {
 			if( CcouchNamespace.REQ_FILEMERGE_IGNORE.equals(mergeMethod) ) {
-				System.err.println("Skipping " + e2.getName() + " (entry already exists)");
+				Log.log(Log.LEVEL_CHATTY, Log.TYPE_SKIP, e1.getName());
 			} else if( CcouchNamespace.REQ_FILEMERGE_REPLACE.equals(mergeMethod) ) {
-				System.err.println("Replacing " + e1.getName());
+				Log.log(Log.LEVEL_CHANGES, Log.TYPE_REPLACING, e1.getName());
 				dir.addDirectoryEntry(e2);
 			} else if( CcouchNamespace.REQ_FILEMERGE_FAIL.equals(mergeMethod) ) {
 				throw new RuntimeException( "Can't merge blobs " + e2.getName() + " into " + e1.getName() + "; file merge method = Fail" );

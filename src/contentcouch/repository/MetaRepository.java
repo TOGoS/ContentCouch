@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -39,25 +40,28 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class MetaRepository extends BaseRequestHandler {
-	protected static class RepoRef {
-		String repoName, subPath;
+	public static class RepoRef {
+		public String repoName, subPath;
 		
 		public RepoRef( String repoName, String subPath ) {
 			this.repoName = repoName;
 			this.subPath = subPath;
 		}
 		
+		public String getHeadPath() {
+			if( subPath.startsWith("heads/") ) return subPath.substring("heads/".length());
+			return null;
+		}
+		
 		public static RepoRef parse(String uri, boolean assumeHead) {
 			String repoName = null;
-			String subPath = (uri.startsWith("x-ccouch-head:") || assumeHead) ?
-				"heads/" : "";
 			if( uri.startsWith("x-ccouch-head:") ) {
 				uri = uri.substring("x-ccouch-head:".length());
-			} else {
-				subPath = "";
+				assumeHead = true;
 			}
 			if( uri.startsWith("x-ccouch-repo:") ) {
 				uri = uri.substring("x-ccouch-repo:".length());
+				assumeHead = false;
 			}
 			if( uri.startsWith("//") ) {
 				uri = uri.substring(2);
@@ -72,8 +76,11 @@ public class MetaRepository extends BaseRequestHandler {
 				}
 			}
 			if( uri.startsWith("/") ) uri = uri.substring(1);
-			subPath += uri;
-			return new RepoRef(repoName, subPath);
+			return new RepoRef(repoName, assumeHead ? "heads/" + uri : uri );
+		}
+		
+		public String toString() {
+			return "x-ccouch-repo://" + repoName + "/" + subPath;
 		}
 	}
 
@@ -89,7 +96,6 @@ public class MetaRepository extends BaseRequestHandler {
 	protected FileHashCache getFileHashCache() {
 		if( fileHashCacheCache == null && config.defaultRepoConfig.uri.startsWith("file:") ) {
 			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.uri + "cache/file-attrs.slf").toString();
-			System.err.println("Using file hash cache "+ hashCachePath);
 			File cacheFile = new File(hashCachePath);
 			fileHashCacheCache = new FileHashCache(cacheFile);
 		}
@@ -212,7 +218,34 @@ public class MetaRepository extends BaseRequestHandler {
 		return res;
 	}
 	
-	protected Response put( Request req, RepoConfig repoConfig, String path ) {
+	protected Object getStoredObject( Response res ) {
+		Object stored = res.getMetadata().get(CcouchNamespace.RES_STORED_OBJECT);
+		if( stored != null ) return stored;
+		String id = (String)res.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER);
+		if( id != null ) return get(id);
+		return null;
+	}
+	
+	protected Response putHead( RepoConfig repoConfig, String path, Object content, Map contentMetadata, Map requestMetadata ) {
+		HashMap subReqMetadata = new HashMap(requestMetadata);
+		subReqMetadata.put(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
+		subReqMetadata.put(CcouchNamespace.REQ_STORE_SIMPLE_DIRS, Boolean.TRUE);
+		Response dataRes = put( repoConfig, "data", content, contentMetadata, subReqMetadata );
+		Object storedObject = getStoredObject(dataRes);
+		
+		String resolvedHeadPath = resolveHeadPath( repoConfig, path, storedObject instanceof Directory ? "" : "new" );
+		BaseRequest subReq = new BaseRequest( Request.VERB_PUT, resolvedHeadPath );
+		subReq.content = storedObject;
+		subReq.contentMetadata = contentMetadata;
+		subReq.metadata = new HashMap(requestMetadata);
+		subReq.putMetadata(CcouchNamespace.REQ_DIRMERGE_METHOD, CcouchNamespace.REQ_DIRMERGE_MERGE);
+		subReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
+		BaseResponse res = new BaseResponse(TheGetter.handleRequest(subReq));
+		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, dataRes.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER));
+		return res;
+	}
+	
+	protected Response put( final Request req, final RepoConfig repoConfig, String path ) {
 		Object content = req.getContent();
 		Blob blob;
 		if( content instanceof Directory.Entry ) {
@@ -230,8 +263,29 @@ public class MetaRepository extends BaseRequestHandler {
 			RdfNode storedRdf = new RdfCommit((Commit)content, getStoringTargetRdfifier(true, req, repoConfig));
 			return putRdf( repoConfig, path, content instanceof RdfNode ? (RdfNode)content : storedRdf, req.getContentMetadata(), req.getMetadata() );
 		} else if( content instanceof Directory ) {
-			RdfNode storedRdf = new RdfDirectory((Directory)content, getStoringTargetRdfifier(true, req, repoConfig));
-			return putRdf( repoConfig, path, content instanceof RdfNode ? (RdfNode)content : storedRdf, req.getContentMetadata(), req.getMetadata() );
+			if( path.startsWith("data") ) {
+				if( Boolean.TRUE.equals(req.getMetadata().get(CcouchNamespace.REQ_STORE_SIMPLE_DIRS)) ) {
+					Directory storedDirectory = new SimpleDirectory( (Directory)content, new Function1() {
+						public Object apply(Object input) {
+							if( input instanceof Ref ) {
+								input = TheGetter.get(((Ref)input).getTargetUri());
+							}
+							Response res = put(repoConfig, "data", input, req.getMetadata());
+							return getStoredObject(res);
+						}
+					});
+					BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Directory leaf blobs inserted to data", "text/plain");
+					res.putMetadata(CcouchNamespace.RES_STORED_OBJECT, storedDirectory);
+					return res;
+				} else {
+					RdfNode storedRdf = new RdfDirectory((Directory)content, getStoringTargetRdfifier(true, req, repoConfig));
+					return putRdf( repoConfig, path, content instanceof RdfNode ? (RdfNode)content : storedRdf, req.getContentMetadata(), req.getMetadata() );
+				}
+			} else if( path.startsWith("heads/") ) {
+				return putHead( repoConfig, path, content, req.getContentMetadata(), req.getMetadata() );
+			} else {
+				throw new RuntimeException( "Can't PUT to " + req.getUri() + ": unrecognised post-repo path" );
+			}
 		} else if( content instanceof RdfNode ) {
 			return putRdf( repoConfig, path, (RdfNode)content, req.getContentMetadata(), req.getMetadata() );
 		} else if( (blob = BlobUtil.getBlob(content, false)) != null ) {
@@ -251,11 +305,7 @@ public class MetaRepository extends BaseRequestHandler {
 				res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, repoConfig.dataScheme.hashToUrn(hash));
 				return res;
 			} else if( path.startsWith("heads/") ) {
-				Response dataPutRes = put( req, repoConfig, "data" );	// Put blob in data, too
-				BaseRequest subReq = new BaseRequest( req, resolveHeadPath( repoConfig, path, "new") );
-				BaseResponse res = new BaseResponse(TheGetter.handleRequest(subReq));
-				MetadataUtil.copyStoredIdentifier(dataPutRes, res, null);
-				return res;
+				return putHead( repoConfig, path, content, req.getContentMetadata(), req.getMetadata() );
 			} else {
 				throw new RuntimeException( "Can't PUT to " + req.getUri() + ": unrecognised post-repo path" );
 			}
@@ -270,22 +320,22 @@ public class MetaRepository extends BaseRequestHandler {
 		return repoConfig.dataScheme.hashToUrn(getHash(blob));
 	}
 	
-	protected Response identify( Request req, Object obj, RepoConfig repoConfig ) {
-		if( obj instanceof RdfNode ) {
-			Object parsedFrom = (req == null) ? null : req.getContentMetadata().get(CcouchNamespace.PARSED_FROM);
-			if( parsedFrom == null ) parsedFrom = BlobUtil.getBlob( obj.toString() );
-			String parsedFromUri = ValueUtil.getString(identify( null, parsedFrom, repoConfig ).getContent());
+	protected Response identify( RepoConfig repoConfig, Object content, Map contentMetadata ) {
+		if( content instanceof RdfNode ) {
+			Object parsedFrom = contentMetadata.get(CcouchNamespace.PARSED_FROM);
+			if( parsedFrom == null ) parsedFrom = BlobUtil.getBlob( content.toString() );
+			String parsedFromUri = ValueUtil.getString(identify( repoConfig, parsedFrom, Collections.EMPTY_MAP ).getContent());
 			return new BaseResponse(Response.STATUS_NORMAL,	"x-parse-rdf:" + parsedFromUri, "text/plain");
-		} else if( obj instanceof Commit ) {
-			return identify( req, new RdfCommit( (Commit)obj, getTargetRdfifier(false, false) ), repoConfig );
-		} else if( obj instanceof Directory ) {
-			return identify( req, new RdfDirectory( (Directory)obj, getTargetRdfifier(false, false) ), repoConfig );
+		} else if( content instanceof Commit ) {
+			return identify( repoConfig, new RdfCommit( (Commit)content, getTargetRdfifier(false, false) ), contentMetadata );
+		} else if( content instanceof Directory ) {
+			return identify( repoConfig, new RdfDirectory( (Directory)content, getTargetRdfifier(false, false) ), contentMetadata );
 		}
 
-		Blob blob = BlobUtil.getBlob(obj, false);
+		Blob blob = BlobUtil.getBlob(content, false);
 		if( blob != null ) return new BaseResponse(Response.STATUS_NORMAL, identifyBlob( blob, repoConfig ), "text/plain");
 		
-		throw new RuntimeException("I don't know how to identify " + obj.getClass().getName());
+		throw new RuntimeException("I don't know how to identify " + content.getClass().getName());
 	}
 	
 	//
@@ -329,7 +379,7 @@ public class MetaRepository extends BaseRequestHandler {
 			
 			if( Request.VERB_PUT.equals(req.getVerb()) || Request.VERB_POST.equals(req.getVerb()) ) {
 				if( "identify".equals(repoRef.subPath) ) {
-					return identify( req, req.getContent(), repoConfig );
+					return identify( repoConfig, req.getContent(), req.getContentMetadata() );
 				} else {
 					if( repoRef.subPath.startsWith("data/") ) {
 						String ss = repoRef.subPath.substring(5);

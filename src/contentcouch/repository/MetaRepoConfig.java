@@ -35,6 +35,7 @@ public class MetaRepoConfig {
 	public RepoConfig defaultRepoConfig = new RepoConfig();
 	public List localRepoConfigs = new ArrayList();
 	public List remoteRepoConfigs = new ArrayList();
+	public List loadedFromConfigUris = new ArrayList(); 
 	
 	public List getAllRepoConfigs() {
 		ArrayList l = new ArrayList();
@@ -149,6 +150,7 @@ public class MetaRepoConfig {
 	}
 	
 	protected void _loadConfig( BufferedReader fr, String configUri ) throws IOException {
+		loadedFromConfigUris.add(configUri);
 		ArrayList args = new ArrayList();
 		String line;
 		String cmdName = null;

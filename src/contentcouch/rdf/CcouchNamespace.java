@@ -69,12 +69,15 @@ public class CcouchNamespace {
 	public static final String REQ_DIRMERGE_IGNORE     = "Ignore";
 	public static final String REQ_DIRMERGE_MERGE      = "Merge";
 	
+	public static final String REQ_STORE_SIMPLE_DIRS   = CC_REQ_NS + "storeSimpleDirs";
+	
 	//public static final String RR_DESIRED_STORE_SECTOR = CC_REQ_NS + "desiredStoreSector";
 	
 	//// Response metadata ////
 	
 	public static final String CC_RES_NS = CC_NS + "Response/";
 	public static final String RES_STORED_IDENTIFIER = CC_RES_NS + "storedIdentifier";
+	public static final String RES_STORED_OBJECT = CC_RES_NS + "storedObject";
 	public static final String RES_CACHEABLE = CC_RES_NS + "cacheable";
 
 	//// Object types ////

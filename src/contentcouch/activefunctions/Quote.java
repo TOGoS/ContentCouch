@@ -9,6 +9,6 @@ import contentcouch.active.BaseActiveFunction;
 
 public class Quote extends BaseActiveFunction {
 	public Response call(Map argumentExpressions) {
-		return new BaseResponse(argumentExpressions.get("operand"));
+		return new BaseResponse(Response.STATUS_NORMAL, argumentExpressions.get("operand"));
 	}
 }

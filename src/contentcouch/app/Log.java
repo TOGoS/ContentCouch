@@ -40,6 +40,7 @@ public class Log {
 	public static final String TYPE_WARNING     = "Warning: ";
 	public static final String TYPE_NOTICE      = "Notice: ";
 	public static final String TYPE_ERROR       = "Error: ";
+	public static final String TYPE_REPLACING   = "Replacing: ";
 	
 	protected static Logger logger = new StderrLogger();
 	public static void setLogger(Logger logger) {

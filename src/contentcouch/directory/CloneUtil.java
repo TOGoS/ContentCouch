@@ -1,8 +1,6 @@
 package contentcouch.directory;
 
-import contentcouch.misc.SimpleDirectory;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -84,29 +82,5 @@ public class CloneUtil {
 			idx |= CLONE_REFTYPE_OBJ;
 		}
 		return idx;
-	}
-	
-	protected static Object clone1( Object obj, int flags ) {
-		if( obj instanceof Ref ) {
-			obj = TheGetter.get(((Ref)obj).getTargetUri());  
-		}
-		if( obj instanceof Directory ) {
-			return new SimpleDirectory((Directory)obj, flags);
-		} else {
-			// We don't need to clone other stuff!
-			return obj;
-		}
-	}
-	
-	public static Object clone( Object obj, String type, int flags, String name ) {
-		final int typeIndex = getTypeIndex(obj,type);
-		final int action = ((flags >> (typeIndex*CLONE_ACTION_BITS)) & CLONE_ACTION_MASK);
-		switch( action ) {
-		case( CLONE_ACTION_IGNORE ): return null;
-		case( CLONE_ACTION_COPY ): return obj;
-		case( CLONE_ACTION_CLONE ): return clone1(obj, flags);
-		case( CLONE_ACTION_FAIL ): throw new RuntimeException("Clone of " + getTypeDesc(typeIndex) + " not allowed." + (name == null ? "" : "  Attempted to clone " + name) );
-		default: throw new RuntimeException("Bug: Unknown clone action: " + action + "." + (name == null ? "" : "  Attempted to clone " + name) );
-		}
 	}
 }

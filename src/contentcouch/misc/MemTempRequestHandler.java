@@ -43,7 +43,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 				return new BaseResponse( Response.STATUS_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
 			}
 		}
-		return new BaseResponse(obj);
+		return new BaseResponse(Response.STATUS_NORMAL, obj);
 	}
 
 	public Response put( String[] parts, Object newObj ) {
@@ -69,7 +69,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 		} else {
 			return new BaseResponse( Response.STATUS_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
 		}
-		return new BaseResponse("Put object at .../" + part);
+		return new BaseResponse(Response.STATUS_NORMAL, "Put object at .../" + part);
 	}
 
 }

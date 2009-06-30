@@ -39,7 +39,7 @@ public class CreateCommit extends BaseActiveFunction {
 		commit.author = author;
 		commit.message = message;
 		commit.date = date;
-		return new BaseResponse(commit);
+		return new BaseResponse(Response.STATUS_NORMAL, commit);
 	}
 
 }

@@ -10,9 +10,6 @@ public class BaseUriProcessor implements UriProcessor {
 
 	public static UriProcessor getInstance() {
 		UriProcessor proc = (UriProcessor)Context.get(CTXVAR);
-		if( proc == null ) {
-			System.err.println("No " + CTXVAR);
-		}
 		return ( proc == null ) ? BASEINSTANCE : proc;
 	}
 	

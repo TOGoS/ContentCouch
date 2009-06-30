@@ -11,6 +11,6 @@ import contentcouch.misc.MetadataUtil;
 public class TypeOf extends BaseActiveFunction {
 	public Response call( Map argumentExpressions ) {
 		Response subRes = getArgumentResponse(argumentExpressions, "operand");
-		return new BaseResponse(MetadataUtil.getContentType(subRes));
+		return new BaseResponse(Response.STATUS_NORMAL, MetadataUtil.getContentType(subRes));
 	}
 }

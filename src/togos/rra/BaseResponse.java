@@ -23,11 +23,13 @@ public class BaseResponse implements Response {
 		this(Response.STATUS_NORMAL, null);
 	}
 	
-	public BaseResponse( Object content ) {
-		this.status = Response.STATUS_NORMAL;
-		this.content = content;
+	public BaseResponse(Response r) {
+		this.status = r.getStatus();
+		this.content = r.getContent();
+		this.contentMetadata = new HashMap(r.getContentMetadata());
+		this.metadata = new HashMap(r.getMetadata());
 	}
-	
+
 	public BaseResponse( int status, Object content ) {
 		this.status = status;
 		this.content = content;

@@ -14,6 +14,7 @@ import togos.rra.BaseRequest;
 import togos.rra.BaseResponse;
 import togos.rra.Request;
 import togos.rra.Response;
+import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryWalker;
 import contentcouch.directory.EntryFilters;
 import contentcouch.directory.FilterIterator;
@@ -23,8 +24,11 @@ import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
+import contentcouch.repository.RepoConfig;
+import contentcouch.repository.MetaRepository.RepoRef;
 import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
 import contentcouch.value.BaseRef;
@@ -169,45 +173,21 @@ public class ContentCouchCommand {
 	
 	//// Dump stuff ////
 	
-	protected int dumpRepoConfig( MetaRepoConfig repo, PrintStream ps, String pfx ) {
-		// TODO
-		/*
-		ps.println( pfx + "Repository path: " + repo.getPath() );
-		ps.println( pfx );
-		
-		if( repo.namedRepositories != null && repo.namedRepositories.size() > 0 ) {
-			ps.println( pfx + "Named repositories:" );
-			for( Iterator i = repo.namedRepositories.entrySet().iterator(); i.hasNext(); ) {
-				Map.Entry e = (Map.Entry)i.next();
-				ps.println( pfx + "  " + e.getKey() + ": " + ((MetaRepository)e.getValue()).getPath() );
-			}
+	protected void printRepoConfig( RepoConfig repoConfig, PrintStream ps, String pfx ) {
+		ps.println(pfx + repoConfig.disposition + " repository " + repoConfig.name );
+		ps.println(pfx + "  " + "URI: " + repoConfig.uri );
+	}
+	
+	protected int dumpRepoConfig( MetaRepoConfig mrc, PrintStream ps, String pfx ) {
+		for( Iterator i=mrc.loadedFromConfigUris.iterator(); i.hasNext(); ) {
+			ps.println(pfx + "Loaded from " + i.next());
 		}
-		ps.println( pfx );
-		
-		if( repo.localRepositories != null && repo.localRepositories.size() > 0 ) {
-			ps.println( pfx + "Local repositories:" );
-			for( Iterator i = repo.localRepositories.iterator(); i.hasNext(); ) {
-				ps.println( pfx + "  " + ((MetaRepository)i.next()).getPath() );
-			}
+		List allRepoConfigs = mrc.getAllRepoConfigs();
+		for( Iterator i=allRepoConfigs.iterator(); i.hasNext(); ) {
+			RepoConfig repoConfig = (RepoConfig)i.next();
+			ps.println(pfx);
+			printRepoConfig(repoConfig, ps, pfx);
 		}
-
-		if( repo.remoteRepositories != null && repo.remoteRepositories.size() > 0 ) {
-			ps.println( pfx + "Remote repositories:" );
-			for( Iterator i = repo.remoteRepositories.iterator(); i.hasNext(); ) {
-				ps.println( pfx + "  " + ((MetaRepository)i.next()).getPath() );
-			}
-		}
-
-		ps.println( pfx + "Sub-command default arguments:" );
-		for( Iterator i=repo.cmdArgs.entrySet().iterator(); i.hasNext(); ) {
-			Map.Entry e = (Map.Entry)i.next();
-			ps.println( pfx + "  [" + e.getKey() + "]" );
-			List argList = (List)e.getValue();
-			for( Iterator argListI=argList.iterator(); argListI.hasNext(); ) {
-				ps.println( pfx + "    " + argListI.next() );
-			}
-		}
-		*/
 		return 0;
 	}
 	
@@ -501,6 +481,8 @@ public class ContentCouchCommand {
 				return 1;
 			} else if( "-files-only".equals(arg) ) {
 				storeDirs = false;
+			} else if( "-v".equals(arg) ) {
+				Log.setLevel(Log.LEVEL_CHATTY);
 			} else if( "-link".equals(arg) ) {
 				shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
@@ -640,15 +622,18 @@ public class ContentCouchCommand {
 			commit.target = new BaseRef(storedUri);
 			commit.parents = parents;
 			
+			// Data already stored, so we don't really need to worry about rdfifying, here
+			RdfCommit rdfCommit = new RdfCommit(commit, metaRepoConfig.getMetaRepository().getTargetRdfifier(false,false));
+			
 			String commitDestUri;
 			if( name != null ) {
-				commitDestUri = "x-ccouch-repo:heads/" + name + "/new";
+				commitDestUri = "x-ccouch-repo:heads/" + metaRepoConfig.defaultRepoConfig.name + "/" + name + "/new";
 			} else {
 				commitDestUri = dataDestUri;
 			}
 			
 			BaseRequest storeCommitReq = new BaseRequest(Request.VERB_PUT, commitDestUri);
-			storeCommitReq.content = commit;
+			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
 			Response storeCommitRes = TheGetter.handleRequest(storeCommitReq);
 			if( storeCommitRes.getStatus() != Response.STATUS_NORMAL ) {
 				Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Could not PUT commit to " + commitDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
@@ -661,6 +646,7 @@ public class ContentCouchCommand {
 				++errorCount;
 				break createCommit;
 			}
+			commitUrn = "x-parse-rdf:" + commitUrn;
 			
 			Log.log(Log.LEVEL_CHANGES, Log.TYPE_GENERIC, "Stored commit as " + commitUrn);
 
@@ -678,15 +664,16 @@ public class ContentCouchCommand {
 	
 	public int runCheckoutCmd( String[] args ) {
 		GeneralOptions opts = getGeneralOptions( args, "checkout" );
-		if( opts.showHelp ) {
-			System.out.println(CHECKOUT_USAGE);
-			return 0;
-		}
 		if( opts == null ) {
 			System.err.println(CHECKOUT_USAGE);
 			return 1;
 		}
+		if( opts.showHelp ) {
+			System.out.println(CHECKOUT_USAGE);
+			return 0;
+		}
 		opts.shouldSaveCommitUri = true;
+		opts.shouldUseCommitTargets = true;
 		
 		if( opts.uris.size() != 2 ) {
 			System.err.println("ccouch checkout: You must specify one source and one destination URI");
@@ -711,6 +698,7 @@ public class ContentCouchCommand {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
 			} else if( "-v".equals(arg) ) {
+				Log.setLevel(Log.LEVEL_CHATTY);
 			} else if( "-store-sector".equals(arg) ) {
 				opts.storeSector = args[++i];
 			} else if( "-link".equals(arg) ) {
@@ -737,10 +725,11 @@ public class ContentCouchCommand {
 
 		return 0;
 	}
-
+	
 	public int runCacheHeadsCmd( String[] args ) {
 		args = mergeConfiguredArgs("cache-heads", args);
 		List cacheUris = new ArrayList();
+		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
@@ -750,6 +739,11 @@ public class ContentCouchCommand {
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_HEADS_USAGE);
 				return 0;
+			} else if( "-link".equals(arg) ) {
+				opts.shouldLinkStored = true;
+			} else if( "-relink".equals(arg) ) {
+				opts.shouldLinkStored = true;
+				opts.shouldRelinkImported = true;
 			} else if( !arg.startsWith("-") ) {
 				cacheUris.add(arg);
 			} else {
@@ -759,9 +753,32 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		// TODO: implement
-		System.err.println("cache-heads unimplemented!");
-		return 1;
+		int errorCount = 0;
+		
+		eachUrl: for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
+			String uri = (String)i.next();
+			RepoRef rr = RepoRef.parse(uri, true);
+			String headPath = rr.getHeadPath();
+			if( headPath == null ) {
+				System.err.println(uri + " could not be parsed as a head path; try [x-ccouch-head:]//<repo>/<head-path>");
+				++errorCount;
+				continue eachUrl;
+			}
+			int headPathSlashIdx = headPath.indexOf('/');
+			if( headPathSlashIdx == -1 ) {
+				System.err.println(uri + " does not have enough head path components (try adding a '/' at the end)");
+				++errorCount;
+				continue eachUrl;
+			}
+			
+			if( rr.repoName == null ) {
+				rr.repoName = headPath.substring(0, headPathSlashIdx);
+			}
+			
+			copy( rr.toString(), "x-ccouch-repo:/" + rr.subPath, opts );
+		}
+		
+		return errorCount;
 	}
 	
 	public int runCheckCmd( String[] args ) {
@@ -823,7 +840,7 @@ public class ContentCouchCommand {
 
 		Object o = TheGetter.get(dir);
 		if( !(o instanceof Directory) ) {
-			System.err.println( dir + " does not point to a Directory (found a " + o.getClass().getName() + ")");
+			System.err.println( dir + " does not point to a Directory (found " + (o == null ? "null" : "a " + o.getClass().getName()) + ")");
 			return 1;
 		}
 		Directory d = (Directory)o;

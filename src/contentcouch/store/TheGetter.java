@@ -8,9 +8,11 @@ import togos.rra.Request;
 import togos.rra.RequestHandler;
 import togos.rra.Response;
 import contentcouch.active.Context;
+import contentcouch.app.Log;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
+import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
 public class TheGetter {
@@ -35,8 +37,16 @@ public class TheGetter {
 		return theGetter;
 	}
 	
+	protected static String describeContent(Object content) {
+		String desc = content.getClass().getName();
+		if( content instanceof Blob ) {
+			desc += " (" + ((Blob)content).getLength() + " bytes)";
+		}
+		return desc;
+	}
+	
 	public static Response handleRequest( Request req ) {
-		//System.err.println(req.getVerb() + " " + req.getUri());
+		Log.log( Log.LEVEL_CHATTY, "Requested: ", req.getVerb() + " " + req.getUri() + (req.getContent() == null ? "" : ", content: " + describeContent(req.getContent())) );
 		return getGenericGetter().handleRequest(req);
 	}
 
