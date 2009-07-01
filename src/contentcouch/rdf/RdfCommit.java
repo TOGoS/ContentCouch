@@ -13,17 +13,22 @@ public class RdfCommit extends RdfNode implements Commit {
 		super(CcouchNamespace.COMMIT);
 	}
 	
-	public RdfCommit( Commit c, Function1 targetRdfifier ) {
+	public RdfCommit( Commit c, Function1 targetRdfifier, Function1 parentRdfifier ) {
 		this();
 		if( targetRdfifier == null ) targetRdfifier = RdfDirectory.DEFAULT_TARGET_RDFIFIER;
+		if( parentRdfifier == null ) parentRdfifier = RdfDirectory.DEFAULT_TARGET_RDFIFIER;
 		if( c.getAuthor() != null ) this.add(DcNamespace.DC_CREATOR, c.getAuthor());
 		if( c.getDate() != null ) this.add(DcNamespace.DC_CREATED, DateUtil.formatDate(c.getDate()));
 		if( c.getMessage() != null ) this.add(DcNamespace.DC_DESCRIPTION, c.getMessage());
 		Object[] parents = c.getParents();
 		if( parents != null ) for( int i=0; i<parents.length; ++i ) {
-			this.add(CcouchNamespace.PARENT, targetRdfifier.apply(parents[i]));
+			this.add(CcouchNamespace.PARENT, parentRdfifier.apply(parents[i]));
 		}
 		this.add(CcouchNamespace.TARGET, targetRdfifier.apply(c.getTarget()));
+	}
+	
+	public RdfCommit( Commit c, Function1 targetRdfifier ) {
+		this( c, targetRdfifier, null );
 	}
 	
 	public Object getTarget() {

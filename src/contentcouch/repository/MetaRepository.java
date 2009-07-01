@@ -260,9 +260,12 @@ public class MetaRepository extends BaseRequestHandler {
 		} else if( content instanceof Collection ) {
 			return put( repoConfig, path, ((Collection)content).iterator(), req.getMetadata() );
 		} else if( content instanceof Commit ) {
+			// TODO: I'm starting to think that relying on 'rdfifier' to store stuff is the wrong approach.
+			// It's confusing, especially when the thing passed in is *already* RDF.
 			RdfNode storedRdf = new RdfCommit((Commit)content, getStoringTargetRdfifier(true, req, repoConfig));
 			return putRdf( repoConfig, path, content instanceof RdfNode ? (RdfNode)content : storedRdf, req.getContentMetadata(), req.getMetadata() );
 		} else if( content instanceof Directory ) {
+			// TODO: Re: rdfifying - see commit note, above 
 			if( path.startsWith("data") ) {
 				if( Boolean.TRUE.equals(req.getMetadata().get(CcouchNamespace.REQ_STORE_SIMPLE_DIRS)) ) {
 					Directory storedDirectory = new SimpleDirectory( (Directory)content, new Function1() {
