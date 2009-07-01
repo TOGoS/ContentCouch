@@ -258,14 +258,15 @@ public class ContentCouchCommand {
 		return writeCommitUris( commitListUri, commitUris );
 	}
 	
-	protected String normalizeUri( String uriOrPathOrSomething, boolean output, boolean directory ) {
+	protected String normalizeUri( String uriOrPathOrSomething, boolean output, boolean directoryize ) {
 		if( "-".equals(uriOrPathOrSomething) ) {
 			return output ? "x-internal-stream:stdout" : "x-internal-stream:stdin";
 		}
-		if( directory && uriOrPathOrSomething.matches("^https?://.*/$") ) {
+		if( directoryize && uriOrPathOrSomething.matches("^https?://.*/$") ) {
 			return "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(uriOrPathOrSomething);
 		}
-		if( PathUtil.isUri(uriOrPathOrSomething) ) {
+		if( uriOrPathOrSomething.matches("^[A-Za-z]:[\\\\/].*") ) {
+		} else if( PathUtil.isUri(uriOrPathOrSomething) ) {
 			return uriOrPathOrSomething;
 		}
 		if( new File(uriOrPathOrSomething).isDirectory() ) {
