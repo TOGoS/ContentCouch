@@ -48,6 +48,7 @@ public class HttpRequestHandler extends BaseRequestHandler {
 			
 			URLConnection urlConn = url.openConnection();
 			long length = urlConn.getContentLength();
+			Log.log(Log.LEVEL_CHATTY, Log.TYPE_DOWNLOADING, req.getUri() + ", " + length + " bytes");
 			File tempFile = File.createTempFile("httpdownload", null);
 			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), length));			
 			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, fcb);

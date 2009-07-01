@@ -46,7 +46,7 @@ public class TheGetter {
 	}
 	
 	public static Response handleRequest( Request req ) {
-		Log.log( Log.LEVEL_CHATTY, "Requested: ", req.getVerb() + " " + req.getUri() + (req.getContent() == null ? "" : ", content: " + describeContent(req.getContent())) );
+		Log.log( Log.LEVEL_CHATTIER, "Requested: ", req.getVerb() + " " + req.getUri() + (req.getContent() == null ? "" : ", content: " + describeContent(req.getContent())) );
 		return getGenericGetter().handleRequest(req);
 	}
 

@@ -36,7 +36,7 @@ public class MergeUtil {
 		
 		protected void mergeBlob(WritableDirectory dir, Entry e1, Entry e2, String mergeMethod) {
 			if( CcouchNamespace.REQ_FILEMERGE_IGNORE.equals(mergeMethod) ) {
-				Log.log(Log.LEVEL_CHATTY, Log.TYPE_SKIP, e1.getName());
+				Log.log(Log.LEVEL_CHATTIER, Log.TYPE_SKIP, e1.getName());
 			} else if( CcouchNamespace.REQ_FILEMERGE_REPLACE.equals(mergeMethod) ) {
 				Log.log(Log.LEVEL_CHANGES, Log.TYPE_REPLACING, e1.getName());
 				dir.addDirectoryEntry(e2);
