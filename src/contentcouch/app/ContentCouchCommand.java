@@ -209,6 +209,7 @@ public class ContentCouchCommand {
 	//// Commit tracking ////
 	
 	protected String getCommitListUri(String checkoutUri) {
+		checkoutUri = PathUtil.maybeFixFileDirectoryUri(checkoutUri);
 		if( checkoutUri.endsWith("/") ) {
 			return PathUtil.appendPath(checkoutUri, ".commit-uris");
 		}
@@ -266,6 +267,7 @@ public class ContentCouchCommand {
 			return "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(uriOrPathOrSomething);
 		}
 		if( uriOrPathOrSomething.matches("^[A-Za-z]:[\\\\/].*") ) {
+			return "file:///" + UriUtil.uriEncode(uriOrPathOrSomething.replace('\\', '/'));
 		} else if( PathUtil.isUri(uriOrPathOrSomething) ) {
 			return uriOrPathOrSomething;
 		}

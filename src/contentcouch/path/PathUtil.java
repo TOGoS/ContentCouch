@@ -1,5 +1,6 @@
 package contentcouch.path;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -233,5 +234,15 @@ public class PathUtil {
 			// Relative path!
 			return new Path( pathOrUri );
 		}
+	}
+	
+	/** Ensures that the URI ends with a slash if the uri is a
+	 * file: URI and names an existing directory */
+	public static String maybeFixFileDirectoryUri( String uri ) {
+		if( !uri.endsWith("/") && uri.startsWith("file:") ) {
+			Path p = PathUtil.parseFilePathOrUri(uri);
+			if( new File(p.toString()).isDirectory() ) return uri + "/";
+		}
+		return uri;
 	}
 }
