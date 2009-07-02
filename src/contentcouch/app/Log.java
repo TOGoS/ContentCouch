@@ -55,7 +55,13 @@ public class Log {
 		if( level < LEVEL_NORMAL    ) return;
 		addLogger( EVENT_WARNING, stderrLogger );
 		if( level < LEVEL_DOWNLOADS ) return;
-		addLogger( EVENT_DOWNLOAD_STARTED, stderrLogger );
+		addLogger( EVENT_DOWNLOAD_STARTED, new Logger() {
+			public void log(String eventName, String[] arguments) {
+				String uri = arguments[0];
+				String length = arguments[1];
+				System.err.println("Downloading " + uri + " (" + length + " bytes)");
+			}
+		});
 		addLogger( EVENT_EXPORTED, stderrLogger );
 		addLogger( EVENT_REPLACED, stderrLogger );
 		if( level < LEVEL_VERBOSE   ) return;
