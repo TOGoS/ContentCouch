@@ -238,8 +238,8 @@ public class MetaRepository extends BaseRequestHandler {
 		subReq.content = storedObject;
 		subReq.contentMetadata = contentMetadata;
 		subReq.metadata = new HashMap(requestMetadata);
-		subReq.putMetadata(CcouchNamespace.REQ_DIRMERGE_METHOD, CcouchNamespace.REQ_DIRMERGE_MERGE);
-		subReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
+		subReq.putMetadata(CcouchNamespace.REQ_DIRMERGE_METHOD, requestMetadata.get(CcouchNamespace.REQ_DIRMERGE_METHOD));
+		subReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, requestMetadata.get(CcouchNamespace.REQ_FILEMERGE_METHOD));
 		BaseResponse res = new BaseResponse(TheGetter.handleRequest(subReq));
 		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, dataRes.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER));
 		return res;
@@ -276,7 +276,7 @@ public class MetaRepository extends BaseRequestHandler {
 							Response res = put(repoConfig, "data", input, req.getMetadata());
 							return getStoredObject(res);
 						}
-					});
+					}, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
 					BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Directory leaf blobs inserted to data", "text/plain");
 					res.putMetadata(CcouchNamespace.RES_STORED_OBJECT, storedDirectory);
 					return res;

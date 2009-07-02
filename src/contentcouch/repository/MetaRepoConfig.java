@@ -84,7 +84,7 @@ public class MetaRepoConfig {
 		} else if( rp.disposition == RepoConfig.DISPOSITION_LOCAL ) {
 			addLocalRepo(rp);
 		} else if( rp.disposition == RepoConfig.DISPOSITION_CACHE ) {
-			Log.log(Log.LEVEL_WARNINGS, "Cache repo specified, but cache repositories are no longer used.  Treating as a local repo.");
+			Log.log(Log.EVENT_WARNING, "Cache repo specified, but cache repositories are no longer used.  Treating as a local repo.");
 			addLocalRepo(rp);
 		} else if( rp.disposition == RepoConfig.DISPOSITION_REMOTE ) {
 			addRemoteRepo(rp);

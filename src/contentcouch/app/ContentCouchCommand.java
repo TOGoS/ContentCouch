@@ -293,6 +293,7 @@ public class ContentCouchCommand {
 		public String fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_STRICTIG;
 		public String dirMergeMethod = null;
 		public List uris = new ArrayList();
+		public int logLevel = Log.LEVEL_DOWNLOADS;
 	}
 	
 	protected GeneralOptions getGeneralOptions( String[] args, String commandName ) {
@@ -492,6 +493,7 @@ public class ContentCouchCommand {
 		boolean shouldRelinkImported = false;
 		boolean followRefs = false;
 		String storeSector = "user";
+		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
@@ -499,8 +501,10 @@ public class ContentCouchCommand {
 				return 1;
 			} else if( "-files-only".equals(arg) ) {
 				storeDirs = false;
+			} else if( "-q".equals(arg) ) {
+				opts.logLevel = Log.LEVEL_QUIET;
 			} else if( "-v".equals(arg) ) {
-				Log.setLevel(Log.LEVEL_CHATTY);
+				opts.logLevel = Log.LEVEL_VERBOSE;
 			} else if( "-link".equals(arg) ) {
 				shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
@@ -529,7 +533,8 @@ public class ContentCouchCommand {
 				return 1;
 			}
 		}
-		
+		Log.setStandardLogLevel(opts.logLevel);
+
 		boolean createCommit = forceCommit || (author != null) || (name != null) || (message != null);
 		int errorCount = 0;
 		
@@ -586,10 +591,10 @@ public class ContentCouchCommand {
 			if( expectIdentifier ) {
 				storedUri = MetadataUtil.getStoredIdentifier(putRes);
 				if( storedUri == null ) {
-					Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Did not recieve identifier after storing " + sourceUri);
+					Log.log(Log.EVENT_ERROR, "Did not recieve identifier after storing " + sourceUri);
 					++errorCount;
 				} else {
-					Log.log(Log.LEVEL_CHANGES, Log.TYPE_GENERIC, sourceUri + "\t" + storedUri);
+					Log.log(Log.EVENT_STORED, sourceUri, storedUri);
 				}
 			}
 		}
@@ -616,11 +621,11 @@ public class ContentCouchCommand {
 									break createCommit;
 								}
 							} else { 
-								Log.log(Log.LEVEL_WARNINGS, Log.TYPE_WARNING, parentCommitUri + " (listed in " + parentCommitListUri + ") does not reference a Commit.  Ignoring.");
+								Log.log(Log.EVENT_WARNING, parentCommitUri + " (listed in " + parentCommitListUri + ") does not reference a Commit.  Ignoring.");
 								System.err.println("Warning: ");
 							}
 						} else {
-							Log.log(Log.LEVEL_WARNINGS, Log.TYPE_WARNING, "Could not load commit " + parentCommitUri + "(listed in " + parentCommitListUri + ").  Ignoring.");
+							Log.log(Log.EVENT_WARNING, "Could not load commit " + parentCommitUri + "(listed in " + parentCommitListUri + ").  Ignoring.");
 						}
 					}
 				}
@@ -654,24 +659,24 @@ public class ContentCouchCommand {
 			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
 			Response storeCommitRes = TheGetter.handleRequest(storeCommitReq);
 			if( storeCommitRes.getStatus() != Response.STATUS_NORMAL ) {
-				Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Could not PUT commit to " + commitDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
+				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + commitDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
 				++errorCount;
 				break createCommit;
 			}
 			String commitUrn = MetadataUtil.getStoredIdentifier(storeCommitRes);
 			if( commitUrn == null ) {
-				Log.log(Log.LEVEL_ERRORS, Log.TYPE_ERROR, "Did not recieve identifier after storing commit.");
+				Log.log(Log.EVENT_ERROR, "Did not recieve identifier after storing commit.");
 				++errorCount;
 				break createCommit;
 			}
 			commitUrn = "x-parse-rdf:" + commitUrn;
 			
-			Log.log(Log.LEVEL_CHANGES, Log.TYPE_GENERIC, "Stored commit as " + commitUrn);
+			Log.log(Log.EVENT_STORED, "New Commit", commitUrn);
 
 			if( parentCommitListUri != null ) {
 				Response storeCommitUriRes = writeCommitUri(parentCommitListUri, commitUrn);
 				if( storeCommitUriRes.getStatus() != Response.STATUS_NORMAL ) {
-					Log.log(Log.LEVEL_WARNINGS, Log.TYPE_WARNING, "Could not PUT new commit URI list to " + parentCommitListUri + ": " + BaseResponse.getErrorSummary(storeCommitUriRes));
+					Log.log(Log.EVENT_WARNING, "Could not PUT new commit URI list to " + parentCommitListUri + ": " + BaseResponse.getErrorSummary(storeCommitUriRes));
 					break createCommit;
 				}
 			}
@@ -715,8 +720,9 @@ public class ContentCouchCommand {
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
+				opts.logLevel = Log.LEVEL_QUIET;
 			} else if( "-v".equals(arg) ) {
-				Log.setLevel(Log.LEVEL_CHATTY);
+				opts.logLevel = Log.LEVEL_VERBOSE;
 			} else if( "-store-sector".equals(arg) ) {
 				opts.storeSector = args[++i];
 			} else if( "-link".equals(arg) ) {
@@ -735,7 +741,8 @@ public class ContentCouchCommand {
 				return 1;
 			}
 		}
-		
+		Log.setStandardLogLevel(opts.logLevel);
+
 		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
 			String uri = (String)i.next();
 			copy( uri, "x-ccouch-repo:data", opts );
@@ -748,12 +755,15 @@ public class ContentCouchCommand {
 		args = mergeConfiguredArgs("cache-heads", args);
 		List cacheUris = new ArrayList();
 		GeneralOptions opts = new GeneralOptions();
+		opts.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
+		opts.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_IGNORE;
+		
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-q".equals(arg) ) {
-				Log.setLevel(Log.LEVEL_SILENT);
+				opts.logLevel = Log.LEVEL_QUIET;
 			} else if( "-v".equals(arg) ) {
-				Log.setLevel(Log.LEVEL_CHATTY);
+				opts.logLevel = Log.LEVEL_VERBOSE;
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_HEADS_USAGE);
 				return 0;
@@ -770,6 +780,7 @@ public class ContentCouchCommand {
 				return 1;
 			}
 		}
+		Log.setStandardLogLevel(opts.logLevel);
 		
 		int errorCount = 0;
 		

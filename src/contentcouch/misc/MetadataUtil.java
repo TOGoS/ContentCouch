@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import togos.rra.BaseResponse;
@@ -147,5 +148,11 @@ public class MetadataUtil {
 		if( storedUri != null ) {
 			dest.putMetadata( CcouchNamespace.RES_STORED_IDENTIFIER, prefix == null ? storedUri : prefix + storedUri );
 		}
+	}
+	
+	public static String getSourceUriOrUnknown( Map metadata ) {
+		String sourceUri = (String)metadata.get(CcouchNamespace.SOURCE_URI);
+		if( sourceUri == null ) sourceUri = "x-unknown:source";
+		return sourceUri;
 	}
 }

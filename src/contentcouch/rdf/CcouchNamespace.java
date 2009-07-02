@@ -45,6 +45,7 @@ public class CcouchNamespace {
 	public static final String DIRECTORYENTRY   = CC_NS + "DirectoryEntry";
 	public static final String COMMIT           = CC_NS + "Commit";
 	public static final String REDIRECT         = CC_NS + "Redirect";
+	public static final String SOURCE_URI       = CC_NS + "sourceUri";
 	
 	//// Request metadata ////
 	

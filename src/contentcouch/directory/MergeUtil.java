@@ -6,6 +6,7 @@ import java.util.Map;
 import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.ValueUtil;
+import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
@@ -13,7 +14,7 @@ import contentcouch.value.Directory.Entry;
 
 public class MergeUtil {	
 	public static interface ConflictResolver {
-		public void resolve( WritableDirectory dir, Directory.Entry e1, Directory.Entry e2 );
+		public void resolve( WritableDirectory dir, Directory.Entry e1, Directory.Entry e2, String srcUri, String destUri );
 	};
 	
 	public static class RegularConflictResolver implements ConflictResolver {
@@ -36,9 +37,9 @@ public class MergeUtil {
 		
 		protected void mergeBlob(WritableDirectory dir, Entry e1, Entry e2, String mergeMethod) {
 			if( CcouchNamespace.REQ_FILEMERGE_IGNORE.equals(mergeMethod) ) {
-				Log.log(Log.LEVEL_CHATTIER, Log.TYPE_SKIP, e1.getName());
+				Log.log(Log.EVENT_KEPT, e1.getName());
 			} else if( CcouchNamespace.REQ_FILEMERGE_REPLACE.equals(mergeMethod) ) {
-				Log.log(Log.LEVEL_CHANGES, Log.TYPE_REPLACING, e1.getName());
+				Log.log(Log.EVENT_REPLACED, e1.getName(), e2.getName());
 				dir.addDirectoryEntry(e2);
 			} else if( CcouchNamespace.REQ_FILEMERGE_FAIL.equals(mergeMethod) ) {
 				throw new RuntimeException( "Can't merge blobs " + e2.getName() + " into " + e1.getName() + "; file merge method = Fail" );
@@ -47,7 +48,7 @@ public class MergeUtil {
 			}
 		}
 		
-		public void resolve(WritableDirectory dir, Entry e1, Entry e2) {
+		public void resolve(WritableDirectory dir, Entry e1, Entry e2, String srcUri, String destUri ) {
 			int e1tt = CloneUtil.getTargetTypeIndex(e1);
 			int e2tt = CloneUtil.getTargetTypeIndex(e2);
 			if( e1tt == e2tt && e1tt == CloneUtil.CLONE_TARGETTYPE_BLOB ) {
@@ -73,7 +74,7 @@ public class MergeUtil {
 					if( !(s instanceof Directory) ) {
 						throw new RuntimeException( "Can't merge from " + e2.getName() + "; not a Directory" );
 					}
-					putAll( (WritableDirectory)t, (Directory)s, this );
+					putAll( (WritableDirectory)t, (Directory)s, this, srcUri, destUri );
 				} else if( CcouchNamespace.REQ_DIRMERGE_IGNORE.equals(dirMergeMethod) ) {
 				} else if( CcouchNamespace.REQ_DIRMERGE_REPLACE.equals(dirMergeMethod) ) {
 					dir.addDirectoryEntry(e2);
@@ -89,23 +90,24 @@ public class MergeUtil {
 		}
 	}
 	
-	public static void put( WritableDirectory dir, Directory.Entry newEntry, ConflictResolver conflictResolver ) {
+	public static void put( WritableDirectory dir, Directory.Entry newEntry, ConflictResolver conflictResolver, String srcUri, String destUri ) {
 		Directory.Entry existingEntry = dir.getDirectoryEntry(newEntry.getName());
 		if( existingEntry != null ) {
 			if( conflictResolver == null ) {
 				throw new RuntimeException("Cannot resolve merge conflict on " + newEntry.getName() + "; no clonflict resolver supploed");
 			} else {
-				conflictResolver.resolve( dir, existingEntry, newEntry );
+				conflictResolver.resolve( dir, existingEntry, newEntry, srcUri, destUri );
 			}
 		} else {
+			Log.log(Log.EVENT_EXPORTED, srcUri, destUri );
 			dir.addDirectoryEntry(newEntry);
 		}
 	}
 	
-	public static void putAll( WritableDirectory destDir, Directory srcDir, ConflictResolver conflictResolver ) {
+	public static void putAll( WritableDirectory destDir, Directory srcDir, ConflictResolver conflictResolver, String srcUri, String destUri ) {
 		for( Iterator i=srcDir.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
-			put( destDir, e, conflictResolver );
+			put( destDir, e, conflictResolver, PathUtil.appendPath(srcUri, e.getName(), false), PathUtil.appendPath(destUri, e.getName(), false) );
 		}
 	}
 }

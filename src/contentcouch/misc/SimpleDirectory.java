@@ -93,10 +93,15 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		this.entryMap = new HashMap(sd.entryMap);
 	}
 	
-	public SimpleDirectory( Directory d, Function1 targetProcessor ) {
+	public SimpleDirectory( Directory d, Function1 directoryTargetProcessor, Function1 blobTargetProcessor ) {
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry entry = (Directory.Entry)i.next();
-			Object target = targetProcessor.apply(entry.getTarget());
+			Object target;
+			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(entry.getTargetType()) ) {
+				target = directoryTargetProcessor.apply(entry.getTarget());
+			} else {
+				target = blobTargetProcessor.apply(entry.getTarget());
+			}
 			if( target == null ) continue;
 			Entry newEntry = new Entry();
 			newEntry.name = entry.getName();

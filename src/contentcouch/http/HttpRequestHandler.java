@@ -48,9 +48,9 @@ public class HttpRequestHandler extends BaseRequestHandler {
 			
 			URLConnection urlConn = url.openConnection();
 			long length = urlConn.getContentLength();
-			Log.log(Log.LEVEL_CHATTY, Log.TYPE_DOWNLOADING, req.getUri() + ", " + length + " bytes");
 			File tempFile = File.createTempFile("httpdownload", null);
 			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), length));			
+			Log.log(Log.EVENT_DOWNLOAD_STARTED, req.getUri(), String.valueOf(length) );
 			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, fcb);
 			if( urlConn.getLastModified() > 0 ) {
 				res.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
@@ -61,18 +61,18 @@ public class HttpRequestHandler extends BaseRequestHandler {
 			return res;
 		} catch( NoRouteToHostException e ) {
 			String mess = "No route to host " + url.getHost();
-			Log.log(Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, mess );
+			Log.log(Log.EVENT_WARNING, mess);
 			return new BaseResponse(Response.STATUS_DOESNOTEXIST, mess, "text/plain");
 		} catch( ConnectException e ) {
 			String mess = "Could not connect to " + url.getHost() + ":" + url.getPort();
-			Log.log(Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, mess);
+			Log.log(Log.EVENT_WARNING, mess);
 			return new BaseResponse(Response.STATUS_DOESNOTEXIST, mess, "text/plain");
 		} catch( FileNotFoundException e ) {
 			return new BaseResponse(Response.STATUS_DOESNOTEXIST, "File not found: " + req.getUri(), "text/plain");
 		} catch( IOException e ) {
 			e.printStackTrace();  // eh
 			String mess = "I/O error reading " + req.getUri();
-			Log.log(Log.LEVEL_WARNINGS, Log.TYPE_NOTFOUND, mess);
+			Log.log(Log.EVENT_WARNING, mess);
 			return new BaseResponse(Response.STATUS_DOESNOTEXIST, mess, "text/plain");
 		}
 	}

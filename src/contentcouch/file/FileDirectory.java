@@ -82,7 +82,7 @@ public class FileDirectory extends File implements WritableDirectory {
 			
 			if( value instanceof Directory ) {
 				FileUtil.mkdirs(this);
-				MergeUtil.putAll(getTargetDirectory(), (Directory)value, null);
+				MergeUtil.putAll(getTargetDirectory(), (Directory)value, null, "x-unknown:source", "x-unknown:dest-file-directory");
 				return;
 			}
 			

@@ -46,7 +46,7 @@ public class FileRequestHandler extends BaseRequestHandler {
 			if( lastModified != null ) {
 				newEntry.targetLastModified = lastModified.getTime();
 			}
-			MergeUtil.put(destDir, newEntry, new MergeUtil.RegularConflictResolver(req.getMetadata()));
+			MergeUtil.put(destDir, newEntry, new MergeUtil.RegularConflictResolver(req.getMetadata()), MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getUri());
 			return new BaseResponse();
 		} else {
 			return BaseResponse.RESPONSE_UNHANDLED;

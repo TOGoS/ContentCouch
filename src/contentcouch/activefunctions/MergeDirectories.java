@@ -7,14 +7,16 @@ import java.util.Map;
 import togos.rra.BaseResponse;
 import togos.rra.Response;
 import contentcouch.active.BaseActiveFunction;
+import contentcouch.active.expression.Expression;
 import contentcouch.directory.MergeUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
+import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 
 public class MergeDirectories extends BaseActiveFunction {
 	public Response call(Map argumentExpressions) {
-		List dirs = getPositionalArgumentValues(argumentExpressions);
+		List expressions = getPositionalArgumentExpressions(argumentExpressions);
 		SimpleDirectory result = new SimpleDirectory();
 		
 		MergeUtil.RegularConflictResolver conflictResolver = new MergeUtil.RegularConflictResolver();
@@ -23,9 +25,11 @@ public class MergeDirectories extends BaseActiveFunction {
 		String dirMergeMethod = ValueUtil.getString(getArgumentValue(argumentExpressions, "dir-merge-method", null));
 		if( dirMergeMethod != null ) conflictResolver.dirMergeMethod = dirMergeMethod;
 		
-		for( Iterator i=dirs.iterator(); i.hasNext(); ) {
-			Directory indir = (Directory)i.next();
-			MergeUtil.putAll( result, indir, conflictResolver );
+		for( Iterator i=expressions.iterator(); i.hasNext(); ) {
+			Expression exp = (Expression)i.next();
+			String uri = exp.toString();
+			Directory indir = (Directory)TheGetter.getResponseValue(exp.eval(), uri);
+			MergeUtil.putAll( result, indir, conflictResolver, uri, "x-unknown:new-directory" );
 		}
 		return new BaseResponse(Response.STATUS_NORMAL, result);
 	}
