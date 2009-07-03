@@ -37,6 +37,10 @@ public class RdfDirectory extends RdfNode implements Directory {
 	};
 	
 	public static class Entry extends RdfNode implements Directory.Entry {
+		public Entry() {
+			super(CcouchNamespace.DIRECTORYENTRY);
+		}
+
 		public Entry( Directory.Entry de, Function1 targetRdfifier ) {
 			this();
 			if( de.getTargetType() == null ) {
@@ -57,9 +61,26 @@ public class RdfDirectory extends RdfNode implements Directory {
 
 			add(CcouchNamespace.TARGET, targetRdfifier.apply(de.getTarget()));
 		}
+		
+		public Entry( Directory.Entry de, Ref target ) {
+			this();
+			if( de.getTargetType() == null ) {
+			} else if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
+			} else if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(de.getTargetType()) ) {
+			} else {
+				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
+			}
 
-		public Entry() {
-			super(CcouchNamespace.DIRECTORYENTRY);
+			add(CcouchNamespace.NAME, de.getName());
+			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
+
+			long modified = de.getTargetLastModified();
+			if( modified != -1 ) add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			
+			long size = de.getTargetSize();
+			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
+
+			add(CcouchNamespace.TARGET, target);
 		}
 		
 		public Object getTarget() {

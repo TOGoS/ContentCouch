@@ -7,6 +7,7 @@ import java.util.Set;
 import contentcouch.date.DateUtil;
 import contentcouch.misc.Function1;
 import contentcouch.value.Commit;
+import contentcouch.value.Ref;
 
 public class RdfCommit extends RdfNode implements Commit {	
 	public RdfCommit() {
@@ -27,6 +28,18 @@ public class RdfCommit extends RdfNode implements Commit {
 		this.add(CcouchNamespace.TARGET, targetRdfifier.apply(c.getTarget()));
 	}
 	
+	public RdfCommit( Commit c, Ref target ) {
+		this();
+		if( c.getAuthor() != null ) this.add(DcNamespace.DC_CREATOR, c.getAuthor());
+		if( c.getDate() != null ) this.add(DcNamespace.DC_CREATED, DateUtil.formatDate(c.getDate()));
+		if( c.getMessage() != null ) this.add(DcNamespace.DC_DESCRIPTION, c.getMessage());
+		Object[] parents = c.getParents();
+		if( parents != null ) for( int i=0; i<parents.length; ++i ) {
+			this.add(CcouchNamespace.PARENT, parents[i]);
+		}
+		this.add(CcouchNamespace.TARGET, target);
+	}
+
 	public RdfCommit( Commit c, Function1 targetRdfifier ) {
 		this( c, targetRdfifier, null );
 	}
