@@ -126,7 +126,7 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 	}
 	
 	public String getFunctionName() {
-		String cName = this.getClass().getCanonicalName();
+		String cName = this.getClass().getName();
 		if( cName == null ) return null;
 		String[] parts = cName.split("\\.");
 		if( parts.length < 2 ) return null;

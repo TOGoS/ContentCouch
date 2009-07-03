@@ -10,7 +10,7 @@ import contentcouch.misc.ValueUtil;
 public class Delay extends BaseActiveFunction {
 
 	public Response call(Map argumentExpressions) {
-		Number delay = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "operand", Integer.valueOf(5)));
+		Number delay = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "operand", new Integer(5)));
 		long millis = (long)(delay.doubleValue() * 1000);
 		try {
 			Thread.sleep(millis);
