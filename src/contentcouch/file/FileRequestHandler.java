@@ -46,8 +46,11 @@ public class FileRequestHandler extends BaseRequestHandler {
 			if( lastModified != null ) {
 				newEntry.targetLastModified = lastModified.getTime();
 			}
-			MergeUtil.put(destDir, newEntry, new MergeUtil.RegularConflictResolver(req.getMetadata()), MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getUri());
-			return new BaseResponse();
+			BaseResponse res = new BaseResponse();
+			if( MergeUtil.put(destDir, newEntry, new MergeUtil.RegularConflictResolver(req.getMetadata()), MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getUri()) ) {
+				res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
+			}
+			return res;
 		} else {
 			return BaseResponse.RESPONSE_UNHANDLED;
 		}

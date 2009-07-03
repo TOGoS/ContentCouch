@@ -120,7 +120,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	public Set getDirectoryEntrySet() {
 		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
 		HashSet entries = new HashSet();
-		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
+		if( entryList != null )	for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
 			entries.add(e);
 		}
@@ -136,5 +136,17 @@ public class RdfDirectory extends RdfNode implements Directory {
 			}
 		}
 		return null;
+	}
+	
+	public void addDirectoryEntry( Directory.Entry newEntry ) {
+		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
+		if( entryList == null ) {
+			entryList = new ArrayList();
+			this.add(CcouchNamespace.ENTRIES, entryList);
+		}
+		if( !(newEntry instanceof RdfDirectory.Entry) ) {
+			throw new RuntimeException( "Can only add RdfDirectory.Entries to RdfDirectory");
+		}
+		entryList.add(newEntry);
 	}
 }

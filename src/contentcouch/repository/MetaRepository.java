@@ -102,12 +102,12 @@ public class MetaRepository extends BaseRequestHandler {
 		return fileHashCacheCache;
 	}
 	
-	public byte[] getHash( Blob blob ) {
+	public byte[] getHash( RepoConfig repoConfig, Blob blob ) {
 		if( blob instanceof FileBlob ) {
 			FileHashCache fileHashCache = getFileHashCache();
-			return fileHashCache.getHash((FileBlob)blob, config.defaultRepoConfig.dataScheme);
+			return fileHashCache.getHash((FileBlob)blob, repoConfig.dataScheme);
 		}
-		return config.defaultRepoConfig.dataScheme.getHash( blob );
+		return repoConfig.dataScheme.getHash( blob );
 	}
 	
 	protected String hashToPostSectorPath( RepoConfig repoConfig, byte[] hash ) {
@@ -206,16 +206,134 @@ public class MetaRepository extends BaseRequestHandler {
 		return put( subReq, repoConfig, path );
 	}
 	
-	protected Response put( RepoConfig repoConfig, String path, Object value, Map requestMetadata ) {
-		return put( repoConfig, path, value, Collections.EMPTY_MAP, requestMetadata );
+	//// PUT stuff ////
+	
+	// request verb and URI will be ignored for all put* methods
+	
+	protected Response putDataBlob( RepoConfig repoConfig, Request req ) {
+		String sector = getRequestedStoreSector(req, repoConfig);
+		
+		byte[] hash = getHash(repoConfig, (Blob)req.getContent());
+		
+		String psp = hashToPostSectorPath(repoConfig, hash);
+		String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
+		
+		BaseRequest subReq = new BaseRequest( req, uri );
+		subReq.content = (Blob)req.getContent();
+		BaseResponse res = new BaseResponse( TheGetter.handleRequest(subReq) );
+		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, repoConfig.dataScheme.hashToUrn(hash));
+		return res;
 	}
 
-	protected Response putRdf( RepoConfig repoConfig, String path, RdfNode value, Map valueMetadata, Map requestMetadata ) {
-		Object parsedFrom = valueMetadata.get(CcouchNamespace.PARSED_FROM);
-		Response blobPutRes = put( repoConfig, path, parsedFrom != null ? parsedFrom : BlobUtil.getBlob(value.toString()), requestMetadata );
-		BaseResponse res = new BaseResponse(blobPutRes);
+	protected Response putDataRdf( RepoConfig repoConfig, Request req ) {
+		Object parsedFrom = req.getContentMetadata().get(CcouchNamespace.PARSED_FROM);
+		BaseRequest subReq = new BaseRequest();
+		subReq.metadata = req.getMetadata();
+		subReq.content = parsedFrom != null ? parsedFrom : BlobUtil.getBlob(((RdfNode)req.getContent()).toString());
+		Response blobPutRes = putDataBlob( repoConfig, subReq );
+		if( blobPutRes.getStatus() != Response.STATUS_NORMAL ) return blobPutRes;
+		BaseResponse res = new BaseResponse();
 		MetadataUtil.copyStoredIdentifier(blobPutRes, res, "x-parse-rdf:");
+		return blobPutRes;
+	}
+	
+	/* TODO: finish implementing this stuff and do away with old 'put' methods
+	protected Response putDataRdfDirectory( RepoConfig repoConfig, Request req ) {
+		Response putRdfBlobRes = putDataRdf( repoConfig, req );
+		
+		// TODO: Base 'has this been stored already' on something more definitive than that
+		// the blobbified RDF is in the datastore.  It may have gotten there other ways
+		// (during cache-on-GET, or by simply caching the blob and not its parsed RDF).
+		if( MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_SKIP_PREVIOUSLY_STORED_DIRS) &&
+		    MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
+			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf directory already stored - skipping", "text/plain");
+			res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
+			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res);
+			return res;
+		}
+
+		Directory d = (Directory)req.getContent();
+		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
+			Directory.Entry e = (Directory.Entry)i.next();
+			Object target = e.getTarget();
+			if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+			BaseRequest entryPutReq = new BaseRequest();
+			entryPutReq.metadata = req.getMetadata();
+			putData( repoConfig, entryPutReq );
+		}
+		
+		BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf directory and entries stored", "text/plain");
+		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res);
 		return res;
+	}
+	
+	protected Response putDataNonRdfDirectory( RepoConfig repoConfig, Request req ) {
+		RdfDirectory rdfDir = new RdfDirectory();
+		
+		Directory d = (Directory)req.getContent();
+		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
+			Directory.Entry e = (Directory.Entry)i.next();
+			Object target = e.getTarget();
+			if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+			BaseRequest entryPutReq = new BaseRequest();
+			entryPutReq.metadata = req.getMetadata();
+			putData( repoConfig, entryPutReq );
+		}
+	}
+
+	protected Response putDataRdfCommit( RepoConfig repoConfig, Request req ) {
+		
+	}
+	
+	protected Response putDataNonRdfCommit( RepoConfig repoConfig, Request req ) {
+		
+	}
+
+	protected Response putData( RepoConfig repoConfig, Request req ) {
+		Object content = req.getContent();
+		if( content instanceof Directory ) {
+			if( content instanceof RdfNode ) {
+				return putDataRdfDirectory( repoConfig, req );
+			} else {
+				return putDataNonRdfDirectory( repoConfig, req );
+			}
+		} else if( content instanceof Commit ) {
+			if( content instanceof RdfNode ) {
+				return putDataRdfCommit( repoConfig, req );
+			} else {
+				return putDataNonRdfCommit( repoConfig, req );
+			}
+		} else if( content instanceof Blob ) {
+			return putDataBlob( repoConfig, req );
+		} else if( content instanceof Collection ) {
+			BaseRequest subReq = new BaseRequest();
+			subReq.content = ((Collection)content).iterator();
+			subReq.metadata = req.getMetadata();
+			return putData( repoConfig, subReq );
+		} else if( content instanceof Iterator ) {
+			int count = 0;
+			for( Iterator i=(Iterator)content; i.hasNext(); ) {
+				BaseRequest subReq = new BaseRequest();
+				subReq.content = i.next();
+				subReq.metadata = req.getMetadata();
+				putData( repoConfig, subReq );
+				++count;
+			}
+			return new BaseResponse(Response.STATUS_NORMAL, count + " items inserted", "text/plain");
+		} else if( content instanceof Directory.Entry ) {
+			BaseRequest subReq = new BaseRequest();
+			subReq.content = ((Directory.Entry)content).getTarget();
+			putData( repoConfig, subReq );
+		} else {
+			throw new RuntimeException("Can't put " + content.getClass().getName() + " to repo data store");
+		}
+	}
+	*/
+	
+	//// old put methods ////
+	
+	protected Response put( RepoConfig repoConfig, String path, Object value, Map requestMetadata ) {
+		return put( repoConfig, path, value, Collections.EMPTY_MAP, requestMetadata );
 	}
 	
 	protected Object getStoredObject( Response res ) {
@@ -263,7 +381,15 @@ public class MetaRepository extends BaseRequestHandler {
 			// TODO: I'm starting to think that relying on 'rdfifier' to store stuff is the wrong approach.
 			// It's confusing, especially when the thing passed in is *already* RDF.
 			RdfNode storedRdf = new RdfCommit((Commit)content, getStoringTargetRdfifier(true, req, repoConfig));
-			return putRdf( repoConfig, path, content instanceof RdfNode ? (RdfNode)content : storedRdf, req.getContentMetadata(), req.getMetadata() );
+			BaseRequest putRdfReq = new BaseRequest();
+			putRdfReq.metadata = req.getMetadata();
+			if( content instanceof RdfNode ) {
+				putRdfReq.contentMetadata = req.getContentMetadata();
+				putRdfReq.content = content;
+			} else {
+				putRdfReq.content = storedRdf;
+			}
+			return putDataRdf( repoConfig, putRdfReq );
 		} else if( content instanceof Directory ) {
 			// TODO: Re: rdfifying - see commit note, above 
 			if( path.startsWith("data") ) {
@@ -282,7 +408,10 @@ public class MetaRepository extends BaseRequestHandler {
 					return res;
 				} else {
 					RdfNode storedRdf = new RdfDirectory((Directory)content, getStoringTargetRdfifier(true, req, repoConfig));
-					return putRdf( repoConfig, path, content instanceof RdfNode ? (RdfNode)content : storedRdf, req.getContentMetadata(), req.getMetadata() );
+					BaseRequest putRdfReq = new BaseRequest();
+					putRdfReq.metadata = req.getMetadata();
+					putRdfReq.content = storedRdf;
+					return putDataRdf( repoConfig, putRdfReq );
 				}
 			} else if( path.startsWith("heads/") ) {
 				return putHead( repoConfig, path, content, req.getContentMetadata(), req.getMetadata() );
@@ -290,7 +419,10 @@ public class MetaRepository extends BaseRequestHandler {
 				throw new RuntimeException( "Can't PUT to " + req.getUri() + ": unrecognised post-repo path" );
 			}
 		} else if( content instanceof RdfNode ) {
-			return putRdf( repoConfig, path, (RdfNode)content, req.getContentMetadata(), req.getMetadata() );
+			BaseRequest putRdfReq = new BaseRequest();
+			putRdfReq.metadata = req.getMetadata();
+			putRdfReq.content = content;
+			return putDataRdf( repoConfig, putRdfReq );
 		} else if( (blob = BlobUtil.getBlob(content, false)) != null ) {
 			if( path.startsWith("data") ) {
 				// subPath can be
@@ -320,7 +452,7 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected String identifyBlob( Blob blob, RepoConfig repoConfig ) {
-		return repoConfig.dataScheme.hashToUrn(getHash(blob));
+		return repoConfig.dataScheme.hashToUrn(getHash(repoConfig, blob));
 	}
 	
 	protected Response identify( RepoConfig repoConfig, Object content, Map contentMetadata ) {

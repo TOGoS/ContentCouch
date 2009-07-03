@@ -155,4 +155,13 @@ public class MetadataUtil {
 		if( sourceUri == null ) sourceUri = "x-unknown:source";
 		return sourceUri;
 	}
+	
+	public static boolean isEntryTrue( Map m, String key ) {
+		Object o = m.get(key);
+		if( o == null ) return false;
+		if( o == Boolean.FALSE ) return false;
+		if( o instanceof Number && ((Number)o).intValue() == 0 ) return false;
+		if( o instanceof String && ((String)o).length() == 0 ) return false;
+		return true;
+	}
 }

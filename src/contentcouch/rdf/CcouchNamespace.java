@@ -55,6 +55,9 @@ public class CcouchNamespace {
 	public static final String REQ_STORE_SECTOR       = CC_REQ_NS + "storeSector";
 	public static final String REQ_HARDLINK_DESIRED   = CC_REQ_NS + "hardlinkDesired";
 	public static final String REQ_REHARDLINK_DESIRED = CC_REQ_NS + "rehardlinkDesired";
+	public static final String REQ_SKIP_PREVIOUSLY_STORED_DIRS = CC_REQ_NS + "skipPreviouslyStoredDirectories";
+	public static final String REQ_USE_URI_DOT_FILES  = CC_REQ_NS + "useUriDotFiles";
+	public static final String REQ_CREATE_URI_DOT_FILES = CC_REQ_NS + "createUriDotFiles";
 	
 	public static final String REQ_FILEMERGE_METHOD    = CC_REQ_NS + "fileMergeMethod";
 	public static final String REQ_FILEMERGE_FAIL      = "Fail";
@@ -80,6 +83,7 @@ public class CcouchNamespace {
 	public static final String RES_STORED_IDENTIFIER = CC_RES_NS + "storedIdentifier";
 	public static final String RES_STORED_OBJECT = CC_RES_NS + "storedObject";
 	public static final String RES_CACHEABLE = CC_RES_NS + "cacheable";
+	public static final String RES_DEST_ALREADY_EXISTED = CC_RES_NS + "destinationAlreadyExisted";
 
 	//// Object types ////
 	

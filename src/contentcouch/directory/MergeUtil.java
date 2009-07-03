@@ -90,7 +90,8 @@ public class MergeUtil {
 		}
 	}
 	
-	public static void put( WritableDirectory dir, Directory.Entry newEntry, ConflictResolver conflictResolver, String srcUri, String destUri ) {
+	/** Returns true if something already existed at the destination (whether it was overwritten or not) */
+	public static boolean put( WritableDirectory dir, Directory.Entry newEntry, ConflictResolver conflictResolver, String srcUri, String destUri ) {
 		Directory.Entry existingEntry = dir.getDirectoryEntry(newEntry.getName());
 		if( existingEntry != null ) {
 			if( conflictResolver == null ) {
@@ -98,9 +99,11 @@ public class MergeUtil {
 			} else {
 				conflictResolver.resolve( dir, existingEntry, newEntry, srcUri, destUri );
 			}
+			return true;
 		} else {
 			Log.log(Log.EVENT_EXPORTED, srcUri, destUri );
 			dir.addDirectoryEntry(newEntry);
+			return false;
 		}
 	}
 	
