@@ -7,6 +7,7 @@ public class Bareword implements Expression {
 	public String text;
 	
 	public Bareword(String text) {
+	    if( text == null ) throw new RuntimeException("Tried to create Bareword with null text");
 		this.text = text;
 	}
 	
@@ -15,7 +16,7 @@ public class Bareword implements Expression {
 	}
 	
 	public String toUri() {
-		throw new RuntimeException("Bareword cannot be converted to URIs!");
+		throw new RuntimeException("Bareword cannot be converted to a URI! (" + text + ")");
 	}
 
 	public Response eval() {

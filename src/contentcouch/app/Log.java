@@ -67,6 +67,7 @@ public class Log {
 		if( level < LEVEL_VERBOSE   ) return;
 		addLogger( EVENT_KEPT, stderrLogger );
 		if( level < LEVEL_DEBUG     ) return;
+		addLogger( EVENT_REQUEST_SUBMITTED, stderrLogger );
 	}
 	
 	public static final void log( String eventName, String[] arguments ) {

@@ -58,6 +58,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		File configFile = getConfigFile();
 		String configFileUri = PathUtil.maybeNormalizeFileUri(configFile.getPath());
 		metaRepoConfig.handleArguments(new String[]{"-file",configFileUri}, 0, ".");
+
+		contentcouch.app.Log.setStandardLogLevel( 60 );
 	}
 	
 	protected File getConfigFile() {
@@ -75,6 +77,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	}
 	
 	protected String getExploreUri(String uri) {
+		if( uri == null ) {
+			throw new RuntimeException( "Null URI given to getExploreUri" );
+		}
 		return
 			"(contentcouch.explorify\n" +
 			"  " + uri + "\n" +
@@ -98,22 +103,34 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			final boolean shouldRewriteRelativeUris;
 			String uri = null;
 			String loadPath = null;
-			if( pi.equals("/explore") ) {
-				uri = getExploreUri(request.getParameter("uri"));
-				shouldRewriteRelativeUris = true;
-				loadPath = "/explore?uri=";
-			} else if( pi.startsWith("/explore/") ) {
-				uri = getExploreUri(PathUtil.appendPath("x-ccouch-repo://", pi.substring(9)));
-				shouldRewriteRelativeUris = false;
-				loadPath = "/explore?uri=";
-			} else if( pi.equals("/raw") ) {
-				uri = request.getParameter("uri");
-				shouldRewriteRelativeUris = true;
-				loadPath = "/raw?uri=";
-			} else if( pi.startsWith("/raw/") ) {
-				uri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(5));
-				shouldRewriteRelativeUris = false;
-				loadPath = "/raw?uri=";
+			String[] pathComp = pi.substring(1).split("/");
+			String inputUri = request.getParameter("uri");
+			if( "explore".equals(pathComp[0]) ) {
+			    if( uri != null ) {
+					shouldRewriteRelativeUris = true;
+					loadPath = "/explore?uri=";
+				} else if( pi.startsWith("/explore/") ) {
+					inputUri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(9));
+					shouldRewriteRelativeUris = false;
+					loadPath = "/explore?uri=";
+				} else {
+					// TODO: redirect
+					return;
+				}
+				uri = getExploreUri(inputUri);
+			} else if( "raw".equals(pathComp[0]) ) {
+				if( inputUri != null ) {
+					shouldRewriteRelativeUris = true;
+					loadPath = "/raw?uri=";
+				} else if( pi.startsWith("/raw/") ) {
+					inputUri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(5));
+					shouldRewriteRelativeUris = false;
+					loadPath = "/raw?uri=";
+				} else {
+					// TODO: redirect
+					return;
+				}
+				uri = inputUri;
 			} else if( pi.equals("/") ) {
 				uri = "file:web/_index.html";
 				shouldRewriteRelativeUris = false;
@@ -142,6 +159,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
 				if( type == null && subRes.getContent() instanceof Blob ) {
 					type = MetadataUtil.guessContentType((Blob)subRes.getContent());
+					type = "text/html";
 				}
 				
 				switch( subRes.getStatus() ) {
