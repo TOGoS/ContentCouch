@@ -60,7 +60,7 @@ public class ContentCouchCommand {
 		"  -dirs-only         ; store only directory listings (no file content)\n" +
 		"  -dont-store        ; store nothing (same as using 'ccocuch id')\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
-		"  -sector            ; data/sub-directory to store data (defaults to \"user\")\n" +
+		"  -store-sector      ; data/sub-directory to store data (defaults to \"user\")\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
 		"  -q                 ; quiet - show nothing\n" +
 		"  -?                 ; display help and exit\n" +
@@ -98,7 +98,7 @@ public class ContentCouchCommand {
 		"Options:\n" +
 		"  -v       ; show all URNs being followed\n" +
 		"  -q       ; show nothing - not even failures\n" +
-		"  -sector  ; data/sub-directory to store data (defaults to \"remote\")\n" +
+		"  -store-sector ; data/sub-directory to store data (defaults to \"remote\")\n" +
 		"\n" +
 		"Attempts to cache any objects that are not already in a local repository\n" +
 		"into your cache repository.  Directories, Commits, and Redirects will\n" +
@@ -327,7 +327,7 @@ public class ContentCouchCommand {
 			} else if( "-relink".equals(arg) ) {
 				shouldLinkStored = true;
 				shouldRelinkImported = true;
-			} else if( "-sector".equals(arg) ) {
+			} else if( "-sector".equals(arg) || "-store-sector".equals(arg) ) {
 				storeSector = args[++i];
 			} else if( "-m".equals(arg) ) {
 				message = args[++i];
@@ -650,7 +650,9 @@ public class ContentCouchCommand {
 				cacheVerbosity = 0;
 			} else if( "-v".equals(arg) ) {
 				cacheVerbosity = GetAttemptListener.GOT_FROM_LOCAL;
-			} else if( "-sector".equals(arg) ) {
+			} else if( "-link".equals(arg) || "-relink".equals(arg) ) {
+				// Ignore for compatibility with RRA branch
+			} else if( "-sector".equals(arg) || "-store-sector".equals(arg) ) {
 				storeSector = args[++i];
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(CACHE_USAGE);
@@ -836,7 +838,7 @@ public class ContentCouchCommand {
 			if( arg.length() == 0 ) {
 				System.err.println(RDFIFY_USAGE);
 				System.exit(1);
-			} else if( "-sector".equals(arg) ) {
+			} else if( "-sector".equals(arg) || "-store-sector".equals(arg) ) {
 				storeSector = args[++i];
 			} else if( "-nested".equals(arg) ) {
 				nested = true;
