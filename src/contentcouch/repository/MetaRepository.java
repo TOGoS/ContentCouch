@@ -636,6 +636,9 @@ public class MetaRepository extends BaseRequestHandler {
 					}
 					
 					return putData( repoConfig, req );
+				} else if( repoRef.subPath.startsWith("heads/") ) {
+					BaseRequest subReq = new BaseRequest( req, resolveHeadPath(repoConfig, repoRef.subPath, "") );
+					return TheGetter.handleRequest(subReq);
 				} else {
 					throw new RuntimeException("Can't PUT to " + req.getUri() + ", sorry!");
 				}
