@@ -16,7 +16,7 @@ public class Log {
 	public static final String EVENT_ERROR           = "error"; // error message X, backtrace Y
 	public static final String EVENT_NOT_FOUND       = "not-found"; // X was not found
 	public static final String EVENT_NOT_FOUND_FATAL = "not-found-fatal"; // X was not found
-	public static final String EVENT_EXPORTED        = "exported";  // X exported as Y
+	public static final String EVENT_PUT             = "put";  // X put as Y
 	public static final String EVENT_REPLACED        = "replaced"; // X overwrite Y
 	public static final String EVENT_KEPT            = "kept"; // X was kept
 	public static final String EVENT_DELETED         = "deleted"; // X was kept
@@ -62,7 +62,7 @@ public class Log {
 				System.err.println("Downloading " + uri + " (" + length + " bytes)");
 			}
 		});
-		addLogger( EVENT_EXPORTED, stderrLogger );
+		addLogger( EVENT_PUT, stderrLogger );
 		addLogger( EVENT_REPLACED, stderrLogger );
 		if( level < LEVEL_VERBOSE   ) return;
 		addLogger( EVENT_KEPT, stderrLogger );

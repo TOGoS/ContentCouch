@@ -19,6 +19,7 @@ import togos.rra.Response;
 import com.eekboom.utils.Strings;
 
 import contentcouch.blob.BlobUtil;
+import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.misc.Function1;
@@ -208,7 +209,7 @@ public class MetaRepository extends BaseRequestHandler {
 		String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
 		
 		BaseRequest subReq = new BaseRequest( req, uri );
-		subReq.content = (Blob)req.getContent();
+		subReq.verb = Request.VERB_PUT;
 		BaseResponse res = new BaseResponse( TheGetter.handleRequest(subReq) );
 		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, repoConfig.dataScheme.hashToUrn(hash));
 		return res;
@@ -223,12 +224,13 @@ public class MetaRepository extends BaseRequestHandler {
 		if( blobPutRes.getStatus() != Response.STATUS_NORMAL ) return blobPutRes;
 		BaseResponse res = new BaseResponse();
 		MetadataUtil.copyStoredIdentifier(blobPutRes, res, "x-parse-rdf:");
-		return blobPutRes;
+		return res;
 	}
 	
 	// TODO: finish implementing this stuff and do away with old 'put' methods
 	protected Response putDataRdfDirectory( RepoConfig repoConfig, Request req ) {
 		Response putRdfBlobRes = putDataRdf( repoConfig, req );
+		TheGetter.getResponseValue(putRdfBlobRes, req);
 		
 		// TODO: Base 'has this been stored already' on something more definitive than that
 		// the blobbified RDF is in the datastore.  It may have gotten there other ways
@@ -237,7 +239,7 @@ public class MetaRepository extends BaseRequestHandler {
 		    MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
 			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf directory already stored - skipping", "text/plain");
 			res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
-			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, "");
+			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 			return res;
 		}
 
@@ -245,14 +247,27 @@ public class MetaRepository extends BaseRequestHandler {
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			Object target = e.getTarget();
-			if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+			String targetSourceUri;
+			if( target instanceof Ref ) {
+				targetSourceUri = ((Ref)target).getTargetUri();
+				target = TheGetter.get( targetSourceUri );
+			} else {
+				String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);
+				if( sourceUri != null ) {
+					targetSourceUri = PathUtil.appendPath(sourceUri, e.getName());
+				} else {
+					targetSourceUri = null;
+				}
+			}
 			BaseRequest targetPutReq = new BaseRequest();
+			targetPutReq.content = target;
 			targetPutReq.metadata = req.getMetadata();
+			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
 			putData( repoConfig, targetPutReq );
 		}
 		
 		BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf directory and entries stored", "text/plain");
-		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, "");
+		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 		return res;
 	}
 	
@@ -260,27 +275,65 @@ public class MetaRepository extends BaseRequestHandler {
 		RdfDirectory rdfDir = new RdfDirectory();
 		
 		Directory d = (Directory)req.getContent();
+		
+		if( MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_USE_URI_DOT_FILES) ) {
+			Directory.Entry uriDotFileEntry = d.getDirectoryEntry(".ccouch-uri");
+			if( uriDotFileEntry != null ) {
+				Object target = uriDotFileEntry.getTarget();
+				if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+				String uri = ValueUtil.getString(target);
+				// TODO: Some kind of validation on the URI (should be x-parse-rdf:<urn scheme>:...)
+				BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "URI previously cached in .ccouch-uri file - skipping", "text/plain");
+				res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, uri);
+				return res;
+			}
+		}		
+		
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			Object target = e.getTarget();
-			if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
-			BaseRequest entryPutReq = new BaseRequest();
-			entryPutReq.metadata = req.getMetadata();
-			entryPutReq.content = target;
-			Response putEntryResponse = putData( repoConfig, entryPutReq );
-			String entryUri = (String)putEntryResponse.getContentMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER);
-			if( entryUri == null ) throw new RuntimeException("Inserting entry target returned null");
-			rdfDir.addDirectoryEntry(new RdfDirectory.Entry(e, new BaseRef(entryUri)));
+			String targetSourceUri;
+			if( target instanceof Ref ) {
+				targetSourceUri = ((Ref)target).getTargetUri();
+				target = TheGetter.get( targetSourceUri );
+			} else {
+				String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);
+				if( sourceUri != null ) {
+					targetSourceUri = PathUtil.appendPath(sourceUri, e.getName());
+				} else {
+					targetSourceUri = null;
+				}
+			}
+			BaseRequest targetPutReq = new BaseRequest();
+			targetPutReq.content = target;
+			targetPutReq.metadata = req.getMetadata();
+			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
+			Response targetPutRes = putData( repoConfig, targetPutReq );
+			TheGetter.getResponseValue(targetPutRes, targetPutReq);
+			String targetUri = MetadataUtil.getStoredIdentifier(targetPutRes);
+			if( targetUri == null ) throw new RuntimeException("Inserting entry target returned null");
+			rdfDir.addDirectoryEntry(new RdfDirectory.Entry(e, new BaseRef(targetUri)));
 		}
 		
-		BaseRequest putRdfDirReq = new BaseRequest();
-		putRdfDirReq.content = rdfDir;
-		putRdfDirReq.metadata = req.getMetadata();
-		return putDataRdf( repoConfig, putRdfDirReq );
+		BaseRequest dirPutReq = new BaseRequest();
+		dirPutReq.content = rdfDir;
+		dirPutReq.metadata = req.getMetadata();
+		Response dirPutRes = putDataRdf( repoConfig, dirPutReq );
+
+		String storedDirUri = MetadataUtil.getStoredIdentifier(dirPutRes);
+		if( d instanceof WritableDirectory &&
+			MetadataUtil.isEntryTrue(req.getMetadata(),CcouchNamespace.REQ_CREATE_URI_DOT_FILES) &&
+			storedDirUri != null
+		) {
+			MetadataUtil.saveCcouchUri( (WritableDirectory)d, storedDirUri );
+		}
+
+		return dirPutRes;
 	}
 
 	protected Response putDataRdfCommit( RepoConfig repoConfig, Request req ) {
 		Response putRdfBlobRes = putDataRdf( repoConfig, req );
+		TheGetter.getResponseValue(putRdfBlobRes, req);
 		
 		// TODO: Base 'has this been stored already' on something more definitive than that
 		// the blobbified RDF is in the datastore.  It may have gotten there other ways
@@ -289,19 +342,27 @@ public class MetaRepository extends BaseRequestHandler {
 		    MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
 			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf commit already stored - skipping", "text/plain");
 			res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
-			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, "");
+			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 			return res;
 		}
 
 		Commit c = (Commit)req.getContent();
 		Object target = c.getTarget();
-		if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+		String targetSourceUri;
+		if( target instanceof Ref ) {
+			targetSourceUri = ((Ref)target).getTargetUri();
+			target = TheGetter.get( targetSourceUri );
+		} else {
+			targetSourceUri = null;
+		}
 		BaseRequest targetPutReq = new BaseRequest();
 		targetPutReq.metadata = req.getMetadata();
+		targetPutReq.content = target;
+		targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
 		putData( repoConfig, targetPutReq );
 		
 		BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf commit and target stored", "text/plain");
-		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, "");
+		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 		return res;
 	}
 	

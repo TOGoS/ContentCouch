@@ -10,7 +10,9 @@ import java.util.regex.Pattern;
 import togos.rra.BaseResponse;
 import togos.rra.ContentAndMetadata;
 import togos.rra.Response;
+import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
+import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
@@ -163,5 +165,15 @@ public class MetadataUtil {
 		if( o instanceof Number && ((Number)o).intValue() == 0 ) return false;
 		if( o instanceof String && ((String)o).length() == 0 ) return false;
 		return true;
+	}
+	
+	public static void saveCcouchUri( WritableDirectory dir, String dirUri ) {
+		SimpleDirectory.Entry uriDotFileEntry = new SimpleDirectory.Entry();
+		uriDotFileEntry.target = BlobUtil.getBlob(dirUri);
+		uriDotFileEntry.targetLastModified = new Date().getTime();
+		uriDotFileEntry.name = ".ccouch-uri";
+		uriDotFileEntry.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
+		uriDotFileEntry.targetSize = ((Blob)uriDotFileEntry.target).getLength();
+		((WritableDirectory)dir).addDirectoryEntry(uriDotFileEntry);
 	}
 }

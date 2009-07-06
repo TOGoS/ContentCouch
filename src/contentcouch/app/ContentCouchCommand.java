@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -289,6 +290,8 @@ public class ContentCouchCommand {
 		public boolean shouldDumpConfig;
 		public boolean shouldSaveCommitUri; 
 		public boolean shouldUseCommitTargets = false;
+		public boolean shouldCreateUriDotFiles = false;
+		public boolean shouldUseUriDotFiles = false;
 		public String storeSector;
 		public String fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_STRICTIG;
 		public String dirMergeMethod = null;
@@ -311,7 +314,7 @@ public class ContentCouchCommand {
 			} else if( "-relink".equals(arg) ) {
 				opts.shouldLinkStored = true;
 				opts.shouldRelinkImported = true;
-
+			
 			// Merging options:
 			} else if( "-file-merge-method".equals(arg) ) {
 				opts.fileMergeMethod = args[++i];
@@ -323,9 +326,15 @@ public class ContentCouchCommand {
 				opts.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_IGNORE;
 			} else if( "-merge".equals(arg) ) {
 				opts.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
+			
 			} else if( "-use-commit-targets".equals(arg) ) {
 				opts.shouldUseCommitTargets = true;
-
+			
+			} else if( "-create-uri-dot-files".equals(arg) ) {
+				opts.shouldCreateUriDotFiles = true;
+			} else if( "-use-uri-dot-files".equals(arg) ) {
+				opts.shouldUseUriDotFiles = true;
+			
 			} else if( "-dump-config".equals(arg) ) {
 				opts.shouldDumpConfig = true;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
@@ -335,7 +344,7 @@ public class ContentCouchCommand {
 			// What to copy to/from
 			} else if( arg.charAt(0) != '-' || "-".equals(arg) ) {
 				opts.uris.add(arg);
-				
+			
 			} else {
 				System.err.println("ccouch " + commandName + ": Unrecognised argument: " + arg);
 				return null;
@@ -489,8 +498,6 @@ public class ContentCouchCommand {
 		String author = null;
 		boolean storeDirs = true;
 		boolean forceCommit = false;
-		boolean shouldLinkStored = false;
-		boolean shouldRelinkImported = false;
 		boolean followRefs = false;
 		String storeSector = "user";
 		GeneralOptions opts = new GeneralOptions();
@@ -506,14 +513,18 @@ public class ContentCouchCommand {
 			} else if( "-v".equals(arg) ) {
 				opts.logLevel = Log.LEVEL_VERBOSE;
 			} else if( "-link".equals(arg) ) {
-				shouldLinkStored = true;
+				opts.shouldLinkStored = true;
 			} else if( "-relink".equals(arg) ) {
-				shouldLinkStored = true;
-				shouldRelinkImported = true;
+				opts.shouldLinkStored = true;
+				opts.shouldRelinkImported = true;
 			} else if( "-store-sector".equals(arg) ) {
 				storeSector = args[++i];
 			} else if( "-follow-refs".equals(arg) ) {
 				followRefs = true;
+			} else if( "-create-uri-dot-files".equals(arg) ) {
+				opts.shouldCreateUriDotFiles = true;
+			} else if( "-use-uri-dot-files".equals(arg) ) {
+				opts.shouldUseUriDotFiles = true;
 			} else if( "-m".equals(arg) ) {
 				message = args[++i];
 			} else if( "-n".equals(arg) ) {
@@ -578,10 +589,13 @@ public class ContentCouchCommand {
 			}
 			
 			BaseRequest putReq = new BaseRequest(Request.VERB_PUT, dataDestUri);
-			putReq.content = getRes.getContent();
-			putReq.contentMetadata = getRes.getContentMetadata(); 
-			if( shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-			if( shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
+			putReq.content = o;
+			putReq.contentMetadata = new HashMap(getRes.getContentMetadata());
+			putReq.contentMetadata.put(CcouchNamespace.SOURCE_URI, sourceUri);
+			if( opts.shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
+			if( opts.shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
+			if( opts.shouldCreateUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
+			if( opts.shouldUseUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
 			putReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
 			Response putRes = TheGetter.handleRequest(putReq);
 			if( putRes.getStatus() != Response.STATUS_NORMAL ) {

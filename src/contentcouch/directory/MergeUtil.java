@@ -101,7 +101,7 @@ public class MergeUtil {
 			}
 			return true;
 		} else {
-			Log.log(Log.EVENT_EXPORTED, srcUri, destUri );
+			Log.log(Log.EVENT_PUT, srcUri, destUri );
 			dir.addDirectoryEntry(newEntry);
 			return false;
 		}
