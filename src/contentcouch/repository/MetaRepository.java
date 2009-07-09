@@ -296,6 +296,7 @@ public class MetaRepository extends BaseRequestHandler {
 		
 		//(Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
 		Date highestMtime = null; // Don't pay attention to directory mtime
+		List rdfDirectoryEntries = new ArrayList();
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			Object target = e.getTarget();
@@ -327,8 +328,9 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			String targetUri = MetadataUtil.getStoredIdentifier(targetPutRes);
 			if( targetUri == null ) throw new RuntimeException("Inserting entry target returned null");
-			rdfDir.addDirectoryEntry(new RdfDirectory.Entry(e, new BaseRef(targetUri)));
+			rdfDirectoryEntries.add(new RdfDirectory.Entry(e, new BaseRef(targetUri)));
 		}
+		rdfDir.setDirectoryEntries(rdfDirectoryEntries);
 		
 		BaseRequest dirPutReq = new BaseRequest();
 		dirPutReq.content = rdfDir;
@@ -685,51 +687,55 @@ public class MetaRepository extends BaseRequestHandler {
 			
 			//String sector = MetadataUtil.getKeyed(request.getMetadata(), RdfNamespace.STORE_SECTOR, rc.userStoreSector);
 		} else {
-			String urn = req.getUri();
-			
-			// Check local repos
-			for( Iterator i=config.getDefaultAndLocalRepoConfigs().iterator(); i.hasNext(); ) {
-				RepoConfig repoConfig = (RepoConfig)i.next();
-				String psp = urnToPostSectorPath(repoConfig, urn);
-				if( psp == null ) continue;
+			if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
+				// URN request? Check each repo to see if it has a data scheme that would handle it
 
-				if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
-					List dataSectorUris = getRepoDataSectorUrls(repoConfig);
-					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
-						String dataSectorUri = (String)si.next();
-						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
-						Response res = TheGetter.handleRequest(subReq);
-						if( res.getStatus() == Response.STATUS_NORMAL ) return res;
+				String urn = req.getUri();
+			
+				// Check local repos
+				for( Iterator i=config.getDefaultAndLocalRepoConfigs().iterator(); i.hasNext(); ) {
+					RepoConfig repoConfig = (RepoConfig)i.next();
+					String psp = urnToPostSectorPath(repoConfig, urn);
+					if( psp == null ) continue;
+	
+					if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
+						List dataSectorUris = getRepoDataSectorUrls(repoConfig);
+						for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
+							String dataSectorUri = (String)si.next();
+							BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
+							Response res = TheGetter.handleRequest(subReq);
+							if( res.getStatus() == Response.STATUS_NORMAL ) return res;
+						}
 					}
 				}
-			}
-			
-			// Check most recently hit remote repo
-			if( lastHitDataSectorUri != null ) {
-				String psp = urnToPostSectorPath(lastHitRepoConfig, urn);
-				BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(lastHitDataSectorUri, psp));
-				Response res = TheGetter.handleRequest(subReq);
-				if( res.getStatus() == Response.STATUS_NORMAL ) {
-					return res;
+				
+				// Check most recently hit remote repo
+				lastHit: if( lastHitDataSectorUri != null ) {
+					String psp = urnToPostSectorPath(lastHitRepoConfig, urn);
+					if( psp == null ) break lastHit;
+					
+					BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(lastHitDataSectorUri, psp));
+					Response res = TheGetter.handleRequest(subReq);
+					if( res.getStatus() == Response.STATUS_NORMAL ) return res;
 				}
-			}
-			
-			// Check all remote repos
-			for( Iterator i=config.remoteRepoConfigs.iterator(); i.hasNext(); ) {
-				RepoConfig repoConfig = (RepoConfig)i.next();
-				String psp = urnToPostSectorPath(repoConfig, urn);
-				if( psp == null ) continue;
-
-				if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
-					List dataSectorUris = getRepoDataSectorUrls(repoConfig);
-					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
-						String dataSectorUri = (String)si.next();
-						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
-						Response res = TheGetter.handleRequest(subReq);
-						if( res.getStatus() == Response.STATUS_NORMAL ) {
-							lastHitDataSectorUri = dataSectorUri;
-							lastHitRepoConfig = repoConfig;
-							return res;
+				
+				// Check all remote repos
+				for( Iterator i=config.remoteRepoConfigs.iterator(); i.hasNext(); ) {
+					RepoConfig repoConfig = (RepoConfig)i.next();
+					String psp = urnToPostSectorPath(repoConfig, urn);
+					if( psp == null ) continue;
+	
+					if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
+						List dataSectorUris = getRepoDataSectorUrls(repoConfig);
+						for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
+							String dataSectorUri = (String)si.next();
+							BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
+							Response res = TheGetter.handleRequest(subReq);
+							if( res.getStatus() == Response.STATUS_NORMAL ) {
+								lastHitDataSectorUri = dataSectorUri;
+								lastHitRepoConfig = repoConfig;
+								return res;
+							}
 						}
 					}
 				}

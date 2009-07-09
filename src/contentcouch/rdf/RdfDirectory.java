@@ -2,6 +2,7 @@ package contentcouch.rdf;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -124,18 +125,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
 		this();
 		if( targetRdfifier == null ) targetRdfifier = DEFAULT_TARGET_RDFIFIER;
-		List entries = new ArrayList(dir.getDirectoryEntrySet());
-		Collections.sort( entries, new Comparator() {
-			public int compare( Object o1, Object o2 ) {
-				return ((Directory.Entry)o1).getName().compareTo(((Directory.Entry)o2).getName());
-			}
-		});
-		List rdfEntries = new ArrayList();
-		for( Iterator i = entries.iterator(); i.hasNext(); ) {
-			Directory.Entry entry = (Directory.Entry)i.next();
-			rdfEntries.add( new RdfDirectory.Entry(entry, targetRdfifier) );
-		}
-		add(CcouchNamespace.ENTRIES, rdfEntries);
+		setDirectoryEntries( dir.getDirectoryEntrySet(), targetRdfifier );
 	}
 	
 	public RdfDirectory( Directory dir ) {
@@ -161,6 +151,36 @@ public class RdfDirectory extends RdfNode implements Directory {
 			}
 		}
 		return null;
+	}
+	
+	/** Replaces whatever entries are currently in this object with the new RdfDirectory.Entries
+	 * based on the given Entries and the given target RDFifier.
+	 * The entries will be sorted by name. */
+	public void setDirectoryEntries( Collection entryCollection, Function1 targetRdfifier ) {
+		ArrayList rdfDirectoryEntries = new ArrayList();
+		for( Iterator i=entryCollection.iterator(); i.hasNext(); ) {
+			rdfDirectoryEntries.add( new RdfDirectory.Entry( (Directory.Entry)i.next(), targetRdfifier ));
+		}
+		setDirectoryEntries(rdfDirectoryEntries);
+	}
+	
+	/** Replaces whatever entries are currently in this object with the given ones.
+	 * The entries will be sorted by name.
+	 * @param entryCollection a collection of RdfDirectoryEntries. */
+	public void setDirectoryEntries( Collection entryCollection ) {
+		List entries = new ArrayList(entryCollection);
+		Collections.sort( entries, new Comparator() {
+			public int compare( Object o1, Object o2 ) {
+				return ((RdfDirectory.Entry)o1).getName().compareTo(((RdfDirectory.Entry)o2).getName());
+			}
+		});
+		List rdfEntries = new ArrayList();
+		remove(CcouchNamespace.ENTRIES);
+		add(CcouchNamespace.ENTRIES, rdfEntries);
+		for( Iterator i = entries.iterator(); i.hasNext(); ) {
+			RdfDirectory.Entry entry = (RdfDirectory.Entry)i.next();
+			rdfEntries.add( entry );
+		}
 	}
 	
 	public void addDirectoryEntry( Directory.Entry newEntry ) {
