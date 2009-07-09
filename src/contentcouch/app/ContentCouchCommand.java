@@ -42,23 +42,31 @@ import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
 	public String USAGE =
+		"ContentCouch by TOGoS; RRA branch\n" +
+		"\n" +
 		"Usage: ccouch [general options] <sub-command> [command-args]\n" +
-		"Version: RRA\n" + 
-		"Run ccouch <subcommand> -? for further info about that command\n" +
 		"General options:\n" +
-		"  -repo <path>          ; specify main repository\n" +
-		"  -local-repo <path>    ; specify secondary local repository\n" +
-		"  -cache-repo <path>    ; specify repository to cache downloaded objects\n" +
-		"  -remote-repo <path>   ; specify a remote repository\n" +
+		"  -repo[:<name>] <location>        ; specify the default repository\n" +
+		"  -local-repo[:<name>] <location>  ; specify a secondary local repository\n" +
+		"  -remote-repo[:<name>] <location> ; specify a remote repository\n" +
 		"Sub-commands:\n" +
-		"  store <files>         ; store files in the repo\n" +
-		"  checkout <uri> <dest> ; check files out to the filesystem\n" +
+		"  store <files>         ; store files in the main repo\n" +
+		"  checkout <src> <dest> ; check files out to the filesystem\n" +
 		"  cache <urn> ...       ; cache blobs\n" +
 		"  cache-heads ...       ; cache heads from another repository\n" +
 		"  id <files>            ; give URNs for files without storing\n" +
 		"  rdfify <dir>          ; print RDF listing of a directory\n" +
 		"  check                 ; check repo integrity and delete bad files\n" +
-		"  touch                 ; remove directory content URI cache files";
+		"  touch                 ; remove directory content URI cache files\n" +
+		"  config                ; display the current configuration\n" +
+		"\n" +
+		"Run ccouch <subcommand> -? for further info about that command.\n" +
+		"\n" +
+		"Locations can generally be given as URIs, absolute or remote filesystem paths,\n" +
+		"pseudo-active URIs (see the documentation), or \"-\" (meaning stdin/out,\n" +
+		"depending on context)\n" +
+		"\n" +
+		"Further documentation may be found at <http://github.com/TOGoS/contentcouch/>";
 	
 	public String COPY_USAGE =
 		"Usage: ccouch [general options] copy [copy options] <src> <src> ... <dest>\n" +
@@ -131,6 +139,14 @@ public class ContentCouchCommand {
 		"  no action is taken.\n" +
 		"- If the content is different, an error is printed and the program exits.";
 		
+	public static String TOUCH_USAGE =
+		"Usage: ccouch [general options] touch [options] <path> <path> ...\n" +
+		"Options:\n" +
+		"  -r            ; Recurse into subdirectories\n" +
+		"\n" +
+		"Will remove all .ccouch-uri files from named directories, parent directories,\n" +
+		"and, if '-r' is given, sub-directories";
+
 	public static String CACHE_USAGE =
 		"Usage: ccouch [general options] cache [options] <urn> <urn> ...\n" +
 		"Options:\n" +
@@ -476,12 +492,15 @@ public class ContentCouchCommand {
 		}
 		if( opts == null ) {
 			System.err.println(COPY_USAGE);
+			System.err.println();
 			return 1;
 		}
 		
 		if( opts.uris.size() <= 1 ) {
 			System.err.println("Must specify at least source and dest");
+			System.err.println();
 			System.err.println(COPY_USAGE);
+			System.err.println();
 			return 1;
 		}
 		
@@ -516,7 +535,9 @@ public class ContentCouchCommand {
 				inputUris.add(normalizeUri(arg, false, false));
 			} else {
 				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
+				System.err.println();
 				System.err.println(CACHE_HEADS_USAGE);
+				System.err.println();
 				return 1;
 			}
 		}
@@ -561,7 +582,9 @@ public class ContentCouchCommand {
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
+				System.err.println();
 				System.err.println(STORE_USAGE);
+				System.err.println();
 				return 1;
 			} else if( "-hide-inputs".equals(arg) ) {
 				reportInputs = false;
@@ -601,7 +624,9 @@ public class ContentCouchCommand {
 				sourceUris.add(normalizeUri(arg,false,false));
 			} else {
 				System.err.println("ccouch store: Unrecognised argument: " + arg);
+				System.err.println();
 				System.err.println(STORE_USAGE);
+				System.err.println();
 				return 1;
 			}
 		}
@@ -772,6 +797,7 @@ public class ContentCouchCommand {
 		GeneralOptions opts = getGeneralOptions( args, "checkout" );
 		if( opts == null ) {
 			System.err.println(CHECKOUT_USAGE);
+			System.err.println();
 			return 1;
 		}
 		if( opts.showHelp ) {
@@ -784,6 +810,7 @@ public class ContentCouchCommand {
 		if( opts.uris.size() != 2 ) {
 			System.err.println("ccouch checkout: You must specify one source and one destination URI");
 			System.err.println(CHECKOUT_USAGE);
+			System.err.println();
 			return 1;
 		}
 		String sourceUri = normalizeUri((String)opts.uris.get(0), false, true);
@@ -823,6 +850,7 @@ public class ContentCouchCommand {
 			} else {
 				System.err.println("ccouch cache: Unrecognised argument: " + arg);
 				System.err.println(CACHE_USAGE);
+				System.err.println();
 				return 1;
 			}
 		}
@@ -861,7 +889,9 @@ public class ContentCouchCommand {
 				cacheUris.add(arg);
 			} else {
 				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
+				System.err.println();
 				System.err.println(CACHE_HEADS_USAGE);
+				System.err.println();
 				return 1;
 			}
 		}
@@ -902,7 +932,9 @@ public class ContentCouchCommand {
 			String arg = args[i];
 			if( arg.startsWith("-" ) ) {
 				System.err.println("ccouch check: Unrecognised argument: " + arg);
+				System.err.println();
 				System.err.println(CACHE_CHECK_USAGE);
+				System.err.println();
 				return 1;
 			} else {
 				checkPaths.add(arg);
@@ -933,6 +965,7 @@ public class ContentCouchCommand {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
 				System.err.println(RDFIFY_USAGE);
+				System.err.println();
 				return 1;
 			} else if( "-nested".equals(arg) ) {
 				nested = true;
@@ -942,7 +975,9 @@ public class ContentCouchCommand {
 				dir = normalizeUri(arg, false, true);
 			} else {
 				System.err.println("ccouch rdfify: Unrecognised argument: " + arg);
+				System.err.println();
 				System.err.println(RDFIFY_USAGE);
+				System.err.println();
 				return 1;
 			}
 		}
@@ -951,7 +986,9 @@ public class ContentCouchCommand {
 		
 		if( dir == null ) {
 			System.err.println("No directory specified");
+			System.err.println();
 			System.err.println(RDFIFY_USAGE);
+			System.err.println();
 			return 1;
 		}
 
@@ -1004,8 +1041,17 @@ public class ContentCouchCommand {
 			String arg = args[i];
 			if( arg.equals("-r") ) {
 				recursive = true;
+			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
+				System.out.println(TOUCH_USAGE);
+				return 0;
 			} else if( !arg.startsWith("-") ) {
 				uris.add(normalizeUri(arg, true, true));
+			} else {
+				System.err.println("ccouch touch: Unrecognised argument: " + arg);
+				System.err.println();
+				System.err.println(TOUCH_USAGE);
+				System.err.println();
+				return 1;
 			}
 		}
 		Log.setStandardLogLevel(opts.logLevel);
@@ -1035,6 +1081,7 @@ public class ContentCouchCommand {
 	public int run( String[] args ) {
 		if( args.length == 0 ) {
 			System.err.println(USAGE);
+			System.err.println();
 			return 1;
 		}
 
@@ -1056,13 +1103,17 @@ public class ContentCouchCommand {
 				break;
 			} else {
 				System.err.println("ccouch: Unrecognised command: " + args[i]);
+				System.err.println();
 				System.err.println(USAGE);
+				System.err.println();
 				return 1;
 			}
 		}
 		if( cmd == null ) { 
-			System.err.println("No command given");
+			System.err.println("ccouch: No command given");
+			System.err.println();
 			System.err.println(USAGE);
+			System.err.println();
 			return 1;
 		}
 		String[] cmdArgs = new String[args.length-i];
@@ -1094,7 +1145,9 @@ public class ContentCouchCommand {
 			errorCount += runTouchCmd( cmdArgs );
 		} else {
 			System.err.println("ccouch: Unrecognised sub-command: " + cmd);
+			System.err.println();
 			System.err.println(USAGE);
+			System.err.println();
 			return 1;
 		}
 		return errorCount;
