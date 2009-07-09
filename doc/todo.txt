@@ -1,5 +1,4 @@
-- Better logging infrastructure
-  - Don't show 'GET xxx' message unless logging for that is turned on 
+- Option to create .ccouch-uri files only if directory and contents haven't been changed for a long time
 
 - Remember the repository most recently successfuly downloaded from and
   download from it first.
@@ -12,6 +11,9 @@
   - urn:sha1: -> http:
 
 == Done ==
+
+* Better logging infrastructure
+  - Don't show 'GET xxx' message unless logging for that is turned on 
 
 * While caching heads, should store heads in cache datastore, not just heads dir
 
