@@ -1,6 +1,3 @@
-- Remember the repository most recently successfuly downloaded from and
-  download from it first.
-
 - RdfNodes ought to read relative URIs as relative to the node's source URI.
   I don't think I ever did this.
 
@@ -9,6 +6,9 @@
   - urn:sha1: -> http:
 
 == Done ==
+
+* Remember the repository most recently successfuly downloaded from and
+  download from it first.
 
 * Better logging infrastructure
   - Don't show 'GET xxx' message unless logging for that is turned on 

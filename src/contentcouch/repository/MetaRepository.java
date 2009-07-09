@@ -617,6 +617,9 @@ public class MetaRepository extends BaseRequestHandler {
 		this.config = config;
 	}
 	
+	protected RepoConfig lastHitRepoConfig;
+	protected String lastHitDataSectorUri;
+	
 	public Response handleRequest( Request req ) {
 		if( "x-ccouch-repo://".equals(req.getUri()) ) {
 			SimpleDirectory sd = new SimpleDirectory();
@@ -682,8 +685,10 @@ public class MetaRepository extends BaseRequestHandler {
 			
 			//String sector = MetadataUtil.getKeyed(request.getMetadata(), RdfNamespace.STORE_SECTOR, rc.userStoreSector);
 		} else {
-			String urn = req.getUri(); 
-			for( Iterator i=config.getAllRepoConfigs().iterator(); i.hasNext(); ) {
+			String urn = req.getUri();
+			
+			// Check local repos
+			for( Iterator i=config.getDefaultAndLocalRepoConfigs().iterator(); i.hasNext(); ) {
 				RepoConfig repoConfig = (RepoConfig)i.next();
 				String psp = urnToPostSectorPath(repoConfig, urn);
 				if( psp == null ) continue;
@@ -695,6 +700,37 @@ public class MetaRepository extends BaseRequestHandler {
 						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
 						Response res = TheGetter.handleRequest(subReq);
 						if( res.getStatus() == Response.STATUS_NORMAL ) return res;
+					}
+				}
+			}
+			
+			// Check most recently hit remote repo
+			if( lastHitDataSectorUri != null ) {
+				String psp = urnToPostSectorPath(lastHitRepoConfig, urn);
+				BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(lastHitDataSectorUri, psp));
+				Response res = TheGetter.handleRequest(subReq);
+				if( res.getStatus() == Response.STATUS_NORMAL ) {
+					return res;
+				}
+			}
+			
+			// Check all remote repos
+			for( Iterator i=config.remoteRepoConfigs.iterator(); i.hasNext(); ) {
+				RepoConfig repoConfig = (RepoConfig)i.next();
+				String psp = urnToPostSectorPath(repoConfig, urn);
+				if( psp == null ) continue;
+
+				if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
+					List dataSectorUris = getRepoDataSectorUrls(repoConfig);
+					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
+						String dataSectorUri = (String)si.next();
+						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
+						Response res = TheGetter.handleRequest(subReq);
+						if( res.getStatus() == Response.STATUS_NORMAL ) {
+							lastHitDataSectorUri = dataSectorUri;
+							lastHitRepoConfig = repoConfig;
+							return res;
+						}
 					}
 				}
 			}

@@ -789,6 +789,8 @@ public class ContentCouchCommand {
 		String sourceUri = normalizeUri((String)opts.uris.get(0), false, true);
 		String destUri = normalizeUri((String)opts.uris.get(1), true, true);
 
+		Log.setStandardLogLevel(opts.logLevel);
+
 		return copy( sourceUri, destUri, opts );
 	}
 	

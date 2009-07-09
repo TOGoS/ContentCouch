@@ -37,6 +37,13 @@ public class MetaRepoConfig {
 	public List remoteRepoConfigs = new ArrayList();
 	public List loadedFromConfigUris = new ArrayList(); 
 	
+	public List getDefaultAndLocalRepoConfigs() {
+		ArrayList l = new ArrayList();
+		l.add(defaultRepoConfig);
+		l.addAll(localRepoConfigs);
+		return l;
+	}
+	
 	public List getAllRepoConfigs() {
 		ArrayList l = new ArrayList();
 		l.add(defaultRepoConfig);
