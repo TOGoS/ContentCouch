@@ -29,8 +29,7 @@ public class FileDirectory extends File implements WritableDirectory {
 		}
 		
 		public long getTargetLastModified() {
-			if( isFile() ) return lastModified();
-			return -1; // Mtime on a directory doesn't necessarily mean much, so let's ignore
+			return lastModified();
 		}
 
 		protected FileDirectory getTargetDirectory() {

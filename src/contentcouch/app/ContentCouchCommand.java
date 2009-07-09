@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import togos.rra.BaseRequest;
 import togos.rra.BaseResponse;
@@ -86,6 +88,12 @@ public class ContentCouchCommand {
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
 		"  -store-sector      ; data sub-dir to store data (defaults to \"user\")\n" +
 		"  -hide-inputs       ; do not show input URIs in final report\n" +
+		"  -create-uri-dot-files ; cache URNs of directories in .ccouch-uri files\n" +
+		"  -use-uri-dot-files    ; skip recursively storing directories containing\n" +
+		"                          .ccouch-uri files, instead trusting the URI within\n" +
+		"  -dcudfnt <time>    ; As an exception when creating uri dot files, don't\n" +
+		"                       create one for directories that contain any files\n" +
+		"                       modified more recently than the given time (see below)\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
 		"  -q                 ; quiet - show nothing\n" +
 		"  -?                 ; display help and exit\n" +
@@ -101,7 +109,10 @@ public class ContentCouchCommand {
 		"\n" +
 		"-relink is useful when a copy of the file is already in the\n" +
 		"repository and you want to make sure the data ends up being\n" +
-		"shared.  -relink implies -link.";
+		"shared.  -relink implies -link.\n" +
+		"\n" +
+		"<time> must be of the format '-<integer><unit>', where <unit> is one of\n" +
+		"'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', or 'years'\n";
 	
 	public String CHECKOUT_USAGE =
 		"Usage: ccouch [general options] checkout [checkout options] <source> <dest>\n" +
@@ -182,6 +193,39 @@ public class ContentCouchCommand {
 	
 	protected String[] mergeConfiguredArgs( String commandName, String[] commandLineArgs ) {
 		return concat( metaRepoConfig.getCommandArgs(commandName), commandLineArgs );
+	}
+	
+	Pattern DELTATIME_PATTERN = Pattern.compile("^(\\+|\\-)(\\d+)(\\w*)$");
+	
+	protected Date parseDeltaTime(Date relativeTo, String d) {
+		Matcher m = DELTATIME_PATTERN.matcher(d); 
+		if( m.matches() ) {
+			String sign = m.group(1);
+			long amount = Long.parseLong(m.group(2));
+			String unit = m.group(3);
+			long multiplier;
+			if( "".equals(unit) || "seconds".equals(unit) || "s".equals(unit) ) {
+				multiplier = 1000;
+			} else if( "minutes".equals(unit) ) {
+				multiplier = (long)(1000l*60);
+			} else if( "hours".equals(unit) ) {
+				multiplier = (long)(1000l*3600);
+			} else if( "days".equals(unit) ) {
+				multiplier = (long)(1000l*3600*24);
+			} else if( "weeks".equals(unit) ) {
+				multiplier = (long)(1000l*3600*24*7);
+			} else if( "months".equals(unit) ) {
+				multiplier = (long)(1000l*3600*24*30.4167);
+			} else if( "years".equals(unit) ) {
+				multiplier = (long)(1000l*3600*24*365.2425);
+			} else {
+				throw new RuntimeException("Unrecognised unit: " + unit);
+			}
+			if( "-".equals(sign) ) multiplier *= -1;
+			return new Date(relativeTo.getTime() + amount*multiplier);
+		} else {
+			throw new RuntimeException( "Badly formatted time delta: " + d );
+		}
 	}
 	
 	//// Dump stuff ////
@@ -303,6 +347,7 @@ public class ContentCouchCommand {
 		public boolean shouldUseCommitTargets = false;
 		public boolean shouldCreateUriDotFiles = false;
 		public boolean shouldUseUriDotFiles = false;
+		public Date shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = null;
 		public String storeSector;
 		public String fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_STRICTIG;
 		public String dirMergeMethod = null;
@@ -539,6 +584,8 @@ public class ContentCouchCommand {
 				opts.shouldCreateUriDotFiles = true;
 			} else if( "-use-uri-dot-files".equals(arg) ) {
 				opts.shouldUseUriDotFiles = true;
+			} else if( "-dcudfnt".equals(arg) ) {
+				opts.shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = parseDeltaTime(new Date(), args[++i]);
 			} else if( "-m".equals(arg) ) {
 				message = args[++i];
 			} else if( "-n".equals(arg) ) {
@@ -611,6 +658,10 @@ public class ContentCouchCommand {
 			if( opts.shouldCreateUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 			if( opts.shouldUseUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
 			putReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
+			putReq.putMetadata(CcouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN,
+				opts.shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan
+			);
+			
 			Response putRes = TheGetter.handleRequest(putReq);
 			if( putRes.getStatus() != Response.STATUS_NORMAL ) {
 				System.err.println("Couldn't PUT to " + dataDestUri + ": " + putRes.getContent());

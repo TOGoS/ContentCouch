@@ -16,9 +16,14 @@ public class BaseResponse implements Response {
 	
 	public int status;
 	public Object content;
+
 	public Map contentMetadata = Collections.EMPTY_MAP;
-	public Map metadata = Collections.EMPTY_MAP;
+	protected boolean contentMetadataClean = true;
 	
+	public Map metadata = Collections.EMPTY_MAP;
+	protected boolean metadataClean = true;
+
+
 	public BaseResponse() {
 		this(Response.STATUS_NORMAL, null);
 	}
@@ -26,8 +31,10 @@ public class BaseResponse implements Response {
 	public BaseResponse(Response r) {
 		this.status = r.getStatus();
 		this.content = r.getContent();
-		this.contentMetadata = new HashMap(r.getContentMetadata());
-		this.metadata = new HashMap(r.getMetadata());
+		this.contentMetadata = r.getContentMetadata();
+		this.contentMetadataClean = true;
+		this.metadata = r.getMetadata();
+		this.metadataClean = true;
 	}
 
 	public BaseResponse( int status, Object content ) {
@@ -53,12 +60,18 @@ public class BaseResponse implements Response {
 	public Map getMetadata() {  return metadata;  }
 	
 	public void putMetadata(String key, Object value) {
-		if( metadata == Collections.EMPTY_MAP ) metadata = new HashMap();
+		if( metadataClean ) {
+			metadata = new HashMap(metadata);
+			metadataClean = false;
+		}
 		metadata.put(key, value);
 	}
 
 	public void putContentMetadata(String key, Object value) {
-		if( contentMetadata == Collections.EMPTY_MAP ) contentMetadata = new HashMap();
+		if( contentMetadataClean ) {
+			contentMetadata = new HashMap();
+			contentMetadataClean = false;
+		}
 		contentMetadata.put(key, value);
 	}
 }

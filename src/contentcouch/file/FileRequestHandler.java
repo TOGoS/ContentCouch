@@ -13,6 +13,7 @@ import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.DcNamespace;
 
 public class FileRequestHandler extends BaseRequestHandler {
 	public Response handleRequest( Request req ) {
@@ -25,6 +26,7 @@ public class FileRequestHandler extends BaseRequestHandler {
 			if( f.exists() ) {
 				BaseResponse res = new BaseResponse();
 				res.content = FileUtil.getContentCouchObject(f);
+				res.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(f.lastModified()));
 				return res;
 			} else {
 				return new BaseResponse(Response.STATUS_DOESNOTEXIST, "File not found: " + path);

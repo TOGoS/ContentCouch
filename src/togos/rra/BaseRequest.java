@@ -33,6 +33,7 @@ public class BaseRequest implements Request {
 		this.uri = uri;
 		this.content = content;
 		this.contentMetadata = contentMetadata;
+		this.contentMetadataClean = true;
 	}
 
 	/** Make one just like req */
@@ -41,7 +42,9 @@ public class BaseRequest implements Request {
 		this.uri = req.getUri();
 		this.content = req.getContent();
 		this.contentMetadata = req.getContentMetadata();
+		this.contentMetadataClean = true;
 		this.metadata = req.getMetadata();
+		this.metadataClean = true;
 		this.contextVars = req.getContextVars();
 	}
 
@@ -51,7 +54,9 @@ public class BaseRequest implements Request {
 		this.uri = uri;
 		this.content = req.getContent();
 		this.contentMetadata = req.getContentMetadata();
+		this.contentMetadataClean = true;
 		this.metadata = req.getMetadata();
+		this.metadataClean = true;
 		this.contextVars = req.getContextVars();
 	}
 	

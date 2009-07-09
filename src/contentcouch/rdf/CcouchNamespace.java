@@ -58,6 +58,8 @@ public class CcouchNamespace {
 	public static final String REQ_SKIP_PREVIOUSLY_STORED_DIRS = CC_REQ_NS + "skipPreviouslyStoredDirectories";
 	public static final String REQ_USE_URI_DOT_FILES  = CC_REQ_NS + "useUriDotFiles";
 	public static final String REQ_CREATE_URI_DOT_FILES = CC_REQ_NS + "createUriDotFiles";
+	public static final String REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN =
+		CC_REQ_NS + "dontCreateUriDotFilesWhenHighestBlobMtimeGreaterThan";
 	
 	public static final String REQ_FILEMERGE_METHOD    = CC_REQ_NS + "fileMergeMethod";
 	public static final String REQ_FILEMERGE_FAIL      = "Fail";
@@ -84,6 +86,7 @@ public class CcouchNamespace {
 	public static final String RES_STORED_OBJECT = CC_RES_NS + "storedObject";
 	public static final String RES_CACHEABLE = CC_RES_NS + "cacheable";
 	public static final String RES_DEST_ALREADY_EXISTED = CC_RES_NS + "destinationAlreadyExisted";
+	public static final String RES_HIGHEST_BLOB_MTIME = CC_RES_NS + "highestBlobModificationTime";
 
 	//// Object types ////
 	

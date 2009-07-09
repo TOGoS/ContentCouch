@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -212,6 +213,10 @@ public class MetaRepository extends BaseRequestHandler {
 		subReq.verb = Request.VERB_PUT;
 		BaseResponse res = new BaseResponse( TheGetter.handleRequest(subReq) );
 		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, repoConfig.dataScheme.hashToUrn(hash));
+		Date mtime = (Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
+		if( mtime != null ) {
+			res.putMetadata(CcouchNamespace.RES_HIGHEST_BLOB_MTIME, mtime);
+		}
 		return res;
 	}
 
@@ -289,6 +294,8 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 		}		
 		
+		//(Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
+		Date highestMtime = null; // Don't pay attention to directory mtime
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			Object target = e.getTarget();
@@ -308,8 +315,16 @@ public class MetaRepository extends BaseRequestHandler {
 			targetPutReq.content = target;
 			targetPutReq.metadata = req.getMetadata();
 			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
+			long entryMtime = e.getTargetLastModified();
+			if( entryMtime != -1 ) {
+				targetPutReq.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(entryMtime));
+			}
 			Response targetPutRes = putData( repoConfig, targetPutReq );
 			TheGetter.getResponseValue(targetPutRes, targetPutReq);
+			Date subHighestMtime = (Date)targetPutRes.getMetadata().get(CcouchNamespace.RES_HIGHEST_BLOB_MTIME);
+			if( subHighestMtime != null && (highestMtime == null || subHighestMtime.compareTo(highestMtime) > 0) ) {
+				highestMtime = subHighestMtime;
+			}
 			String targetUri = MetadataUtil.getStoredIdentifier(targetPutRes);
 			if( targetUri == null ) throw new RuntimeException("Inserting entry target returned null");
 			rdfDir.addDirectoryEntry(new RdfDirectory.Entry(e, new BaseRef(targetUri)));
@@ -318,11 +333,23 @@ public class MetaRepository extends BaseRequestHandler {
 		BaseRequest dirPutReq = new BaseRequest();
 		dirPutReq.content = rdfDir;
 		dirPutReq.metadata = req.getMetadata();
-		Response dirPutRes = putDataRdf( repoConfig, dirPutReq );
+		BaseResponse dirPutRes = new BaseResponse(putDataRdf( repoConfig, dirPutReq ));
+		if( highestMtime != null ) {
+			dirPutRes.putContentMetadata(CcouchNamespace.RES_HIGHEST_BLOB_MTIME, highestMtime);
+		}
 
+		boolean oldEnough;
+		if( highestMtime == null ) {
+			oldEnough = true; // Meh?
+		} else {
+			Date noNewerThan = (Date)req.getMetadata().get(CcouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN);
+			oldEnough = (noNewerThan == null) ? true : highestMtime.before(noNewerThan); 
+		}
+		
 		String storedDirUri = MetadataUtil.getStoredIdentifier(dirPutRes);
 		if( d instanceof WritableDirectory &&
 			MetadataUtil.isEntryTrue(req.getMetadata(),CcouchNamespace.REQ_CREATE_URI_DOT_FILES) &&
+			oldEnough &&
 			storedDirUri != null
 		) {
 			MetadataUtil.saveCcouchUri( (WritableDirectory)d, storedDirUri );

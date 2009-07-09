@@ -54,7 +54,9 @@ public class RdfDirectory extends RdfNode implements Directory {
 			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
 
 			long modified = de.getTargetLastModified();
-			if( modified != -1 ) add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) && modified != -1 ) {
+				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			}
 			
 			long size = de.getTargetSize();
 			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
@@ -75,7 +77,9 @@ public class RdfDirectory extends RdfNode implements Directory {
 			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
 
 			long modified = de.getTargetLastModified();
-			if( modified != -1 ) add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) && modified != -1 ) {
+				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			}
 			
 			long size = de.getTargetSize();
 			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
