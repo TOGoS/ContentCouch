@@ -698,14 +698,12 @@ public class MetaRepository extends BaseRequestHandler {
 					String psp = urnToPostSectorPath(repoConfig, urn);
 					if( psp == null ) continue;
 	
-					if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
-						List dataSectorUris = getRepoDataSectorUrls(repoConfig);
-						for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
-							String dataSectorUri = (String)si.next();
-							BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
-							Response res = TheGetter.handleRequest(subReq);
-							if( res.getStatus() == Response.STATUS_NORMAL ) return res;
-						}
+					List dataSectorUris = getRepoDataSectorUrls(repoConfig);
+					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
+						String dataSectorUri = (String)si.next();
+						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
+						Response res = TheGetter.handleRequest(subReq);
+						if( res.getStatus() == Response.STATUS_NORMAL ) return res;
 					}
 				}
 				
@@ -725,17 +723,15 @@ public class MetaRepository extends BaseRequestHandler {
 					String psp = urnToPostSectorPath(repoConfig, urn);
 					if( psp == null ) continue;
 	
-					if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
-						List dataSectorUris = getRepoDataSectorUrls(repoConfig);
-						for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
-							String dataSectorUri = (String)si.next();
-							BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
-							Response res = TheGetter.handleRequest(subReq);
-							if( res.getStatus() == Response.STATUS_NORMAL ) {
-								lastHitDataSectorUri = dataSectorUri;
-								lastHitRepoConfig = repoConfig;
-								return res;
-							}
+					List dataSectorUris = getRepoDataSectorUrls(repoConfig);
+					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
+						String dataSectorUri = (String)si.next();
+						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
+						Response res = TheGetter.handleRequest(subReq);
+						if( res.getStatus() == Response.STATUS_NORMAL ) {
+							lastHitDataSectorUri = dataSectorUri;
+							lastHitRepoConfig = repoConfig;
+							return res;
 						}
 					}
 				}
