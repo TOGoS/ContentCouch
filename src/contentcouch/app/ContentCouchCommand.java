@@ -41,7 +41,8 @@ import contentcouch.value.Ref;
 public class ContentCouchCommand {
 	public String USAGE =
 		"Usage: ccouch [general options] <sub-command> [command-args]\n" +
-		"Run ccouch <subcommand> -? for further help\n" +
+		"Version: RRA\n" + 
+		"Run ccouch <subcommand> -? for further info about that command\n" +
 		"General options:\n" +
 		"  -repo <path>          ; specify main repository\n" +
 		"  -local-repo <path>    ; specify secondary local repository\n" +
@@ -54,16 +55,22 @@ public class ContentCouchCommand {
 		"  cache-heads ...       ; cache heads from another repository\n" +
 		"  id <files>            ; give URNs for files without storing\n" +
 		"  rdfify <dir>          ; print RDF listing of a directory\n" +
-		"  check                 ; check repo integrity and delete bad files";
+		"  check                 ; check repo integrity and delete bad files\n" +
+		"  touch                 ; remove directory content URI cache files";
 	
 	public String COPY_USAGE =
 		"Usage: ccouch [general options] copy [copy options] <src> <src> ... <dest>\n" +
-		"<src> and <dest> can be file paths, URIs, or \"-\"\n";
+		"  <src> and <dest> can be file paths, URIs, or \"-\"\n" +
+		"Options:\n" +
+		"  -link              ; when possible, hardlink files instead of copying\n";
 
 	public String ID_USAGE =
 		"Usage: ccouch [general options] id <uri> <uri> ...\n" +
 		"Options:\n" +
-		"  -hide-inputs  ; do not show input URIs";
+		"  -hide-inputs       ; do not show input URIs in final report\n" +
+		"\n" +
+		"Will report <input-uri>\t<identity-uri> on standard out unless -hide-inputs\n" +
+		"is specified, in which case only the identity URIs will be reported.";
 	
 	public String STORE_USAGE =
 		"Usage: ccouch [general options] store [store options] <file1> <file2> ...\n" +
@@ -78,9 +85,13 @@ public class ContentCouchCommand {
 		"  -dont-store        ; store nothing (same as using 'ccocuch id')\n" +
 		"  -relink            ; hardlink imported files to their stored counterpart\n" +
 		"  -store-sector      ; data sub-dir to store data (defaults to \"user\")\n" +
+		"  -hide-inputs       ; do not show input URIs in final report\n" +
 		"  -v                 ; verbose - report every path -> urn mapping\n" +
 		"  -q                 ; quiet - show nothing\n" +
 		"  -?                 ; display help and exit\n" +
+		"\n" +
+		"Will report <input-uri>\t<identity-uri> on standard out unless -hide-inputs\n" +
+		"is specified, in which case only the identity URIs will be reported." +
 		"\n" +
 		"If -m, -a, and/or -n are used, a commit will be created and its URN output.\n" +
 		"\n" +
@@ -499,6 +510,7 @@ public class ContentCouchCommand {
 		boolean storeDirs = true;
 		boolean forceCommit = false;
 		boolean followRefs = false;
+		boolean reportInputs = true;
 		String storeSector = "user";
 		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i < args.length; ++i ) {
@@ -506,6 +518,8 @@ public class ContentCouchCommand {
 			if( arg.length() == 0 ) {
 				System.err.println(STORE_USAGE);
 				return 1;
+			} else if( "-hide-inputs".equals(arg) ) {
+				reportInputs = false;
 			} else if( "-files-only".equals(arg) ) {
 				storeDirs = false;
 			} else if( "-q".equals(arg) ) {
@@ -608,7 +622,11 @@ public class ContentCouchCommand {
 					Log.log(Log.EVENT_ERROR, "Did not recieve identifier after storing " + sourceUri);
 					++errorCount;
 				} else {
-					Log.log(Log.EVENT_STORED, sourceUri, storedUri);
+					if( reportInputs ) {
+						System.out.println( sourceUri + "\t" + storedUri );
+					} else {
+						System.out.println( storedUri );
+					}
 				}
 			}
 		}
@@ -857,6 +875,7 @@ public class ContentCouchCommand {
 		String dir = null;
 		boolean nested = false;
 		boolean followRefs = false;
+		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
@@ -875,6 +894,8 @@ public class ContentCouchCommand {
 			}
 		}
 		
+		Log.setStandardLogLevel(opts.logLevel);
+		
 		if( dir == null ) {
 			System.err.println("No directory specified");
 			System.err.println(RDFIFY_USAGE);
@@ -889,6 +910,72 @@ public class ContentCouchCommand {
 		Directory d = (Directory)o;
 		RdfDirectory rdf = new RdfDirectory(d, metaRepoConfig.getMetaRepository().getTargetRdfifier(nested, followRefs));
 		System.out.println(rdf.toString());
+		return 0;
+	}
+	
+	protected void touch( File f ) {
+		if( f.isDirectory() ) {
+			File uriFile = new File(f + "/.ccouch-uri");
+			if( uriFile.exists() ) {
+				Log.log(Log.EVENT_DELETED, uriFile.getPath());
+				uriFile.delete();				
+			}
+		}
+	}
+	protected void touchParents( File f ) {
+		f = f.getParentFile();
+		while( f != null ) {
+			touch(f);
+			f = f.getParentFile();
+		}
+	}
+	protected void touchChildren( File f ) {
+		if( f.isDirectory() ) {
+			File[] subs = f.listFiles();
+			for( int i=0; i<subs.length; ++i ) {
+				File sub = subs[i];
+				if( sub.isDirectory() ) {
+					touch(sub);
+					touchChildren(sub);
+				}
+			}
+		}
+	}
+	
+	public int runTouchCmd( String[] args ) {
+		args = mergeConfiguredArgs("touch", args);
+		boolean recursive = false;
+		List uris = new ArrayList();
+		GeneralOptions opts = new GeneralOptions();
+		for( int i=0; i<args.length; ++i ) {
+			String arg = args[i];
+			if( arg.equals("-r") ) {
+				recursive = true;
+			} else if( !arg.startsWith("-") ) {
+				uris.add(normalizeUri(arg, true, true));
+			}
+		}
+		Log.setStandardLogLevel(opts.logLevel);
+		int errorCount = 0;
+		for( Iterator pi=uris.iterator(); pi.hasNext(); ) {
+			String uri = (String)pi.next();
+			if( !uri.startsWith("file:") ) {
+				System.err.println("'touch' currently only supports file URIs, " + uri + " given");
+				++errorCount;
+				continue;
+			}
+			String filePath = PathUtil.parseFilePathOrUri(uri).toString();
+			File f = new File(filePath);
+			if( !f.exists() ) {
+				System.err.println("File " + f + " does not exist");
+				++errorCount;
+				continue;
+			}
+			f = f.getAbsoluteFile();
+			touch(f);
+			if( recursive ) touchChildren(f);
+			touchParents(f);				
+		}
 		return 0;
 	}
 	
@@ -950,6 +1037,8 @@ public class ContentCouchCommand {
 			errorCount += runIdCmd( cmdArgs );
 		} else if( "rdfify".equals(cmd) ) {
 			errorCount += runRdfifyCmd( cmdArgs );
+		} else if( "touch".equals(cmd) ) {
+			errorCount += runTouchCmd( cmdArgs );
 		} else {
 			System.err.println("ccouch: Unrecognised sub-command: " + cmd);
 			System.err.println(USAGE);

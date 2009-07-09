@@ -54,6 +54,7 @@ public class Log {
 		addLogger( EVENT_ERROR, stderrLogger );
 		if( level < LEVEL_NORMAL    ) return;
 		addLogger( EVENT_WARNING, stderrLogger );
+		addLogger( EVENT_DELETED, stderrLogger );
 		if( level < LEVEL_DOWNLOADS ) return;
 		addLogger( EVENT_DOWNLOAD_STARTED, new Logger() {
 			public void log(String eventName, String[] arguments) {
@@ -64,6 +65,7 @@ public class Log {
 		});
 		addLogger( EVENT_PUT, stderrLogger );
 		addLogger( EVENT_REPLACED, stderrLogger );
+		addLogger( EVENT_STORED, stderrLogger );
 		if( level < LEVEL_VERBOSE   ) return;
 		addLogger( EVENT_KEPT, stderrLogger );
 		if( level < LEVEL_DEBUG     ) return;
