@@ -106,7 +106,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			String[] pathComp = pi.substring(1).split("/");
 			String inputUri = request.getParameter("uri");
 			if( "explore".equals(pathComp[0]) ) {
-			    if( uri != null ) {
+			    if( inputUri != null ) {
 					shouldRewriteRelativeUris = true;
 					loadPath = "/explore?uri=";
 				} else if( pi.startsWith("/explore/") ) {
