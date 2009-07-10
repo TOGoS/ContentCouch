@@ -46,6 +46,7 @@ public class BaseRequest implements Request {
 		this.metadata = req.getMetadata();
 		this.metadataClean = true;
 		this.contextVars = req.getContextVars();
+		this.contextVarsClean = true;
 	}
 
 	/** Make one just like req, but with a different URI */
@@ -58,6 +59,7 @@ public class BaseRequest implements Request {
 		this.metadata = req.getMetadata();
 		this.metadataClean = true;
 		this.contextVars = req.getContextVars();
+		this.contextVarsClean = true;
 	}
 	
 	public String getVerb() {  return verb;  }

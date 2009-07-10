@@ -577,7 +577,6 @@ public class ContentCouchCommand {
 		boolean forceCommit = false;
 		boolean followRefs = false;
 		boolean reportInputs = true;
-		String storeSector = "user";
 		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
@@ -600,7 +599,7 @@ public class ContentCouchCommand {
 				opts.shouldLinkStored = true;
 				opts.shouldRelinkImported = true;
 			} else if( "-store-sector".equals(arg) ) {
-				storeSector = args[++i];
+				opts.storeSector = args[++i];
 			} else if( "-follow-refs".equals(arg) ) {
 				followRefs = true;
 			} else if( "-create-uri-dot-files".equals(arg) ) {
@@ -632,6 +631,16 @@ public class ContentCouchCommand {
 		}
 		Log.setStandardLogLevel(opts.logLevel);
 
+		String commitDestUri = null;
+		if( name != null ) {
+			if( metaRepoConfig.defaultRepoConfig.name == null ) {
+				System.err.println("ccouch store: Would not be able to create head for commit;");
+				System.err.println("default repository is not named");
+				return 1;
+			}
+			commitDestUri = "x-ccouch-repo:heads/" + metaRepoConfig.defaultRepoConfig.name + "/" + name + "/new";
+		}
+		
 		boolean createCommit = forceCommit || (author != null) || (name != null) || (message != null);
 		int errorCount = 0;
 		
@@ -642,7 +651,7 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		String dataDestUri = "x-ccouch-repo:data/" + (storeSector != null ? storeSector + "/" : "");
+		String dataDestUri = "x-ccouch-repo:data/";;
 		String storedUri = null;
 		for( Iterator i=sourceUris.iterator(); i.hasNext(); ) {
 			String sourceUri = (String)i.next();
@@ -678,6 +687,7 @@ public class ContentCouchCommand {
 			putReq.content = o;
 			putReq.contentMetadata = new HashMap(getRes.getContentMetadata());
 			putReq.contentMetadata.put(CcouchNamespace.SOURCE_URI, sourceUri);
+			if( opts.storeSector != null ) putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 			if( opts.shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
 			if( opts.shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
 			if( opts.shouldCreateUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
@@ -756,35 +766,48 @@ public class ContentCouchCommand {
 			// Data already stored, so we don't really need to worry about rdfifying, here
 			RdfCommit rdfCommit = new RdfCommit(commit, metaRepoConfig.getMetaRepository().getTargetRdfifier(false,false));
 			
-			String commitDestUri;
-			if( name != null ) {
-				commitDestUri = "x-ccouch-repo:heads/" + metaRepoConfig.defaultRepoConfig.name + "/" + name + "/new";
-			} else {
-				commitDestUri = dataDestUri;
-			}
-			
-			BaseRequest storeCommitReq = new BaseRequest(Request.VERB_PUT, commitDestUri);
+			BaseRequest storeCommitReq = new BaseRequest(Request.VERB_PUT, dataDestUri);
 			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
+			if( opts.storeSector != null ) storeCommitReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
+			if( opts.shouldLinkStored ) storeCommitReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
+			storeCommitReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
 			Response storeCommitRes = TheGetter.handleRequest(storeCommitReq);
 			if( storeCommitRes.getStatus() != Response.STATUS_NORMAL ) {
-				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + commitDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
+				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + dataDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
 				++errorCount;
 				break createCommit;
 			}
-			String commitUrn = MetadataUtil.getStoredIdentifier(storeCommitRes);
-			if( commitUrn == null ) {
+			
+			String commitBlobUrn = MetadataUtil.getStoredIdentifier(storeCommitRes);
+			if( commitBlobUrn == null ) {
 				Log.log(Log.EVENT_ERROR, "Did not recieve identifier after storing commit.");
 				++errorCount;
 				break createCommit;
 			}
-			commitUrn = "x-parse-rdf:" + commitUrn;
+
+			String commitUrn = "x-parse-rdf:" + commitBlobUrn;
 			
-			Log.log(Log.EVENT_STORED, "New Commit", commitUrn);
+			if( reportInputs ) {
+				System.out.println( "New Commit\t" + commitUrn );
+			} else {
+				System.out.println( commitUrn );
+			}
 
 			if( parentCommitListUri != null ) {
 				Response storeCommitUriRes = writeCommitUri(parentCommitListUri, commitUrn);
 				if( storeCommitUriRes.getStatus() != Response.STATUS_NORMAL ) {
 					Log.log(Log.EVENT_WARNING, "Could not PUT new commit URI list to " + parentCommitListUri + ": " + BaseResponse.getErrorSummary(storeCommitUriRes));
+					break createCommit;
+				}
+			}
+
+			if( commitDestUri != null ) {
+				BaseRequest storeCommitHeadReq = new BaseRequest(storeCommitReq, commitDestUri);
+				storeCommitHeadReq.content = TheGetter.get(commitBlobUrn);
+				Response storeCommitHeadRes = TheGetter.handleRequest(storeCommitHeadReq);
+				if( storeCommitHeadRes.getStatus() != Response.STATUS_NORMAL ) {
+					Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + commitDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
+					++errorCount;
 					break createCommit;
 				}
 			}
