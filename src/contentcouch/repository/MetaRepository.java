@@ -337,7 +337,7 @@ public class MetaRepository extends BaseRequestHandler {
 		dirPutReq.metadata = req.getMetadata();
 		BaseResponse dirPutRes = new BaseResponse(putDataRdf( repoConfig, dirPutReq ));
 		if( highestMtime != null ) {
-			dirPutRes.putContentMetadata(CcouchNamespace.RES_HIGHEST_BLOB_MTIME, highestMtime);
+			dirPutRes.putMetadata(CcouchNamespace.RES_HIGHEST_BLOB_MTIME, highestMtime);
 		}
 
 		boolean oldEnough;
