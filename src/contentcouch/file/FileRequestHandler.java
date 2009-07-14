@@ -7,7 +7,7 @@ import togos.rra.BaseRequestHandler;
 import togos.rra.BaseResponse;
 import togos.rra.Request;
 import togos.rra.Response;
-import contentcouch.directory.MergeUtil;
+import contentcouch.directory.DirectoryMerger;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
@@ -49,7 +49,10 @@ public class FileRequestHandler extends BaseRequestHandler {
 				newEntry.targetLastModified = lastModified.getTime();
 			}
 			BaseResponse res = new BaseResponse();
-			if( MergeUtil.put(destDir, newEntry, new MergeUtil.RegularConflictResolver(req.getMetadata()), MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getUri()) ) {
+			
+			DirectoryMerger merger = new DirectoryMerger( new DirectoryMerger.RegularConflictResolver(req.getMetadata()), false );
+			
+			if( merger.put(destDir, newEntry, MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getUri()) ) {
 				res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
 			}
 			return res;

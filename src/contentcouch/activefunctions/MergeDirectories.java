@@ -8,9 +8,10 @@ import togos.rra.BaseResponse;
 import togos.rra.Response;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;
-import contentcouch.directory.MergeUtil;
+import contentcouch.directory.DirectoryMerger;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 
@@ -19,17 +20,18 @@ public class MergeDirectories extends BaseActiveFunction {
 		List expressions = getPositionalArgumentExpressions(argumentExpressions);
 		SimpleDirectory result = new SimpleDirectory();
 		
-		MergeUtil.RegularConflictResolver conflictResolver = new MergeUtil.RegularConflictResolver();
+		DirectoryMerger.RegularConflictResolver conflictResolver = new DirectoryMerger.RegularConflictResolver();
 		String fileMergeMethod = ValueUtil.getString(getArgumentValue(argumentExpressions, "file-merge-method", null));
 		if( fileMergeMethod != null ) conflictResolver.fileMergeMethod = fileMergeMethod;
-		String dirMergeMethod = ValueUtil.getString(getArgumentValue(argumentExpressions, "dir-merge-method", null));
-		if( dirMergeMethod != null ) conflictResolver.dirMergeMethod = dirMergeMethod;
+		//String dirMergeMethod = ValueUtil.getString(getArgumentValue(argumentExpressions, "dir-merge-method", null));
+		//if( dirMergeMethod != null ) conflictResolver.dirMergeMethod = dirMergeMethod;
+		conflictResolver.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
 		
 		for( Iterator i=expressions.iterator(); i.hasNext(); ) {
 			Expression exp = (Expression)i.next();
 			String uri = exp.toString();
 			Directory indir = (Directory)TheGetter.getResponseValue(exp.eval(), uri);
-			MergeUtil.putAll( result, indir, conflictResolver, uri, "x-unknown:new-directory" );
+			new DirectoryMerger( conflictResolver, true ).putAll( result, indir, uri, "x-unknown:new-directory" );
 		}
 		return new BaseResponse(Response.STATUS_NORMAL, result);
 	}

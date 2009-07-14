@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import contentcouch.blob.BlobUtil;
-import contentcouch.directory.MergeUtil;
+import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
@@ -81,7 +81,7 @@ public class FileDirectory extends File implements WritableDirectory {
 			
 			if( value instanceof Directory ) {
 				FileUtil.mkdirs(this);
-				MergeUtil.putAll(getTargetDirectory(), (Directory)value, null, "x-unknown:source", "x-unknown:dest-file-directory");
+				new DirectoryMerger( null, false ).putAll(getTargetDirectory(), (Directory)value, "x-unknown:source", "x-unknown:dest-file-directory");
 				return;
 			}
 			

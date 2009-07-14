@@ -46,14 +46,6 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			this.targetLastModified = e.getTargetLastModified();
 		}
 		
-		public Entry(Directory.Entry e, int cloneFlags ) {
-			this.name = e.getName();
-			this.target = e.getTarget();
-			this.targetType = e.getTargetType();
-			this.targetSize = e.getTargetSize();
-			this.targetLastModified = e.getTargetLastModified();
-		}
-		
 		public Entry( String name, Object target, String targetType ) {
 			this.name = name;
 			this.target = target;
@@ -105,9 +97,10 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			if( target == null ) continue;
 			Entry newEntry = new Entry();
 			newEntry.name = entry.getName();
+			newEntry.target = target;
 			newEntry.targetType = entry.getTargetType();
 			newEntry.targetSize = entry.getTargetSize();
-			newEntry.target = target;
+			newEntry.targetLastModified = entry.getTargetLastModified();
 			addDirectoryEntry(newEntry);
 		}
 	}
