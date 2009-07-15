@@ -1,66 +1,45 @@
-More coonceptual details about ContentCouch can be found on the wiki at
-http://wiki.github.com/TOGoS/contentcouch and in the doc/ of the project
-directory.  This file gives some detail about the implementation, and will
-hopefully help you get the 'ccouch' command and/or the web servlet running.
+More conceptual details about ContentCouch can be found on the wiki at
+http://wiki.github.com/TOGoS/contentcouch and under doc/ in the project
+directory.  This file gives is intended only to help you get started
+using ContentCouch.
 
 == Repository set up ==
 
-All you need to do to 'set up' a new repository is decide what directory
-you want it to be in and what you want to name it.  Each repository is
-a directory containing a set of data files, 'heads' (named pointers to
-notable objects), and cache files.
+The first step to using ContentCouch is to create and name a repository.
 
-It is perfectly acceptable to have a single repository that stores objects
-and heads for many projects, but you may want to create other repositories
-to simplify file management.
+A repository can store any number of files from any number of projects.
 
-When deciding on a name for your repository, you should choose something
-unique, as anyone who wants to download files from your repository will need
-to use this name to identify it.  A good convention is to include the name
-of the computer on which the repository resides and the role that it serves.
+If you want to use hardlinks between the repository and your files (this
+saves space but also causes your files to be read-only, a good solution for
+large media files but not for smaller files that change often), you should
+create the repository on the same partition as the files you want to store
+in it.
 
-See 'Heads' for more information on how repository names are used.
+Your repository will also need a name.  Choose something short but relatively
+unique.  If your computer already has host/domain name, that would be a good
+choice.
 
-If you will be using ccouch to download files from other computers, you should
-either set up a second, 'cache', repository, or configure the main repository
-to use itself as a cache by adding the following line to <repo-path>/ccouch-config
-(which will not exist if you have not already run some ccouch commands):
+To create the repository, just store a few files in it by running
 
-  -use-main-repo-as-cache
+  ccouch -repo:<repo-name> <path-to-repo> store [-link] <file1> <file2> ...
 
-See the 'Repository Roles' section for details on other repository roles and why
-it may be useful to have more than one repository on one computer.
+As an example, this might look like:
+  
+  java -cp C:/apps/ccouch/web/WEB-INF/classes \
+  contentcouch.app.ContentCouchCommand \
+  -repo:togos-backup3 file:///F:/datastore/ccouch \
+  store -link helloworld.txt
 
-== ccouch Command ==
+(backslashes indicate that the command continues on the next line.)
 
-...better installation instructions pending
+For obvious reasons, you would benefit by creating a shell script/batch
+file to call ccouch for you.  Example scripts are included in the project:
+ccouch.sh and ccouch.bat, for Unix and Windows, respectively.  These scripts
+call java with the ccouch classpath and main class, specify a repository,
+and pass through any additional parameters.
 
-Basically you'll want to copy ccouch.sh or ccouch.bat to a location in
-your path and change the paths within to point at the ContentCouch program
-directory and your local repositories.
-
-Run 'ccouch -?' to see a list of sub-commands, and 'ccouch <subcommand> -?'
-to see a list of options for the given sub-command.
-
-== Servlet ==
-
-A shell script is included (winstone.sh for unix, winstone.bat for windows)
-that will start up the Winstone servlet container with the
-ContentCouchExplorerServlet.  This servlet may work with other containers,
-but has not been tested with them.
-
-The purpose of the servlet is to give you a way to easily poke around in
-your repositories.  It is not a necessary component to use ccouch.
-
-The included shell scripts point Winstone to the web/ directory in the
-ContentCouch project.  This directory contains:
-
-  repo-config - configuration file used to initialize the servlet repository
-  WEB-INF/classes - where all the class files are loaded from
-  WEB-INF/web.xml - servlet configuration file
-
-repo-config in the web folder should generally be a single line pointing
-to the actual location of the main repository.
+For more information, run 'ccouch -?' to see a list of sub-commands, and
+'ccouch <subcommand> -?' to see a list of options for any given sub-command.
 
 == Repositories and Configuration Files ==
 
@@ -170,6 +149,26 @@ For convenience, 'ccouch cache-heads' does some special handling of head
 paths.  For more information, run
 
   ccouch cache-heads -?
+
+== Servlet ==
+
+A shell script is included (winstone.sh for unix, winstone.bat for windows)
+that will start up the Winstone servlet container with the
+ContentCouchExplorerServlet.  This servlet may work with other containers,
+but has not been tested with them.
+
+The purpose of the servlet is to give you a way to easily poke around in
+your repositories.  It is not a necessary component to use ccouch.
+
+The included shell scripts point Winstone to the web/ directory in the
+ContentCouch project.  This directory contains:
+
+  repo-config - configuration file used to configure the servlet repository
+  WEB-INF/classes - where all the class files are loaded from
+  WEB-INF/web.xml - servlet configuration file
+
+repo-config in the web folder should generally be a single line pointing
+to the actual location of the main repository.
 
 == Example: Joe's Laptop == 
 
