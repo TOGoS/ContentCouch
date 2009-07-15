@@ -3,6 +3,9 @@
  */
 package contentcouch.repository;
 
+import contentcouch.contentaddressing.ContentAddressingScheme;
+import contentcouch.contentaddressing.Sha1Scheme;
+
 public class RepoConfig {
 	public static final String DISPOSITION_DEFAULT = "default";
 	public static final String DISPOSITION_LOCAL = "local";

@@ -1,4 +1,4 @@
-package contentcouch.repository;
+package contentcouch.contentaddressing;
 
 import org.bitpedia.util.Base32;
 
@@ -15,15 +15,15 @@ public class Sha1Scheme implements ContentAddressingScheme {
 		return "Base32-encoded SHA-1";
 	}
 	public String getRdfKey() {
-		return CcouchNamespace.BASE32SHA1;
+		return CcouchNamespace.SHA1BASE32;
 	}
 	
-	protected static String SHA1URNPREFIX = "urn:sha1:";
-	protected static String BITPRINTURNPREFIX = "urn:bitprint:";
+	public static String SHA1URNPREFIX = "urn:sha1:";
+	public static int SHA1BASE32LENGTH = 32;
 	
 	/** Return true if the given URN is in the domain of this addressing scheme */ 
 	public boolean wouldHandleUrn( String urn ) {
-		return urn.startsWith(SHA1URNPREFIX) || urn.startsWith(BITPRINTURNPREFIX);
+		return urn.startsWith(SHA1URNPREFIX) || urn.startsWith(BitprintScheme.BITPRINTURNPREFIX);
 	}
 
 	/** Return the canonical identifier of the given blob */
@@ -42,18 +42,18 @@ public class Sha1Scheme implements ContentAddressingScheme {
 
 	// Convert to/from URN
 	public String hashToUrn( byte[] hash ) {
-		return "urn:sha1:" + Base32.encode(hash);
+		return SHA1URNPREFIX + Base32.encode(hash);
 	}
 	public byte[] urnToHash( String urn ) {
 		String b32 = urn;
 		if( urn.startsWith(SHA1URNPREFIX) ) {
-			b32 = urn.substring(SHA1URNPREFIX.length(),SHA1URNPREFIX.length()+32);
-		} else if( urn.startsWith(BITPRINTURNPREFIX) ) {
-			b32 = urn.substring(BITPRINTURNPREFIX.length(),BITPRINTURNPREFIX.length()+32);
+			b32 = urn.substring(SHA1URNPREFIX.length(),SHA1URNPREFIX.length()+SHA1BASE32LENGTH);
+		} else if( urn.startsWith(BitprintScheme.BITPRINTURNPREFIX) ) {
+			b32 = urn.substring(BitprintScheme.BITPRINTURNPREFIX.length(),BitprintScheme.BITPRINTURNPREFIX.length()+SHA1BASE32LENGTH);
 		} else {
 			throw new BadlyFormedUrnException(urn);
 		}
-		if( b32.length() < 32 ) throw new BadlyFormedUrnException(urn);
+		if( b32.length() < SHA1BASE32LENGTH ) throw new BadlyFormedUrnException(urn);
 		return Base32.decode(b32);
 	}
 	
@@ -62,7 +62,7 @@ public class Sha1Scheme implements ContentAddressingScheme {
 		return Base32.encode(hash);
 	}
 	public byte[] filenameToHash( String filename ) {
-		if( filename.length() < 32 ) throw new BadlyFormedFilenameException(filename);
+		if( filename.length() < SHA1BASE32LENGTH ) throw new BadlyFormedFilenameException(filename);
 		return Base32.decode(filename);
 	}
 }

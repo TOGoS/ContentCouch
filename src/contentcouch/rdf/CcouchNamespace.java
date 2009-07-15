@@ -21,6 +21,7 @@ public class CcouchNamespace {
 	
 	public static final String CC_NS = "http://ns.nuke24.net/ContentCouch/";
 	public static final String INTERNAL_NS = CC_NS + "Internal/";
+	public static final String BZ_NS = "http://bitzi.com/xmlns/2002/01/bz-core#";
 	
 	public static final String NAME             = CC_NS + "name";
 	public static final String TAG              = CC_NS + "tag";
@@ -38,7 +39,9 @@ public class CcouchNamespace {
 	public static final String PARENT           = CC_NS + "parent";
 
 	public static final String HARDLINKABLE     = CC_NS + "hardlinkable";
-	public static final String BASE32SHA1       = CC_NS + "base32Sha1";
+	public static final String SHA1BASE32       = CC_NS + "sha1Base32";
+	public static final String BITPRINT         = CC_NS + "bitprint";
+	public static final String BASE32TIGERTREE  = BZ_NS + "fileTigerTree";
 	public static final String PARSED_FROM      = CC_NS + "parsedFrom";
 
 	public static final String DIRECTORY        = CC_NS + "Directory";

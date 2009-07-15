@@ -1,4 +1,4 @@
-package contentcouch.repository;
+package contentcouch.contentaddressing;
 
 import contentcouch.value.Blob;
 

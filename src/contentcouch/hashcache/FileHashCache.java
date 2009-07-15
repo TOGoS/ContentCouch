@@ -5,10 +5,10 @@ import java.io.IOException;
 
 import org.bitpedia.util.Base32;
 
+import contentcouch.contentaddressing.ContentAddressingScheme;
+import contentcouch.contentaddressing.Sha1Scheme;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
-import contentcouch.repository.ContentAddressingScheme;
-import contentcouch.repository.Sha1Scheme;
 
 
 
