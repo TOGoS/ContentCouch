@@ -50,7 +50,7 @@ public class DirectoryMerger {
 			if( Bitprint.isBitprintCompatibleUri(givenUrn) ) return givenUrn;
 			if( b instanceof FileBlob ) {
 				// Then we can ask the repository for the cached identifier...
-				String urn = TheGetter.identify("x-ccouch-repo:identify", Collections.EMPTY_MAP);
+				String urn = TheGetter.identify(b, Collections.EMPTY_MAP);
 				if( Bitprint.isBitprintCompatibleUri(urn) ) return urn;
 			}
 			return null;
@@ -59,7 +59,7 @@ public class DirectoryMerger {
 		protected boolean blobsAreEqual( Blob srcBlob, Blob destBlob, String srcUri, String destUri ) {
 			// First, try to compare URNs, which might have been passed in or cached somewhere
 			srcUri = getComparableUrn( srcBlob, srcUri );
-			destUri = getComparableUrn( srcBlob, destUri );
+			destUri = getComparableUrn( destBlob, destUri );
 			if( srcUri != null && destUri != null ) {
 				if( srcUri.equals(destUri) ) return true; // save a little bit of parsing time...
 				Boolean equivalence = Bitprint.getUriEquivalence(srcUri, destUri);
