@@ -1,10 +1,13 @@
 package contentcouch.directory;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
 import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
+import contentcouch.contentaddressing.BitprintScheme.Bitprint;
+import contentcouch.file.FileBlob;
 import contentcouch.misc.Function1;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
@@ -16,7 +19,7 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 import contentcouch.value.Directory.Entry;
 
-public class DirectoryMerger {	
+public class DirectoryMerger {
 	public static interface ConflictResolver {
 		public void resolve( WritableDirectory dir, Directory.Entry e1, Directory.Entry e2, String srcUri, String destUri );
 	};
@@ -37,6 +40,35 @@ public class DirectoryMerger {
 			}
 			if( fileMergeMethod == null ) fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_FAIL;
 			if( dirMergeMethod == null ) dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_FAIL;
+		}
+		
+		// TODO: URI equivalence checker should probably be configurable.
+		// For now, just use the static Bitprint functions.
+		// Maybe move these functions to a utility class, too.
+
+		protected String getComparableUrn( Blob b, String givenUrn ) {
+			if( Bitprint.isBitprintCompatibleUri(givenUrn) ) return givenUrn;
+			if( b instanceof FileBlob ) {
+				// Then we can ask the repository for the cached identifier...
+				String urn = TheGetter.identify("x-ccouch-repo:identify", Collections.EMPTY_MAP);
+				if( Bitprint.isBitprintCompatibleUri(urn) ) return urn;
+			}
+			return null;
+		}
+		
+		protected boolean blobsAreEqual( Blob srcBlob, Blob destBlob, String srcUri, String destUri ) {
+			// First, try to compare URNs, which might have been passed in or cached somewhere
+			srcUri = getComparableUrn( srcBlob, srcUri );
+			destUri = getComparableUrn( srcBlob, destUri );
+			if( srcUri != null && destUri != null ) {
+				if( srcUri.equals(destUri) ) return true; // save a little bit of parsing time...
+				Boolean equivalence = Bitprint.getUriEquivalence(srcUri, destUri);
+				if( equivalence != null ) return equivalence.booleanValue();
+			}
+			
+			// This can be really expensive, which is why we tried to avoid it...
+			System.err.println("Comparing blobs, oh no!");
+			return BlobUtil.blobsEqual(srcBlob, destBlob);
 		}
 		
 		protected void mergeBlob(WritableDirectory dir, Entry e1, Entry e2, String mergeMethod) {
@@ -60,7 +92,7 @@ public class DirectoryMerger {
 					Blob b1 = BlobUtil.getBlob(DirectoryUtil.getTargetValue(e1.getTarget()));
 					Blob b2 = BlobUtil.getBlob(DirectoryUtil.getTargetValue(e2.getTarget()));
 					String[] options = fileMergeMethod.substring(5).split(":");
-					if( BlobUtil.blobsEqual(b1, b2) ) {
+					if( blobsAreEqual(b1, b2, srcUri, destUri) ) {
 						mergeBlob( dir, e1, e2, options[0] );
 					} else {
 						mergeBlob( dir, e1, e2, options[1] );

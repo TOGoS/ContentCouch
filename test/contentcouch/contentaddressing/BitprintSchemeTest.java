@@ -58,5 +58,10 @@ public class BitprintSchemeTest extends TestCase {
 		// Compare SHA-1 and TigerTree URNs (null)
 		assertNull( Bitprint.getUriEquivalence("urn:sha1:"+sha1a, "urn:tree:tiger:"+tta) );
 		assertNull( Bitprint.getUriEquivalence("urn:tree:tiger:"+tta, "urn:sha1:"+sha1a) );
+		
+		// Compare other schemes (null)
+		assertNull( Bitprint.getUriEquivalence("urn:tree:tiger:"+tta, "http://www.nuke24.net/") );
+		assertNull( Bitprint.getUriEquivalence("urn:sha1:"+sha1a, "http://www.nuke24.net/") );
+		assertNull( Bitprint.getUriEquivalence("http://slashdot.org/", "http://www.nuke24.net/") );
 	}
 }

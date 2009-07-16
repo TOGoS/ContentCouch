@@ -112,6 +112,14 @@ public class BitprintScheme implements ContentAddressingScheme {
 			if( bp2 == null ) return null;
 			return getEquivalence(bp1, bp2);
 		}
+		
+		/** Returns true if the given uri is any of the bitprint-compatible schemes (bitprint,sha1,tigertree) */
+		public static boolean isBitprintCompatibleUri( String uri ) {
+			return
+				uri.startsWith(BitprintScheme.BITPRINTURNPREFIX) ||
+				uri.startsWith(Sha1Scheme.SHA1URNPREFIX) ||
+				uri.startsWith(TigerTreeScheme.TIGERTREEURNPREFIX);
+		}
 	}
 	
 	public static final BitprintScheme instance = new BitprintScheme();

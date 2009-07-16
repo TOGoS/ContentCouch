@@ -81,8 +81,8 @@ public class TheGetter {
 		return (Directory)get("active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(uri));
 	}
 	
-	public static String identify( Object obj, Map metadata ) {
-		BaseRequest idReq = new BaseRequest(Request.VERB_POST, "x-ccouch-repo:identify", obj, metadata );
+	public static String identify( Object content, Map contentMetadata ) {
+		BaseRequest idReq = new BaseRequest(Request.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata );
 		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.handleRequest(idReq), idReq.uri));
 	}
 }
