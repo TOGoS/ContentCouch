@@ -154,7 +154,7 @@ public class MetadataUtil {
 	
 	public static String getSourceUriOrUnknown( Map metadata ) {
 		String sourceUri = (String)metadata.get(CcouchNamespace.SOURCE_URI);
-		if( sourceUri == null ) sourceUri = "x-unknown:source";
+		if( sourceUri == null ) sourceUri = "x-undefined:source";
 		return sourceUri;
 	}
 	

@@ -81,7 +81,7 @@ public class FileDirectory extends File implements WritableDirectory {
 			
 			if( value instanceof Directory ) {
 				FileUtil.mkdirs(this);
-				new DirectoryMerger( null, false ).putAll(getTargetDirectory(), (Directory)value, "x-unknown:source", "x-unknown:dest-file-directory");
+				new DirectoryMerger( null, false ).putAll(getTargetDirectory(), (Directory)value, "x-undefined:source", "x-undefined:dest-file-directory");
 				return;
 			}
 			

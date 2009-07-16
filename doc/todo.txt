@@ -1,9 +1,35 @@
-- RdfNodes ought to read relative URIs as relative to the node's source URI.
-  I don't think I ever did this.
+- When comparing files for 'Strict' merge method (which is very useful!),
+  use cached content URNs when they are available (e.g. when source URI is
+  given or the blob is a FilbBlob and URNs are comparable).
+  This used to work but was never re-implemented on RRA branch.
 
-- Create functions to help make photo album pages:
-  - active: -> urn:sha1:
-  - urn:sha1: -> http:
+- Checkout causes a lot of x-undefined:source URIs to be reported; change to report actual source when possible.
+
+- Create functions to help make photo album pages
+  - Cache results of active functions in the datastore, remembering active:... -> urn:... mapping
+  - Function to create listing of photos referencing thumbnails
+
+- RDFify should have option to use alternate RDF writing method for large documents
+  - RDFDirectory objects would not be created - data would be serialized more directly
+  - Would write standard namespaces out first
+  - Non-standard namespace declarations would be included as needed
+  - Would write one element at a time to a stream - no need for buffering 
+
+- Metadata stores
+  - Any number of metadata stores (similar to how data/ is divided into user-specified 'sectors')
+  - Probably backed by lucene
+  - Active function to return a list of metadata items from a query
+    (has tag X, date < Y, get only the latest 10, sorted by date descending, etc)
+  - Active function to create directory from a list of metadata items,
+    generating entry targets, names, and modification times based on
+    the metadata.
+  - Sub-command to import metadata into datastore from RDF files
+  - Sub-command to export metadata as RDF based on a query
+  - Allow metadata 'documents' to be signed?  Metadata may then be able to take the place of 'heads'.
+
+- RdfNodes ought to read relative URIs as relative to the node's source URI.
+  - I don't think I ever did this.
+  - This is very low priority, since all RDF docs currently used only contain absolute URIs.
 
 == Done ==
 
