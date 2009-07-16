@@ -1,5 +1,3 @@
-- Checkout causes a lot of x-undefined:source URIs to be reported; change to report actual source when possible.
-
 - Create functions to help make photo album pages
   - Cache results of active functions in the datastore, remembering active:... -> urn:... mapping
   - Function to create listing of photos referencing thumbnails
@@ -27,6 +25,8 @@
   - This is very low priority, since all RDF docs currently used only contain absolute URIs.
 
 == Done ==
+
+* Checkout causes a lot of x-undefined:source URIs to be reported; change to report actual source when possible.
 
 * When comparing files for 'Strict' merge method (which is very useful!),
   use cached content URNs when they are available (e.g. when source URI is
