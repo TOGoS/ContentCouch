@@ -1,8 +1,3 @@
-- When comparing files for 'Strict' merge method (which is very useful!),
-  use cached content URNs when they are available (e.g. when source URI is
-  given or the blob is a FilbBlob and URNs are comparable).
-  This used to work but was never re-implemented on RRA branch.
-
 - Checkout causes a lot of x-undefined:source URIs to be reported; change to report actual source when possible.
 
 - Create functions to help make photo album pages
@@ -32,6 +27,11 @@
   - This is very low priority, since all RDF docs currently used only contain absolute URIs.
 
 == Done ==
+
+* When comparing files for 'Strict' merge method (which is very useful!),
+  use cached content URNs when they are available (e.g. when source URI is
+  given or the blob is a FilbBlob and URNs are comparable).
+  This used to work but was never re-implemented on RRA branch.
 
 * Remember the repository most recently successfuly downloaded from and
   download from it first.
