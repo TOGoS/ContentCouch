@@ -20,13 +20,14 @@ public class TigerTreeScheme implements ContentAddressingScheme {
 	}
 	
 	public static String TIGERTREEURNPREFIX = "urn:tree:tiger:";
+	public static int TIGERTREEHASHLENGTH = 24;
 	public static int TIGERTREEBASE32LENGTH = 39;
 	
 	/** Return true if the given URN is in the domain of this addressing scheme */ 
 	public boolean wouldHandleUrn( String urn ) {
 		return urn.startsWith(TIGERTREEURNPREFIX) || urn.startsWith(BitprintScheme.BITPRINTURNPREFIX);
 	}
-
+	
 	/** Return the canonical identifier of the given blob */
 	public byte[] getHash( Blob blob ) {
 		return DigestUtil.digestBlob(blob, new TigerTree());
@@ -37,7 +38,7 @@ public class TigerTreeScheme implements ContentAddressingScheme {
 		return Base32.encode(hash);
 	}
 	public byte[] rdfValueToHash( String value ) {
-		if( value.length() < 32 ) throw new BadlyFormedRdfValueException(value);
+		if( value.length() < 32 ) throw new BadlyFormedRdfValueException(value, "Wrong length");
 		return Base32.decode(value);
 	}
 
@@ -52,9 +53,9 @@ public class TigerTreeScheme implements ContentAddressingScheme {
 		} else if( urn.startsWith(BitprintScheme.BITPRINTURNPREFIX) ) {
 			b32 = urn.substring(BitprintScheme.BITPRINTURNPREFIX.length() + Sha1Scheme.SHA1BASE32LENGTH+1, BitprintScheme.BITPRINTURNPREFIX.length()+TIGERTREEBASE32LENGTH);
 		} else {
-			throw new BadlyFormedUrnException(urn);
+			throw new BadlyFormedUrnException(urn, "URI not handled by this scheme");
 		}
-		if( b32.length() < TIGERTREEBASE32LENGTH ) throw new BadlyFormedUrnException(urn);
+		if( b32.length() < TIGERTREEBASE32LENGTH ) throw new BadlyFormedUrnException(urn, "Wrong length");
 		return Base32.decode(b32);
 	}
 	
@@ -63,7 +64,7 @@ public class TigerTreeScheme implements ContentAddressingScheme {
 		return Base32.encode(hash);
 	}
 	public byte[] filenameToHash( String filename ) {
-		if( filename.length() < TIGERTREEBASE32LENGTH ) throw new BadlyFormedFilenameException(filename);
+		if( filename.length() < TIGERTREEBASE32LENGTH ) throw new BadlyFormedFilenameException(filename, "Wrong length");
 		return Base32.decode(filename);
 	}
 }

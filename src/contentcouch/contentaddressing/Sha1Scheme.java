@@ -19,13 +19,14 @@ public class Sha1Scheme implements ContentAddressingScheme {
 	}
 	
 	public static String SHA1URNPREFIX = "urn:sha1:";
+	public static int SHA1HASHLENGTH = 20;
 	public static int SHA1BASE32LENGTH = 32;
 	
 	/** Return true if the given URN is in the domain of this addressing scheme */ 
 	public boolean wouldHandleUrn( String urn ) {
 		return urn.startsWith(SHA1URNPREFIX) || urn.startsWith(BitprintScheme.BITPRINTURNPREFIX);
 	}
-
+	
 	/** Return the canonical identifier of the given blob */
 	public byte[] getHash( Blob blob ) {
 		return DigestUtil.sha1DigestBlob(blob);
@@ -36,7 +37,7 @@ public class Sha1Scheme implements ContentAddressingScheme {
 		return Base32.encode(hash);
 	}
 	public byte[] rdfValueToHash( String value ) {
-		if( value.length() < 32 ) throw new BadlyFormedRdfValueException(value);
+		if( value.length() < 32 ) throw new BadlyFormedRdfValueException(value, "Wrong length");
 		return Base32.decode(value);
 	}
 
@@ -51,9 +52,9 @@ public class Sha1Scheme implements ContentAddressingScheme {
 		} else if( urn.startsWith(BitprintScheme.BITPRINTURNPREFIX) ) {
 			b32 = urn.substring(BitprintScheme.BITPRINTURNPREFIX.length(),BitprintScheme.BITPRINTURNPREFIX.length()+SHA1BASE32LENGTH);
 		} else {
-			throw new BadlyFormedUrnException(urn);
+			throw new BadlyFormedUrnException(urn, "URI not handled by this scheme");
 		}
-		if( b32.length() < SHA1BASE32LENGTH ) throw new BadlyFormedUrnException(urn);
+		if( b32.length() < SHA1BASE32LENGTH ) throw new BadlyFormedUrnException(urn, "Wrong length");
 		return Base32.decode(b32);
 	}
 	
@@ -62,7 +63,7 @@ public class Sha1Scheme implements ContentAddressingScheme {
 		return Base32.encode(hash);
 	}
 	public byte[] filenameToHash( String filename ) {
-		if( filename.length() < SHA1BASE32LENGTH ) throw new BadlyFormedFilenameException(filename);
+		if( filename.length() < SHA1BASE32LENGTH ) throw new BadlyFormedFilenameException(filename, "Wrong length");
 		return Base32.decode(filename);
 	}
 }

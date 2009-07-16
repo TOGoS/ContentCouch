@@ -1,6 +1,7 @@
 package contentcouch.contentaddressing;
 
 import contentcouch.blob.BlobUtil;
+import contentcouch.contentaddressing.BitprintScheme.Bitprint;
 import contentcouch.value.Blob;
 import junit.framework.TestCase;
 
@@ -26,5 +27,36 @@ public class BitprintSchemeTest extends TestCase {
 		assertEquals( tigerTreeBase32, bitprintUrn.substring(13+32+1,13+32+1+39) );
 		
 		assertEquals( 13+32+1+39, bitprintUrn.length() );
+	}
+	
+	public void testEquivalence() {
+		String sha1a = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+		String sha1b = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
+		String tta  = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
+		String ttb  = "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD";
+		
+		// Compare SHA-1 URNs (true/false)
+		assertEquals( Boolean.TRUE, Bitprint.getUriEquivalence("urn:sha1:"+sha1a, "urn:sha1:"+sha1a) );
+		assertEquals( Boolean.FALSE, Bitprint.getUriEquivalence("urn:sha1:"+sha1a, "urn:sha1:"+sha1b) );
+
+		// Compare TigerTree URNs (true/false)
+		assertEquals( Boolean.TRUE, Bitprint.getUriEquivalence("urn:tree:tiger:"+tta, "urn:tree:tiger:"+tta) );
+		assertEquals( Boolean.FALSE, Bitprint.getUriEquivalence("urn:tree:tiger:"+tta, "urn:tree:tiger:"+ttb) );
+
+		// Compare Bitprint URNs (true/false)
+		assertEquals( Boolean.TRUE, Bitprint.getUriEquivalence("urn:bitprint:"+sha1a+"."+tta, "urn:bitprint:"+sha1a+"."+tta) );
+		assertEquals( Boolean.FALSE, Bitprint.getUriEquivalence("urn:bitprint:"+sha1a+"."+tta, "urn:bitprint:"+sha1a+"."+ttb) );
+		assertEquals( Boolean.FALSE, Bitprint.getUriEquivalence("urn:bitprint:"+sha1a+"."+tta, "urn:bitprint:"+sha1b+"."+tta) );
+		assertEquals( Boolean.FALSE, Bitprint.getUriEquivalence("urn:bitprint:"+sha1a+"."+tta, "urn:bitprint:"+sha1b+"."+ttb) );
+
+		// Compare Bitprint and SHA-1/TigerTree URNs (true/false)
+		assertEquals( Boolean.TRUE, Bitprint.getUriEquivalence("urn:bitprint:"+sha1a+"."+tta, "urn:sha1:"+sha1a) );
+		assertEquals( Boolean.FALSE, Bitprint.getUriEquivalence("urn:bitprint:"+sha1a+"."+tta, "urn:sha1:"+sha1b) );
+		assertEquals( Boolean.TRUE, Bitprint.getUriEquivalence("urn:bitprint:"+sha1a+"."+tta, "urn:tree:tiger:"+tta) );
+		assertEquals( Boolean.FALSE, Bitprint.getUriEquivalence("urn:bitprint:"+sha1a+"."+tta, "urn:tree:tiger:"+ttb) );
+		
+		// Compare SHA-1 and TigerTree URNs (null)
+		assertNull( Bitprint.getUriEquivalence("urn:sha1:"+sha1a, "urn:tree:tiger:"+tta) );
+		assertNull( Bitprint.getUriEquivalence("urn:tree:tiger:"+tta, "urn:sha1:"+sha1a) );
 	}
 }

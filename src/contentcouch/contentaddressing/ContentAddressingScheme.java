@@ -3,23 +3,29 @@ package contentcouch.contentaddressing;
 import contentcouch.value.Blob;
 
 public interface ContentAddressingScheme {
-	public static class BadlyFormedUrnException extends RuntimeException {
-		public BadlyFormedUrnException(String badUrn) {
-			super(badUrn);
+	public static class SomethingIsBadlyFormedException extends RuntimeException {
+		public SomethingIsBadlyFormedException( String somethingBadlyFormed, String explain ) {
+			super(explain + ": " + somethingBadlyFormed);
+		}
+	}
+	
+	public static class BadlyFormedUrnException extends SomethingIsBadlyFormedException {
+		public BadlyFormedUrnException( String badUrn, String explain ) {
+			super( badUrn, explain );
 		}
 	} 
 	
-	public static class BadlyFormedFilenameException extends RuntimeException {
-		public BadlyFormedFilenameException(String badFilename) {
-			super(badFilename);
+	public static class BadlyFormedFilenameException extends SomethingIsBadlyFormedException {
+		public BadlyFormedFilenameException( String badFilename, String explain ) {
+			super( badFilename, explain );
 		}
 	} 
 
-	public static class BadlyFormedRdfValueException extends RuntimeException {
-		public BadlyFormedRdfValueException(String badRdfValue) {
-			super(badRdfValue);
+	public static class BadlyFormedRdfValueException extends SomethingIsBadlyFormedException {
+		public BadlyFormedRdfValueException( String badRdfValue, String explain ) {
+			super( badRdfValue, explain );
 		}
-	} 
+	}
 
 	
 	
