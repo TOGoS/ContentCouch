@@ -222,9 +222,13 @@ public class MetaRepository extends BaseRequestHandler {
 
 	protected Response putDataRdf( RepoConfig repoConfig, Request req ) {
 		Object parsedFrom = req.getContentMetadata().get(CcouchNamespace.PARSED_FROM);
+		String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);
 		BaseRequest subReq = new BaseRequest();
 		subReq.metadata = req.getMetadata();
 		subReq.content = parsedFrom != null ? parsedFrom : BlobUtil.getBlob(((RdfNode)req.getContent()).toString());
+		if( sourceUri != null ) {
+			subReq.putContentMetadata(CcouchNamespace.SOURCE_URI, "x-rdfified:" + sourceUri);
+		}
 		Response blobPutRes = putDataBlob( repoConfig, subReq );
 		if( blobPutRes.getStatus() != Response.STATUS_NORMAL ) return blobPutRes;
 		BaseResponse res = new BaseResponse();
@@ -293,7 +297,7 @@ public class MetaRepository extends BaseRequestHandler {
 				return res;
 			}
 		}		
-		
+		String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);		
 		//(Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
 		Date highestMtime = null; // Don't pay attention to directory mtime
 		List rdfDirectoryEntries = new ArrayList();
@@ -305,7 +309,6 @@ public class MetaRepository extends BaseRequestHandler {
 				targetSourceUri = ((Ref)target).getTargetUri();
 				target = TheGetter.get( targetSourceUri );
 			} else {
-				String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);
 				if( sourceUri != null ) {
 					targetSourceUri = PathUtil.appendPath(sourceUri, e.getName());
 				} else {
@@ -334,6 +337,7 @@ public class MetaRepository extends BaseRequestHandler {
 		
 		BaseRequest dirPutReq = new BaseRequest();
 		dirPutReq.content = rdfDir;
+		dirPutReq.contentMetadata = req.getContentMetadata();
 		dirPutReq.metadata = req.getMetadata();
 		BaseResponse dirPutRes = new BaseResponse(putDataRdf( repoConfig, dirPutReq ));
 		if( highestMtime != null ) {
