@@ -463,6 +463,7 @@ public class ContentCouchCommand {
 		BaseRequest putReq = new BaseRequest( Request.VERB_PUT, destUri );
 		putReq.content = getRes.getContent();
 		putReq.contentMetadata = getRes.getContentMetadata();
+		putReq.putContentMetadata(CcouchNamespace.SOURCE_URI, sourceUri);
 		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 		if( opts.shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
 		if( opts.shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);

@@ -172,7 +172,13 @@ public class DirectoryMerger {
 	public void putAll( WritableDirectory destDir, Directory srcDir, String srcUri, String destUri ) {
 		for( Iterator i=srcDir.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
-			put( destDir, e, PathUtil.appendPath(srcUri, e.getName(), false), PathUtil.appendPath(destUri, e.getName(), false) );
+			String sourceUri;
+			if( e.getTarget() instanceof Ref ) {
+				sourceUri = ((Ref)e.getTarget()).getTargetUri();
+			} else {
+				sourceUri = PathUtil.appendPath(srcUri, e.getName(), false);
+			}
+			put( destDir, e, sourceUri, PathUtil.appendPath(destUri, e.getName(), false) );
 		}
 	}
 }

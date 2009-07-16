@@ -7,6 +7,7 @@ import java.util.Set;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.WritableDirectory;
+import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
@@ -75,13 +76,17 @@ public class FileDirectory extends File implements WritableDirectory {
 				}
 			}
 			
+			String sourceUri;
 			if( value instanceof Ref ) {
-				value = TheGetter.get(((Ref)value).getTargetUri());
+				sourceUri = ((Ref)value).getTargetUri();
+				value = TheGetter.get(sourceUri);
+			} else {
+				sourceUri = "x-undefined:source";
 			}
 			
 			if( value instanceof Directory ) {
 				FileUtil.mkdirs(this);
-				new DirectoryMerger( null, false ).putAll(getTargetDirectory(), (Directory)value, "x-undefined:source", "x-undefined:dest-file-directory");
+				new DirectoryMerger( null, false ).putAll(getTargetDirectory(), (Directory)value, sourceUri, PathUtil.maybeNormalizeFileUri(getPath()) );
 				return;
 			}
 			
