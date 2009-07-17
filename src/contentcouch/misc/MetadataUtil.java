@@ -182,10 +182,8 @@ public class MetadataUtil {
 	}
 
 	public static void dereferenceTargetToRequest( Object target, BaseRequest req ) {
-		Map targetMetadata;
-		String targetSourceUri;
 		if( target instanceof Ref ) {
-			targetSourceUri = ((Ref)target).getTargetUri();
+			String targetSourceUri = ((Ref)target).getTargetUri();
 			BaseRequest targetReq = new BaseRequest(Request.VERB_GET, targetSourceUri );
 			Response targetRes = TheGetter.handleRequest( targetReq );
 			req.content = TheGetter.getResponseValue( targetRes, targetReq );
