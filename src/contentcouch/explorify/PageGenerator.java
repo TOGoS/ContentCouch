@@ -2,31 +2,32 @@ package contentcouch.explorify;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import contentcouch.active.Context;
 import contentcouch.app.servlet.ContentCouchExplorerServlet.HttpServletRequestHandler;
-import contentcouch.misc.ValueUtil;
 
 public abstract class PageGenerator implements HttpServletRequestHandler {
 	public String uri;
-	public UriProcessor uriProcessor;
+	public Map context;
 	public String header = "<html><body>";
 	public String footer = "</body></html>";
 	
-	public PageGenerator( String uri, UriProcessor uriProcessor, String header, String footer ) {
+	public PageGenerator( String uri, Map context, String header, String footer ) {
+		this.context = context;
 		this.uri = uri;
-		this.uriProcessor = uriProcessor;
 		if( header != null ) this.header = header;
 		if( footer != null ) this.footer = footer;
 	}
 	
-	protected String processUri( String uri ) {
-		return uriProcessor == null ? uri : ValueUtil.getString(uriProcessor.processUri(uri));
+	protected String processUri( String whichProcessor, String uri ) {
+		return BaseUriProcessor.getInstance(whichProcessor).processUri(uri);
 	}
-	protected String processRelativeUri( String baseUri, String relativeUri ) {
-		return uriProcessor == null ? relativeUri : ValueUtil.getString(uriProcessor.processRelativeUri(baseUri, relativeUri));
+	protected String processRelativeUri( String whichProcessor, String baseUri, String relativeUri ) {
+		return BaseUriProcessor.getInstance(whichProcessor).processRelativeUri(baseUri, relativeUri);
 	}
 	
 	////
@@ -40,9 +41,14 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 	}
 	
 	public void write(PrintWriter w) {
-		w.println(header);
-		writeContent(w);
-		w.println(footer);
+		Context.pushInstance(context);
+		try {
+			w.println(header);
+			writeContent(w);
+			w.println(footer);
+		} finally {
+			Context.popInstance();
+		}
 	}
 	
 	public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {

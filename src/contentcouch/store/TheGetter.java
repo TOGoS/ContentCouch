@@ -1,5 +1,6 @@
 package contentcouch.store;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
@@ -11,9 +12,11 @@ import contentcouch.active.Context;
 import contentcouch.app.Log;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
+import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
+import contentcouch.value.Ref;
 
 public class TheGetter {
 	public static class AbnormalResponseException extends RuntimeException {
@@ -84,5 +87,22 @@ public class TheGetter {
 	public static String identify( Object content, Map contentMetadata ) {
 		BaseRequest idReq = new BaseRequest(Request.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata );
 		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.handleRequest(idReq), idReq.uri));
+	}
+	
+	public static Object dereference( Object o ) {
+		return o instanceof Ref ? get(((Ref)o).getTargetUri()) : o;
+	}
+	public static String reference( Object o, boolean allowFileUris, boolean allowContentUris ) {
+		if( o instanceof Ref ) {
+			return ((Ref)o).getTargetUri();
+		}
+		if( allowFileUris && o instanceof File ) {
+			File f = (File)o;
+			return PathUtil.maybeNormalizeFileUri(f.isDirectory() ? f.getAbsolutePath() + "/" : f.getAbsolutePath());
+		}
+		if( allowContentUris ) {
+			identify(o, Collections.EMPTY_MAP);
+		}
+		throw new RuntimeException("Don't know how to reference " + (o == null ? "null" : "a " + o.getClass().getName()));
 	}
 }

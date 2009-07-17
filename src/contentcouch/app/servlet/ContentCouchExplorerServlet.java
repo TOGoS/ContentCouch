@@ -75,23 +75,26 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		}
 		return configFile;
 	}
-	
-	protected String getExploreUri(String uri) {
+
+	protected String getProcessingUri(String processor, String uri, String verb) {
 		if( uri == null ) {
-			throw new RuntimeException( "Null URI given to getExploreUri" );
+			throw new RuntimeException( "Null URI given to getProcessingUri" );
 		}
 		return
-			"(contentcouch.explorify\n" +
+			"(" + processor + "\n" +
 			"  " + uri + "\n" +
 			"  header=(contentcouch.let\n" +
 			"    vars/page-title=(contentcouch.concat\n" +
-			"      \"Exploring \" x-context-var:explored-uri \"\")\n" +
+			"      \"" + verb + " \" x-context-var:processed-uri \"\")\n" +
 			"    vars/page-title2=(contentcouch.concat\n" +
-			"      \"Exploring \" x-context-var:explored-uri \"\")\n" +
+			"      \"" + verb + " \" x-context-var:processed-uri \"\")\n" +
 			"    (contentcouch.eval\n" +
 			"       (contentcouch.builtindata.get \"default-page-header-expression\"))\n" +
 			"  )\n" +
 			")\n";
+	}
+	protected String getExploreUri(String uri) {
+		return getProcessingUri("contentcouch.explorify", uri, "Exploring");
 	}
 	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -102,17 +105,18 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		try {
 			final boolean shouldRewriteRelativeUris;
 			String uri = null;
-			String loadPath = null;
 			String[] pathComp = pi.substring(1).split("/");
 			String inputUri = request.getParameter("uri");
-			if( "explore".equals(pathComp[0]) ) {
+			if( "process".equals(pathComp[0]) ) {
+				shouldRewriteRelativeUris = true;
+			    String processor = request.getParameter("processor");
+				uri = getProcessingUri(processor, inputUri, "Album view of");
+			} else if( "explore".equals(pathComp[0]) ) {
 			    if( inputUri != null ) {
 					shouldRewriteRelativeUris = true;
-					loadPath = "/explore?uri=";
 				} else if( pi.startsWith("/explore/") ) {
 					inputUri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(9));
 					shouldRewriteRelativeUris = false;
-					loadPath = "/explore?uri=";
 				} else {
 					// TODO: redirect
 					return;
@@ -121,11 +125,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			} else if( "raw".equals(pathComp[0]) ) {
 				if( inputUri != null ) {
 					shouldRewriteRelativeUris = true;
-					loadPath = "/raw?uri=";
 				} else if( pi.startsWith("/raw/") ) {
 					inputUri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(5));
 					shouldRewriteRelativeUris = false;
-					loadPath = "/raw?uri=";
 				} else {
 					// TODO: redirect
 					return;
@@ -142,10 +144,19 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 			BaseRequest subReq = new BaseRequest(Request.VERB_GET, uri);
 			try {
 				Context.push("funk", "Bring the funk");
-				final String fLoadPath = loadPath;
-				BaseUriProcessor.push( new BaseUriProcessor(BaseUriProcessor.getInstance(), shouldRewriteRelativeUris) {
+				BaseUriProcessor.push( "explore", new BaseUriProcessor(BaseUriProcessor.getInstance("explore"), shouldRewriteRelativeUris) {
 					public String processUri(String uri) {
-						return fLoadPath + UriUtil.uriEncode(uri);
+						return "/explore?uri=" + UriUtil.uriEncode(uri);
+					}
+				});
+				BaseUriProcessor.push( "raw", new BaseUriProcessor(BaseUriProcessor.getInstance("raw"), shouldRewriteRelativeUris) {
+					public String processUri(String uri) {
+						return "/raw?uri=" + UriUtil.uriEncode(uri);
+					}
+				});
+				BaseUriProcessor.push( "album", new BaseUriProcessor(BaseUriProcessor.getInstance("raw"), shouldRewriteRelativeUris) {
+					public String processUri(String uri) {
+						return "/process?processor=contentcouch.photoalbum.make-album-page&uri=" + UriUtil.uriEncode(uri);
 					}
 				});
 				subReq.contextVars = Context.getInstance();
@@ -155,7 +166,7 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					subRes = Explorify.explorifyDirectory( uri, (Directory)subRes.getContent(),
 						"<html><head><style>/*<!CDATA[*/\n" + BuiltInData.getString("default-page-style") + "/*]]>*/</style><body>\n", null );
 				}
-								
+				
 				String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
 				if( type == null && subRes.getContent() instanceof Blob ) {
 					type = MetadataUtil.guessContentType((Blob)subRes.getContent());
@@ -174,7 +185,9 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				if( type != null ) response.setHeader("Content-Type", type);
 				BlobUtil.writeBlobToOutputStream( BlobUtil.getBlob( subRes.getContent() ), response.getOutputStream() );
 			} finally {
-				BaseUriProcessor.pop();
+				BaseUriProcessor.pop("raw");
+				BaseUriProcessor.pop("explore");
+				BaseUriProcessor.pop("album");
 			}				
 		} catch( RuntimeException e ) {
 			response.setHeader("Content-Type", "text/plain");

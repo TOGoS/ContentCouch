@@ -48,10 +48,12 @@ public class ApplyUriProcessor extends BaseActiveFunction {
 		if( operator == null ) throw new RuntimeException( "'operand' expression needed");
 		final String inputUri = operand.toUri();
 		
-		UriProcessor oldUriProc = BaseUriProcessor.getInstance();
+		String whichOne = null;
+		
+		UriProcessor oldUriProc = BaseUriProcessor.getInstance(whichOne);
 		Context.pushNewDynamicScope();
 		try {
-			BaseUriProcessor.setInstance(new BaseUriProcessor(oldUriProc, true) {
+			BaseUriProcessor.setInstance(whichOne, new BaseUriProcessor(oldUriProc, true) {
 				public String processUri(String uri) {
 					return super.processUri(outerProcess( argumentExpressions, innerProcess(operator, uri) ));
 				}

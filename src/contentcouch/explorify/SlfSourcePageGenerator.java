@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
+import java.util.Map;
 
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
@@ -20,8 +21,8 @@ public class SlfSourcePageGenerator extends PageGenerator {
 	Blob blob;
 	String title;
 	
-	public SlfSourcePageGenerator( Blob b, String uri, UriProcessor uriProcessor, String header, String footer ) {
-		super( uri, uriProcessor, header, footer );
+	public SlfSourcePageGenerator( Blob b, String uri, Map context, String header, String footer ) {
+		super( uri, context, header, footer );
 		this.blob = b;
 	}
 	
@@ -147,18 +148,6 @@ public class SlfSourcePageGenerator extends PageGenerator {
 			SimpleListFile slf = new SimpleListFile(blob, "r");
 			Chunk c = slf.getFirstChunk();
 
-		/*
-		w.println("<style>");
-		w.println("body { background-color: #88B; color: black; }");
-		w.println("body > div, body > table { border:1px solid; margin:4px; padding: 0px; background-color:silver }");
-		w.println(".chunk-title { margin: 0; padding: 2px 4px 2px 4px; background-color: #EEE }");
-		w.println(".chunk-summary { margin: 0; padding: 2px 4px 2px 12px; color: #808; background-color: #FFF }");
-		w.println(".chunk-content { margin: 0; padding: 1px 4px 1px 4px }");
-		w.println(".chunk-content > span, .chunk-summary > span { margin: 0; padding: 1px 0px 1px 0px; }");
-		w.println(".chunk-title, .chunk-content, .chunk-summary { font-family: monospace }");
-		w.println(".chunk-link { text-decoration: none }");
-		w.println("</style>");
-		*/
 			while( c != null ) {
 				writeChunkAsHtml(slf, c, w);
 				c = slf.getChunk(c.nextOffset);

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import contentcouch.date.DateUtil;
@@ -18,32 +19,32 @@ import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
 public class DirectoryPageGenerator extends PageGenerator {
-	Directory dir;
+	protected Directory dir;
 
-	public DirectoryPageGenerator( Directory dir, String uri, UriProcessor uriProcessor, String header, String footer ) {
-		super( uri, uriProcessor, header, footer );
+	public DirectoryPageGenerator( Directory dir, String uri, Map context, String header, String footer ) {
+		super( uri, context, header, footer );
 		this.dir = dir;
+	}
+	
+	protected String getUnprocessedHref( Directory.Entry e, boolean allowRelative ) {
+		String href;
+		if( e.getTarget() instanceof RelativeRef && ((RelativeRef)e.getTarget()).isRelative() ) {
+			href = ((RelativeRef)e.getTarget()).getTargetRelativeUri();
+		} else if( e.getTarget() instanceof Ref ) {
+			href = ((Ref)e.getTarget()).getTargetUri();
+		} else {
+			href = allowRelative ? e.getName() : PathUtil.appendPath(uri, e.getName());
+		}
+		if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+			if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
+		}
+		return href;
 	}
 	
 	public void writeContent(PrintWriter w) {
 		Set entries = dir.getDirectoryEntrySet();
 		ArrayList entryList = new ArrayList(entries);
 		Collections.sort(entryList, EntryComparators.TYPE_THEN_NAME_COMPARATOR);
-		
-		/*
-		String title = ValueUtil.getString(metadata.get(DcNamespace.DC_TITLE));
-		if( title == null ) title = "Index of some directory";
-
-		w.println("<html>");
-		w.println("<head>");
-		w.println("<title>" + XML.xmlEscapeText(title) + "</title>");
-		w.println("<style>");
-		w.println(".dir-list td, .dir-list th { padding-left: 1ex; padding-right: 1ex; font-family: Courier }");
-		w.println("</style>");
-		w.println("</head>");
-		w.println("<body>");
-		w.println("<h2>" + XML.xmlEscapeText(title) + "</h2>");
-		*/
 		
 		w.println("<div class=\"main-content\">");
 		w.println("<table class=\"dir-list\">");
@@ -54,20 +55,12 @@ public class DirectoryPageGenerator extends PageGenerator {
 		w.write("</tr>\n");
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			Entry e = (Entry)i.next();
-			String href;
+			String href = getUnprocessedHref(e, true);
 			String name = e.getName();
-			if( e.getTarget() instanceof RelativeRef && ((RelativeRef)e.getTarget()).isRelative() ) {
-				href = ((RelativeRef)e.getTarget()).getTargetRelativeUri();
-			} else if( e.getTarget() instanceof Ref ) {
-				href = ((Ref)e.getTarget()).getTargetUri();
-			} else {
-				href = name;
-			}
 			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
-				if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
 				if( !name.endsWith("/") ) name += "/";
 			}
-			href = processRelativeUri(uri, href);
+			href = processRelativeUri("default", uri, href);
 			w.write("<tr>");
 			w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
 			w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
@@ -76,10 +69,5 @@ public class DirectoryPageGenerator extends PageGenerator {
 		}
 		w.println("</table>");
 		w.println("</div>");
-		
-		/*
-		w.println("</body>");
-		w.println("</html>");
-		*/
 	}
 }

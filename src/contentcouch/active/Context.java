@@ -26,9 +26,12 @@ public class Context {
 	}
 	public static Map getInstance() {
 		return (Map)((Stack)instanceStack.get()).peek();
-	}	
+	}
+	public static Map getSnapshot() {
+		return new HashMap(getInstance());
+	}
 	public static void pushNewDynamicScope() {
-		pushInstance(new HashMap(getInstance()));
+		pushInstance(getSnapshot());
 	}
 	
 	//// Var stuff ////

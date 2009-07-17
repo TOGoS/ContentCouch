@@ -94,7 +94,7 @@ public class ImageUtil {
 			throw new RuntimeException("Output image would be too large: " + Math.abs(newWidth*newHeight) + " pixels");
 		}
 		
-		BufferedImage bdest = new BufferedImage(Math.abs(newWidth), Math.abs(newHeight), img.getType());
+		BufferedImage bdest = new BufferedImage(Math.abs(newWidth), Math.abs(newHeight), img.getType() );
 		Graphics2D g = bdest.createGraphics();
 		int dx1 = newWidth  < 0 ? -newWidth  : 0;
 		int dy1 = newHeight < 0 ? -newHeight : 0;

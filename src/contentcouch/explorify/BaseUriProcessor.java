@@ -8,21 +8,21 @@ public class BaseUriProcessor implements UriProcessor {
 	public static final String CTXVAR = CcouchNamespace.INTERNAL_NS + "uriProcessor";
 	public static final BaseUriProcessor BASEINSTANCE = new BaseUriProcessor( null, false );
 
-	public static UriProcessor getInstance() {
-		UriProcessor proc = (UriProcessor)Context.get(CTXVAR);
+	public static UriProcessor getInstance(String whichOne) {
+		UriProcessor proc = (UriProcessor)Context.get(CTXVAR + "/" + whichOne);
 		return ( proc == null ) ? BASEINSTANCE : proc;
 	}
 	
-	public static void setInstance( UriProcessor proc ) {
-		Context.put(CTXVAR, proc);
+	public static void setInstance( String whichOne, UriProcessor proc ) {
+		Context.put( CTXVAR + "/" + whichOne, proc);
 	}
 	
-	public static void push( UriProcessor proc ) {
-		Context.push( CTXVAR, proc );
+	public static void push( String whichOne, UriProcessor proc ) {
+		Context.push( CTXVAR + "/" + whichOne, proc );
 	}
 	
-	public static Object pop() {
-		return Context.pop( CTXVAR );
+	public static Object pop( String whichOne ) {
+		return Context.pop( CTXVAR + "/" + whichOne );
 	}
 	
 	protected UriProcessor postProcessor;

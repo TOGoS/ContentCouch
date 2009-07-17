@@ -14,7 +14,6 @@ import contentcouch.active.Context;
 import contentcouch.active.expression.Expression;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.InputStreamBlob;
-import contentcouch.explorify.BaseUriProcessor;
 import contentcouch.explorify.DirectoryPageGenerator;
 import contentcouch.explorify.PageGenerator;
 import contentcouch.explorify.RdfSourcePageGenerator;
@@ -36,10 +35,18 @@ public class Explorify extends BaseActiveFunction {
 				public void run() {
 					try {
 						pg.write(pw);
-						pw.close();
-						pos.close();
-					} catch( IOException e ) {
+					} catch( RuntimeException e ) {
+						pw.println("<pre>");
+						e.printStackTrace(pw);
+						pw.println("</pre>");
 						throw new RuntimeException(e);
+					} finally {
+						try {
+							pw.close();
+							pos.close();
+						} catch( IOException e ) {
+							throw new RuntimeException(e);
+						}
 					}
 				}
 			}).start();
@@ -59,15 +66,15 @@ public class Explorify extends BaseActiveFunction {
 	}
 	
 	public static Response explorifyDirectory(String uri, Directory d, String header, String footer ) {
-		return getPageGeneratorResult(new DirectoryPageGenerator(d, uri, BaseUriProcessor.getInstance(), header, footer ));
+		return getPageGeneratorResult(new DirectoryPageGenerator(d, uri, Context.getSnapshot(), header, footer ));
 	}
 	
 	public static Response explorifyXmlBlob(String uri, Blob b, String header, String footer ) {
-		return getPageGeneratorResult(new RdfSourcePageGenerator(b, uri, BaseUriProcessor.getInstance(), header, footer ));
+		return getPageGeneratorResult(new RdfSourcePageGenerator(b, uri, Context.getSnapshot(), header, footer ));
 	}
 	
 	public static Response explorifySlfBlob(String uri, Blob b, String header, String footer ) {
-		return getPageGeneratorResult(new SlfSourcePageGenerator(b, uri, BaseUriProcessor.getInstance(), header, footer ));
+		return getPageGeneratorResult(new SlfSourcePageGenerator(b, uri, Context.getSnapshot(), header, footer ));
 	}
 		
 	public Response call(Map argumentExpressions) {
@@ -75,7 +82,7 @@ public class Explorify extends BaseActiveFunction {
 		String uri = e.toUri();
 		Response subRes = getArgumentResponse(argumentExpressions, "operand");
 		if( subRes.getStatus() != Response.STATUS_NORMAL ) return subRes;
-		Context.push("explored-uri", uri);
+		Context.push("processed-uri", uri);
 		try {
 			if( subRes.getContent() instanceof Directory ) {
 				return explorifyDirectory(uri, (Directory)subRes.getContent(), getHeader(argumentExpressions), getFooter(argumentExpressions));
@@ -93,7 +100,7 @@ public class Explorify extends BaseActiveFunction {
 				}
 			}
 		} finally {
-			Context.pop("explored-uri");
+			Context.pop("processed-uri");
 		}
 		return subRes;
 	}

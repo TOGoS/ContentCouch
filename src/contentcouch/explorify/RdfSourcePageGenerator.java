@@ -3,6 +3,7 @@ package contentcouch.explorify;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,8 +15,8 @@ import contentcouch.xml.XML;
 public class RdfSourcePageGenerator extends PageGenerator {
 	Blob blob;
 	
-	public RdfSourcePageGenerator( Blob b, String uri, UriProcessor uriProcessor, String header, String footer ) {
-		super( uri, uriProcessor, header, footer );
+	public RdfSourcePageGenerator( Blob b, String uri, Map context, String header, String footer ) {
+		super( uri, context, header, footer );
 		this.blob = b;
 	}
 	
@@ -34,10 +35,10 @@ public class RdfSourcePageGenerator extends PageGenerator {
 		if( url.startsWith(CcouchNamespace.URI_PARSE_PREFIX) ) {
 			// Then show 2 links
 			String noParsePart = url.substring(CcouchNamespace.URI_PARSE_PREFIX.length());
-			return formatLink2(processUri(url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
-				formatLink2(processUri(noParsePart), noParsePart);
+			return formatLink2(processUri("explore",url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
+				formatLink2(processUri("explore",noParsePart), noParsePart);
 		} else {
-			return formatLink2(processUri(url), url);
+			return formatLink2(processUri("explore",url), url);
 		}
 	}
 	
