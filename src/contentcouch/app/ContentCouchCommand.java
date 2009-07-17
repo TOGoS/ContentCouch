@@ -4,9 +4,11 @@ package contentcouch.app;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -187,7 +189,7 @@ public class ContentCouchCommand {
 		"Rdfify options:\n" +
 		"  -nested            ; nest sub-dirs in output instead of linking to them";
 
-	public static String CACHE_CHECK_USAGE =
+	public static String CHECK_USAGE =
 		"Usage: ccouch [general options] check <path> <path> ...\n" +
 		"\n" +
 		"Walks the named directories or files and ensures that all non-dot files'\n" +
@@ -242,6 +244,39 @@ public class ContentCouchCommand {
 		} else {
 			throw new RuntimeException( "Badly formatted time delta: " + d );
 		}
+	}
+	
+	protected class BaseArgumentHandler extends MultiArgumentHandler {
+		public boolean helpShown;
+		public int handleAllArguments( Iterator it ) {
+			while( it.hasNext() ) {
+				String current = (String)it.next();
+				if( !handleArguments(current,it) ) return 1;
+				if( helpShown ) return -1;
+			}
+			return 0;
+		}
+		public int handleAllArguments( String[] args ) {
+			return handleAllArguments( Arrays.asList( args ).iterator());
+		}
+	}
+	
+	protected BaseArgumentHandler createArgumentHandler( final String commandName, final String usage ) {
+		final BaseArgumentHandler mah = new BaseArgumentHandler();
+		mah.addArgumentHandler(new ArgumentHandler() {
+			public boolean handleArguments(String current, Iterator rest) {
+				if( "-h".equals(current) || "-?".equals(current) ) {
+					System.out.println( usage );
+					mah.helpShown = true;
+					return true;
+				} else {
+					System.err.println( "ccouch " + commandName + ": Unrecognised argument '" + current + "'");
+					System.err.println( usage );
+					return false;
+				}
+			}
+		});
+		return mah;
 	}
 	
 	//// Dump stuff ////
@@ -354,8 +389,7 @@ public class ContentCouchCommand {
 		return "file:" + uriOrPathOrSomething;
 	}
 	
-	protected static class GeneralOptions {
-		public boolean showHelp;
+	protected static class GeneralOptions implements ArgumentHandler {
 		public boolean shouldLinkStored;
 		public boolean shouldRelinkImported;
 		public boolean shouldDumpConfig;
@@ -367,62 +401,73 @@ public class ContentCouchCommand {
 		public String storeSector;
 		public String fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_STRICTIG;
 		public String dirMergeMethod = null;
-		public List uris = new ArrayList();
 		public int logLevel = Log.LEVEL_DOWNLOADS;
-	}
-	
-	protected GeneralOptions getGeneralOptions( String[] args, String commandName ) {
-		args = mergeConfiguredArgs(commandName, args);
+		HashSet extraLogEvents = new HashSet();
 		
-		GeneralOptions opts = new GeneralOptions();
-		for( int i=0; i < args.length; ++i ) {
-			String arg = args[i];
-			if( arg.length() == 0 ) {
-				return null;
-			
-			// Linking options
-			} else if( "-link".equals(arg) ) {
-				opts.shouldLinkStored = true;
-			} else if( "-relink".equals(arg) ) {
-				opts.shouldLinkStored = true;
-				opts.shouldRelinkImported = true;
-			
-			// Merging options:
-			} else if( "-file-merge-method".equals(arg) ) {
-				opts.fileMergeMethod = args[++i];
-			} else if( "-dir-merge-method".equals(arg) ) {
-				opts.dirMergeMethod = args[++i];
-			} else if( "-replace-existing".equals(arg) ) {
-				opts.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_REPLACE;
-			} else if( "-keep-existing".equals(arg) ) {
-				opts.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_IGNORE;
-			} else if( "-merge".equals(arg) ) {
-				opts.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
-			
-			} else if( "-use-commit-targets".equals(arg) ) {
-				opts.shouldUseCommitTargets = true;
-			
-			} else if( "-create-uri-dot-files".equals(arg) ) {
-				opts.shouldCreateUriDotFiles = true;
-			} else if( "-use-uri-dot-files".equals(arg) ) {
-				opts.shouldUseUriDotFiles = true;
-			
-			} else if( "-dump-config".equals(arg) ) {
-				opts.shouldDumpConfig = true;
-			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
-				opts.showHelp = true;
-				return opts;
-			
-			// What to copy to/from
-			} else if( arg.charAt(0) != '-' || "-".equals(arg) ) {
-				opts.uris.add(arg);
-			
-			} else {
-				System.err.println("ccouch " + commandName + ": Unrecognised argument: " + arg);
-				return null;
+		public void setUpLogging() {
+			Log.setStandardLogLevel(logLevel);
+			for( Iterator i=extraLogEvents.iterator(); i.hasNext(); ) {
+				Log.addLogger( (String)i.next(), Log.getStderrLogger() );
 			}
 		}
-		return opts;
+		
+		public boolean handleArguments( String arg, Iterator it ) {
+			if( arg.length() == 0 ) {
+				
+			// Linking options
+			} else if( "-link".equals(arg) ) {
+				this.shouldLinkStored = true;
+			} else if( "-relink".equals(arg) ) {
+				this.shouldLinkStored = true;
+				this.shouldRelinkImported = true;
+			} else if( "-store-sector".equals(arg) ) {
+				this.storeSector = (String)it.next();
+				
+			// Merging options:
+			} else if( "-file-merge-method".equals(arg) ) {
+				this.fileMergeMethod = (String)it.next();
+			} else if( "-dir-merge-method".equals(arg) ) {
+				this.dirMergeMethod = (String)it.next();
+			} else if( "-replace-existing".equals(arg) ) {
+				this.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_REPLACE;
+			} else if( "-keep-existing".equals(arg) ) {
+				this.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_IGNORE;
+			} else if( "-merge".equals(arg) ) {
+				this.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
+			
+			} else if( "-use-commit-targets".equals(arg) ) {
+				this.shouldUseCommitTargets = true;
+			
+			} else if( "-create-uri-dot-files".equals(arg) ) {
+				this.shouldCreateUriDotFiles = true;
+			} else if( "-use-uri-dot-files".equals(arg) ) {
+				this.shouldUseUriDotFiles = true;
+			
+			} else if( "-dump-config".equals(arg) ) {
+				this.shouldDumpConfig = true;
+
+			} else if( "-q".equals(arg) ) {
+				this.logLevel = Log.LEVEL_QUIET;
+			} else if( arg.startsWith("-v") ) {
+				String logLevelStr = arg.substring(2);
+				if( logLevelStr.length() == 0 ) {
+					this.logLevel = Log.LEVEL_VERBOSE;
+				} else if( logLevelStr.matches("^\\d+$") ) {
+					try {
+						this.logLevel = Integer.parseInt(logLevelStr);
+					} catch( NumberFormatException e ) {
+						throw new RuntimeException(e);
+					}
+				} else {
+					this.extraLogEvents.add(logLevelStr);
+				}
+				
+			} else {
+				return false;
+			}
+			
+			return true;
+		}
 	}
 	
 	//// Shared command routines ////
@@ -486,18 +531,23 @@ public class ContentCouchCommand {
 	//// Commands ////	
 
 	public int runCopyCmd( String[] args ) {
-		GeneralOptions opts = getGeneralOptions(args, "copy");
-		if( opts.showHelp ) {
-			System.out.println(COPY_USAGE);
-			return 0;
-		}
-		if( opts == null ) {
-			System.err.println(COPY_USAGE);
-			System.err.println();
-			return 1;
-		}
+		GeneralOptions opts = new GeneralOptions();
+		BaseArgumentHandler bah = createArgumentHandler("copy", COPY_USAGE);
+		bah.addArgumentHandler( opts );
+		final ArrayList paths = new ArrayList();
+		bah.addArgumentHandler( new ArgumentHandler() {
+			public boolean handleArguments(String current, Iterator rest) {
+				if( current.equals("-") || !current.startsWith("-") ) {
+					paths.add(current);
+					return true;
+				}
+				return false;
+			}
+		});
+		int errorCount = bah.handleAllArguments(args);
+		if( errorCount != 0 ) return errorCount;
 		
-		if( opts.uris.size() <= 1 ) {
+		if( paths.size() <= 1 ) {
 			System.err.println("Must specify at least source and dest");
 			System.err.println();
 			System.err.println(COPY_USAGE);
@@ -505,12 +555,9 @@ public class ContentCouchCommand {
 			return 1;
 		}
 		
-		int errorCount = 0;
-
-		List uris = new ArrayList(opts.uris);
-		String destUri = normalizeUri((String)uris.remove(uris.size()-1), true, false);
+		String destUri = normalizeUri((String)paths.remove(paths.size()-1), true, false);
 		
-		for( Iterator i=uris.iterator(); i.hasNext(); ) {
+		for( Iterator i=paths.iterator(); i.hasNext(); ) {
 			String sourceUri = normalizeUri((String)i.next(), false, false);
 			
 			errorCount += copy( sourceUri, destUri, opts );
@@ -630,7 +677,7 @@ public class ContentCouchCommand {
 				return 1;
 			}
 		}
-		Log.setStandardLogLevel(opts.logLevel);
+		opts.setUpLogging();
 
 		String commitDestUri = null;
 		if( name != null ) {
@@ -818,29 +865,34 @@ public class ContentCouchCommand {
 	}
 	
 	public int runCheckoutCmd( String[] args ) {
-		GeneralOptions opts = getGeneralOptions( args, "checkout" );
-		if( opts == null ) {
-			System.err.println(CHECKOUT_USAGE);
-			System.err.println();
-			return 1;
-		}
-		if( opts.showHelp ) {
-			System.out.println(CHECKOUT_USAGE);
-			return 0;
-		}
+		GeneralOptions opts = new GeneralOptions();
+		BaseArgumentHandler bah = createArgumentHandler("checkout", CHECKOUT_USAGE);
+		bah.addArgumentHandler( opts );
+		final ArrayList paths = new ArrayList();
+		bah.addArgumentHandler( new ArgumentHandler() {
+			public boolean handleArguments(String current, Iterator rest) {
+				if( current.equals("-") || !current.startsWith("-") ) {
+					paths.add(current);
+					return true;
+				}
+				return false;
+			}
+		});
+		int errorCount = bah.handleAllArguments(args);
+		if( errorCount != 0 ) return errorCount;
+
+		opts.setUpLogging();
 		opts.shouldSaveCommitUri = true;
 		opts.shouldUseCommitTargets = true;
 		
-		if( opts.uris.size() != 2 ) {
+		if( paths.size() != 2 ) {
 			System.err.println("ccouch checkout: You must specify one source and one destination URI");
 			System.err.println(CHECKOUT_USAGE);
 			System.err.println();
 			return 1;
 		}
-		String sourceUri = normalizeUri((String)opts.uris.get(0), false, true);
-		String destUri = normalizeUri((String)opts.uris.get(1), true, true);
-
-		Log.setStandardLogLevel(opts.logLevel);
+		String sourceUri = normalizeUri((String)paths.get(0), false, true);
+		String destUri = normalizeUri((String)paths.get(1), true, true);
 
 		return copy( sourceUri, destUri, opts );
 	}
@@ -852,36 +904,25 @@ public class ContentCouchCommand {
 		
 		GeneralOptions opts = new GeneralOptions();
 		opts.storeSector = "remote";
-		List cacheUris = new ArrayList();
-		for( int i=0; i<args.length; ++i ) {
-			String arg = args[i];
-			if( "-q".equals(arg) ) {
-				opts.logLevel = Log.LEVEL_QUIET;
-			} else if( "-v".equals(arg) ) {
-				opts.logLevel = Log.LEVEL_VERBOSE;
-			} else if( "-store-sector".equals(arg) ) {
-				opts.storeSector = args[++i];
-			} else if( "-link".equals(arg) ) {
-				opts.shouldLinkStored = true;
-			} else if( "-relink".equals(arg) ) {
-				opts.shouldLinkStored = true;
-				opts.shouldRelinkImported = true;
-			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
-				System.out.println(CACHE_USAGE);
-				return 0;
-			} else if( !arg.startsWith("-") ) {
-				cacheUris.add(arg);
-			} else {
-				System.err.println("ccouch cache: Unrecognised argument: " + arg);
-				System.err.println(CACHE_USAGE);
-				System.err.println();
-				return 1;
+		BaseArgumentHandler bah = createArgumentHandler("cache", CACHE_USAGE);
+		bah.addArgumentHandler(opts);
+		final ArrayList paths = new ArrayList();		
+		bah.addArgumentHandler( new ArgumentHandler() {
+			public boolean handleArguments(String current, Iterator rest) {
+				if( current.equals("-") || !current.startsWith("-") ) {
+					paths.add(current);
+					return true;
+				}
+				return false;
 			}
-		}
-		Log.setStandardLogLevel(opts.logLevel);
+		});
+		int errorCount = bah.handleAllArguments(args);
+		if( errorCount != 0 ) return errorCount;
+		
+		opts.setUpLogging();
 
-		for( Iterator i=cacheUris.iterator(); i.hasNext(); ) {
-			String uri = (String)i.next();
+		for( Iterator i=paths.iterator(); i.hasNext(); ) {
+			String uri = normalizeUri((String)i.next(), false, false);
 			copy( uri, "x-ccouch-repo:data", opts );
 		}
 
@@ -919,7 +960,7 @@ public class ContentCouchCommand {
 				return 1;
 			}
 		}
-		Log.setStandardLogLevel(opts.logLevel);
+		opts.setUpLogging();
 		
 		int errorCount = 0;
 		
@@ -957,7 +998,7 @@ public class ContentCouchCommand {
 			if( arg.startsWith("-" ) ) {
 				System.err.println("ccouch check: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(CACHE_CHECK_USAGE);
+				System.err.println(CHECK_USAGE);
 				System.err.println();
 				return 1;
 			} else {

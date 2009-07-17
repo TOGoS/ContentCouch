@@ -19,6 +19,7 @@ import togos.rra.Response;
 
 import com.eekboom.utils.Strings;
 
+import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
@@ -108,6 +109,8 @@ public class MetaRepository extends BaseRequestHandler {
 			FileHashCache fileHashCache = getFileHashCache();
 			return fileHashCache.getHash((FileBlob)blob, repoConfig.dataScheme);
 		}
+		
+		Log.log(Log.EVENT_PERFORMANCE_WARNING, "Cannot cache hash of " + blob.getClass().getName());
 		return repoConfig.dataScheme.getHash( blob );
 	}
 	
@@ -130,7 +133,7 @@ public class MetaRepository extends BaseRequestHandler {
 		Response dirRes = TheGetter.handleRequest(dirReq);
 		if( dirRes.getStatus() != Response.STATUS_NORMAL ) return l;
 		if( !(dirRes.getContent() instanceof Directory) ) {
-			System.err.println(dataDirUri + " exists but is not a directory");
+			Log.log(Log.EVENT_WARNING, dataDirUri + " exists but is not a directory");
 		}
 		Directory d = (Directory)dirRes.getContent();
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
@@ -579,7 +582,10 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Response identify( RepoConfig repoConfig, Object content, Map contentMetadata ) {
 		if( content instanceof RdfNode ) {
 			Object parsedFrom = contentMetadata.get(CcouchNamespace.PARSED_FROM);
-			if( parsedFrom == null ) parsedFrom = BlobUtil.getBlob( content.toString() );
+			if( parsedFrom == null ) {
+				Log.log(Log.EVENT_PERFORMANCE_WARNING, "Blobbifying RDF node just to get content URN");
+				parsedFrom = BlobUtil.getBlob( content.toString() );
+			}
 			String parsedFromUri = ValueUtil.getString(identify( repoConfig, parsedFrom, Collections.EMPTY_MAP ).getContent());
 			return new BaseResponse(Response.STATUS_NORMAL,	"x-parse-rdf:" + parsedFromUri, "text/plain");
 		} else if( content instanceof Commit ) {

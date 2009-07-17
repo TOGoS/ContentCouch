@@ -42,6 +42,12 @@ public class Log {
 		};
 	}
 	
+	public static Logger stderrLogger = null;
+	public static final Logger getStderrLogger() {
+		if( stderrLogger == null ) stderrLogger = createStreamLogger( System.err, " " );
+		return stderrLogger;
+	}
+	
 	public static final int LEVEL_SILENT    = 00;
 	public static final int LEVEL_QUIET     = 10; // Errors only
 	public static final int LEVEL_NORMAL    = 20; // Errors, warnings
@@ -50,7 +56,7 @@ public class Log {
 	public static final int LEVEL_DEBUG     = 50; // Errors, warnings, downloads, fs changes, fs non-changes, requests
 	
 	public static final void setStandardLogLevel( int level ) {
-		Logger stderrLogger = createStreamLogger( System.err, " " );
+		Logger stderrLogger = getStderrLogger();
 
 		if( level < LEVEL_QUIET     ) return;
 		addLogger( EVENT_ERROR, stderrLogger );
