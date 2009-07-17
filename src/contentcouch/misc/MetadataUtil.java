@@ -7,8 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import togos.rra.BaseRequest;
 import togos.rra.BaseResponse;
 import togos.rra.ContentAndMetadata;
+import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
@@ -16,7 +18,9 @@ import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
+import contentcouch.store.TheGetter;
 import contentcouch.value.Blob;
+import contentcouch.value.Ref;
 
 public class MetadataUtil {
 	
@@ -175,5 +179,20 @@ public class MetadataUtil {
 		uriDotFileEntry.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
 		uriDotFileEntry.targetSize = ((Blob)uriDotFileEntry.target).getLength();
 		((WritableDirectory)dir).addDirectoryEntry(uriDotFileEntry);
+	}
+
+	public static void dereferenceTargetToRequest( Object target, BaseRequest req ) {
+		Map targetMetadata;
+		String targetSourceUri;
+		if( target instanceof Ref ) {
+			targetSourceUri = ((Ref)target).getTargetUri();
+			BaseRequest targetReq = new BaseRequest(Request.VERB_GET, targetSourceUri );
+			Response targetRes = TheGetter.handleRequest( targetReq );
+			req.content = TheGetter.getResponseValue( targetRes, targetReq );
+			req.contentMetadata = targetRes.getContentMetadata();
+			req.putContentMetadata( CcouchNamespace.SOURCE_URI, targetSourceUri );
+		} else {
+			req.content = target;
+		}
 	}
 }

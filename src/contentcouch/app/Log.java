@@ -13,6 +13,7 @@ public class Log {
 	public static final String EVENT_REQUEST_SUBMITTED = "request-submitted"; // method X, uri Y
 	public static final String EVENT_REQUEST_HANDLED = "request-handled"; // method X, uri Y, handled by Z
 	public static final String EVENT_WARNING         = "warning"; // message X
+	public static final String EVENT_PERFORMANCE_WARNING = "performance-warning"; // message X
 	public static final String EVENT_ERROR           = "error"; // error message X, backtrace Y
 	public static final String EVENT_NOT_FOUND       = "not-found"; // X was not found
 	public static final String EVENT_NOT_FOUND_FATAL = "not-found-fatal"; // X was not found
@@ -72,6 +73,7 @@ public class Log {
 
 		if( level < LEVEL_VERBOSE   ) return;
 		addLogger( EVENT_KEPT, stderrLogger );
+		addLogger( EVENT_PERFORMANCE_WARNING, stderrLogger );
 
 		if( level < LEVEL_DEBUG     ) return;
 		addLogger( EVENT_REQUEST_SUBMITTED, stderrLogger );

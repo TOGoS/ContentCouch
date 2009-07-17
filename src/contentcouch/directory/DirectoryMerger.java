@@ -55,6 +55,11 @@ public class DirectoryMerger {
 			}
 			return null;
 		}
+
+		protected String getBlobDescription( Blob b ) {
+			if( b instanceof FileBlob ) { return "FileBlob<" + ((FileBlob)b).getPath() + ">"; }
+			return b.getClass().getName();
+		}
 		
 		protected boolean blobsAreEqual( Blob srcBlob, Blob destBlob, String srcUri, String destUri ) {
 			// First, try to compare URNs, which might have been passed in or cached somewhere
@@ -67,7 +72,7 @@ public class DirectoryMerger {
 			}
 			
 			// This can be really expensive, which is why we tried to avoid it...
-			System.err.println("Comparing blobs, oh no!");
+			Log.log( Log.EVENT_PERFORMANCE_WARNING, "Comparing blobs byte-by-byte: " + getBlobDescription(srcBlob) + ", " + getBlobDescription(destBlob) );
 			return BlobUtil.blobsEqual(srcBlob, destBlob);
 		}
 		

@@ -256,22 +256,9 @@ public class MetaRepository extends BaseRequestHandler {
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			Object target = e.getTarget();
-			String targetSourceUri;
-			if( target instanceof Ref ) {
-				targetSourceUri = ((Ref)target).getTargetUri();
-				target = TheGetter.get( targetSourceUri );
-			} else {
-				String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);
-				if( sourceUri != null ) {
-					targetSourceUri = PathUtil.appendPath(sourceUri, e.getName());
-				} else {
-					targetSourceUri = null;
-				}
-			}
 			BaseRequest targetPutReq = new BaseRequest();
-			targetPutReq.content = target;
+			MetadataUtil.dereferenceTargetToRequest( target, targetPutReq );
 			targetPutReq.metadata = req.getMetadata();
-			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
 			putData( repoConfig, targetPutReq );
 		}
 		
@@ -381,17 +368,9 @@ public class MetaRepository extends BaseRequestHandler {
 
 		Commit c = (Commit)req.getContent();
 		Object target = c.getTarget();
-		String targetSourceUri;
-		if( target instanceof Ref ) {
-			targetSourceUri = ((Ref)target).getTargetUri();
-			target = TheGetter.get( targetSourceUri );
-		} else {
-			targetSourceUri = null;
-		}
 		BaseRequest targetPutReq = new BaseRequest();
 		targetPutReq.metadata = req.getMetadata();
-		targetPutReq.content = target;
-		targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
+		MetadataUtil.dereferenceTargetToRequest( target, targetPutReq );
 		putData( repoConfig, targetPutReq );
 		
 		BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf commit and target stored", "text/plain");
