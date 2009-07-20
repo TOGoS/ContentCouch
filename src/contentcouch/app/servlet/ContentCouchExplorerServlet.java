@@ -56,8 +56,8 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 		metaRepoConfig = new MetaRepoConfig();
 		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
 		File configFile = getConfigFile();
-		String configFileUri = PathUtil.maybeNormalizeFileUri(configFile.getPath());
-		metaRepoConfig.handleArguments(new String[]{"-file",configFileUri}, 0, ".");
+		String configFileUri = PathUtil.maybeNormalizeFileUri(configFile.getAbsolutePath());
+		metaRepoConfig.handleArguments(new String[]{"-file",configFileUri}, 0, configFileUri);
 
 		contentcouch.app.Log.setStandardLogLevel( 60 );
 	}
@@ -98,10 +98,13 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 	}
 	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		String pi = request.getPathInfo();
-		if( pi == null ) pi = request.getRequestURI();
-		if( pi == null ) pi = "/";
-		
+		String pi = request.getServletPath();
+		String _pathToRoot = "";
+		for( int i=1; i<pi.length(); ++i ) {
+			if( pi.charAt(i) == '/' ) _pathToRoot += "../";
+		}
+		final String pathToRoot = _pathToRoot;
+
 		try {
 			final boolean shouldRewriteRelativeUris;
 			String uri = null;
@@ -133,11 +136,24 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 					return;
 				}
 				uri = inputUri;
+			} else if( pi.equals("/test1") ) {
+				response.addHeader("Content-Type", "text/plain");
+				response.getWriter().println("Test1 passed");
+				response.getWriter().println();
+				response.getWriter().println("Request properties");
+				response.getWriter().println("  servletPath: " + request.getServletPath());
+				response.getWriter().println("  contextPath: " + request.getContextPath());
+				response.getWriter().println("  pathTranslated: " + request.getPathTranslated());
+				response.getWriter().println();
+				response.getWriter().println("Servlet context properties");
+				response.getWriter().println("  realPath(\"/\"): " + getServletContext().getRealPath("/"));
+				response.getWriter().println("  realPath(\"\"): " + getServletContext().getRealPath(""));
+				return;
 			} else if( pi.equals("/") ) {
-				uri = "file:web/_index.html";
+				uri = PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("") + "/_index.html");
 				shouldRewriteRelativeUris = false;
 			} else {
-				uri = "file:web" + pi + ".html";
+				uri = PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("") + pi + ".html");
 				shouldRewriteRelativeUris = false;
 			}
 			
@@ -146,17 +162,17 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				Context.push("funk", "Bring the funk");
 				BaseUriProcessor.push( "explore", new BaseUriProcessor(BaseUriProcessor.getInstance("explore"), shouldRewriteRelativeUris) {
 					public String processUri(String uri) {
-						return "/explore?uri=" + UriUtil.uriEncode(uri);
+						return pathToRoot + "explore?uri=" + UriUtil.uriEncode(uri);
 					}
 				});
 				BaseUriProcessor.push( "raw", new BaseUriProcessor(BaseUriProcessor.getInstance("raw"), shouldRewriteRelativeUris) {
 					public String processUri(String uri) {
-						return "/raw?uri=" + UriUtil.uriEncode(uri);
+						return pathToRoot + "raw?uri=" + UriUtil.uriEncode(uri);
 					}
 				});
 				BaseUriProcessor.push( "album", new BaseUriProcessor(BaseUriProcessor.getInstance("raw"), shouldRewriteRelativeUris) {
 					public String processUri(String uri) {
-						return "/process?processor=contentcouch.photoalbum.make-album-page&uri=" + UriUtil.uriEncode(uri);
+						return pathToRoot + "process?processor=contentcouch.photoalbum.make-album-page&uri=" + UriUtil.uriEncode(uri);
 					}
 				});
 				subReq.contextVars = Context.getInstance();
@@ -176,7 +192,10 @@ public class ContentCouchExplorerServlet extends HttpServlet {
 				switch( subRes.getStatus() ) {
 				case( Response.STATUS_NORMAL ): break;
 				case( Response.STATUS_DOESNOTEXIST ): case( Response.STATUS_UNHANDLED ):
-					response.sendError(404, "Resource Not Found"); break;
+					response.sendError(404, "Resource Not Found");
+					response.addHeader("Content-Type", "text/plain");
+					response.getWriter().println("Could not find mapped-to resource: " + subReq.getUri() );
+					break;
 				case( Response.STATUS_USERERROR ):
 					response.sendError(400, "User Error"); break;
 				default:
