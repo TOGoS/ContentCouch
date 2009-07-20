@@ -7,6 +7,7 @@ import java.util.Map;
 import togos.rra.BaseResponse;
 import togos.rra.Response;
 import contentcouch.misc.UriUtil;
+import contentcouch.misc.ValueUtil;
 
 public class ValueExpression implements Expression {
 	public Object value;
@@ -16,6 +17,11 @@ public class ValueExpression implements Expression {
 		this.value = value;
 	}
 	
+	public ValueExpression( Object value, Map metadata ) {
+		this.value = value;
+		this.metadata = metadata;
+	}
+
 	public void putMetadata(String key, Object value) {
 		if( metadata == Collections.EMPTY_MAP ) metadata = new HashMap();
 		metadata.put(key, value);
@@ -28,6 +34,9 @@ public class ValueExpression implements Expression {
 	}
 
 	public String toString() {
+		if( value instanceof byte[] ) {
+			value = ValueUtil.getString((byte[])value);
+		}
 		if( value instanceof Expression ) {
 			return "(quote " + value.toString() + ")";
 		} else if( value instanceof String ) {
@@ -45,7 +54,7 @@ public class ValueExpression implements Expression {
 	}
 	
 	public String toUri() {
-		return "data:," + UriUtil.uriEncode(value.toString());
+		return "data:," + UriUtil.uriEncode(ValueUtil.getBytes(value), false);
 	}
 	
 	public boolean isConstant() {

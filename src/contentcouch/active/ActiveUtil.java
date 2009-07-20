@@ -1,11 +1,12 @@
 package contentcouch.active;
 
+import java.util.HashMap;
 import java.util.TreeMap;
 
 import contentcouch.active.expression.Bareword;
-import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;
 import contentcouch.active.expression.FunctionByNameExpression;
+import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.UriExpression;
 import contentcouch.active.expression.ValueExpression;
 import contentcouch.misc.UriUtil;
@@ -160,6 +161,11 @@ public class ActiveUtil {
 		if( uri.startsWith(ACTIVE_URI_PREFIX) ) return parseActiveUriExpression(uri);
 		if( uri.startsWith("(") ) return parseParenExpression(uri);
 		if( uri.startsWith("\"") ) return new ValueExpression(uri.substring(1,uri.length()-1));
+		if( uri.startsWith(DataUriResolver.DATA_URI_PREFIX) ) {
+			HashMap metadata = new HashMap();
+			byte[] data = DataUriResolver.parse(uri, metadata);
+			return new ValueExpression(data, metadata);
+		}
 		if( uri.indexOf(":") == -1 ) {
 			return new Bareword(uri);
 		} else {

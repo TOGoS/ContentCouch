@@ -32,7 +32,7 @@ public class ActiveUriTest extends TestCase {
 
 	public void testActiveUriParse2() {
 		Expression e = ActiveUtil.parseExpression("active:active:get-func%2bname%40data:,foofunc+bar@x:baz+quux@x:quuux");
-		assertEquals("((get-func name=data:,foofunc) bar=x:baz quux=x:quuux)", e.toString());
+		assertEquals("((get-func name=\"foofunc\") bar=x:baz quux=x:quuux)", e.toString());
 	}
 	
 	public void testParenExpressionParse() {
@@ -52,7 +52,7 @@ public class ActiveUriTest extends TestCase {
 
 	public void testParenExpressionParse2() {
 		Expression e = ActiveUtil.parseParenExpression("((get-func name=data:,foofunc) bar=x:baz quux=x:quuux)");
-		assertEquals("((get-func name=data:,foofunc) bar=x:baz quux=x:quuux)", e.toString());
+		assertEquals("((get-func name=\"foofunc\") bar=x:baz quux=x:quuux)", e.toString());
 	}
 	
 	/** Test that ResolveUriExpression sanitizes itself on toString() */
@@ -72,13 +72,13 @@ public class ActiveUriTest extends TestCase {
 	/** Test that active URIs within (expressions) are parsed */
 	public void testParenExpressionParse3() {
 		Expression e = ActiveUtil.parseParenExpression("((get-func name=data:,foofunc) bar=x:baz quux=active:foo+bar@x:baz)");
-		assertEquals("((get-func name=data:,foofunc) bar=x:baz quux=(foo bar=x:baz))", e.toString());
+		assertEquals("((get-func name=\"foofunc\") bar=x:baz quux=(foo bar=x:baz))", e.toString());
 	}
 
 	/** Test that active URIs as functions within (expressions) are parsed */
 	public void testParenExpressionParse4() {
 		Expression e = ActiveUtil.parseParenExpression("(active:get-func+name@data:,foofunc bar=x:baz quux=active:foo+bar@x:baz)");
-		assertEquals("((get-func name=data:,foofunc) bar=x:baz quux=(foo bar=x:baz))", e.toString());
+		assertEquals("((get-func name=\"foofunc\") bar=x:baz quux=(foo bar=x:baz))", e.toString());
 	}
 
 	/** Test that (expressions) within active URIs are parsed */

@@ -22,6 +22,14 @@ public class ValueUtil {
 		}
 	}
 	
+	public static byte[] getBytes( Object o ) {
+		if( o == null ) return null;
+		if( o instanceof byte[] ) return (byte[])o;
+		if( o instanceof String ) return getBytes((String)o);
+		if( o instanceof Blob ) return BlobUtil.getBytes((Blob)o);
+		throw new RuntimeException("Don't know how to turn " + o.getClass().getName() + " into bytes");
+	}
+	
 	//// Get strings ////
 	
 	public static String getString(byte[] bytes) {
