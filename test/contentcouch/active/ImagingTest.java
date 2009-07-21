@@ -2,20 +2,18 @@ package contentcouch.active;
 
 import java.awt.image.BufferedImage;
 
-import contentcouch.repository.ContentCouchRepository;
-import contentcouch.store.Getter;
-import contentcouch.value.Blob;
 import junit.framework.TestCase;
+import contentcouch.repository.MetaRepoConfig;
+import contentcouch.store.TheGetter;
+import contentcouch.value.Blob;
 
 public class ImagingTest extends TestCase {
-	ContentCouchRepository repo; 
-	protected ContentCouchRepository getRepo() {
-		if( repo == null ) repo = new ContentCouchRepository("junk-repo");
-		return repo;
-	}
-	
-	protected Getter getGenericGetter() {
-		return getRepo().getGenericGetter();
+	MetaRepoConfig repo; 
+
+	public void setUp() {
+		repo = new MetaRepoConfig();
+		repo.handleArguments(new String[]{"-repo","junk-repo/"}, 0, "./");
+		TheGetter.globalInstance = repo.getRequestKernel();
 	}
 	
 	protected void assertInstanceOf( Class c, Object obj ) {
@@ -28,31 +26,31 @@ public class ImagingTest extends TestCase {
 
 	public void testFetchImage() {
 		String uri = "http://www.nuke24.net/images/bunny.jpg";
-		Object result = getGenericGetter().get(uri);
+		Object result = TheGetter.get(uri);
 		assertInstanceOf( Blob.class, result );
 	}
 	
 	public void testScaleImage() {
 		String uri = "(contentcouch.graphics.scale-image http://www.nuke24.net/images/bunny.jpg scale=\"0.5\")";
-		Object result = getGenericGetter().get(uri);
+		Object result = TheGetter.get(uri);
 		assertInstanceOf( BufferedImage.class, result );
 	}
 
 	public void testSerializeImage() {
 		String uri = "(contentcouch.graphics.serialize-image http://www.nuke24.net/images/bunny.jpg format=\"image/jpeg\")";
-		Object result = getGenericGetter().get(uri);
+		Object result = TheGetter.get(uri);
 		assertInstanceOf( Blob.class, result );
 	}
 	
 	public void testSerializeImageWithQuality() {
 		String uri = "(contentcouch.graphics.serialize-image http://www.nuke24.net/images/bunny.jpg format=\"image/jpeg\" quality=\"50\")";
-		Object result = getGenericGetter().get(uri);
+		Object result = TheGetter.get(uri);
 		assertInstanceOf( Blob.class, result );
 	}
 
 	public void testScaleAndSerializeImage() {
 		String uri = "(contentcouch.graphics.serialize-image (contentcouch.graphics.scale-image http://www.nuke24.net/images/bunny.jpg) format=\"image/jpeg\")";
-		Object result = getGenericGetter().get(uri);
+		Object result = TheGetter.get(uri);
 		assertInstanceOf( Blob.class, result );
 	}
 }

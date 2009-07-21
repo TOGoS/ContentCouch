@@ -18,7 +18,7 @@ public class XML {
 	}
 
 	public static String xmlEscapeAttributeValue( String text ) {
-		return text.replaceAll("&","&amp").replaceAll("\"","&quot;").replaceAll("<", "&lt;").replaceAll(">","&gt;");
+		return text.replaceAll("&","&amp;").replaceAll("\"","&quot;").replaceAll("<", "&lt;").replaceAll(">","&gt;");
 	}
 	
 	public static String xmlUnescape(String text) {

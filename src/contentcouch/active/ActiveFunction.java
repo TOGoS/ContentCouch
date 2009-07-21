@@ -2,6 +2,8 @@ package contentcouch.active;
 
 import java.util.Map;
 
+import togos.rra.Response;
+
 public interface ActiveFunction {
-	public Object call( Map argumentExpressions );
+	public Response call( Map argumentExpressions );
 }

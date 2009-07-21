@@ -1,6 +1,3 @@
-/**
- * 
- */
 package contentcouch.rdf;
 
 public class RdfNode extends MultiMap {
@@ -12,6 +9,6 @@ public class RdfNode extends MultiMap {
 	}
 	
 	public String toString() {
-		return RdfIO.xmlEncodeRdf(this, RdfNamespace.CCOUCH_NS);
+		return RdfIO.xmlEncodeRdf(this, CcouchNamespace.CC_NS);
 	}
 }

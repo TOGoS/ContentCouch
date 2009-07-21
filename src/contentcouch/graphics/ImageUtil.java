@@ -15,7 +15,6 @@ import javax.imageio.ImageWriter;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
-import contentcouch.rdf.RdfNamespace;
 import contentcouch.value.Blob;
 
 public class ImageUtil {
@@ -65,7 +64,6 @@ public class ImageUtil {
 	}
 	
 	public static Blob serializeImage( final BufferedImage img, final String formatName, Number quality ) {
-		final String longFormatName = getLongFormatName(formatName);
 		final String shortFormatName = getShortFormatName(formatName);
 		
 		Iterator writerIter = ImageIO.getImageWritersByFormatName(shortFormatName);
@@ -88,9 +86,7 @@ public class ImageUtil {
 			throw new RuntimeException(e);
 		}
 		
-		ByteArrayBlob bab = new ByteArrayBlob(baos.toByteArray());
-		bab.putMetadata(RdfNamespace.DC_FORMAT, longFormatName);
-		return bab;
+		return new ByteArrayBlob(baos.toByteArray());
 	}
 	
 	public static BufferedImage scaleImage( final BufferedImage img, final int newWidth, final int newHeight ) {
@@ -98,7 +94,7 @@ public class ImageUtil {
 			throw new RuntimeException("Output image would be too large: " + Math.abs(newWidth*newHeight) + " pixels");
 		}
 		
-		BufferedImage bdest = new BufferedImage(Math.abs(newWidth), Math.abs(newHeight), img.getType());
+		BufferedImage bdest = new BufferedImage(Math.abs(newWidth), Math.abs(newHeight), img.getType() );
 		Graphics2D g = bdest.createGraphics();
 		int dx1 = newWidth  < 0 ? -newWidth  : 0;
 		int dy1 = newHeight < 0 ? -newHeight : 0;

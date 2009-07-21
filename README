@@ -1,55 +1,45 @@
-More coonceptual details about ContentCouch can be found on the wiki at
-http://wiki.github.com/TOGoS/contentcouch and in the doc/ of the project
-directory.  This file gives some detail about the implementation, and will
-hopefully help you get the 'ccouch' command and/or the web servlet running.
+More conceptual details about ContentCouch can be found on the wiki at
+http://wiki.github.com/TOGoS/contentcouch and under doc/ in the project
+directory.  This file is intended only to help you get started using
+ContentCouch at a basic level.
 
 == Repository set up ==
 
-All you need to do to 'set up' a new repository is decide what directory
-you want it to be in and what you want to name it.  Each repository is
-a directory containing a set of data files, 'heads' (named pointers to
-notable objects), and cache files.
+The first step to using ContentCouch is to create and name a repository.
 
-When deciding on a name for your repository, you should choose something
-unique, as anyone who wants to download files from your repository will need
-to use this name to identify it.  A good convention is to use the name
-of the computer on which the repository resides.
+A repository can store any number of files from any number of projects.
 
-See 'Heads' for more information on how repository names are used.
+If you want to use hardlinks between the repository and your files (this
+saves space but also causes your files to be read-only, a good solution for
+large media files but not for smaller files that change often), you should
+create the repository on the same partition as the files you want to store
+in it.
 
-== ccouch Command ==
+Your repository will also need a name.  Choose something short but relatively
+unique.  If your computer already has host/domain name, that would be a good
+choice.
 
-...better installation instructions pending
+To create the repository, just store a few files in it by running
 
-Basically you'll want to copy ccouch.sh or ccouch.bat to a location in
-your path and change the paths within to point at the ContentCouch program
-directory and your local repositories.  This way you will be able to type
-ccouch from within any directory and have it automatically reference the
-right class path and repository.
+  ccouch -repo:<repo-name> <path-to-repo> store [-link] <file1> <file2> ...
 
-Updated documentation about the commands can be found by running 'ccouch -?'.
-Run 'ccouch <subcommand> -?' to see a list of options for the given
-sub-command.
+As an example, this might look like:
+  
+  java -cp C:/apps/ccouch/web/WEB-INF/classes \
+  contentcouch.app.ContentCouchCommand \
+  -repo:togos-backup3 file:///F:/datastore/ccouch \
+  store -link helloworld.txt
 
-== Servlet ==
+(backslashes indicate that the command continues on the next line.)
 
-A shell script is included (winstone.sh for unix, winstone.bat for windows)
-that will start up the Winstone servlet container with the
-ContentCouchExplorerServlet.  This servlet may work with other containers,
-but has not been tested with them.
+For obvious reasons, you would benefit by creating a shell script/batch
+file to call ccouch for you.  Example scripts are included in the project:
+ccouch.sh and ccouch.bat, for Unix and Windows, respectively.  These scripts
+call java with the ccouch classpath and main class, specify a repository,
+and pass through any additional parameters.
 
-The purpose of the servlet is to give you a way to easily poke around in
-your repositories.  It is not a necessary component to use ccouch.
-
-The included shell scripts point Winstone to the web/ directory in the
-ContentCouch project.  This directory contains:
-
-  repo-config - configuration file used to initialize the servlet repository
-  WEB-INF/classes - where all the class files are loaded from
-  WEB-INF/web.xml - servlet configuration file
-
-repo-config in the web folder should generally be a single line pointing
-to the actual location of the primary local repository.
+For more information, run 'ccouch -?' to see a list of sub-commands, and
+'ccouch <subcommand> -?' to see a list of options for any given sub-command.
 
 == Repositories and Configuration Files ==
 
@@ -84,18 +74,28 @@ options are given in /home/ted/ccouch/ccouch-config).
 - main - this is the repository that will be checked first when loading
   files, and that files will be stored in when 'ccouch store' is invoked.
   This repository can reference any number of local and remote
-  repositories.
+  repositories, and one cache repository (which may be itself).
 
 - local - these are other repositories that can be accessed quickly
   (i.e. on the same filesystem or computer as the main repository).
+  
+  It could be useful to have several 'main' repositories on a single computer
+  if you wanted to keep data for different purposes separate.  For example,
+  you might have one repository dedicated to storing photos, and one dedicated
+  to storing music.  These separate repositories could reference eachother
+  as '-local-repo:<name>'
+  
+- cache - if one is specified, blobs downloaded from remote repositories
+  are cached in the cache repository for fast access.  The cache repository
+  should, like local repositories, be on the same computer as the main repo.
+  It is useful to have this be separate from the main repository, since the
+  main repository holds files that are important to the user of this computer,
+  but the cache repository is more likely to hold less valuable files and/or
+  files that can be re-downloaded from elsewhere.
 
-  It could be useful to have multiple repositories on one machine if you want
-  to have separate repositories for each user, or for each partition (to
-  allow hardlinks between stored blobs and files on a partition).
-    
 - remote - a repository residing on a machine that is slow or difficult
-  to access, such as one connected only by a low-bandwidth link (e.g.
-  the Internet).  You generally want to cache files that are loaded from
+  to access, such as one connected only by a low-bandwidth link (such as
+  the internet).  You generally want to cache files that are loaded from
   remote repositories rather than downloading them each time they are needed.
 
 == Heads ==
@@ -129,7 +129,7 @@ The ccouch commands and servlet recognise a URI form that looks like:
 
 Using these URIs you can reference specific heads.  If <repo-name> is
 included, the URI references the head in that specific repository. Otherwise,
-only the main, and local repositories are checked (except by the
+only the main, local, and cache repositories are checked (except by the
 'ccouch cache-heads', which will also load remote heads in some cases).
 
 If the URI ends with /latest, it will reference the latest version found
@@ -150,6 +150,26 @@ paths.  For more information, run
 
   ccouch cache-heads -?
 
+== Servlet ==
+
+A shell script is included (winstone.sh for unix, winstone.bat for windows)
+that will start up the Winstone servlet container with the
+ContentCouchExplorerServlet.  This servlet may work with other containers,
+but has not been tested with them.
+
+The purpose of the servlet is to give you a way to easily poke around in
+your repositories.  It is not a necessary component to use ccouch.
+
+The included shell scripts point Winstone to the web/ directory in the
+ContentCouch project.  This directory contains:
+
+  repo-config - configuration file used to configure the servlet repository
+  WEB-INF/classes - where all the class files are loaded from
+  WEB-INF/web.xml - servlet configuration file
+
+repo-config in the web folder should generally be a single line pointing
+to the actual location of the main repository.
+
 == Example: Joe's Laptop == 
 
 Joe has a laptop that he does a lot of work on.  He has a directory full of
@@ -159,10 +179,12 @@ repositories.  He sets up one repository for the bulk of his files and
 calls it "joe-laptop".  He keeps his work on a separate hard drive, and
 so it makes sense for him to have a separate repository on that hard drive
 for storing work stuff so that he can store and checkout using hardlinks.
-He also wants to use this laptop to back up files from a friend's server.
+He also wants to use this laptop to back up files from a friend's server,
+and so sets up a cache repository where those files can be stored.
 
   joe-laptop       ; catch-all repository for files archived from joe-laptop
   joe-laptop-work  ; a repository storing joe's work-related files
+  joe-laptop-cache ; joe-laptop's cache for files downloaded from elsewhere
 
 Joe's 'work' hard drive is C, and his photos and music are stored on F, so
 he sets up his repositores to be on the same drives as the files they are
@@ -170,12 +192,14 @@ storing (again, so that he can use hardlinks):
 
   C:/ccouch/work/
   F:/ccouch/main/
+  F:/ccouch/cache/
 
 Joe eventually decides that he wants other people to be able to pull from
 his repositories, and so he sets up a web server and maps his ccouch
 repositories to the following URLs:
 
   http://laptop.joe.example.org/ccouch/main/
+  http://laptop.joe.example.org/ccouch/cache/
   http://laptop.joe.example.org/ccouch/work/
 
 Next Joe is going to set up a script that will back up files from his friend
@@ -194,8 +218,10 @@ config file, F:/ccouch/main/ccouch-config:
   # Local stuff:
   -repo-name joe-laptop
   -local-repo C:/ccouch/work
+  -cache-repo F:/ccouch/cache
   # Bill's repositories:
   -remote-repo:bill http://ccouch.billstuff.example.org/bill/
+  -remote-repo:bill-cache http://ccouch.billstuff.example.org/bill-cache/
 
   # I always wanna symlink:
   [checkout]

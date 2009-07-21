@@ -7,12 +7,16 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import togos.rra.ContentAndMetadata;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfIO;
-import contentcouch.rdf.RdfNamespace;
+import contentcouch.store.TheGetter;
+import contentcouch.value.BaseRef;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -31,24 +35,25 @@ public class DirectoryUtil {
 				while( lineMatcher.find() ) {
 					String href = lineMatcher.group(1);
 					href = XML.xmlUnescape(href);
-					String fullPath = PathUtil.appendPath(identifier, href);
-					if( fullPath.startsWith(identifier) ) {
-						String subPath = fullPath.substring(identifier.length());
-						if( subPath.startsWith("?") ) continue;
-						int si = subPath.indexOf('/');
-						if( si == -1 ) {
-							SimpleDirectory.Entry e = new SimpleDirectory.Entry();
-							e.name = subPath;
-							e.targetType = RdfNamespace.OBJECT_TYPE_BLOB;
-							e.target = new Ref(PathUtil.appendPath(identifier, subPath));
-							dir.addEntry(e);
-						} else {
-							SimpleDirectory.Entry e = new SimpleDirectory.Entry();
-							e.name = subPath.substring(0, si);
-							e.targetType = RdfNamespace.OBJECT_TYPE_DIRECTORY;
-							e.target = new Ref(PathUtil.appendPath(identifier, e.name) + "/");
-							dir.addEntry(e);
-						}
+					if( href.startsWith("./") ) href = href.substring(2);
+					if( href.startsWith("../") ) continue;
+					if( href.startsWith("?") ) continue;
+					if( PathUtil.isAbsolute(href) ) continue;
+					if( href.equals("") ) continue;
+					int si = href.indexOf('/');
+					if( si != -1 ) href = href.substring(0,si+1);
+					if( !href.endsWith("/") ) {
+						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
+						e.name = href;
+						e.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
+						e.target = new BaseRef(identifier, href);
+						dir.addDirectoryEntry(e);
+					} else {
+						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
+						e.name = href.substring(0, href.length()-1);
+						e.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+						e.target = new BaseRef(identifier, e.name + "/");
+						dir.addDirectoryEntry(e);
 					}
 				}
 			}
@@ -58,22 +63,30 @@ public class DirectoryUtil {
 		return dir;
 	}
 	
-	public static Directory getDirectory( Object o, Map metadata, String identifier ) {
+	public static Directory getDirectory( Object o, Map metadata, String uri ) {
 		if( o == null ) return null;
 		if( o instanceof Directory ) {
 			return (Directory)o;
 		}
 		if( o instanceof Blob ) {
 			Blob blob = (Blob)o;
-			String type = (String)metadata.get(RdfNamespace.DC_FORMAT);
+			String type = (String)metadata.get(DcNamespace.DC_FORMAT);
 			if( type == null || type.startsWith("text/html") ) {
-				return parseHtmlDirectory(blob, identifier);
+				return parseHtmlDirectory(blob, uri);
 			}
 			if( type.startsWith("application/rdf+xml") ) {
-				return (Directory)RdfIO.parseRdf(ValueUtil.getString(blob), identifier);
+				return (Directory)RdfIO.parseRdf(ValueUtil.getString(blob), uri);
 			}
-			return parseHtmlDirectory(blob, identifier);
+			return parseHtmlDirectory(blob, uri);
 		}
 		throw new RuntimeException("Don't know how to turn " + o.getClass().getName() + " into Directory");	
+	}
+	
+	public static Directory getDirectory( ContentAndMetadata res, String uri ) {
+		return getDirectory(res.getContent(), res.getContentMetadata(), uri);
+	}
+
+	protected static Object getTargetValue( Object target ) {
+		return ( target instanceof Ref ) ? TheGetter.get(((Ref)target).getTargetUri()) : target;
 	}
 }

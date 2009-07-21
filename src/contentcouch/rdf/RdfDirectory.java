@@ -1,10 +1,8 @@
-/**
- * 
- */
 package contentcouch.rdf;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -16,19 +14,23 @@ import java.util.Set;
 import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;
 import contentcouch.misc.Function1;
+import contentcouch.value.BaseRef;
 import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class RdfDirectory extends RdfNode implements Directory {
-	public static Function1 DEFAULT_DIRECTORY_ENTRY_TARGET_RDFIFIER = new Function1() {
+	/** Turns Blobs into Refs, keeps Refs and RdfNodes as they are, and turns Directories into nested Rdf */
+	public static Function1 DEFAULT_TARGET_RDFIFIER = new Function1() {
 		public Object apply(Object input) {
-			if( input instanceof Ref || input instanceof RdfNode ) {
+			if( input == null ) {
+				return null;
+			} else if( input instanceof Ref || input instanceof RdfNode ) {
 				return input;
 			} else if( input instanceof Directory ) {
 				return new RdfDirectory( (Directory)input, this );
 			} else if( input instanceof Blob ) {
-				return new Ref(DigestUtil.getSha1Urn((Blob)input));
+				return new BaseRef(DigestUtil.getSha1Urn((Blob)input));
 			} else {
 				throw new RuntimeException("Don't know how to rdf-ify " + input.getClass().getName() );
 			}
@@ -36,51 +38,77 @@ public class RdfDirectory extends RdfNode implements Directory {
 	};
 	
 	public static class Entry extends RdfNode implements Directory.Entry {
+		public Entry() {
+			super(CcouchNamespace.DIRECTORYENTRY);
+		}
+
 		public Entry( Directory.Entry de, Function1 targetRdfifier ) {
 			this();
-			if( RdfNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
-			} else if( RdfNamespace.OBJECT_TYPE_DIRECTORY.equals(de.getTargetType()) ) {
+			if( de.getTargetType() == null ) {
+			} else if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
+			} else if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(de.getTargetType()) ) {
 			} else {
 				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
 			}
 
-			add(RdfNamespace.CCOUCH_NAME, de.getKey());
-			add(RdfNamespace.CCOUCH_TARGETTYPE, de.getTargetType());
+			add(CcouchNamespace.NAME, de.getName());
+			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
 
-			long modified = de.getLastModified();
-			if( modified != -1 ) add(RdfNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			long modified = de.getTargetLastModified();
+			if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) && modified != -1 ) {
+				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			}
 			
-			long size = de.getSize();
-			if( size != -1 ) add(RdfNamespace.CCOUCH_SIZE, String.valueOf(size) );
+			long size = de.getTargetSize();
+			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
 
-			add(RdfNamespace.CCOUCH_TARGET, targetRdfifier.apply(de.getValue()));
-		}
-
-		public Entry() {
-			super(RdfNamespace.CCOUCH_DIRECTORYENTRY);
+			add(CcouchNamespace.TARGET, targetRdfifier.apply(de.getTarget()));
 		}
 		
-		public Object getValue() {
-			return getSingle(RdfNamespace.CCOUCH_TARGET);
+		public Entry( Directory.Entry de, Ref target ) {
+			this();
+			if( de.getTargetType() == null ) {
+			} else if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) ) {
+			} else if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(de.getTargetType()) ) {
+			} else {
+				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
+			}
+
+			add(CcouchNamespace.NAME, de.getName());
+			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
+
+			long modified = de.getTargetLastModified();
+			if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(de.getTargetType()) && modified != -1 ) {
+				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
+			}
+			
+			long size = de.getTargetSize();
+			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
+
+			add(CcouchNamespace.TARGET, target);
+		}
+		
+		public Object getTarget() {
+			return getSingle(CcouchNamespace.TARGET);
 		}
 
 		public String getTargetType() {
-			return (String)getSingle(RdfNamespace.CCOUCH_TARGETTYPE);
+			return (String)getSingle(CcouchNamespace.TARGETTYPE);
 		}
 
-		public String getKey() {
-			return (String)getSingle(RdfNamespace.CCOUCH_NAME);
+		public String getName() {
+			return (String)getSingle(CcouchNamespace.NAME);
 		}
 
-		public long getSize() {
-			String lm = (String)getSingle(RdfNamespace.CCOUCH_SIZE);
+		public long getTargetSize() {
+			String lm = (String)getSingle(CcouchNamespace.SIZE);
 			if( lm == null ) return -1;
 			return Long.parseLong(lm);
 		}
 
-		public long getLastModified() {
+		public long getTargetLastModified() {
 			try {
-				String lm = (String)this.getSingle(RdfNamespace.DC_MODIFIED);
+				String lm = (String)this.getSingle(DcNamespace.DC_MODIFIED);
 				if( lm == null ) return -1;
 				return DateUtil.parseDate(lm).getTime();
 			} catch( ParseException e ) {
@@ -91,33 +119,23 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public RdfDirectory() {
-		super(RdfNamespace.CCOUCH_DIRECTORY);
+		super(CcouchNamespace.DIRECTORY);
 	}
 	
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
 		this();
-		List entries = new ArrayList(dir.getDirectoryEntrySet());
-		Collections.sort( entries, new Comparator() {
-			public int compare( Object o1, Object o2 ) {
-				return ((Directory.Entry)o1).getKey().compareTo(((Directory.Entry)o2).getKey());
-			}
-		});
-		List rdfEntries = new ArrayList();
-		for( Iterator i = entries.iterator(); i.hasNext(); ) {
-			Directory.Entry entry = (Directory.Entry)i.next();
-			rdfEntries.add( new RdfDirectory.Entry(entry, targetRdfifier) );
-		}
-		add(RdfNamespace.CCOUCH_ENTRIES, rdfEntries);
+		if( targetRdfifier == null ) targetRdfifier = DEFAULT_TARGET_RDFIFIER;
+		setDirectoryEntries( dir.getDirectoryEntrySet(), targetRdfifier );
 	}
 	
 	public RdfDirectory( Directory dir ) {
-		this( dir, DEFAULT_DIRECTORY_ENTRY_TARGET_RDFIFIER );
+		this( dir, null );
 	}
 
 	public Set getDirectoryEntrySet() {
-		List entryList = (List)this.getSingle(RdfNamespace.CCOUCH_ENTRIES);
+		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
 		HashSet entries = new HashSet();
-		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
+		if( entryList != null )	for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
 			entries.add(e);
 		}
@@ -125,13 +143,55 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public Directory.Entry getDirectoryEntry(String key) {
-		List entryList = (List)this.getSingle(RdfNamespace.CCOUCH_ENTRIES);
+		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
-			if( e.getKey() == key ) {
+			if( e.getName() == key ) {
 				return e;
 			}
 		}
 		return null;
+	}
+	
+	/** Replaces whatever entries are currently in this object with the new RdfDirectory.Entries
+	 * based on the given Entries and the given target RDFifier.
+	 * The entries will be sorted by name. */
+	public void setDirectoryEntries( Collection entryCollection, Function1 targetRdfifier ) {
+		ArrayList rdfDirectoryEntries = new ArrayList();
+		for( Iterator i=entryCollection.iterator(); i.hasNext(); ) {
+			rdfDirectoryEntries.add( new RdfDirectory.Entry( (Directory.Entry)i.next(), targetRdfifier ));
+		}
+		setDirectoryEntries(rdfDirectoryEntries);
+	}
+	
+	/** Replaces whatever entries are currently in this object with the given ones.
+	 * The entries will be sorted by name.
+	 * @param entryCollection a collection of RdfDirectoryEntries. */
+	public void setDirectoryEntries( Collection entryCollection ) {
+		List entries = new ArrayList(entryCollection);
+		Collections.sort( entries, new Comparator() {
+			public int compare( Object o1, Object o2 ) {
+				return ((RdfDirectory.Entry)o1).getName().compareTo(((RdfDirectory.Entry)o2).getName());
+			}
+		});
+		List rdfEntries = new ArrayList();
+		remove(CcouchNamespace.ENTRIES);
+		add(CcouchNamespace.ENTRIES, rdfEntries);
+		for( Iterator i = entries.iterator(); i.hasNext(); ) {
+			RdfDirectory.Entry entry = (RdfDirectory.Entry)i.next();
+			rdfEntries.add( entry );
+		}
+	}
+	
+	public void addDirectoryEntry( Directory.Entry newEntry ) {
+		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
+		if( entryList == null ) {
+			entryList = new ArrayList();
+			this.add(CcouchNamespace.ENTRIES, entryList);
+		}
+		if( !(newEntry instanceof RdfDirectory.Entry) ) {
+			throw new RuntimeException( "Can only add RdfDirectory.Entries to RdfDirectory");
+		}
+		entryList.add(newEntry);
 	}
 }

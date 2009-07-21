@@ -4,38 +4,97 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
-import contentcouch.rdf.RdfNamespace;
+import contentcouch.blob.BlobUtil;
+import contentcouch.directory.DirectoryMerger;
+import contentcouch.directory.WritableDirectory;
+import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
+import contentcouch.store.TheGetter;
+import contentcouch.value.Blob;
 import contentcouch.value.Directory;
+import contentcouch.value.Ref;
 
-public class FileDirectory extends File implements Directory {
-	public static class FileDirectoryEntry extends File implements Directory.Entry {
-		public FileDirectoryEntry(File file) {
+public class FileDirectory extends File implements WritableDirectory {
+	/** Should it try to use hardlinks when writing files? */
+	public boolean shouldUseHardlinks;
+	
+	public class Entry extends File implements Directory.Entry {
+		public Entry(File file) {
 			super(file.getPath());
 		}
 
-		public String getKey() {
-			return getName();
+		////
+		
+		public String getName() {
+			return super.getName();
 		}
 		
-		public long getLastModified() {
-			if( isFile() ) return lastModified();
-			return -1; // Mtime on a directory doesn't necessarily mean much, so let's ignore
+		public long getTargetLastModified() {
+			return lastModified();
 		}
 
-		public Object getValue() {
+		protected FileDirectory getTargetDirectory() {
+			FileDirectory fd = new FileDirectory(this);
+			fd.shouldUseHardlinks = shouldUseHardlinks;
+			return fd;
+		}
+		
+		public Object getTarget() {
+			if( this.isDirectory() ) {
+				return getTargetDirectory();
+			}
 			return FileUtil.getContentCouchObject(this);
 		}
 		
-		public long getSize() {
+		public long getTargetSize() {
 			if( isFile() ) return length();
 			return -1;
 		}
 
 		public String getTargetType() {
 			if( isDirectory() ) {
-				return RdfNamespace.OBJECT_TYPE_DIRECTORY;
+				return CcouchNamespace.OBJECT_TYPE_DIRECTORY;
 			} else {
-				return RdfNamespace.OBJECT_TYPE_BLOB;
+				return CcouchNamespace.OBJECT_TYPE_BLOB;
+			}
+		}
+		
+		////
+		
+		public void setTargetLastModified(long time) {
+			if( time > 0 ) this.setLastModified(time);
+		}
+		
+		public void setTarget(Object value) {
+			if( this.exists() ) {
+				if( !this.delete() ) {
+					if( this.isDirectory() ) {
+						throw new RuntimeException( "Could not delete directory " + this + " to replace.  Ensure that it is empty.");
+					} else {
+						throw new RuntimeException( "Could not delete " + this + " to replace");
+					}
+				}
+			}
+			
+			String sourceUri;
+			if( value instanceof Ref ) {
+				sourceUri = ((Ref)value).getTargetUri();
+				value = TheGetter.get(sourceUri);
+			} else {
+				sourceUri = "x-undefined:source";
+			}
+			
+			if( value instanceof Directory ) {
+				FileUtil.mkdirs(this);
+				new DirectoryMerger( null, false ).putAll(getTargetDirectory(), (Directory)value, sourceUri, PathUtil.maybeNormalizeFileUri(getPath()) );
+				return;
+			}
+			
+			Blob blob = BlobUtil.getBlob(value);
+			if( shouldUseHardlinks ) {
+				BlobUtil.linkBlobToFile(blob, this);
+			} else {
+				BlobUtil.writeBlobToFile(blob, this);
 			}
 		}
 	}
@@ -54,14 +113,22 @@ public class FileDirectory extends File implements Directory {
 		if( subFiles != null ) for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
 			if( subFile.getName().startsWith(".") ) continue;
-			entries.add(new FileDirectoryEntry(subFile));
+			entries.add(new Entry(subFile));
 		}
 		return entries;
 	}
 	
-	public Entry getDirectoryEntry(String key) {
+	public Directory.Entry getDirectoryEntry(String key) {
 		File f = new File(this.getPath() + "/" + key);
 		if( !f.exists() ) return null;
-		return new FileDirectoryEntry(f);
+		return new Entry(f);
+	}
+	
+	public void addDirectoryEntry(Directory.Entry entry) {
+		File f = new File(this.getPath() + "/" + entry.getName());
+		//if( f.exists() ) throw new RuntimeException("Cannot add entry; file already exists at " + this + "/" + entry.getName());
+		Entry e = new Entry(f);
+		e.setTarget(entry.getTarget());
+		e.setTargetLastModified(entry.getTargetLastModified());
 	}
 }

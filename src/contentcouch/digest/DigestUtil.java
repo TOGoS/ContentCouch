@@ -39,11 +39,7 @@ public class DigestUtil {
 		return md.digest();
 	}
 	
-	public static byte[] digestBlob( Blob blob, String digestAlgorithmName )
-		throws NoSuchAlgorithmException
-	{
-		MessageDigest md = MessageDigest.getInstance(digestAlgorithmName);
-		
+	public static byte[] digestBlob( Blob blob, MessageDigest md ) {
 		if( blob instanceof ByteArrayBlob ) {
 			// Do all at once no matter the length
 			return md.digest( blob.getData(0, (int)blob.getLength()) );
@@ -61,6 +57,13 @@ public class DigestUtil {
 			}
 			return md.digest();
 		}
+	}
+	
+	public static byte[] digestBlob( Blob blob, String digestAlgorithmName )
+		throws NoSuchAlgorithmException
+	{
+		MessageDigest md = MessageDigest.getInstance(digestAlgorithmName);
+		return digestBlob( blob, md );
 	}
 	
 	public static byte[] sha1DigestBlob( Blob blob ) {

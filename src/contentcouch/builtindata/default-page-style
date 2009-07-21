@@ -1,0 +1,50 @@
+body { background: #88B; color: black; }
+body > h2 { color:white }
+
+.main-content > h3 { margin: 0; padding: 4pt 2em 4pt 2em; background: darkgray }
+
+.main-content { border:1px solid; margin:4px; padding: 0px; background-color:#CCC; }
+.main-content > pre { margin: 1em 2em; }
+
+/* SLF Formatting */
+.chunk { border:1px solid; margin:4px; padding: 0px; background-color:silver }
+.chunk-title { margin: 0; padding: 2px 4px 2px 4px; background-color: #EEE }
+.chunk-summary { margin: 0; padding: 2px 4px 2px 12px; color: #808; background-color: #FFF }
+.chunk-content { margin: 0; padding: 1px 4px 1px 4px }
+.chunk-content > span, .chunk-summary > span { margin: 0; padding: 1px 0px 1px 0px; }
+.chunk-title, .chunk-content, .chunk-summary { font-family: monospace }
+.chunk-link { text-decoration: none }
+
+/* Directory List Formatting */
+.main-content .dir-list th { background: #DDD; }
+.dir-list { border-collapse: collapse; }
+.dir-list td, .dir-list th {
+	padding-left: 1ex;
+	padding-right: 1ex;
+	font-family: Courier;
+	border-left: 1px outset;
+}
+
+/* Photo Album Formatting */
+.image-thumbnail-box {
+	background: black;
+	float: left;
+	border: 2px outset #222;
+	text-align: center;
+	margin: 4px;
+	color: white;
+}
+.image-thumbnail-title {
+	width: 100%;
+	background: #333;
+}
+.image-thumbnail-inner-box {
+	width: 160px;
+	height: 130px;
+	display: table;
+	text-align: center;
+}
+.image-thumbnail-inner-box > * {
+	display: table-cell;
+	vertical-align: middle;
+}
