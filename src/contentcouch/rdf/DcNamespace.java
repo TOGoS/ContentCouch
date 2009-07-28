@@ -9,4 +9,5 @@ public class DcNamespace {
 	public static final String DC_FORMAT               = DC_NS + "format";
 	public static final String DC_TITLE                = DC_NS + "title";
 	public static final String DC_DESCRIPTION          = DC_NS + "description";
+	public static final String DC_SUBJECT              = DC_NS + "subject";
 }

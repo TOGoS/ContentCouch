@@ -3,20 +3,10 @@ package contentcouch.rdf;
 import java.util.HashMap;
 import java.util.Map;
 
-import contentcouch.value.Ref;
 
 public class CcouchNamespace {
 	//// Types //// 
 	
-	public static class Description extends RdfNode {
-		public Ref about;
-		public Description() {
-			super(RdfNamespace.RDF_DESCRIPTION);
-		}
-	}
-
-	//// Constants ////
-
 	public static final String URI_PARSE_PREFIX = "x-parse-rdf:";
 	
 	public static final String CC_NS = "http://ns.nuke24.net/ContentCouch/";

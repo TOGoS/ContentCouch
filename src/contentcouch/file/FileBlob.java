@@ -6,9 +6,13 @@ import java.io.IOException;
 
 import contentcouch.value.Blob;
 
-public class FileBlob extends File implements Blob {	
+public class FileBlob extends File implements Blob {
+	public FileBlob( String path ) {
+		super(path);
+	}
+	
 	public FileBlob( File file ) {
-		super(file.getPath());
+		this(file.getPath());
 	}
 	
 	//// Blob implementation ////

@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import contentcouch.rdf.CcouchNamespace.Description;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Ref;
 import contentcouch.xml.XML;
