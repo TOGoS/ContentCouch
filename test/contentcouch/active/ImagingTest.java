@@ -12,8 +12,8 @@ public class ImagingTest extends TestCase {
 
 	public void setUp() {
 		repo = new MetaRepoConfig();
-		repo.handleArguments(new String[]{"-repo","junk-repo/"}, 0, "./");
 		TheGetter.globalInstance = repo.getRequestKernel();
+		repo.handleArguments(new String[]{"-repo","junk-repo/"}, 0, "./");
 	}
 	
 	protected void assertInstanceOf( Class c, Object obj ) {
