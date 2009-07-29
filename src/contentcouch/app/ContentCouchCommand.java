@@ -821,7 +821,7 @@ public class ContentCouchCommand {
 			storeCommitReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
 			Response storeCommitRes = TheGetter.handleRequest(storeCommitReq);
 			if( storeCommitRes.getStatus() != Response.STATUS_NORMAL ) {
-				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + dataDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
+				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + dataDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
 				++errorCount;
 				break createCommit;
 			}
@@ -844,7 +844,7 @@ public class ContentCouchCommand {
 			if( parentCommitListUri != null ) {
 				Response storeCommitUriRes = writeCommitUri(parentCommitListUri, commitUrn);
 				if( storeCommitUriRes.getStatus() != Response.STATUS_NORMAL ) {
-					Log.log(Log.EVENT_WARNING, "Could not PUT new commit URI list to " + parentCommitListUri + ": " + BaseResponse.getErrorSummary(storeCommitUriRes));
+					Log.log(Log.EVENT_WARNING, "Could not PUT new commit URI list to " + parentCommitListUri + ": " + TheGetter.getResponseErrorSummary(storeCommitUriRes));
 					break createCommit;
 				}
 			}
@@ -854,7 +854,7 @@ public class ContentCouchCommand {
 				storeCommitHeadReq.content = TheGetter.get(commitBlobUrn);
 				Response storeCommitHeadRes = TheGetter.handleRequest(storeCommitHeadReq);
 				if( storeCommitHeadRes.getStatus() != Response.STATUS_NORMAL ) {
-					Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + commitDestUri + ": " + BaseResponse.getErrorSummary(storeCommitRes));
+					Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + commitDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
 					++errorCount;
 					break createCommit;
 				}

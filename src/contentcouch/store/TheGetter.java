@@ -69,6 +69,10 @@ public class TheGetter {
 	public static Object getResponseValue( Response res, Request req ) {
 		return getResponseValue(res, req.getVerb(), req.getUri() );
 	}
+	
+	public static final String getResponseErrorSummary( Response res ) {
+		return res.getStatus() + ": " + ValueUtil.getString(res.getContent()); 
+	}
 
 	public static Object get(String uri) {
 		Request req = new BaseRequest("GET",uri);

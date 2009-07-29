@@ -4,16 +4,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.DcNamespace;
-
 public class BaseResponse implements Response {
+	public static final String DC_NS                    = "http://purl.org/dc/terms/";
+	public static final String DC_FORMAT                = DC_NS + "format";	
 	public static final BaseResponse RESPONSE_UNHANDLED = new BaseResponse(Response.STATUS_UNHANDLED, "Not handled", "text/plain");
-	
-	public static final String getErrorSummary( Response res ) {
-		return res.getStatus() + ": " + ValueUtil.getString(res.getContent()); 
-	}
-	
+		
 	public int status;
 	public Object content;
 
@@ -44,14 +39,13 @@ public class BaseResponse implements Response {
 
 	public BaseResponse( int status, Object content, Response inheritFrom ) {
 		this(status, content);
-		if( ValueUtil.getBoolean(inheritFrom.getMetadata().get(RraNamespace.RES_CACHEABLE),false) ) {
-			putMetadata(RraNamespace.RES_CACHEABLE, Boolean.TRUE);
-		}
+		this.metadata = inheritFrom.getMetadata();
+		this.metadataClean = true;
 	}
 	
 	public BaseResponse( int status, Object content, String contentType ) {
 		this(status,content);
-		putContentMetadata(DcNamespace.DC_FORMAT, contentType);
+		putContentMetadata(DC_FORMAT, contentType);
 	}
 
 	public int getStatus() {  return status;  }

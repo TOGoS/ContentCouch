@@ -4,17 +4,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import togos.rra.BaseRequest;
-import togos.rra.BaseResponse;
 import togos.rra.Request;
 import togos.rra.Response;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Context;
+import contentcouch.active.expression.Expression;
+import contentcouch.active.expression.UriExpression;
 import contentcouch.explorify.BaseUriProcessor;
 import contentcouch.explorify.UriProcessor;
 import contentcouch.misc.ValueUtil;
 import contentcouch.store.TheGetter;
-import contentcouch.active.expression.Expression;
-import contentcouch.active.expression.UriExpression;
 
 public class ApplyUriProcessor extends BaseActiveFunction {
 	protected String innerProcess( Expression operator, String inputUri ) {
@@ -23,7 +22,7 @@ public class ApplyUriProcessor extends BaseActiveFunction {
 			Context.put("uri", inputUri);
 			Response res = operator.eval();
 			if( res.getStatus() != Response.STATUS_NORMAL ) {
-				throw new RuntimeException("Error while processing URI:" + inputUri + ": " + BaseResponse.getErrorSummary(res));
+				throw new RuntimeException("Error while processing URI:" + inputUri + ": " + TheGetter.getResponseErrorSummary(res));
 			}
 			String newUri = ValueUtil.getString(res.getContent());
 			if( newUri == null ) {
