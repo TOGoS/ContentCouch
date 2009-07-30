@@ -1,6 +1,9 @@
 package togos.swf2;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -50,13 +53,38 @@ public class SwfHttpServlet extends HttpServlet {
 	}
 	
 	protected Object parseContent( HttpServletRequest req ) {
-		// TODO: Update to return blobs when content is not recognised as argument map
-		return new BaseArguments( null, req.getParameterMap() );
+		// TODO: Update to return blobs when content is not recognized as argument map
+		HashMap namedArguments = new HashMap();
+		for( Iterator i=req.getParameterMap().entrySet().iterator(); i.hasNext(); ) {
+			Map.Entry e = (Map.Entry)i.next();
+			namedArguments.put( e.getKey(), ((String[])e.getValue())[0] );
+		}
+		return new BaseArguments( null, namedArguments );
 	}
 	
 	protected void doGet( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
 		subReq.verb = Request.VERB_GET;
+		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getServletPath();
+		subReq.content = parseContent(req);
+		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
+		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
+		doGeneric(subReq, resp);
+	}
+
+	protected void doPost( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
+		BaseRequest subReq = new BaseRequest();
+		subReq.verb = Request.VERB_POST;
+		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getServletPath();
+		subReq.content = parseContent(req);
+		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
+		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
+		doGeneric(subReq, resp);
+	}
+
+	protected void doPut( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
+		BaseRequest subReq = new BaseRequest();
+		subReq.verb = Request.VERB_PUT;
 		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getServletPath();
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);

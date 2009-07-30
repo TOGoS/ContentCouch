@@ -13,7 +13,7 @@ public class EntryComparators {
 		public int compare(Object o1, Object o2) {
 			Directory.Entry e1 = (Directory.Entry)o1;
 			Directory.Entry e2 = (Directory.Entry)o2;
-			return e1.getName().compareTo(e2.getName());
+			return Strings.compareNatural(e1.getName(), e2.getName());
 		}
 	};
 	
