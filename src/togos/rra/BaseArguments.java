@@ -15,6 +15,13 @@ public class BaseArguments implements Arguments {
 	protected List positionalArguments = Collections.EMPTY_LIST;
 	protected Map namedArguments = Collections.EMPTY_MAP;
 	
+	public BaseArguments() { }
+	
+	public BaseArguments( List positionalArguments, Map namedArguments ) {
+		if( positionalArguments != null ) this.positionalArguments = positionalArguments;
+		if( namedArguments != null ) this.namedArguments = namedArguments;
+	}
+
 	public void addPositionalArgument( Object value ) {
 		if( positionalArguments == Collections.EMPTY_LIST ) positionalArguments = new ArrayList();
 		positionalArguments.add(value);

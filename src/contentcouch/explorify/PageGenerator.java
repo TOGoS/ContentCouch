@@ -7,8 +7,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import togos.swf2.HttpServletRequestHandler;
+
 import contentcouch.active.Context;
-import contentcouch.app.servlet.ContentCouchExplorerServlet.HttpServletRequestHandler;
 
 public abstract class PageGenerator implements HttpServletRequestHandler {
 	public String uri;
