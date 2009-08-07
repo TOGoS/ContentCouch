@@ -7,6 +7,7 @@
 	<classpathentry kind="lib" path="ext-lib/httpclient-4.0-beta2.jar"/>
 	<classpathentry kind="lib" path="ext-lib/winstone-0.9.10.jar"/>
 	<classpathentry kind="lib" path="ext-lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="ext-lib/togos.mf-2009.08.07.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="output" path="web/WEB-INF/classes"/>
 </classpath>
