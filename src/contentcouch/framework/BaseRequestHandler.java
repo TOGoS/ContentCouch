@@ -1,10 +1,10 @@
 package contentcouch.framework;
 
-import togos.mf.Request;
-import togos.mf.RequestHandler;
-import togos.mf.Response;
-import togos.mf.ResponseCodes;
-import togos.mf.ResponseSession;
+import togos.mf.api.Request;
+import togos.mf.api.RequestHandler;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
+import togos.mf.api.ResponseSession;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.ResponseSessions;
 

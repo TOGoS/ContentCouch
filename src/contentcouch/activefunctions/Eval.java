@@ -2,8 +2,8 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
-import togos.mf.RequestVerbs;
-import togos.mf.Response;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;

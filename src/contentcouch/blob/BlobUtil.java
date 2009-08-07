@@ -9,12 +9,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import togos.mf.value.Blob;
+
 import contentcouch.app.Linker;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.RdfNode;
-import contentcouch.value.Blob;
 
 public class BlobUtil {
 	//// Convert blobs to other things ////

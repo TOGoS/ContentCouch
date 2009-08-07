@@ -1,8 +1,8 @@
 package contentcouch.contentaddressing;
 
+import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.BitprintScheme.Bitprint;
-import contentcouch.value.Blob;
 import junit.framework.TestCase;
 
 public class BitprintSchemeTest extends TestCase {

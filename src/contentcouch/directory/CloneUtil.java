@@ -1,7 +1,7 @@
 package contentcouch.directory;
 
+import togos.mf.value.Blob;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 

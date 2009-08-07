@@ -3,9 +3,9 @@ package contentcouch.activefunctions;
 import java.util.HashMap;
 import java.util.Map;
 
-import togos.mf.RequestVerbs;
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Context;

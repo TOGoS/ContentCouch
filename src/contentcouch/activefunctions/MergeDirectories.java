@@ -4,8 +4,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;

@@ -10,10 +10,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import togos.mf.RequestVerbs;
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
+import togos.mf.value.Blob;
 import contentcouch.active.ActiveRequestHandler;
 import contentcouch.active.DataUriResolver;
 import contentcouch.app.Log;
@@ -28,7 +29,6 @@ import contentcouch.path.PathUtil;
 import contentcouch.store.ParseRdfRequestHandler;
 import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
-import contentcouch.value.Blob;
 
 public class MetaRepoConfig {
 	public Map namedRepoConfigs = new HashMap();

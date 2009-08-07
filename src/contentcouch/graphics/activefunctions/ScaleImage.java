@@ -7,8 +7,8 @@ import contentcouch.active.BaseActiveFunction;
 import contentcouch.graphics.ImageUtil;
 import contentcouch.misc.ValueUtil;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 
 public class ScaleImage extends BaseActiveFunction {

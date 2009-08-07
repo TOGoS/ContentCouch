@@ -4,8 +4,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;

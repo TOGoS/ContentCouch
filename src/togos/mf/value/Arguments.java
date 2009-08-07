@@ -1,4 +1,4 @@
-package togos.mf;
+package togos.mf.value;
 
 import java.util.List;
 import java.util.Map;

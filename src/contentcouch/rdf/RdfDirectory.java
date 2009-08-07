@@ -11,11 +11,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import togos.mf.value.Blob;
+
 import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;
 import contentcouch.misc.Function1;
 import contentcouch.value.BaseRef;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 

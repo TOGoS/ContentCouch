@@ -3,7 +3,7 @@ package contentcouch.activefunctions;
 import java.util.Iterator;
 import java.util.Map;
 
-import togos.mf.Response;
+import togos.mf.api.Response;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Context;
 import contentcouch.active.expression.Expression;

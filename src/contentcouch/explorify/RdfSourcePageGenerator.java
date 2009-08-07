@@ -7,9 +7,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import togos.mf.value.Blob;
+
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.value.Blob;
 import contentcouch.xml.XML;
 
 public class RdfSourcePageGenerator extends PageGenerator {

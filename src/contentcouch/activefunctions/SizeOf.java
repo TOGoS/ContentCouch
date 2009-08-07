@@ -2,12 +2,12 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
+import togos.mf.value.Blob;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.misc.ValueUtil;
-import contentcouch.value.Blob;
 
 public class SizeOf extends BaseActiveFunction {
 	public Response call( Map argumentExpressions ) {

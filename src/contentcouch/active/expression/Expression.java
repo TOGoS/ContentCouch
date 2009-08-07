@@ -1,6 +1,6 @@
 package contentcouch.active.expression;
 
-import togos.mf.Response;
+import togos.mf.api.Response;
 
 public interface Expression {
 	public Response eval();

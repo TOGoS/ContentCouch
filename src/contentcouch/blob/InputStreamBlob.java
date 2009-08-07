@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import contentcouch.value.Blob;
+import togos.mf.value.Blob;
+
 
 public class InputStreamBlob implements Blob {
 	InputStream inputStream;

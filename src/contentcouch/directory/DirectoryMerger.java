@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
+import togos.mf.value.Blob;
+
 import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.BitprintScheme.Bitprint;
@@ -14,7 +16,6 @@ import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 import contentcouch.value.Directory.Entry;

@@ -3,8 +3,8 @@ package togos.mf.base;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import togos.mf.Response;
-import togos.mf.ResponseSession;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseSession;
 
 public class ResponseSessions {
 	public static ResponseSession createSingleResultSession(Response res) {

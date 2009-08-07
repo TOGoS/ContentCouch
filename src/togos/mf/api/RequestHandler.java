@@ -1,4 +1,4 @@
-package togos.mf;
+package togos.mf.api;
 
 
 /** Used to send messages and/or request things between components */

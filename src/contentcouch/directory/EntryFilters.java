@@ -1,8 +1,8 @@
 package contentcouch.directory;
 
+import togos.mf.value.Blob;
 import contentcouch.misc.Function1;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
 public class EntryFilters {

@@ -14,11 +14,11 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.DcNamespace;
 
-import togos.mf.RequestVerbs;
-import togos.mf.ResponseCodes;
-import togos.mf.Request;
-import togos.mf.RequestHandler;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.RequestHandler;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
 

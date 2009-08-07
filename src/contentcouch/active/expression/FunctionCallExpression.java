@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import contentcouch.active.ActiveFunction;
 import contentcouch.active.ActiveUtil;
 import contentcouch.misc.UriUtil;

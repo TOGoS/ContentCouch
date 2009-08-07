@@ -4,9 +4,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 
-import togos.mf.Request;
-import togos.mf.RequestHandler;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.RequestHandler;
+import togos.mf.api.Response;
 import togos.mf.base.BaseResponse;
 
 

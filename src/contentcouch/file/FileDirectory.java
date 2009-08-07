@@ -4,13 +4,14 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
+import togos.mf.value.Blob;
+
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 

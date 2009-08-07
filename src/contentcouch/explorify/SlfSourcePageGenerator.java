@@ -10,10 +10,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.util.Map;
 
+import togos.mf.value.Blob;
+
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.ValueUtil;
-import contentcouch.value.Blob;
 
 public class SlfSourcePageGenerator extends PageGenerator {
 	protected char[] hexChars = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};

@@ -5,7 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import contentcouch.value.Blob;
+import togos.mf.value.Blob;
+
 
 public class FileCacheBlob implements Blob {
 	File file;

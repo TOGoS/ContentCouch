@@ -5,9 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import sun.misc.BASE64Decoder;
-import togos.mf.ResponseCodes;
-import togos.mf.Request;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.framework.BaseRequestHandler;
 import contentcouch.misc.UriUtil;

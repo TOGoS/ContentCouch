@@ -3,8 +3,8 @@ package contentcouch.activefunctions;
 import java.util.Map;
 import java.util.TreeMap;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.ActiveUtil;
 import contentcouch.active.BaseActiveFunction;

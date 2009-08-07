@@ -2,10 +2,11 @@ package contentcouch.active;
 
 import java.awt.image.BufferedImage;
 
+import togos.mf.value.Blob;
+
 import junit.framework.TestCase;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
-import contentcouch.value.Blob;
 
 public class ImagingTest extends TestCase {
 	MetaRepoConfig repo; 

@@ -4,10 +4,10 @@ import contentcouch.directory.WritableDirectory;
 import contentcouch.framework.BaseRequestHandler;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
-import togos.mf.RequestVerbs;
-import togos.mf.ResponseCodes;
-import togos.mf.Request;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 
 public class MemTempRequestHandler extends BaseRequestHandler {

@@ -1,4 +1,4 @@
-package togos.mf;
+package togos.mf.api;
 
 import java.util.Map;
 

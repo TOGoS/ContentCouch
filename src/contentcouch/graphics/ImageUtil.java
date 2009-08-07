@@ -13,9 +13,10 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 
+import togos.mf.value.Blob;
+
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
-import contentcouch.value.Blob;
 
 public class ImageUtil {
 	

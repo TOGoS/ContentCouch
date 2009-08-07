@@ -7,7 +7,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import togos.mf.ContentAndMetadata;
+import togos.mf.api.ContentAndMetadata;
+import togos.mf.value.Blob;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
@@ -17,7 +18,6 @@ import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfIO;
 import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 import contentcouch.xml.XML;

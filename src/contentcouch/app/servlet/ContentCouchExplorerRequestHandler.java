@@ -1,12 +1,13 @@
 package contentcouch.app.servlet;
 
-import togos.mf.Arguments;
-import togos.mf.RequestVerbs;
-import togos.mf.ResponseCodes;
-import togos.mf.Request;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import togos.mf.value.Arguments;
+import togos.mf.value.Blob;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfHttpServlet;
 import contentcouch.active.Context;
@@ -20,7 +21,6 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
 public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {

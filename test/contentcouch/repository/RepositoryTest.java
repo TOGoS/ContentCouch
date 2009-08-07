@@ -1,16 +1,16 @@
 package contentcouch.repository;
 
 import junit.framework.TestCase;
-import togos.mf.RequestVerbs;
-import togos.mf.Response;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
+import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.store.TheGetter;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
 public class RepositoryTest extends TestCase {

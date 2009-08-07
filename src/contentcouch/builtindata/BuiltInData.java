@@ -5,10 +5,10 @@ import java.net.URL;
 import contentcouch.misc.ValueUtil;
 import contentcouch.store.TheGetter;
 
-import togos.mf.RequestVerbs;
-import togos.mf.ResponseCodes;
-import togos.mf.Request;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 

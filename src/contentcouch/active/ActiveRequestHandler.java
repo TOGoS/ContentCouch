@@ -1,7 +1,7 @@
 package contentcouch.active;
 
-import togos.mf.Request;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.Response;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.expression.Expression;
 import contentcouch.framework.BaseRequestHandler;

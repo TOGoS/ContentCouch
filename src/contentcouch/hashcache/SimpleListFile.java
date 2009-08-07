@@ -6,7 +6,8 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import contentcouch.value.Blob;
+import togos.mf.value.Blob;
+
 
 /** Format of this kind of file:
  * 

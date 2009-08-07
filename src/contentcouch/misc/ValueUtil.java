@@ -6,8 +6,9 @@ import java.nio.charset.CharsetDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
+import togos.mf.value.Blob;
+
 import contentcouch.blob.BlobUtil;
-import contentcouch.value.Blob;
 
 public class ValueUtil {
 	//// Get bytes ////

@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import togos.mf.Arguments;
+import togos.mf.value.Arguments;
 
 public class BaseArguments implements Arguments {
 	public static Object single( Object value ) {

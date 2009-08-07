@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;

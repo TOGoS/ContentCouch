@@ -2,8 +2,8 @@ package togos.swf2;
 
 import java.util.Map;
 
-import togos.mf.Arguments;
-import togos.mf.RequestHandler;
+import togos.mf.api.RequestHandler;
+import togos.mf.value.Arguments;
 
 public interface Component extends RequestHandler {
 	/** Return assorted metadata about this component that may be useful to other components. */

@@ -9,13 +9,13 @@ import java.util.HashMap;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.framework.BaseRequestHandler;
-import contentcouch.value.Blob;
 
-import togos.mf.RequestVerbs;
-import togos.mf.ResponseCodes;
-import togos.mf.Request;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
+import togos.mf.value.Blob;
 
 public class InternalStreamRequestHandler extends BaseRequestHandler {
 	static final InternalStreamRequestHandler instance = new InternalStreamRequestHandler();

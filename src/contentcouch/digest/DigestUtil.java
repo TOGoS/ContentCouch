@@ -8,9 +8,10 @@ import java.security.NoSuchAlgorithmException;
 
 import org.bitpedia.util.Base32;
 
+import togos.mf.value.Blob;
+
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.file.FileBlob;
-import contentcouch.value.Blob;
 
 public class DigestUtil {
 	final static int maxChunkLength = 1024*1024; // 1 megabyte

@@ -5,13 +5,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
+import togos.mf.value.Blob;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
-import contentcouch.value.Blob;
 
 public class Concat extends BaseActiveFunction {
 

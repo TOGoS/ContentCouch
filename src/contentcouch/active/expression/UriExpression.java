@@ -1,7 +1,7 @@
 package contentcouch.active.expression;
 
-import togos.mf.RequestVerbs;
-import togos.mf.Response;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
 import contentcouch.active.Context;
 import contentcouch.misc.UriUtil;

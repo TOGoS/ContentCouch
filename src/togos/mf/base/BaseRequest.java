@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import togos.mf.Request;
+import togos.mf.api.Request;
 
 public class BaseRequest implements Request {
 	public String verb;

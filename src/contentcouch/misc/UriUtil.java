@@ -2,7 +2,8 @@ package contentcouch.misc;
 
 import java.io.UnsupportedEncodingException;
 
-import contentcouch.value.Blob;
+import togos.mf.value.Blob;
+
 
 
 public class UriUtil {

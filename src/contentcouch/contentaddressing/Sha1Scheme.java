@@ -2,9 +2,10 @@ package contentcouch.contentaddressing;
 
 import org.bitpedia.util.Base32;
 
+import togos.mf.value.Blob;
+
 import contentcouch.digest.DigestUtil;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.value.Blob;
 
 public class Sha1Scheme implements ContentAddressingScheme {
 	public static final Sha1Scheme instance = new Sha1Scheme();

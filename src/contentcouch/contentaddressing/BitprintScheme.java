@@ -2,8 +2,9 @@ package contentcouch.contentaddressing;
 
 import org.bitpedia.util.Base32;
 
+import togos.mf.value.Blob;
+
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.value.Blob;
 
 public class BitprintScheme implements ContentAddressingScheme {
 	public static class Bitprint {

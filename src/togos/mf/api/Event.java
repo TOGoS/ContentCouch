@@ -1,4 +1,4 @@
-package togos.mf;
+package togos.mf.api;
 
 public interface Event {
 	public String getName();

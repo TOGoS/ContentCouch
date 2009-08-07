@@ -3,9 +3,10 @@ package contentcouch.contentaddressing;
 import org.bitpedia.util.Base32;
 import org.bitpedia.util.TigerTree;
 
+import togos.mf.value.Blob;
+
 import contentcouch.digest.DigestUtil;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.value.Blob;
 
 public class TigerTreeScheme implements ContentAddressingScheme {
 	public static final TigerTreeScheme instance = new TigerTreeScheme();

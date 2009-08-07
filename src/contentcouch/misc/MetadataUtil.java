@@ -7,11 +7,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import togos.mf.ContentAndMetadata;
-import togos.mf.RequestVerbs;
-import togos.mf.Response;
+import togos.mf.api.ContentAndMetadata;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.WritableDirectory;
@@ -19,7 +20,6 @@ import contentcouch.file.FileBlob;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.store.TheGetter;
-import contentcouch.value.Blob;
 import contentcouch.value.Ref;
 
 public class MetadataUtil {

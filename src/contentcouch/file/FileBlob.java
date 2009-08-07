@@ -4,7 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import contentcouch.value.Blob;
+import togos.mf.value.Blob;
+
 
 public class FileBlob extends File implements Blob {
 	public FileBlob( String path ) {

@@ -4,19 +4,19 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
-import togos.mf.RequestVerbs;
-import togos.mf.ResponseCodes;
-import togos.mf.Request;
-import togos.mf.RequestHandler;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.RequestHandler;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
+import togos.mf.value.Blob;
 import contentcouch.active.Context;
 import contentcouch.app.Log;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 

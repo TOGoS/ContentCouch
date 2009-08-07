@@ -7,9 +7,10 @@ import java.io.PipedOutputStream;
 import java.io.PrintWriter;
 import java.util.Map;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Response;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
+import togos.mf.value.Blob;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Context;
 import contentcouch.active.expression.Expression;
@@ -21,7 +22,6 @@ import contentcouch.explorify.RdfSourcePageGenerator;
 import contentcouch.explorify.SlfSourcePageGenerator;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.ValueUtil;
-import contentcouch.value.Blob;
 import contentcouch.value.Directory;
 
 public class Explorify extends BaseActiveFunction {

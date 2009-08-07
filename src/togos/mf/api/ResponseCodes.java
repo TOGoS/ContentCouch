@@ -1,4 +1,4 @@
-package togos.mf;
+package togos.mf.api;
 
 public class ResponseCodes {
 	public static final int RESPONSE_UNHANDLED = 0;

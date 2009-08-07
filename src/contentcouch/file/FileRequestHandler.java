@@ -3,9 +3,9 @@ package contentcouch.file;
 import java.io.File;
 import java.util.Date;
 
-import togos.mf.ResponseCodes;
-import togos.mf.Request;
-import togos.mf.Response;
+import togos.mf.api.Request;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.framework.BaseRequestHandler;
