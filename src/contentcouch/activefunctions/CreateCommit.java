@@ -6,8 +6,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.date.DateUtil;
 import contentcouch.misc.SimpleCommit;
@@ -39,7 +40,7 @@ public class CreateCommit extends BaseActiveFunction {
 		commit.author = author;
 		commit.message = message;
 		commit.date = date;
-		return new BaseResponse(Response.STATUS_NORMAL, commit);
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, commit);
 	}
 
 }

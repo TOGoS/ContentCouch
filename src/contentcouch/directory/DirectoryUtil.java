@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import togos.rra.ContentAndMetadata;
+import togos.mf.ContentAndMetadata;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;

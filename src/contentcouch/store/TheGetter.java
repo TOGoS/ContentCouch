@@ -4,10 +4,12 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
-import togos.rra.BaseRequest;
-import togos.rra.Request;
-import togos.rra.RequestHandler;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.RequestHandler;
+import togos.mf.Response;
+import togos.mf.base.BaseRequest;
 import contentcouch.active.Context;
 import contentcouch.app.Log;
 import contentcouch.misc.UriUtil;
@@ -50,13 +52,13 @@ public class TheGetter {
 	
 	public static Response handleRequest( Request req ) {
 		Log.log(Log.EVENT_REQUEST_SUBMITTED, req.getVerb(), req.getUri(), (req.getContent() == null ? "" : describeContent(req.getContent())) );
-		return getGenericGetter().handleRequest(req);
+		return getGenericGetter().call(req);
 	}
 
 	public static Object getResponseValue( Response res, String verb, String uri ) {
 		switch( res.getStatus() ) {
-		case( Response.STATUS_NORMAL ): return res.getContent();
-		case( Response.STATUS_DOESNOTEXIST ): return null;
+		case( ResponseCodes.RESPONSE_NORMAL ): return res.getContent();
+		case( ResponseCodes.RESPONSE_DOESNOTEXIST ): return null;
 		default:
 			throw new AbnormalResponseException( verb, uri, res.getStatus(), res.getContent() );
 		}
@@ -80,7 +82,7 @@ public class TheGetter {
 	}
 	
 	public static Object put(String uri, Object obj) {
-		BaseRequest putReq = new BaseRequest(Request.VERB_PUT, uri, obj, Collections.EMPTY_MAP);
+		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, uri, obj, Collections.EMPTY_MAP);
 		return getResponseValue(handleRequest(putReq), putReq);
 	}
 
@@ -89,7 +91,7 @@ public class TheGetter {
 	}
 	
 	public static String identify( Object content, Map contentMetadata ) {
-		BaseRequest idReq = new BaseRequest(Request.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata );
+		BaseRequest idReq = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata );
 		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.handleRequest(idReq), idReq.uri));
 	}
 	

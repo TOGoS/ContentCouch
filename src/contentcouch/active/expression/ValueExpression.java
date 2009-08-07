@@ -4,8 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 
@@ -28,7 +29,7 @@ public class ValueExpression implements Expression {
 	}
 
 	public Response eval() {
-		BaseResponse bre = new BaseResponse( Response.STATUS_NORMAL, value );
+		BaseResponse bre = new BaseResponse( ResponseCodes.RESPONSE_NORMAL, value );
 		bre.metadata = metadata;
 		return bre;
 	}

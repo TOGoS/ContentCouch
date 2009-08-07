@@ -1,8 +1,14 @@
-package togos.rra;
+package contentcouch.framework;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+
+import togos.mf.Request;
+import togos.mf.RequestHandler;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
+
 
 public class MultiRequestHandler extends BaseRequestHandler {
 	protected List requestHandlers = new ArrayList();
@@ -11,11 +17,11 @@ public class MultiRequestHandler extends BaseRequestHandler {
 		requestHandlers.add(0, requestHandler);
 	}
 
-	public Response handleRequest(Request request) {
+	public Response call(Request request) {
 		Response res;
 		for( Iterator i=requestHandlers.iterator(); i.hasNext(); ) {
 			RequestHandler rh = (RequestHandler)i.next();
-			res = rh.handleRequest(request);
+			res = rh.call(request);
 			if( res.getStatus() > 0 ) {
 				//System.err.println("  Handled by " + rh.getClass().getName() );
 				return res;

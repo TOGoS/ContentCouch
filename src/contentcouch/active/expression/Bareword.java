@@ -1,6 +1,6 @@
 package contentcouch.active.expression;
 
-import togos.rra.Response;
+import togos.mf.Response;
 
 public class Bareword implements Expression {
 	

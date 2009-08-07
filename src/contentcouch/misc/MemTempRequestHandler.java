@@ -1,17 +1,19 @@
 package contentcouch.misc;
 
 import contentcouch.directory.WritableDirectory;
+import contentcouch.framework.BaseRequestHandler;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
-import togos.rra.BaseRequestHandler;
-import togos.rra.BaseResponse;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 
 public class MemTempRequestHandler extends BaseRequestHandler {
 	protected static Object root = new SimpleDirectory();
 
-	public Response handleRequest(Request req) {
+	public Response call(Request req) {
 		String path = req.getUri();
 		if( !path.startsWith("x-memtemp:") ) return BaseResponse.RESPONSE_UNHANDLED;
 		path = path.substring("x-memtemp:".length());
@@ -19,11 +21,11 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 		path = "memtemproot/" + path;
 		String[] parts = path.split("/+");
 		
-		if( Request.VERB_GET.equals(req.getVerb()) ) {
+		if( RequestVerbs.VERB_GET.equals(req.getVerb()) ) {
 			return get( parts );
-		} else if( Request.VERB_PUT.equals(req.getVerb()) ) {
+		} else if( RequestVerbs.VERB_PUT.equals(req.getVerb()) ) {
 			if( path.length() == 0 ) {
-				return new BaseResponse( Response.STATUS_USERERROR, "Cannot PUT at " + req.getUri(), "text/plain");
+				return new BaseResponse( ResponseCodes.RESPONSE_CALLER_ERROR, "Cannot PUT at " + req.getUri(), "text/plain");
 			}
 			return put( parts, req.getContent() );
 		} else {
@@ -37,13 +39,13 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 			String part = parts[i];
 			if( obj instanceof Directory ) {
 				Directory.Entry e = ((Directory)obj).getDirectoryEntry(part);
-				if( e == null ) return new BaseResponse( Response.STATUS_DOESNOTEXIST, part + " not found in " + parts[i-1], "text/plain");
+				if( e == null ) return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, part + " not found in " + parts[i-1], "text/plain");
 				obj = e.getTarget();
 			} else {
-				return new BaseResponse( Response.STATUS_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
+				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
 			}
 		}
-		return new BaseResponse(Response.STATUS_NORMAL, obj);
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, obj);
 	}
 
 	public Response put( String[] parts, Object newObj ) {
@@ -59,7 +61,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 					obj = e.getTarget();
 				}
 			} else {
-				return new BaseResponse( Response.STATUS_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
+				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
 			}
 		}
 
@@ -67,9 +69,9 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 		if( obj instanceof Directory ) {
 			((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, newObj, newObj instanceof Directory ? CcouchNamespace.OBJECT_TYPE_DIRECTORY : CcouchNamespace.OBJECT_TYPE_BLOB));
 		} else {
-			return new BaseResponse( Response.STATUS_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
+			return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
 		}
-		return new BaseResponse(Response.STATUS_NORMAL, "Put object at .../" + part);
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Put object at .../" + part);
 	}
 
 }

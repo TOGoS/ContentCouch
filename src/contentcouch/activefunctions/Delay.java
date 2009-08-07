@@ -2,8 +2,9 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.misc.ValueUtil;
 
@@ -17,7 +18,7 @@ public class Delay extends BaseActiveFunction {
 		} catch( InterruptedException e ) {
 			throw new RuntimeException(e);
 		}
-		return new BaseResponse(Response.STATUS_NORMAL, "Delayed " + millis + " milliseconds", "text/plain");
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Delayed " + millis + " milliseconds", "text/plain");
 	}
 
 }

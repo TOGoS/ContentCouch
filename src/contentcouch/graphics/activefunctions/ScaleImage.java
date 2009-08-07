@@ -7,8 +7,9 @@ import contentcouch.active.BaseActiveFunction;
 import contentcouch.graphics.ImageUtil;
 import contentcouch.misc.ValueUtil;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 
 public class ScaleImage extends BaseActiveFunction {
 
@@ -64,7 +65,7 @@ public class ScaleImage extends BaseActiveFunction {
 			newHeight = maxHeight.intValue();
 		}
 		
-		return new BaseResponse(Response.STATUS_NORMAL, ImageUtil.scaleImage( img, newWidth, newHeight ));
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, ImageUtil.scaleImage( img, newWidth, newHeight ));
 	}
 
 }

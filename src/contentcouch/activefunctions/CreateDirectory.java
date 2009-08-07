@@ -3,8 +3,9 @@ package contentcouch.activefunctions;
 import java.util.Iterator;
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;
 import contentcouch.misc.SimpleDirectory;
@@ -37,7 +38,7 @@ public class CreateDirectory extends BaseActiveFunction {
 			}
 		}
 		
-		return new BaseResponse(Response.STATUS_NORMAL, result);
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, result);
 	}
 
 }

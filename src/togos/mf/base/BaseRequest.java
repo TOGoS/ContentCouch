@@ -1,8 +1,10 @@
-package togos.rra;
+package togos.mf.base;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import togos.mf.Request;
 
 public class BaseRequest implements Request {
 	public String verb;

@@ -11,11 +11,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import togos.rra.BaseRequest;
-import togos.rra.BaseRequestHandler;
-import togos.rra.BaseResponse;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.Response;
+import togos.mf.base.BaseRequest;
+import togos.mf.base.BaseResponse;
 
 import com.eekboom.utils.Strings;
 
@@ -23,6 +24,7 @@ import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
+import contentcouch.framework.BaseRequestHandler;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.misc.Function1;
 import contentcouch.misc.MetadataUtil;
@@ -129,9 +131,9 @@ public class MetaRepository extends BaseRequestHandler {
 		ArrayList l = new ArrayList();
 		String dataDirUri = PathUtil.appendPath(repoConfig.uri,"data/");
 		
-		BaseRequest dirReq = new BaseRequest( Request.VERB_GET, dataDirUri );
+		BaseRequest dirReq = new BaseRequest( RequestVerbs.VERB_GET, dataDirUri );
 		Response dirRes = TheGetter.handleRequest(dirReq);
-		if( dirRes.getStatus() != Response.STATUS_NORMAL ) return l;
+		if( dirRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return l;
 		if( !(dirRes.getContent() instanceof Directory) ) {
 			Log.log(Log.EVENT_WARNING, dataDirUri + " exists but is not a directory");
 		}
@@ -213,7 +215,7 @@ public class MetaRepository extends BaseRequestHandler {
 		String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
 		
 		BaseRequest subReq = new BaseRequest( req, uri );
-		subReq.verb = Request.VERB_PUT;
+		subReq.verb = RequestVerbs.VERB_PUT;
 		BaseResponse res = new BaseResponse( TheGetter.handleRequest(subReq) );
 		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, repoConfig.dataScheme.hashToUrn(hash));
 		Date mtime = (Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
@@ -233,7 +235,7 @@ public class MetaRepository extends BaseRequestHandler {
 			subReq.putContentMetadata(CcouchNamespace.SOURCE_URI, "x-rdfified:" + sourceUri);
 		}
 		Response blobPutRes = putDataBlob( repoConfig, subReq );
-		if( blobPutRes.getStatus() != Response.STATUS_NORMAL ) return blobPutRes;
+		if( blobPutRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return blobPutRes;
 		BaseResponse res = new BaseResponse();
 		MetadataUtil.copyStoredIdentifier(blobPutRes, res, "x-parse-rdf:");
 		return res;
@@ -249,7 +251,7 @@ public class MetaRepository extends BaseRequestHandler {
 		// (during cache-on-GET, or by simply caching the blob and not its parsed RDF).
 		if( MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_SKIP_PREVIOUSLY_STORED_DIRS) &&
 		    MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
-			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf directory already stored - skipping", "text/plain");
+			BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf directory already stored - skipping", "text/plain");
 			res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
 			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 			return res;
@@ -265,7 +267,7 @@ public class MetaRepository extends BaseRequestHandler {
 			putData( repoConfig, targetPutReq );
 		}
 		
-		BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf directory and entries stored", "text/plain");
+		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf directory and entries stored", "text/plain");
 		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 		return res;
 	}
@@ -282,7 +284,7 @@ public class MetaRepository extends BaseRequestHandler {
 				if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
 				String uri = ValueUtil.getString(target);
 				// TODO: Some kind of validation on the URI (should be x-parse-rdf:<urn scheme>:...)
-				BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "URI previously cached in .ccouch-uri file - skipping", "text/plain");
+				BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "URI previously cached in .ccouch-uri file - skipping", "text/plain");
 				res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, uri);
 				return res;
 			}
@@ -363,7 +365,7 @@ public class MetaRepository extends BaseRequestHandler {
 		// (during cache-on-GET, or by simply caching the blob and not its parsed RDF).
 		if( MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_SKIP_PREVIOUSLY_STORED_DIRS) &&
 		    MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
-			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf commit already stored - skipping", "text/plain");
+			BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf commit already stored - skipping", "text/plain");
 			res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
 			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 			return res;
@@ -376,7 +378,7 @@ public class MetaRepository extends BaseRequestHandler {
 		MetadataUtil.dereferenceTargetToRequest( target, targetPutReq );
 		putData( repoConfig, targetPutReq );
 		
-		BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, "Rdf commit and target stored", "text/plain");
+		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf commit and target stored", "text/plain");
 		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 		return res;
 	}
@@ -432,7 +434,7 @@ public class MetaRepository extends BaseRequestHandler {
 				putData( repoConfig, subReq );
 				++count;
 			}
-			return new BaseResponse(Response.STATUS_NORMAL, count + " items inserted", "text/plain");
+			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, count + " items inserted", "text/plain");
 		} else if( content instanceof Directory.Entry ) {
 			BaseRequest subReq = new BaseRequest();
 			subReq.content = ((Directory.Entry)content).getTarget();
@@ -587,7 +589,7 @@ public class MetaRepository extends BaseRequestHandler {
 				parsedFrom = BlobUtil.getBlob( content.toString() );
 			}
 			String parsedFromUri = ValueUtil.getString(identify( repoConfig, parsedFrom, Collections.EMPTY_MAP ).getContent());
-			return new BaseResponse(Response.STATUS_NORMAL,	"x-parse-rdf:" + parsedFromUri, "text/plain");
+			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL,	"x-parse-rdf:" + parsedFromUri, "text/plain");
 		} else if( content instanceof Commit ) {
 			return identify( repoConfig, new RdfCommit( (Commit)content, getTargetRdfifier(false, false) ), contentMetadata );
 		} else if( content instanceof Directory ) {
@@ -595,7 +597,7 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 
 		Blob blob = BlobUtil.getBlob(content, false);
-		if( blob != null ) return new BaseResponse(Response.STATUS_NORMAL, identifyBlob( blob, repoConfig ), "text/plain");
+		if( blob != null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, identifyBlob( blob, repoConfig ), "text/plain");
 		
 		throw new RuntimeException("I don't know how to identify " + content.getClass().getName());
 	}
@@ -611,7 +613,7 @@ public class MetaRepository extends BaseRequestHandler {
 	protected RepoConfig lastHitRepoConfig;
 	protected String lastHitDataSectorUri;
 	
-	public Response handleRequest( Request req ) {
+	public Response call( Request req ) {
 		if( "x-ccouch-repo://".equals(req.getUri()) ) {
 			SimpleDirectory sd = new SimpleDirectory();
 			for( Iterator i=this.config.namedRepoConfigs.values().iterator(); i.hasNext(); ) {
@@ -622,27 +624,27 @@ public class MetaRepository extends BaseRequestHandler {
 				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.uri);
 				sd.addDirectoryEntry(entry);
 			}
-			return new BaseResponse(Response.STATUS_NORMAL, sd);
+			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, sd);
 		} else if( req.getUri().startsWith("x-ccouch-head:") || req.getUri().startsWith("x-ccouch-repo:") ) {
 			RepoRef repoRef = RepoRef.parse(req.getUri(), false);
 			RepoConfig repoConfig;
 			if( repoRef.repoName == null ) {
 				repoConfig = config.defaultRepoConfig;
 				if( repoConfig == null ) {
-					BaseResponse res = new BaseResponse(Response.STATUS_DOESNOTEXIST, "No default repository to handle " + req.getUri());
+					BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "No default repository to handle " + req.getUri());
 					res.putContentMetadata(DcNamespace.DC_FORMAT, "text/plain");
 					return res;
 				}
 			} else {
 				repoConfig = (RepoConfig)config.namedRepoConfigs.get(repoRef.repoName);
 				if( repoConfig == null ) {
-					BaseResponse res = new BaseResponse(Response.STATUS_DOESNOTEXIST, "No such repository: " + repoRef.repoName);
+					BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "No such repository: " + repoRef.repoName);
 					res.putContentMetadata(DcNamespace.DC_FORMAT, "text/plain");
 					return res;
 				}
 			}
 			
-			if( Request.VERB_PUT.equals(req.getVerb()) || Request.VERB_POST.equals(req.getVerb()) ) {
+			if( RequestVerbs.VERB_PUT.equals(req.getVerb()) || RequestVerbs.VERB_POST.equals(req.getVerb()) ) {
 				if( "identify".equals(repoRef.subPath) ) {
 					return identify( repoConfig, req.getContent(), req.getContentMetadata() );
 				} else if( repoRef.subPath.equals("data") || repoRef.subPath.startsWith("data/") ) {
@@ -676,7 +678,7 @@ public class MetaRepository extends BaseRequestHandler {
 			
 			//String sector = MetadataUtil.getKeyed(request.getMetadata(), RdfNamespace.STORE_SECTOR, rc.userStoreSector);
 		} else {
-			if( Request.VERB_GET.equals(req.getVerb()) || Request.VERB_HEAD.equals(req.getVerb()) ) {
+			if( RequestVerbs.VERB_GET.equals(req.getVerb()) || RequestVerbs.VERB_HEAD.equals(req.getVerb()) ) {
 				// URN request? Check each repo to see if it has a data scheme that would handle it
 
 				String urn = req.getUri();
@@ -692,7 +694,7 @@ public class MetaRepository extends BaseRequestHandler {
 						String dataSectorUri = (String)si.next();
 						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
 						Response res = TheGetter.handleRequest(subReq);
-						if( res.getStatus() == Response.STATUS_NORMAL ) return res;
+						if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) return res;
 					}
 				}
 				
@@ -703,7 +705,7 @@ public class MetaRepository extends BaseRequestHandler {
 					
 					BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(lastHitDataSectorUri, psp));
 					Response res = TheGetter.handleRequest(subReq);
-					if( res.getStatus() == Response.STATUS_NORMAL ) return res;
+					if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) return res;
 				}
 				
 				// Check all remote repos
@@ -717,7 +719,7 @@ public class MetaRepository extends BaseRequestHandler {
 						String dataSectorUri = (String)si.next();
 						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
 						Response res = TheGetter.handleRequest(subReq);
-						if( res.getStatus() == Response.STATUS_NORMAL ) {
+						if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 							lastHitDataSectorUri = dataSectorUri;
 							lastHitRepoConfig = repoConfig;
 							return res;

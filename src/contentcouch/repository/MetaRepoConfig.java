@@ -10,15 +10,16 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import togos.rra.BaseRequest;
-import togos.rra.MultiRequestHandler;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseRequest;
 import contentcouch.active.ActiveRequestHandler;
 import contentcouch.active.DataUriResolver;
 import contentcouch.app.Log;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.file.FileRequestHandler;
+import contentcouch.framework.MultiRequestHandler;
 import contentcouch.http.HttpRequestHandler;
 import contentcouch.misc.ContextVarRequestHandler;
 import contentcouch.misc.MemTempRequestHandler;
@@ -77,10 +78,10 @@ public class MetaRepoConfig {
 			if( rp.uri != null ) defaultRepoConfig.uri = rp.uri;
 			String cfgUri = rp.uri + "ccouch-config";
 
-			BaseRequest cfgRequest = new BaseRequest(Request.VERB_GET, cfgUri);
+			BaseRequest cfgRequest = new BaseRequest(RequestVerbs.VERB_GET, cfgUri);
 			Response cfgResponse = TheGetter.handleRequest(cfgRequest);
 			Blob cfgBlob;
-			if( cfgResponse.getStatus() == Response.STATUS_NORMAL && (cfgBlob = (Blob)cfgResponse.getContent()) != null ) {
+			if( cfgResponse.getStatus() == ResponseCodes.RESPONSE_NORMAL && (cfgBlob = (Blob)cfgResponse.getContent()) != null ) {
 				BufferedReader brd = new BufferedReader(new InputStreamReader(new BlobInputStream(cfgBlob)));
 				try {
 					_loadConfig(brd, cfgUri);

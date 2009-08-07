@@ -5,14 +5,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import sun.misc.BASE64Decoder;
-import togos.rra.BaseResponse;
-import togos.rra.Request;
-import togos.rra.RequestHandler;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
+import contentcouch.framework.BaseRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.rdf.DcNamespace;
 
-public class DataUriResolver implements RequestHandler {
+public class DataUriResolver extends BaseRequestHandler {
 	public static final String DATA_URI_PREFIX = "data:";
 
 	public static byte[] parse(String uri, Map metadataDest) {
@@ -42,12 +43,12 @@ public class DataUriResolver implements RequestHandler {
 		return data;
 	}
 	
-	public Response handleRequest( Request req ) {
+	public Response call( Request req ) {
 		String uri = req.getUri();
 		if( !uri.startsWith(DATA_URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
 		HashMap metadata = new HashMap();
 		byte[] data = parse(uri, metadata);
-		BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, data);
+		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, data);
 		res.metadata = metadata;
 		return res;
 	}

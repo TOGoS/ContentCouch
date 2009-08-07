@@ -2,9 +2,10 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
-import togos.rra.BaseRequest;
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.Response;
+import togos.mf.base.BaseRequest;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Context;
 import contentcouch.misc.ValueUtil;
@@ -15,7 +16,7 @@ public class Eval extends BaseActiveFunction {
 		Object resolveThis = getArgumentValue(argumentExpressions, "operand", null);
 		if( resolveThis == null ) return BaseResponse.RESPONSE_UNHANDLED;
 		String uri = ValueUtil.getString(resolveThis);
-		BaseRequest req = new BaseRequest(BaseRequest.VERB_GET, uri);
+		BaseRequest req = new BaseRequest(RequestVerbs.VERB_GET, uri);
 		req.contextVars = Context.getInstance();
 		return TheGetter.handleRequest(req);
 	}

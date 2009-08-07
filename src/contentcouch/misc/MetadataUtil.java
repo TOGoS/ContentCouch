@@ -7,11 +7,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import togos.rra.BaseRequest;
-import togos.rra.BaseResponse;
-import togos.rra.ContentAndMetadata;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.ContentAndMetadata;
+import togos.mf.RequestVerbs;
+import togos.mf.Response;
+import togos.mf.base.BaseRequest;
+import togos.mf.base.BaseResponse;
 import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.WritableDirectory;
@@ -184,7 +184,7 @@ public class MetadataUtil {
 	public static void dereferenceTargetToRequest( Object target, BaseRequest req ) {
 		if( target instanceof Ref ) {
 			String targetSourceUri = ((Ref)target).getTargetUri();
-			BaseRequest targetReq = new BaseRequest(Request.VERB_GET, targetSourceUri );
+			BaseRequest targetReq = new BaseRequest(RequestVerbs.VERB_GET, targetSourceUri );
 			Response targetRes = TheGetter.handleRequest( targetReq );
 			req.content = TheGetter.getResponseValue( targetRes, targetReq );
 			req.contentMetadata = targetRes.getContentMetadata();

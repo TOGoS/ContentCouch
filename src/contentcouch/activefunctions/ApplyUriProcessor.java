@@ -3,9 +3,10 @@ package contentcouch.activefunctions;
 import java.util.HashMap;
 import java.util.Map;
 
-import togos.rra.BaseRequest;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseRequest;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Context;
 import contentcouch.active.expression.Expression;
@@ -21,7 +22,7 @@ public class ApplyUriProcessor extends BaseActiveFunction {
 		try {
 			Context.put("uri", inputUri);
 			Response res = operator.eval();
-			if( res.getStatus() != Response.STATUS_NORMAL ) {
+			if( res.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				throw new RuntimeException("Error while processing URI:" + inputUri + ": " + TheGetter.getResponseErrorSummary(res));
 			}
 			String newUri = ValueUtil.getString(res.getContent());
@@ -58,7 +59,7 @@ public class ApplyUriProcessor extends BaseActiveFunction {
 				}
 			});
 			String uri = innerProcess(operator, inputUri);
-			BaseRequest req = new BaseRequest(Request.VERB_GET, uri);
+			BaseRequest req = new BaseRequest(RequestVerbs.VERB_GET, uri);
 			req.contextVars = Context.getInstance();
 			return TheGetter.handleRequest(req);
 		} finally {

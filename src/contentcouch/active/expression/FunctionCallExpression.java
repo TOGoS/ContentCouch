@@ -5,7 +5,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
 import contentcouch.active.ActiveFunction;
 import contentcouch.active.ActiveUtil;
 import contentcouch.misc.UriUtil;
@@ -59,7 +60,7 @@ public class FunctionCallExpression implements Expression, PathSimplifiableExpre
 
 	public Response eval() {
 		Response fRes = funcExpression.eval();
-		if( fRes.getStatus() != Response.STATUS_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
+		if( fRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
 		if( !(fRes.getContent() instanceof ActiveFunction) ) throw new RuntimeException( "Object returned by " + funcExpression.toString() + " is not an ActiveFunction");
 		return ((ActiveFunction)fRes.getContent()).call(argumentExpressions);
 	}
@@ -71,7 +72,7 @@ public class FunctionCallExpression implements Expression, PathSimplifiableExpre
 	protected ActiveFunction getStaticActiveFunction( Expression funcExpression ) {
 		if( funcExpression.isConstant() ) {
 			Response fRes = funcExpression.eval();
-			if( fRes.getStatus() != Response.STATUS_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
+			if( fRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
 			if( !(fRes.getContent() instanceof ActiveFunction) ) throw new RuntimeException( "Object returned by " + funcExpression.toString() + " is not an ActiveFunction");
 			return (ActiveFunction)fRes.getContent();
 		}

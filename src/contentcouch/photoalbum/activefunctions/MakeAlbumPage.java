@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import togos.rra.Response;
+import togos.mf.Response;
 import contentcouch.active.Context;
 import contentcouch.active.expression.Expression;
 import contentcouch.activefunctions.Explorify;

@@ -3,8 +3,9 @@ package contentcouch.activefunctions;
 import java.util.Map;
 import java.util.TreeMap;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.ActiveUtil;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.FunctionCallExpression;
@@ -32,16 +33,16 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 			}
 			if( source instanceof Directory ) {
 				Directory.Entry e = ((Directory)source).getDirectoryEntry(pathParts[i]);
-				if( e == null ) return new BaseResponse(Response.STATUS_NORMAL, pathParts[i] + " not found");
+				if( e == null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, pathParts[i] + " not found");
 				source = e.getTarget();
 			} else {
-				return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Cannot follow path " + path);
+				return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Cannot follow path " + path);
 			}
 		}
 		if( source instanceof Ref ) {
 			source = TheGetter.get( ((Ref)source).getTargetUri() );
 		}
-		return new BaseResponse(Response.STATUS_NORMAL, source);
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, source);
 	}
 	
 	//// Path simplification ////

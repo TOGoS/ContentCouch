@@ -3,11 +3,12 @@ package contentcouch.file;
 import java.io.File;
 import java.util.Date;
 
-import togos.rra.BaseRequestHandler;
-import togos.rra.BaseResponse;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.directory.DirectoryMerger;
+import contentcouch.framework.BaseRequestHandler;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
@@ -16,7 +17,7 @@ import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 
 public class FileRequestHandler extends BaseRequestHandler {
-	public Response handleRequest( Request req ) {
+	public Response call( Request req ) {
 		if( !req.getUri().startsWith("file:") ) return BaseResponse.RESPONSE_UNHANDLED;
 		
 		String path = PathUtil.parseFilePathOrUri(req.getUri()).toString();
@@ -29,7 +30,7 @@ public class FileRequestHandler extends BaseRequestHandler {
 				res.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(f.lastModified()));
 				return res;
 			} else {
-				return new BaseResponse(Response.STATUS_DOESNOTEXIST, "File not found: " + path);
+				return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "File not found: " + path);
 			}
 		} else if( "PUT".equals(req.getVerb()) ) {
 			File f = new File(path);

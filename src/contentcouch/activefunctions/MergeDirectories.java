@@ -4,8 +4,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;
 import contentcouch.directory.DirectoryMerger;
@@ -33,6 +34,6 @@ public class MergeDirectories extends BaseActiveFunction {
 			Directory indir = (Directory)TheGetter.getResponseValue(exp.eval(), uri);
 			new DirectoryMerger( conflictResolver, true ).putAll( result, indir, uri, "x-undefined:new-directory" );
 		}
-		return new BaseResponse(Response.STATUS_NORMAL, result);
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, result);
 	}
 }

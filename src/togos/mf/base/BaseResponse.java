@@ -1,13 +1,16 @@
-package togos.rra;
+package togos.mf.base;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+
 public class BaseResponse implements Response {
 	public static final String DC_NS                    = "http://purl.org/dc/terms/";
 	public static final String DC_FORMAT                = DC_NS + "format";	
-	public static final BaseResponse RESPONSE_UNHANDLED = new BaseResponse(Response.STATUS_UNHANDLED, "Not handled", "text/plain");
+	public static final BaseResponse RESPONSE_UNHANDLED = new BaseResponse(ResponseCodes.RESPONSE_UNHANDLED, "Not handled", "text/plain");
 		
 	public int status;
 	public Object content;
@@ -20,7 +23,7 @@ public class BaseResponse implements Response {
 
 
 	public BaseResponse() {
-		this(Response.STATUS_NORMAL, null);
+		this(ResponseCodes.RESPONSE_NORMAL, null);
 	}
 	
 	public BaseResponse(Response r) {

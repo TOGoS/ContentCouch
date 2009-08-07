@@ -7,8 +7,9 @@ import java.io.PipedOutputStream;
 import java.io.PrintWriter;
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.Context;
 import contentcouch.active.expression.Expression;
@@ -51,7 +52,7 @@ public class Explorify extends BaseActiveFunction {
 				}
 			}).start();
 			Blob blob = new InputStreamBlob(pis, -1);
-			return new BaseResponse(Response.STATUS_NORMAL, blob, pg.getContentType() );
+			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, blob, pg.getContentType() );
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -81,7 +82,7 @@ public class Explorify extends BaseActiveFunction {
 		Expression e = (Expression)argumentExpressions.get("operand");
 		String uri = e.toUri();
 		Response subRes = getArgumentResponse(argumentExpressions, "operand");
-		if( subRes.getStatus() != Response.STATUS_NORMAL ) return subRes;
+		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
 		Context.push("processed-uri", uri);
 		try {
 			if( subRes.getContent() instanceof Directory ) {
@@ -96,7 +97,7 @@ public class Explorify extends BaseActiveFunction {
 				} else if( MetadataUtil.CT_SLF.equals(type) ) {
 					return explorifySlfBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
 				} else if( type != null ) {
-					return new BaseResponse(Response.STATUS_NORMAL, blob, type);
+					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, blob, type);
 				}
 			}
 		} finally {

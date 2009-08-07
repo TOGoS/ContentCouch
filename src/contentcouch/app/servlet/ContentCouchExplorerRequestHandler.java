@@ -1,10 +1,12 @@
 package contentcouch.app.servlet;
 
-import togos.rra.Arguments;
-import togos.rra.BaseRequest;
-import togos.rra.BaseResponse;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.Arguments;
+import togos.mf.RequestVerbs;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.Response;
+import togos.mf.base.BaseRequest;
+import togos.mf.base.BaseResponse;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfHttpServlet;
 import contentcouch.active.Context;
@@ -53,7 +55,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		return getProcessingUri("contentcouch.explorify", uri, "Exploring");
 	}
 
-	public Response handleRequest( Request req ) {
+	public Response call( Request req ) {
 		String pi = req.getUri();
 		if( !pi.startsWith(SwfHttpServlet.SERVLET_PATH_URI_PREFIX) ) {
 			throw new RuntimeException("Expected " + SwfHttpServlet.SERVLET_PATH_URI_PREFIX + "..., but got " + pi);
@@ -87,7 +89,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 				shouldRewriteRelativeUris = false;
 			} else {
 				// TODO: redirect
-				return new BaseResponse( BaseResponse.STATUS_DOESNOTEXIST, "" );
+				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, "" );
 			}
 			uri = getExploreUri(inputUri);
 		} else if( "raw".equals(pathComp[0]) ) {
@@ -98,7 +100,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 				shouldRewriteRelativeUris = false;
 			} else {
 				// TODO: redirect
-				return new BaseResponse( BaseResponse.STATUS_DOESNOTEXIST, "" );
+				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, "" );
 			}
 			uri = inputUri;
 		} else if( pi.equals("/") ) {
@@ -109,7 +111,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			shouldRewriteRelativeUris = false;
 		}
 		
-		BaseRequest subReq = new BaseRequest(Request.VERB_GET, uri);
+		BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, uri);
 		try {
 			Context.push("funk", "Bring the funk");
 			BaseUriProcessor.push( "explore", new BaseUriProcessor(BaseUriProcessor.getInstance("explore"), shouldRewriteRelativeUris) {

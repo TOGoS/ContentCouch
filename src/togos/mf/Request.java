@@ -1,13 +1,8 @@
-package togos.rra;
+package togos.mf;
 
 import java.util.Map;
 
 public interface Request extends ContentAndMetadata {
-	public static final String VERB_GET  = "GET" ;
-	public static final String VERB_HEAD = "HEAD";
-	public static final String VERB_PUT  = "PUT" ;
-	public static final String VERB_POST = "POST";
-	
 	public String getVerb();
 	public String getUri();
 	public Object getContent();

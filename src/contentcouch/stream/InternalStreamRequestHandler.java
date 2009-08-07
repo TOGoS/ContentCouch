@@ -8,12 +8,14 @@ import java.util.HashMap;
 
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
+import contentcouch.framework.BaseRequestHandler;
 import contentcouch.value.Blob;
 
-import togos.rra.BaseRequestHandler;
-import togos.rra.BaseResponse;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 
 public class InternalStreamRequestHandler extends BaseRequestHandler {
 	static final InternalStreamRequestHandler instance = new InternalStreamRequestHandler();
@@ -64,19 +66,19 @@ public class InternalStreamRequestHandler extends BaseRequestHandler {
 		return blob;
 	}
 
-	public Response handleRequest(Request req) {
+	public Response call(Request req) {
 		if( !req.getUri().startsWith(URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
 		String streamName = req.getUri().substring(URI_PREFIX.length());
-		if( Request.VERB_POST.equals(req.getVerb()) || Request.VERB_PUT.equals(req.getVerb()) ) {
+		if( RequestVerbs.VERB_POST.equals(req.getVerb()) || RequestVerbs.VERB_PUT.equals(req.getVerb()) ) {
 			Object content = req.getContent();
 			if( content == null ) {
 				throw new RuntimeException("Can't PUT or POST to " + req.getUri() + " without content");
 			}
 			Blob blob = BlobUtil.getBlob(content);
 			putBlob(blob, streamName);
-			return new BaseResponse(Response.STATUS_NORMAL, "Written");
-		} else if( Request.VERB_GET.equals(req.getVerb()) ) {
-			return new BaseResponse(Response.STATUS_NORMAL, getBlob(streamName));
+			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Written");
+		} else if( RequestVerbs.VERB_GET.equals(req.getVerb()) ) {
+			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, getBlob(streamName));
 		} else {
 			throw new RuntimeException("Don't know how to handle " + req.getVerb() );
 		}

@@ -5,8 +5,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
@@ -51,6 +52,6 @@ public class Concat extends BaseActiveFunction {
 			for( int j=0; j<len; ++j, ++offset ) resultBytes[offset] = blobBytes[j];
 		}
 
-		return new BaseResponse(Response.STATUS_NORMAL, new ByteArrayBlob(resultBytes));
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, new ByteArrayBlob(resultBytes));
 	}
 }

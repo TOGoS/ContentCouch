@@ -2,7 +2,7 @@ package contentcouch.builtindata.activefunctions;
 
 import java.util.Map;
 
-import togos.rra.Response;
+import togos.mf.Response;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.builtindata.BuiltInData;
 import contentcouch.misc.ValueUtil;

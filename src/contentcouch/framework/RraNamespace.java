@@ -1,4 +1,4 @@
-package togos.rra;
+package contentcouch.framework;
 
 public class RraNamespace {
 	

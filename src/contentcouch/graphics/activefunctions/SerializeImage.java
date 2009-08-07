@@ -3,8 +3,9 @@ package contentcouch.graphics.activefunctions;
 import java.awt.image.BufferedImage;
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.graphics.ImageUtil;
 import contentcouch.misc.ValueUtil;
@@ -17,6 +18,6 @@ public class SerializeImage extends BaseActiveFunction {
 		final String longFormatName = ImageUtil.getLongFormatName(formatName);
 		final Number quality = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "quality", null));
 		
-		return new BaseResponse(Response.STATUS_NORMAL, ImageUtil.serializeImage(img, formatName, quality), longFormatName);
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, ImageUtil.serializeImage(img, formatName, quality), longFormatName);
 	}
 }

@@ -1,9 +1,9 @@
 package contentcouch.repository;
 
 import junit.framework.TestCase;
-import togos.rra.BaseRequest;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.Response;
+import togos.mf.base.BaseRequest;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
@@ -68,7 +68,7 @@ public class RepositoryTest extends TestCase {
 	}
 	
 	protected String storeDirectory(Directory dir) {
-		BaseRequest putReq = new BaseRequest(Request.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		putReq.content = dir;
 		
 		Response putRes = TheGetter.handleRequest(putReq);
@@ -95,7 +95,7 @@ public class RepositoryTest extends TestCase {
 		RdfDirectory rdfDir = (RdfDirectory)TheGetter.get(originalStoredUri);
 		assertTrue( rdfDir instanceof RdfDirectory );
 		
-		BaseRequest putReq = new BaseRequest(Request.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		putReq.content = rdfDir;
 		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, "bilge");
 		Response putRes = TheGetter.handleRequest(putReq);
@@ -114,7 +114,7 @@ public class RepositoryTest extends TestCase {
 	public void testUriDotFilesStored() {
 		SimpleDirectory simpleDir = createTestSimpleDirectory();
 		
-		BaseRequest storeReq = new BaseRequest(Request.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		BaseRequest storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		Response storeRes = TheGetter.handleRequest(storeReq);
@@ -127,7 +127,7 @@ public class RepositoryTest extends TestCase {
 		simpleDir.addDirectoryEntry(createBlobDirectoryEntry("hello3", "A third hello!"));
 		
 		// Using uri dot files, we should still get the old URI
-		storeReq = new BaseRequest(Request.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		storeReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
@@ -138,7 +138,7 @@ public class RepositoryTest extends TestCase {
 
 		// Without using uri dot files, we should get a new URI
 		simpleDir.addDirectoryEntry(createBlobDirectoryEntry("hello3", "A third hello!"));
-		storeReq = new BaseRequest(Request.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		storeReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.FALSE);

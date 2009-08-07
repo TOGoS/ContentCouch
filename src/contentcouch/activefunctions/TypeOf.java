@@ -2,8 +2,9 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.misc.MetadataUtil;
@@ -11,6 +12,6 @@ import contentcouch.misc.MetadataUtil;
 public class TypeOf extends BaseActiveFunction {
 	public Response call( Map argumentExpressions ) {
 		Response subRes = getArgumentResponse(argumentExpressions, "operand");
-		return new BaseResponse(Response.STATUS_NORMAL, MetadataUtil.getContentType(subRes));
+		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, MetadataUtil.getContentType(subRes));
 	}
 }

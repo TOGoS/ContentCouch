@@ -1,9 +1,11 @@
-package togos.rra;
+package togos.mf.base;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import togos.mf.Arguments;
 
 public class BaseArguments implements Arguments {
 	public static Object single( Object value ) {

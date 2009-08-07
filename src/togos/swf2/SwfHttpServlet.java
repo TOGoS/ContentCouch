@@ -14,11 +14,13 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.DcNamespace;
 
-import togos.rra.BaseArguments;
-import togos.rra.BaseRequest;
-import togos.rra.Request;
-import togos.rra.RequestHandler;
-import togos.rra.Response;
+import togos.mf.RequestVerbs;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.RequestHandler;
+import togos.mf.Response;
+import togos.mf.base.BaseArguments;
+import togos.mf.base.BaseRequest;
 
 public class SwfHttpServlet extends HttpServlet {
 	protected RequestHandler requestHandler;
@@ -30,16 +32,16 @@ public class SwfHttpServlet extends HttpServlet {
 
 	protected void doGeneric( Request subReq, HttpServletResponse response ) throws ServletException, IOException {
 		try {
-			Response subRes = requestHandler.handleRequest(subReq);
+			Response subRes = requestHandler.call(subReq);
 			String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
 			switch( subRes.getStatus() ) {
-			case( Response.STATUS_NORMAL ): break;
-			case( Response.STATUS_DOESNOTEXIST ): case( Response.STATUS_UNHANDLED ):
+			case( ResponseCodes.RESPONSE_NORMAL ): break;
+			case( ResponseCodes.RESPONSE_DOESNOTEXIST ): case( ResponseCodes.RESPONSE_UNHANDLED ):
 				response.sendError(404, "Resource Not Found");
 				response.addHeader("Content-Type", "text/plain");
 				response.getWriter().println("Could not find resource: " + subReq.getUri() );
 				break;
-			case( Response.STATUS_USERERROR ):
+			case( ResponseCodes.RESPONSE_CALLER_ERROR ):
 				response.sendError(400, "User Error"); break;
 			default:
 				response.sendError(500, "RRA Error " + subRes.getStatus()); break;
@@ -64,7 +66,7 @@ public class SwfHttpServlet extends HttpServlet {
 	
 	protected void doGet( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
-		subReq.verb = Request.VERB_GET;
+		subReq.verb = RequestVerbs.VERB_GET;
 		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getServletPath();
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
@@ -74,7 +76,7 @@ public class SwfHttpServlet extends HttpServlet {
 
 	protected void doPost( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
-		subReq.verb = Request.VERB_POST;
+		subReq.verb = RequestVerbs.VERB_POST;
 		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getServletPath();
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
@@ -84,7 +86,7 @@ public class SwfHttpServlet extends HttpServlet {
 
 	protected void doPut( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
-		subReq.verb = Request.VERB_PUT;
+		subReq.verb = RequestVerbs.VERB_PUT;
 		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getServletPath();
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);

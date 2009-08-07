@@ -1,16 +1,16 @@
 package contentcouch.active;
 
-import togos.rra.BaseResponse;
-import togos.rra.Request;
-import togos.rra.RequestHandler;
-import togos.rra.Response;
+import togos.mf.Request;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.expression.Expression;
+import contentcouch.framework.BaseRequestHandler;
 
-public class ActiveRequestHandler implements RequestHandler {
+public class ActiveRequestHandler extends BaseRequestHandler {
 	public ActiveRequestHandler() {
 	}
 	
-	public Response handleRequest( Request req ) {
+	public Response call( Request req ) {
 		String uri = req.getUri();
 		if( uri.startsWith(ActiveUtil.ACTIVE_URI_PREFIX) || uri.startsWith("(") || uri.startsWith("\"") ) {
 			Expression e = ActiveUtil.parseExpression( uri );

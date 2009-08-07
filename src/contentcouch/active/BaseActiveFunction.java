@@ -6,8 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import togos.rra.BaseResponse;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;
 import contentcouch.active.expression.FunctionByNameExpression;
@@ -18,7 +19,7 @@ import contentcouch.path.PathSimplifiableExpression;
 public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifiableActiveFunction {
 	protected static Response getArgumentResponse( Map argumentExpressions, String name ) {
 		Expression e = (Expression)argumentExpressions.get(name);
-		if( e == null ) return new BaseResponse(Response.STATUS_DOESNOTEXIST, "Missing argument " + name, "text/plain");
+		if( e == null ) return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Missing argument " + name, "text/plain");
 		return e.eval();
 	}
 	
@@ -26,7 +27,7 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return defaultValue;
 		Response res = e.eval();
-		if( res.getStatus() == Response.STATUS_NORMAL ) {
+		if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 			if( res.getContent() == null ) return defaultValue;
 			return res.getContent();
 		}
@@ -64,7 +65,7 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 			Expression exp = (Expression)i.next();
 			Response res = exp != null ? exp.eval() : null;
 			if( res != null ) {
-				if( res != null && res.getStatus() == Response.STATUS_NORMAL ) {
+				if( res != null && res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 					values.add( res.getContent() );
 				} else {
 					throw new RuntimeException( "Couldn't load " + exp.toString() + ": " + res.getStatus() + ": " + res.getContent());

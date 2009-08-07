@@ -2,7 +2,7 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
-import togos.rra.Response;
+import togos.mf.Response;
 
 public class ExplorifyNonBlobs extends Explorify {
 

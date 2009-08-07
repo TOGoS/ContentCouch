@@ -10,17 +10,18 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
 
-import togos.rra.BaseRequestHandler;
-import togos.rra.BaseResponse;
-import togos.rra.Request;
-import togos.rra.Response;
+import togos.mf.ResponseCodes;
+import togos.mf.Request;
+import togos.mf.Response;
+import togos.mf.base.BaseResponse;
 import contentcouch.app.Log;
 import contentcouch.blob.FileCacheBlob;
 import contentcouch.blob.InputStreamBlob;
+import contentcouch.framework.BaseRequestHandler;
 import contentcouch.rdf.DcNamespace;
 
 public class HttpRequestHandler extends BaseRequestHandler {
-	public Response handleRequest(Request req) {
+	public Response call(Request req) {
 		if( !req.getUri().startsWith("http://") && !req.getUri().startsWith("https://") ) return BaseResponse.RESPONSE_UNHANDLED;
 
 		if( !"GET".equals(req.getVerb()) ) {
@@ -51,7 +52,7 @@ public class HttpRequestHandler extends BaseRequestHandler {
 			File tempFile = File.createTempFile("httpdownload", null);
 			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), length));			
 			Log.log(Log.EVENT_DOWNLOAD_STARTED, req.getUri(), String.valueOf(length) );
-			BaseResponse res = new BaseResponse(Response.STATUS_NORMAL, fcb);
+			BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, fcb);
 			if( urlConn.getLastModified() > 0 ) {
 				res.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
 			}
@@ -62,18 +63,18 @@ public class HttpRequestHandler extends BaseRequestHandler {
 		} catch( NoRouteToHostException e ) {
 			String mess = "No route to host " + url.getHost();
 			Log.log(Log.EVENT_WARNING, mess);
-			return new BaseResponse(Response.STATUS_DOESNOTEXIST, mess, "text/plain");
+			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, mess, "text/plain");
 		} catch( ConnectException e ) {
 			String mess = "Could not connect to " + url.getHost() + ":" + url.getPort();
 			Log.log(Log.EVENT_WARNING, mess);
-			return new BaseResponse(Response.STATUS_DOESNOTEXIST, mess, "text/plain");
+			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, mess, "text/plain");
 		} catch( FileNotFoundException e ) {
-			return new BaseResponse(Response.STATUS_DOESNOTEXIST, "File not found: " + req.getUri(), "text/plain");
+			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "File not found: " + req.getUri(), "text/plain");
 		} catch( IOException e ) {
 			e.printStackTrace();  // eh
 			String mess = "I/O error reading " + req.getUri();
 			Log.log(Log.EVENT_WARNING, mess);
-			return new BaseResponse(Response.STATUS_DOESNOTEXIST, mess, "text/plain");
+			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, mess, "text/plain");
 		}
 	}
 
