@@ -21,9 +21,9 @@ public class SwfFrontRequestHandler implements RequestHandler {
 	}
 
 	public Response handleRequest( Request request ) {
+		System.err.println( request.getUri() + " <- uri");
 		BaseRequest subReq = new BaseRequest(request);
-		subReq.putMetadata(SwfNamespace.COMPONENTS, components);
-		
+		subReq.putContextVar(SwfNamespace.COMPONENTS, components);
 		Response res;
 		for( Iterator i=components.values().iterator(); i.hasNext(); ) {
 			RequestHandler rh = (RequestHandler)i.next();

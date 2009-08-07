@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import contentcouch.blob.BlobUtil;
+import contentcouch.explorify.BaseUriProcessor;
+import contentcouch.explorify.UriProcessor;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.DcNamespace;
 
@@ -28,8 +30,18 @@ public class SwfHttpServlet extends HttpServlet {
 		this.requestHandler = rh;
 	}
 
-	protected void doGeneric( Request subReq, HttpServletResponse response ) throws ServletException, IOException {
+	protected void doGeneric( Request insubReq, HttpServletResponse response ) throws ServletException, IOException {
 		try {
+			BaseRequest subReq = new BaseRequest(insubReq);
+			subReq.putContextVar(BaseUriProcessor.CTXVAR+"/default", new BaseUriProcessor((UriProcessor)subReq.getContextVars().get(BaseUriProcessor.CTXVAR+"/default"), false) {
+				public String processUri(String uri) {
+					if( uri.startsWith(SERVLET_PATH_URI_PREFIX) ) {
+						// TODO: Use dot-dots..
+						uri = uri.substring(SERVLET_PATH_URI_PREFIX.length());
+					}
+					return super.processUri(uri);
+				}
+			});
 			Response subRes = requestHandler.handleRequest(subReq);
 			String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
 			switch( subRes.getStatus() ) {

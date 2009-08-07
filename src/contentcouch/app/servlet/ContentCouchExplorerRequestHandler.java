@@ -30,6 +30,12 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
 		metaRepoConfig.handleArguments(new String[]{"-file",configFileUri}, 0, configFileUri);
 		contentcouch.app.Log.setStandardLogLevel( 60 );
+		putComponent("explore", new ExploreComponent(SwfHttpServlet.SERVLET_PATH_URI_PREFIX + "/explore"));
+		putComponent("album", new ExploreAlbumComponent(SwfHttpServlet.SERVLET_PATH_URI_PREFIX + "/album"));
+		putComponent("raw", new ExploreRawComponent(SwfHttpServlet.SERVLET_PATH_URI_PREFIX + "/raw"));
+		UriMapComponent webRootC = new UriMapComponent(SwfHttpServlet.SERVLET_PATH_URI_PREFIX + "/", webRoot, true, "_index");
+		webRootC.addAutoPostfix(".html");
+		putComponent("webroot", webRootC );
 	}
 
 	protected String getProcessingUri(String processor, String uri, String verb) {
@@ -60,54 +66,46 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		}
 		pi = pi.substring(SwfHttpServlet.SERVLET_PATH_URI_PREFIX.length());
 		
-		Arguments args = null;
-		if( req.getContent() instanceof Arguments ) {
-			args = (Arguments)req.getContent();
-		}
-		
 		String _pathToRoot = "";
 		for( int i=1; i<pi.length(); ++i ) {
 			if( pi.charAt(i) == '/' ) _pathToRoot += "../";
 		}
 		final String pathToRoot = _pathToRoot;
 
-		final boolean shouldRewriteRelativeUris;
+		BaseRequest subReq1 = new BaseRequest(req);
+		final boolean shouldRewriteRelativeUris = true;
+		subReq1.putContextVar(BaseUriProcessor.CTXVAR + "/default", new BaseUriProcessor(null, shouldRewriteRelativeUris) {
+			public String processUri(String uri) {
+				return pathToRoot + "explore?uri=" + UriUtil.uriEncode(uri);
+			}
+		});
+		subReq1.putContextVar(BaseUriProcessor.CTXVAR + "/explore", new BaseUriProcessor(null, shouldRewriteRelativeUris) {
+			public String processUri(String uri) {
+				return pathToRoot + "explore?uri=" + UriUtil.uriEncode(uri);
+			}
+		});
+		subReq1.putContextVar(BaseUriProcessor.CTXVAR + "/raw", new BaseUriProcessor(null, shouldRewriteRelativeUris) {
+			public String processUri(String uri) {
+				return pathToRoot + "raw?uri=" + UriUtil.uriEncode(uri);
+			}
+		});
+		subReq1.putContextVar(BaseUriProcessor.CTXVAR + "/album", new BaseUriProcessor(null, shouldRewriteRelativeUris) {
+			public String processUri(String uri) {
+				return pathToRoot + "process?processor=contentcouch.photoalbum.make-album-page&uri=" + UriUtil.uriEncode(uri);
+			}
+		});
+		if( true ) return super.handleRequest(subReq1);
+		
+		// Old code temporarily left around for reference:
+		
+		Arguments args = null;
+		if( req.getContent() instanceof Arguments ) {
+			args = (Arguments)req.getContent();
+		}
+
 		String uri = null;
 		String[] pathComp = pi.substring(1).split("/");
 		String inputUri = (String)args.getNamedArguments().get("uri");
-		if( "process".equals(pathComp[0]) ) {
-			shouldRewriteRelativeUris = true;
-		    String processor = (String)args.getNamedArguments().get("processor");
-			uri = getProcessingUri(processor, inputUri, "Album view of");
-		} else if( "explore".equals(pathComp[0]) ) {
-		    if( inputUri != null ) {
-				shouldRewriteRelativeUris = true;
-			} else if( pi.startsWith("/explore/") ) {
-				inputUri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(9));
-				shouldRewriteRelativeUris = false;
-			} else {
-				// TODO: redirect
-				return new BaseResponse( BaseResponse.STATUS_DOESNOTEXIST, "" );
-			}
-			uri = getExploreUri(inputUri);
-		} else if( "raw".equals(pathComp[0]) ) {
-			if( inputUri != null ) {
-				shouldRewriteRelativeUris = true;
-			} else if( pi.startsWith("/raw/") ) {
-				inputUri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(5));
-				shouldRewriteRelativeUris = false;
-			} else {
-				// TODO: redirect
-				return new BaseResponse( BaseResponse.STATUS_DOESNOTEXIST, "" );
-			}
-			uri = inputUri;
-		} else if( pi.equals("/") ) {
-			uri = PathUtil.appendPath(webRoot, "_index.html");
-			shouldRewriteRelativeUris = false;
-		} else {
-			uri = PathUtil.appendPath(webRoot, pi.substring(1) + ".html");
-			shouldRewriteRelativeUris = false;
-		}
 		
 		BaseRequest subReq = new BaseRequest(Request.VERB_GET, uri);
 		try {
