@@ -18,9 +18,9 @@ import contentcouch.rdf.DcNamespace;
 
 public class FileRequestHandler extends BaseRequestHandler {
 	public Response call( Request req ) {
-		if( !req.getUri().startsWith("file:") ) return BaseResponse.RESPONSE_UNHANDLED;
+		if( !req.getResourceName().startsWith("file:") ) return BaseResponse.RESPONSE_UNHANDLED;
 		
-		String path = PathUtil.parseFilePathOrUri(req.getUri()).toString();
+		String path = PathUtil.parseFilePathOrUri(req.getResourceName()).toString();
 		
 		if( "GET".equals(req.getVerb()) ) {
 			File f = new File(path);
@@ -53,7 +53,7 @@ public class FileRequestHandler extends BaseRequestHandler {
 			
 			DirectoryMerger merger = new DirectoryMerger( new DirectoryMerger.RegularConflictResolver(req.getMetadata()), false );
 			
-			if( merger.put(destDir, newEntry, MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getUri()) ) {
+			if( merger.put(destDir, newEntry, MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getResourceName()) ) {
 				res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
 			}
 			return res;

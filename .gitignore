@@ -1,5 +1,6 @@
 .src-files.lst
 .settings
 junk*
+installer/ccouch-install.properties
 web/WEB-INF/classes
 web/repo-config

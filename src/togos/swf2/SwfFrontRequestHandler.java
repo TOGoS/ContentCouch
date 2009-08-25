@@ -4,13 +4,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import contentcouch.framework.BaseRequestHandler;
-
+import togos.mf.api.CallHandler;
 import togos.mf.api.Request;
-import togos.mf.api.RequestHandler;
 import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import contentcouch.framework.BaseRequestHandler;
 
 public class SwfFrontRequestHandler extends BaseRequestHandler {
 	protected Map components = new HashMap();
@@ -28,7 +27,7 @@ public class SwfFrontRequestHandler extends BaseRequestHandler {
 		
 		Response res;
 		for( Iterator i=components.values().iterator(); i.hasNext(); ) {
-			RequestHandler rh = (RequestHandler)i.next();
+			CallHandler rh = (CallHandler)i.next();
 			res = rh.call(subReq);
 			if( res.getStatus() > 0 ) return res;
 		}

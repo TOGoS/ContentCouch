@@ -10,23 +10,22 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import contentcouch.blob.BlobUtil;
-import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.DcNamespace;
-
+import togos.mf.api.CallHandler;
 import togos.mf.api.Request;
-import togos.mf.api.RequestHandler;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
+import contentcouch.blob.BlobUtil;
+import contentcouch.misc.ValueUtil;
+import contentcouch.rdf.DcNamespace;
 
 public class SwfHttpServlet extends HttpServlet {
-	protected RequestHandler requestHandler;
+	protected CallHandler requestHandler;
 	public static final String SERVLET_PATH_URI_PREFIX = "x-servlet-path:";
 	
-	public SwfHttpServlet(RequestHandler rh) {
+	public SwfHttpServlet(CallHandler rh) {
 		this.requestHandler = rh;
 	}
 
@@ -39,7 +38,7 @@ public class SwfHttpServlet extends HttpServlet {
 			case( ResponseCodes.RESPONSE_DOESNOTEXIST ): case( ResponseCodes.RESPONSE_UNHANDLED ):
 				response.sendError(404, "Resource Not Found");
 				response.addHeader("Content-Type", "text/plain");
-				response.getWriter().println("Could not find resource: " + subReq.getUri() );
+				response.getWriter().println("Could not find resource: " + subReq.getResourceName() );
 				break;
 			case( ResponseCodes.RESPONSE_CALLER_ERROR ):
 				response.sendError(400, "User Error"); break;

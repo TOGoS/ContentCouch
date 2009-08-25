@@ -614,7 +614,7 @@ public class MetaRepository extends BaseRequestHandler {
 	protected String lastHitDataSectorUri;
 	
 	public Response call( Request req ) {
-		if( "x-ccouch-repo://".equals(req.getUri()) ) {
+		if( "x-ccouch-repo://".equals(req.getResourceName()) ) {
 			SimpleDirectory sd = new SimpleDirectory();
 			for( Iterator i=this.config.namedRepoConfigs.values().iterator(); i.hasNext(); ) {
 				RepoConfig repoConfig = (RepoConfig)i.next();
@@ -625,13 +625,13 @@ public class MetaRepository extends BaseRequestHandler {
 				sd.addDirectoryEntry(entry);
 			}
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, sd);
-		} else if( req.getUri().startsWith("x-ccouch-head:") || req.getUri().startsWith("x-ccouch-repo:") ) {
-			RepoRef repoRef = RepoRef.parse(req.getUri(), false);
+		} else if( req.getResourceName().startsWith("x-ccouch-head:") || req.getResourceName().startsWith("x-ccouch-repo:") ) {
+			RepoRef repoRef = RepoRef.parse(req.getResourceName(), false);
 			RepoConfig repoConfig;
 			if( repoRef.repoName == null ) {
 				repoConfig = config.defaultRepoConfig;
 				if( repoConfig == null ) {
-					BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "No default repository to handle " + req.getUri());
+					BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "No default repository to handle " + req.getResourceName());
 					res.putContentMetadata(DcNamespace.DC_FORMAT, "text/plain");
 					return res;
 				}
@@ -663,7 +663,7 @@ public class MetaRepository extends BaseRequestHandler {
 					BaseRequest subReq = new BaseRequest( req, resolveHeadPath(repoConfig, repoRef.subPath, "") );
 					return TheGetter.handleRequest(subReq);
 				} else {
-					throw new RuntimeException("Can't PUT to " + req.getUri() + ", sorry!");
+					throw new RuntimeException("Can't PUT to " + req.getResourceName() + ", sorry!");
 				}
 			} else {
 				String path = repoRef.subPath;
@@ -681,7 +681,7 @@ public class MetaRepository extends BaseRequestHandler {
 			if( RequestVerbs.VERB_GET.equals(req.getVerb()) || RequestVerbs.VERB_HEAD.equals(req.getVerb()) ) {
 				// URN request? Check each repo to see if it has a data scheme that would handle it
 
-				String urn = req.getUri();
+				String urn = req.getResourceName();
 			
 				// Check local repos
 				for( Iterator i=config.getDefaultAndLocalRepoConfigs().iterator(); i.hasNext(); ) {

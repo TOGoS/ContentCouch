@@ -14,7 +14,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 	protected static Object root = new SimpleDirectory();
 
 	public Response call(Request req) {
-		String path = req.getUri();
+		String path = req.getResourceName();
 		if( !path.startsWith("x-memtemp:") ) return BaseResponse.RESPONSE_UNHANDLED;
 		path = path.substring("x-memtemp:".length());
 		while( path.startsWith("/") ) path = path.substring(1);
@@ -25,7 +25,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 			return get( parts );
 		} else if( RequestVerbs.VERB_PUT.equals(req.getVerb()) ) {
 			if( path.length() == 0 ) {
-				return new BaseResponse( ResponseCodes.RESPONSE_CALLER_ERROR, "Cannot PUT at " + req.getUri(), "text/plain");
+				return new BaseResponse( ResponseCodes.RESPONSE_CALLER_ERROR, "Cannot PUT at " + req.getResourceName(), "text/plain");
 			}
 			return put( parts, req.getContent() );
 		} else {

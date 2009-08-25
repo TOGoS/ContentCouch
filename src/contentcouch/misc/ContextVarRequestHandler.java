@@ -9,9 +9,9 @@ import togos.mf.base.BaseResponse;
 
 public class ContextVarRequestHandler extends BaseRequestHandler {
 	public Response call(Request req) {
-		if( !req.getUri().startsWith("x-context-var:") ) return BaseResponse.RESPONSE_UNHANDLED;
+		if( !req.getResourceName().startsWith("x-context-var:") ) return BaseResponse.RESPONSE_UNHANDLED;
 		
-		String varName = UriUtil.uriDecode(req.getUri().substring("x-context-var:".length()));
+		String varName = UriUtil.uriDecode(req.getResourceName().substring("x-context-var:".length()));
 		
 		if( RequestVerbs.VERB_GET.equals(req.getVerb()) ) {
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, req.getContextVars().get(varName));

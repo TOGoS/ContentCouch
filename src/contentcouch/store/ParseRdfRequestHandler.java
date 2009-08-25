@@ -14,17 +14,17 @@ import contentcouch.rdf.RdfIO;
 
 public class ParseRdfRequestHandler extends BaseRequestHandler {
 	public Response call( Request req ) {
-		if( !req.getUri().startsWith("x-parse-rdf:") || !"GET".equals(req.getVerb()) ) {
+		if( !req.getResourceName().startsWith("x-parse-rdf:") || !"GET".equals(req.getVerb()) ) {
 			return BaseResponse.RESPONSE_UNHANDLED;
 		}
 		
-		BaseRequest subReq = new BaseRequest(req, req.getUri().substring("x-parse-rdf:".length()));
+		BaseRequest subReq = new BaseRequest(req, req.getResourceName().substring("x-parse-rdf:".length()));
 		Response subRes = TheGetter.handleRequest(subReq);
 		
 		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
 		
 		Blob blob = BlobUtil.getBlob(subRes.getContent());
-		Object value = RdfIO.parseRdf(ValueUtil.getString(blob), subReq.getUri());
+		Object value = RdfIO.parseRdf(ValueUtil.getString(blob), subReq.getResourceName());
 		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, value, subRes);
 		res.putContentMetadata(CcouchNamespace.PARSED_FROM, blob);
 		return res;

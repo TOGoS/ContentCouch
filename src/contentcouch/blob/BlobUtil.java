@@ -16,6 +16,7 @@ import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.RdfNode;
+import contentcouch.stream.StreamUtil;
 
 public class BlobUtil {
 	//// Convert blobs to other things ////
@@ -82,16 +83,6 @@ public class BlobUtil {
 	
 	public static final int READ_CHUNK_SIZE = 8*1024;
 
-	public static void copyInputToOutput( InputStream is, OutputStream os )
-		throws IOException
-	{
-		byte[] bytes = new byte[READ_CHUNK_SIZE];
-		int read;
-		while( (read = is.read(bytes)) > 0 ) {
-			os.write(bytes, 0, read);
-		}
-	}
-	
 	public static void writeBlobToOutputStream( Blob blob, OutputStream os ) {
 		try {
 			if( blob instanceof InputStreamBlob ) {
@@ -99,7 +90,7 @@ public class BlobUtil {
 			} else if( blob instanceof File ) {
 				FileInputStream is = new FileInputStream((File)blob);
 				try {
-					copyInputToOutput(is, os);
+					StreamUtil.copyInputToOutput(is, os);
 				} finally {
 					is.close();
 				}

@@ -1,0 +1,16 @@
+# Where to install the script that will run ccouch so that you don't have
+# to type out java -cp ...... contentcouch.app.ContentCouchCommand -repo .... each time.
+# This should be be on your command path.
+script-path = C:/windows/ccouch.bat
+
+# What kind of script to write ('bat' or 'sh')
+script-style = bat
+
+# Where do you want ccouch to store everything?
+# This directory will used as your ccouch repository. 
+default-repo-path = C:/datastore/ccouch
+
+# What do you want to call your repository?
+# This cannot contain any spaces or special characters other than '-'
+# A good choice is to include the name of the computer hosting the repository.
+default-repo-name = localrepo

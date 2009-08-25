@@ -603,7 +603,7 @@ public class ContentCouchCommand {
 			BaseRequest getReq = new BaseRequest(RequestVerbs.VERB_GET, input);
 			Response getRes = TheGetter.handleRequest(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
-				System.err.println("Couldn't find " + getReq.getUri() + ": " + getRes.getStatus() + ": " + getRes.getContent() );
+				System.err.println("Couldn't find " + getReq.getResourceName() + ": " + getRes.getStatus() + ": " + getRes.getContent() );
 				++errorCount;
 			} else {
 				String id = TheGetter.identify( getRes.getContent(), getRes.getContentMetadata() );
@@ -1145,16 +1145,22 @@ public class ContentCouchCommand {
 		return 0;
 	}
 	
+	protected boolean getterInitialized = false;
+	protected boolean initializeGetter() {
+		if( !getterInitialized ) {
+			TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
+			InternalStreamRequestHandler.getInstance().addInputStream("stdin",System.in);
+			InternalStreamRequestHandler.getInstance().addOutputStream("stdout",System.out);
+		}
+		return getterInitialized = true;
+	}
+	
 	public int run( String[] args ) {
 		if( args.length == 0 ) {
 			System.err.println(USAGE);
 			System.err.println();
 			return 1;
 		}
-
-		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
-		InternalStreamRequestHandler.getInstance().addInputStream("stdin",System.in);
-		InternalStreamRequestHandler.getInstance().addOutputStream("stdout",System.out);
 		
 		String cmd = null;
 		int i;
@@ -1163,7 +1169,7 @@ public class ContentCouchCommand {
 			if( "-h".equals(args[i]) || "-?".equals(args[i]) ) {
 				System.out.println(USAGE);
 				return 0;
-			} else if( (ni = metaRepoConfig.handleArguments(args, i, "./")) > i ) {
+			} else if( initializeGetter() && (ni = metaRepoConfig.handleArguments(args, i, "./")) > i ) {
 				i = ni;
 			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
 				cmd = args[i++];
@@ -1183,6 +1189,7 @@ public class ContentCouchCommand {
 			System.err.println();
 			return 1;
 		}
+		initializeGetter();
 		String[] cmdArgs = new String[args.length-i];
 		for( int j=0; j<cmdArgs.length; ++i, ++j ) {
 			cmdArgs[j] = args[i];

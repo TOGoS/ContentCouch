@@ -3,40 +3,18 @@ http://wiki.github.com/TOGoS/contentcouch and under doc/ in the project
 directory.  This file is intended only to help you get started using
 ContentCouch at a basic level.
 
-== Repository set up ==
+== Installation ==
 
-The first step to using ContentCouch is to create and name a repository.
+* cd into the 'install' directory
+* run install.bat or install.sh
+  - this should create a file, 'ccouch-install.properties'
+* edit ccouch-install.properties, following the instructions therein
+* run install.bat/sh again
+  - this will create a script with the classpath and default repository
+    configured at the 'script-path' you gave in ccouch-install.properties.
 
-A repository can store any number of files from any number of projects.
-
-If you want to use hardlinks between the repository and your files (this
-saves space but also causes your files to be read-only, a good solution for
-large media files but not for smaller files that change often), you should
-create the repository on the same partition as the files you want to store
-in it.
-
-Your repository will also need a name.  Choose something short but relatively
-unique.  If your computer already has host/domain name, that would be a good
-choice.
-
-To create the repository, just store a few files in it by running
-
-  ccouch -repo:<repo-name> <path-to-repo> store [-link] <file1> <file2> ...
-
-As an example, this might look like:
-  
-  java -cp C:/apps/ccouch/web/WEB-INF/classes \
-  contentcouch.app.ContentCouchCommand \
-  -repo:togos-backup3 file:///F:/datastore/ccouch \
-  store -link helloworld.txt
-
-(backslashes indicate that the command continues on the next line.)
-
-For obvious reasons, you would benefit by creating a shell script/batch
-file to call ccouch for you.  Example scripts are included in the project:
-ccouch.sh and ccouch.bat, for Unix and Windows, respectively.  These scripts
-call java with the ccouch classpath and main class, specify a repository,
-and pass through any additional parameters.
+You should now be able to run ccouch at the command line simply by typing
+'ccouch' (or whatever you gave as script-path).
 
 For more information, run 'ccouch -?' to see a list of sub-commands, and
 'ccouch <subcommand> -?' to see a list of options for any given sub-command.
@@ -51,6 +29,8 @@ command.  Configuration files can also give default arguments for subcommands.
 
 Example:
 
+  # Some additional repositories to check when searching for content
+  # or to cache heads from (using ccouch cache-heads //<repo-name>/...)
   -local-repo:music /home/ted/ccouch-music/
   -remote-repo:jon http://www.jon.com/ccouch/
 

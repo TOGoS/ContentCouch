@@ -57,7 +57,7 @@ public class InternalStreamRequestHandler extends BaseRequestHandler {
 		if( !(iso instanceof InputStream) ) throw new RuntimeException("Not an input stream: " + streamName);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			BlobUtil.copyInputToOutput((InputStream)iso, baos);
+			StreamUtil.copyInputToOutput((InputStream)iso, baos);
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -67,12 +67,12 @@ public class InternalStreamRequestHandler extends BaseRequestHandler {
 	}
 
 	public Response call(Request req) {
-		if( !req.getUri().startsWith(URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
-		String streamName = req.getUri().substring(URI_PREFIX.length());
+		if( !req.getResourceName().startsWith(URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
+		String streamName = req.getResourceName().substring(URI_PREFIX.length());
 		if( RequestVerbs.VERB_POST.equals(req.getVerb()) || RequestVerbs.VERB_PUT.equals(req.getVerb()) ) {
 			Object content = req.getContent();
 			if( content == null ) {
-				throw new RuntimeException("Can't PUT or POST to " + req.getUri() + " without content");
+				throw new RuntimeException("Can't PUT or POST to " + req.getResourceName() + " without content");
 			}
 			Blob blob = BlobUtil.getBlob(content);
 			putBlob(blob, streamName);

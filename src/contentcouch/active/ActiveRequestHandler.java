@@ -11,7 +11,7 @@ public class ActiveRequestHandler extends BaseRequestHandler {
 	}
 	
 	public Response call( Request req ) {
-		String uri = req.getUri();
+		String uri = req.getResourceName();
 		if( uri.startsWith(ActiveUtil.ACTIVE_URI_PREFIX) || uri.startsWith("(") || uri.startsWith("\"") ) {
 			Expression e = ActiveUtil.parseExpression( uri );
 			Context.pushInstance(req.getContextVars());

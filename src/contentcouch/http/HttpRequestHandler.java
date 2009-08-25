@@ -22,7 +22,7 @@ import contentcouch.rdf.DcNamespace;
 
 public class HttpRequestHandler extends BaseRequestHandler {
 	public Response call(Request req) {
-		if( !req.getUri().startsWith("http://") && !req.getUri().startsWith("https://") ) return BaseResponse.RESPONSE_UNHANDLED;
+		if( !req.getResourceName().startsWith("http://") && !req.getResourceName().startsWith("https://") ) return BaseResponse.RESPONSE_UNHANDLED;
 
 		if( !"GET".equals(req.getVerb()) ) {
 			throw new RuntimeException("HTTP handler only does GETs, for now.");
@@ -30,7 +30,7 @@ public class HttpRequestHandler extends BaseRequestHandler {
 		
 		URL url;
 		try {
-			url = new URL(req.getUri());
+			url = new URL(req.getResourceName());
 		} catch( MalformedURLException e ) {
 			throw new RuntimeException(e);
 		}
@@ -51,7 +51,7 @@ public class HttpRequestHandler extends BaseRequestHandler {
 			long length = urlConn.getContentLength();
 			File tempFile = File.createTempFile("httpdownload", null);
 			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), length));			
-			Log.log(Log.EVENT_DOWNLOAD_STARTED, req.getUri(), String.valueOf(length) );
+			Log.log(Log.EVENT_DOWNLOAD_STARTED, req.getResourceName(), String.valueOf(length) );
 			BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, fcb);
 			if( urlConn.getLastModified() > 0 ) {
 				res.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
@@ -69,10 +69,10 @@ public class HttpRequestHandler extends BaseRequestHandler {
 			Log.log(Log.EVENT_WARNING, mess);
 			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, mess, "text/plain");
 		} catch( FileNotFoundException e ) {
-			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "File not found: " + req.getUri(), "text/plain");
+			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "File not found: " + req.getResourceName(), "text/plain");
 		} catch( IOException e ) {
 			e.printStackTrace();  // eh
-			String mess = "I/O error reading " + req.getUri();
+			String mess = "I/O error reading " + req.getResourceName();
 			Log.log(Log.EVENT_WARNING, mess);
 			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, mess, "text/plain");
 		}

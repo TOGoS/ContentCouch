@@ -1,6 +1,11 @@
 package contentcouch.file;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import contentcouch.stream.StreamUtil;
 
 
 public class FileUtil {
@@ -24,6 +29,26 @@ public class FileUtil {
 			return new FileDirectory(f);
 		} else {
 			return new FileBlob(f);
+		}
+	}
+	
+	public static void copy( File in, File out ) {
+		
+		FileInputStream is = null;
+		FileOutputStream os = null;
+		try {
+			is = new FileInputStream(in);
+			os = new FileOutputStream(out);
+			StreamUtil.copyInputToOutput( is, os );
+		} catch( IOException e ) {
+			throw new RuntimeException( "Error while copying " + in.getPath() + " to " + out.getPath(), e );
+		} finally {
+			try {
+				if( os != null ) os.close();
+				if( is != null ) is.close();
+			} catch( IOException e ) {
+				// Whatever
+			}
 		}
 	}
 }

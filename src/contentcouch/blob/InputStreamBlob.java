@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import contentcouch.stream.StreamUtil;
+
 import togos.mf.value.Blob;
 
 
@@ -78,7 +80,7 @@ public class InputStreamBlob implements Blob {
 			//       = position - offset
 			os.write(previousRead, (int)(offset-(position-previousRead.length)), (int)(position-offset));
 		}
-		BlobUtil.copyInputToOutput(inputStream, os);
+		StreamUtil.copyInputToOutput(inputStream, os);
 		int br;
 		byte[] readed = new byte[BlobUtil.READ_CHUNK_SIZE];
 		while( (br = inputStream.read(readed)) > 0 ) {

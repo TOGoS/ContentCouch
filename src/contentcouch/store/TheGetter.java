@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import togos.mf.api.Request;
-import togos.mf.api.RequestHandler;
+import togos.mf.api.CallHandler;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
@@ -29,10 +29,10 @@ public class TheGetter {
 	
 	public static final String CTXVAR = CcouchNamespace.INTERNAL_NS + "getter"; 
 	
-	public static RequestHandler globalInstance;
+	public static CallHandler globalInstance;
 	
-	public static RequestHandler getGenericGetter() {
-		RequestHandler theGetter = (RequestHandler)Context.get(CTXVAR);
+	public static CallHandler getGenericGetter() {
+		CallHandler theGetter = (CallHandler)Context.get(CTXVAR);
 		if( theGetter == null ) {
 			theGetter = globalInstance;
 		}
@@ -51,7 +51,7 @@ public class TheGetter {
 	}
 	
 	public static Response handleRequest( Request req ) {
-		Log.log(Log.EVENT_REQUEST_SUBMITTED, req.getVerb(), req.getUri(), (req.getContent() == null ? "" : describeContent(req.getContent())) );
+		Log.log(Log.EVENT_REQUEST_SUBMITTED, req.getVerb(), req.getResourceName(), (req.getContent() == null ? "" : describeContent(req.getContent())) );
 		return getGenericGetter().call(req);
 	}
 
@@ -69,7 +69,7 @@ public class TheGetter {
 	}
 
 	public static Object getResponseValue( Response res, Request req ) {
-		return getResponseValue(res, req.getVerb(), req.getUri() );
+		return getResponseValue(res, req.getVerb(), req.getResourceName() );
 	}
 	
 	public static final String getResponseErrorSummary( Response res ) {

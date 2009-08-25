@@ -44,7 +44,7 @@ public class DataUriResolver extends BaseRequestHandler {
 	}
 	
 	public Response call( Request req ) {
-		String uri = req.getUri();
+		String uri = req.getResourceName();
 		if( !uri.startsWith(DATA_URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
 		HashMap metadata = new HashMap();
 		byte[] data = parse(uri, metadata);
