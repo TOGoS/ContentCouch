@@ -20,7 +20,7 @@ public class BuiltInData {
 		       "No such resource: " + name, "text/plain");
 		}
 		Request req = new BaseRequest(RequestVerbs.VERB_GET, resourceUrl.toString());
-		return TheGetter.handleRequest(req);
+		return TheGetter.call(req);
 	}
 	
 	public static String getString(String name) {

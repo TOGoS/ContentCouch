@@ -18,6 +18,6 @@ public class Eval extends BaseActiveFunction {
 		String uri = ValueUtil.getString(resolveThis);
 		BaseRequest req = new BaseRequest(RequestVerbs.VERB_GET, uri);
 		req.contextVars = Context.getInstance();
-		return TheGetter.handleRequest(req);
+		return TheGetter.call(req);
 	}
 }

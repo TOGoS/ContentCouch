@@ -22,10 +22,12 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import contentcouch.app.Linker.LinkException;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryWalker;
 import contentcouch.directory.EntryFilters;
 import contentcouch.directory.FilterIterator;
+import contentcouch.file.FileBlob;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleCommit;
 import contentcouch.misc.UriUtil;
@@ -55,6 +57,7 @@ public class ContentCouchCommand {
 		"  -remote-repo[:<name>] <location> ; specify a remote repository\n" +
 		"Sub-commands:\n" +
 		"  store <files>         ; store files in the main repo\n" +
+		"  relink <files>        ; replace files with hardlinks to the store\n" +
 		"  checkout <src> <dest> ; check files out to the filesystem\n" +
 		"  cache <urn> ...       ; cache blobs\n" +
 		"  cache-heads ...       ; cache heads from another repository\n" +
@@ -86,6 +89,12 @@ public class ContentCouchCommand {
 		"Will report <input-uri>\t<identity-uri> on standard out unless -hide-inputs\n" +
 		"is specified, in which case only the identity URIs will be reported.";
 	
+	public String RELINK_USAGE =
+		"Usage: ccouch [general options] relink [store options] <file1> <file2> ...\n" +
+		"Relink options:\n" +
+		"  -v  ; be verbose\n" +
+		"  -q  ; be quiet";
+
 	public String STORE_USAGE =
 		"Usage: ccouch [general options] store [store options] <file1> <file2> ...\n" +
 		"Store options:\n" +
@@ -97,7 +106,6 @@ public class ContentCouchCommand {
 		"  -files-only        ; store only file content (no directory listings)\n" +
 		"  -dirs-only         ; store only directory listings (no file content)\n" +
 		"  -dont-store        ; store nothing (same as using 'ccocuch id')\n" +
-		"  -relink            ; hardlink imported files to their stored counterpart\n" +
 		"  -store-sector      ; data sub-dir to store data (defaults to \"user\")\n" +
 		"  -hide-inputs       ; do not show input URIs in final report\n" +
 		"  -create-uri-dot-files ; cache URNs of directories in .ccouch-uri files\n" +
@@ -118,10 +126,6 @@ public class ContentCouchCommand {
 		"If -n is specified, a commit will be stored under that name as\n" +
 		"<repo-path>/heads/<main-repo-name>/<name>/<version>, where <version> is automatically\n" +
 		"incremented for new commits.\n" +
-		"\n" +
-		"-relink is useful when a copy of the file is already in the\n" +
-		"repository and you want to make sure the data ends up being\n" +
-		"shared.  -relink implies -link.\n" +
 		"\n" +
 		"<time> must be of the format '-<integer><unit>', where <unit> is one of\n" +
 		"'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', or 'years'\n";
@@ -336,7 +340,7 @@ public class ContentCouchCommand {
 		BaseRequest storeCommitUriReq = new BaseRequest(RequestVerbs.VERB_PUT, commitListUri);
 		storeCommitUriReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_REPLACE);
 		storeCommitUriReq.content = text;
-		return TheGetter.handleRequest(storeCommitUriReq);
+		return TheGetter.call(storeCommitUriReq);
 	}
 	
 	protected Response writeCommitUri( String commitListUri, String commitUri ) {
@@ -348,7 +352,7 @@ public class ContentCouchCommand {
 	protected List getCommitUris( String commitListUri ) {
 		// Load parent commits
 		BaseRequest parentCommitListReq = new BaseRequest(RequestVerbs.VERB_GET, commitListUri);
-		Response parentCommitListRes = TheGetter.handleRequest(parentCommitListReq);
+		Response parentCommitListRes = TheGetter.call(parentCommitListReq);
 		List commitUris = new ArrayList();
 		if( parentCommitListRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 			String parentCommitStr = ValueUtil.getString( parentCommitListRes.getContent() );
@@ -393,7 +397,6 @@ public class ContentCouchCommand {
 	
 	protected static class GeneralOptions implements ArgumentHandler {
 		public boolean shouldLinkStored;
-		public boolean shouldRelinkImported;
 		public boolean shouldDumpConfig;
 		public boolean shouldSaveCommitUri; 
 		public boolean shouldUseCommitTargets = false;
@@ -419,9 +422,6 @@ public class ContentCouchCommand {
 			// Linking options
 			} else if( "-link".equals(arg) ) {
 				this.shouldLinkStored = true;
-			} else if( "-relink".equals(arg) ) {
-				this.shouldLinkStored = true;
-				this.shouldRelinkImported = true;
 			} else if( "-store-sector".equals(arg) ) {
 				this.storeSector = (String)it.next();
 				
@@ -483,7 +483,7 @@ public class ContentCouchCommand {
 		
 		findTarget: while( true ) {
 			BaseRequest getReq = new BaseRequest( RequestVerbs.VERB_GET, sourceTargetUri );
-			getRes = TheGetter.handleRequest(getReq);
+			getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
 				return 1;
@@ -513,10 +513,9 @@ public class ContentCouchCommand {
 		putReq.putContentMetadata(CcouchNamespace.SOURCE_URI, sourceUri);
 		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 		if( opts.shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-		if( opts.shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
 		putReq.putMetadata(CcouchNamespace.REQ_DIRMERGE_METHOD, opts.dirMergeMethod);
 		putReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, opts.fileMergeMethod);
-		Response putRes = TheGetter.handleRequest(putReq);
+		Response putRes = TheGetter.call(putReq);
 		if( putRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 			System.err.println("Couldn't PUT to " + destUri + ": " + putRes.getContent());
 			return 1;
@@ -601,7 +600,7 @@ public class ContentCouchCommand {
 		for( Iterator i=inputUris.iterator(); i.hasNext(); ) {
 			String input = (String)i.next();
 			BaseRequest getReq = new BaseRequest(RequestVerbs.VERB_GET, input);
-			Response getRes = TheGetter.handleRequest(getReq);
+			Response getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				System.err.println("Couldn't find " + getReq.getResourceName() + ": " + getRes.getStatus() + ": " + getRes.getContent() );
 				++errorCount;
@@ -614,6 +613,89 @@ public class ContentCouchCommand {
 				}
 			}
 		}
+		return errorCount;
+	}
+	
+	protected int relink( File f ) {
+		BaseRequest idReq = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify");
+		idReq.content = new FileBlob(f);
+		Response idRes = TheGetter.call(idReq);
+		String id = (String)TheGetter.getResponseValue(idRes, idReq);
+		if( id == null ) {
+			Log.log(Log.EVENT_ERROR, "Failed to identify " + f);
+			return 0;
+		}
+		
+		BaseRequest getStoreFileReq = new BaseRequest(RequestVerbs.VERB_GET, id);
+		Response getStoreFileRes = TheGetter.call(getStoreFileReq);
+		int status = getStoreFileRes.getStatus();
+		if( status == ResponseCodes.RESPONSE_DOESNOTEXIST || status == ResponseCodes.RESPONSE_UNHANDLED ) {
+			// skip it.
+		} else if( status == ResponseCodes.RESPONSE_NORMAL ) {
+			Object hopefullyFile = TheGetter.getResponseValue(getStoreFileRes, getStoreFileReq);
+			if( hopefullyFile instanceof File ) {
+				File target = (File)hopefullyFile;
+				// woohoo, found it!  Can we link?
+				File backup = new File(f.getPath() + ".ccouch-relink-backup");
+				if( !f.renameTo(backup) ) {
+					Log.log(Log.EVENT_ERROR, "Couldn't rename " + f + " to replace with hardlink");
+					return 1;
+				}
+				try {
+					Linker.getInstance().link(target, f);
+					Log.log(Log.EVENT_REPLACED, target.getAbsolutePath(), f.getAbsolutePath()); 
+					backup.delete();
+				} catch( LinkException e ) {
+					Log.log(Log.EVENT_ERROR, "Couldn't link " + f + " to " + target);
+					backup.renameTo(f);
+					return 1;
+				}
+			}
+		}
+		return 0;
+	}
+	
+	protected int _relink( File f ) {
+		if( f.isDirectory() ) {
+			File[] childs = f.listFiles();
+			int errorCount = 0;
+			for( int i=0; i<childs.length; ++i ) {
+				File k = childs[i];
+				if( k.getName().startsWith(".") ) continue;
+				_relink(k);
+			}
+			return errorCount;
+		} else {
+			return relink(f);
+		}
+	}
+	
+	public int runRelinkCmd( String[] args ) {
+		ArrayList filenames = new ArrayList();
+		GeneralOptions opts = new GeneralOptions();
+		for( int i=0; i<args.length; ++i ) {
+			String arg = args[i];
+			if( "-q".equals(arg) ) {
+				opts.logLevel = Log.LEVEL_QUIET;
+			} else if( "-v".equals(arg) ) {
+				opts.logLevel = Log.LEVEL_VERBOSE;
+			} else if( !arg.startsWith("-") ) {
+				filenames.add(arg);
+			} else {
+				System.err.println("ccouch relink: Unrecognised argument: " + arg);
+				System.err.println();
+				System.err.println(RELINK_USAGE);
+				System.err.println();
+				return 1;
+			}
+		}
+		opts.setUpLogging();
+		
+		int errorCount = 0;
+		for( Iterator i=filenames.iterator(); i.hasNext(); ) {
+			errorCount += _relink(new File((String)i.next()));
+		}
+		
 		return errorCount;
 	}
 	
@@ -645,9 +727,6 @@ public class ContentCouchCommand {
 				opts.logLevel = Log.LEVEL_VERBOSE;
 			} else if( "-link".equals(arg) ) {
 				opts.shouldLinkStored = true;
-			} else if( "-relink".equals(arg) ) {
-				opts.shouldLinkStored = true;
-				opts.shouldRelinkImported = true;
 			} else if( "-store-sector".equals(arg) ) {
 				opts.storeSector = args[++i];
 			} else if( "-follow-refs".equals(arg) ) {
@@ -707,7 +786,7 @@ public class ContentCouchCommand {
 			String sourceUri = (String)i.next();
 			
 			Request getReq = new BaseRequest(RequestVerbs.VERB_GET, sourceUri);
-			Response getRes = TheGetter.handleRequest(getReq);
+			Response getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
 				++errorCount;
@@ -739,7 +818,6 @@ public class ContentCouchCommand {
 			putReq.contentMetadata.put(CcouchNamespace.SOURCE_URI, sourceUri);
 			if( opts.storeSector != null ) putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 			if( opts.shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-			if( opts.shouldRelinkImported ) putReq.putMetadata(CcouchNamespace.REQ_REHARDLINK_DESIRED, Boolean.TRUE);
 			if( opts.shouldCreateUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 			if( opts.shouldUseUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
 			putReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_IGNORE);
@@ -747,7 +825,7 @@ public class ContentCouchCommand {
 				opts.shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan
 			);
 			
-			Response putRes = TheGetter.handleRequest(putReq);
+			Response putRes = TheGetter.call(putReq);
 			if( putRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				System.err.println("Couldn't PUT to " + dataDestUri + ": " + putRes.getContent());
 				++errorCount;
@@ -779,7 +857,7 @@ public class ContentCouchCommand {
 					String parentCommitUri = (String)parentCommitUris.get(i);
 					if( !forceCommit ) {
 						BaseRequest parentCommitRequest = new BaseRequest(RequestVerbs.VERB_GET, parentCommitUri);
-						Response parentCommitResponse = TheGetter.handleRequest(parentCommitRequest);
+						Response parentCommitResponse = TheGetter.call(parentCommitRequest);
 						if( parentCommitResponse.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 							if( parentCommitResponse.getContent() instanceof Commit ) {
 								Commit parentCommit = (Commit)parentCommitResponse.getContent();
@@ -821,7 +899,7 @@ public class ContentCouchCommand {
 			if( opts.storeSector != null ) storeCommitReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 			if( opts.shouldLinkStored ) storeCommitReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
 			storeCommitReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
-			Response storeCommitRes = TheGetter.handleRequest(storeCommitReq);
+			Response storeCommitRes = TheGetter.call(storeCommitReq);
 			if( storeCommitRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + dataDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
 				++errorCount;
@@ -854,7 +932,7 @@ public class ContentCouchCommand {
 			if( commitDestUri != null ) {
 				BaseRequest storeCommitHeadReq = new BaseRequest(storeCommitReq, commitDestUri);
 				storeCommitHeadReq.content = TheGetter.get(commitBlobUrn);
-				Response storeCommitHeadRes = TheGetter.handleRequest(storeCommitHeadReq);
+				Response storeCommitHeadRes = TheGetter.call(storeCommitHeadReq);
 				if( storeCommitHeadRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 					Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + commitDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
 					++errorCount;
@@ -949,9 +1027,6 @@ public class ContentCouchCommand {
 				return 0;
 			} else if( "-link".equals(arg) ) {
 				opts.shouldLinkStored = true;
-			} else if( "-relink".equals(arg) ) {
-				opts.shouldLinkStored = true;
-				opts.shouldRelinkImported = true;
 			} else if( !arg.startsWith("-") ) {
 				cacheUris.add(arg);
 			} else {
@@ -1201,6 +1276,8 @@ public class ContentCouchCommand {
 			errorCount += dumpRepoConfig( metaRepoConfig, System.out, "  ");
 		} else if( "copy".equals(cmd) || "cp".equals(cmd) ) {
 			errorCount += runCopyCmd( cmdArgs );
+		} else if( "relink".equals(cmd) ) {
+			errorCount += runRelinkCmd( cmdArgs );
 		} else if( "store".equals(cmd) ) {
 			errorCount += runStoreCmd( cmdArgs );
 		} else if( "checkout".equals(cmd) ) {

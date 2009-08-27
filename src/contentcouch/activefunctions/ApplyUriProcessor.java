@@ -61,7 +61,7 @@ public class ApplyUriProcessor extends BaseActiveFunction {
 			String uri = innerProcess(operator, inputUri);
 			BaseRequest req = new BaseRequest(RequestVerbs.VERB_GET, uri);
 			req.contextVars = Context.getInstance();
-			return TheGetter.handleRequest(req);
+			return TheGetter.call(req);
 		} finally {
 			Context.popInstance();
 		}

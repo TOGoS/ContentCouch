@@ -132,7 +132,7 @@ public class MetaRepository extends BaseRequestHandler {
 		String dataDirUri = PathUtil.appendPath(repoConfig.uri,"data/");
 		
 		BaseRequest dirReq = new BaseRequest( RequestVerbs.VERB_GET, dataDirUri );
-		Response dirRes = TheGetter.handleRequest(dirReq);
+		Response dirRes = TheGetter.call(dirReq);
 		if( dirRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return l;
 		if( !(dirRes.getContent() instanceof Directory) ) {
 			Log.log(Log.EVENT_WARNING, dataDirUri + " exists but is not a directory");
@@ -216,7 +216,7 @@ public class MetaRepository extends BaseRequestHandler {
 		
 		BaseRequest subReq = new BaseRequest( req, uri );
 		subReq.verb = RequestVerbs.VERB_PUT;
-		BaseResponse res = new BaseResponse( TheGetter.handleRequest(subReq) );
+		BaseResponse res = new BaseResponse( TheGetter.call(subReq) );
 		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, repoConfig.dataScheme.hashToUrn(hash));
 		Date mtime = (Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
 		if( mtime != null ) {
@@ -437,6 +437,7 @@ public class MetaRepository extends BaseRequestHandler {
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, count + " items inserted", "text/plain");
 		} else if( content instanceof Directory.Entry ) {
 			BaseRequest subReq = new BaseRequest();
+			subReq.metadata = req.getMetadata();
 			subReq.content = ((Directory.Entry)content).getTarget();
 			return putData( repoConfig, subReq );
 		} else {
@@ -661,7 +662,7 @@ public class MetaRepository extends BaseRequestHandler {
 					return putData( repoConfig, req );
 				} else if( repoRef.subPath.startsWith("heads/") ) {
 					BaseRequest subReq = new BaseRequest( req, resolveHeadPath(repoConfig, repoRef.subPath, "") );
-					return TheGetter.handleRequest(subReq);
+					return TheGetter.call(subReq);
 				} else {
 					throw new RuntimeException("Can't PUT to " + req.getResourceName() + ", sorry!");
 				}
@@ -673,7 +674,7 @@ public class MetaRepository extends BaseRequestHandler {
 					path = repoConfig.uri + path;
 				}
 				BaseRequest subReq = new BaseRequest(req, path);
-				return TheGetter.handleRequest(subReq);
+				return TheGetter.call(subReq);
 			}
 			
 			//String sector = MetadataUtil.getKeyed(request.getMetadata(), RdfNamespace.STORE_SECTOR, rc.userStoreSector);
@@ -693,7 +694,7 @@ public class MetaRepository extends BaseRequestHandler {
 					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
 						String dataSectorUri = (String)si.next();
 						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
-						Response res = TheGetter.handleRequest(subReq);
+						Response res = TheGetter.call(subReq);
 						if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) return res;
 					}
 				}
@@ -704,11 +705,12 @@ public class MetaRepository extends BaseRequestHandler {
 					if( psp == null ) break lastHit;
 					
 					BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(lastHitDataSectorUri, psp));
-					Response res = TheGetter.handleRequest(subReq);
+					Response res = TheGetter.call(subReq);
 					if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) return res;
 				}
 				
-				// Check all remote repos
+				// Check all remote repos (unless we are explicitly asked not to)
+				if( !MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_LOCAL_REPOS_ONLY))
 				for( Iterator i=config.remoteRepoConfigs.iterator(); i.hasNext(); ) {
 					RepoConfig repoConfig = (RepoConfig)i.next();
 					String psp = urnToPostSectorPath(repoConfig, urn);
@@ -718,7 +720,7 @@ public class MetaRepository extends BaseRequestHandler {
 					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
 						String dataSectorUri = (String)si.next();
 						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
-						Response res = TheGetter.handleRequest(subReq);
+						Response res = TheGetter.call(subReq);
 						if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 							lastHitDataSectorUri = dataSectorUri;
 							lastHitRepoConfig = repoConfig;

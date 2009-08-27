@@ -50,7 +50,7 @@ public class TheGetter {
 		return desc;
 	}
 	
-	public static Response handleRequest( Request req ) {
+	public static Response call( Request req ) {
 		Log.log(Log.EVENT_REQUEST_SUBMITTED, req.getVerb(), req.getResourceName(), (req.getContent() == null ? "" : describeContent(req.getContent())) );
 		return getGenericGetter().call(req);
 	}
@@ -78,12 +78,12 @@ public class TheGetter {
 
 	public static Object get(String uri) {
 		Request req = new BaseRequest("GET",uri);
-		return getResponseValue(handleRequest(req), req);
+		return getResponseValue(call(req), req);
 	}
 	
 	public static Object put(String uri, Object obj) {
 		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, uri, obj, Collections.EMPTY_MAP);
-		return getResponseValue(handleRequest(putReq), putReq);
+		return getResponseValue(call(putReq), putReq);
 	}
 
 	public static Directory getDirectory( String uri ) {
@@ -92,7 +92,7 @@ public class TheGetter {
 	
 	public static String identify( Object content, Map contentMetadata ) {
 		BaseRequest idReq = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata );
-		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.handleRequest(idReq), idReq.uri));
+		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.call(idReq), idReq.uri));
 	}
 	
 	public static Object dereference( Object o ) {

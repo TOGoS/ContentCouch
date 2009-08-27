@@ -130,7 +130,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 				}
 			});
 			subReq.contextVars = Context.getInstance();
-			Response subRes = TheGetter.handleRequest(subReq);
+			Response subRes = TheGetter.call(subReq);
 			
 			if( subRes.getContent() instanceof Directory ) {
 				subRes = Explorify.explorifyDirectory( uri, (Directory)subRes.getContent(),

@@ -27,7 +27,7 @@ public class UriExpression implements Expression, PathSimplifiableExpression {
 	public Response eval() {
 		BaseRequest req = new BaseRequest( RequestVerbs.VERB_GET, uri );
 		req.contextVars = Context.getInstance();
-		return TheGetter.handleRequest(req);
+		return TheGetter.call(req);
 	}
 	
 	public String toUri() {

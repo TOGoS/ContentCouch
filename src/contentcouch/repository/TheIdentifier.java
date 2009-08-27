@@ -12,7 +12,7 @@ public class TheIdentifier {
 	public static String identify( Blob b ) {
 		BaseRequest req = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify");
 		req.content = b;
-		Response res = TheGetter.handleRequest(req);
+		Response res = TheGetter.call(req);
 		if( res.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 			throw new RuntimeException( "Could not identify blob; " + ValueUtil.getString(res.getContent()));
 		}

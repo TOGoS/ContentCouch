@@ -1,7 +1,7 @@
 package contentcouch.app;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -15,11 +15,6 @@ public class Installer {
 	public static final String USAGE =
 		"java contentcouch.app.Installer {install|uninstall}";
 	
-	public static final String DIRUSAGE =
-		"Error: Could not load {propertiesPath} or {propertiesTemplatePath}\n" +
-		"Make sure you are running the installer from the directory containing\n" +
-		"{propertiesTemplatePath}.";
-	
 	String propertiesPath = "ccouch-install.properties";
 	String propertiesTemplatePath = null;
 	File appDir;
@@ -29,9 +24,9 @@ public class Installer {
 	
 	protected Properties getProperties(File f) {
 		Properties props = new Properties();
-		FileReader r = null;
+		FileInputStream r = null;
 		try {
-			r = new FileReader(f);
+			r = new FileInputStream(f);
 			props.load(r);
 		} catch( IOException e ) {
 			throw new RuntimeException( "Error while loading install properties", e );
@@ -80,9 +75,10 @@ public class Installer {
 	public int preInstall() {
 		File ptf = getPropertiesTemplateFile();
 		if( !ptf.exists() ) {
-			System.err.println(DIRUSAGE
-				.replace("{propertiesPath}", propertiesPath)
-				.replace("{propertiesTemplatePath}", propertiesTemplatePath)
+			System.err.println(
+				"Error: Could not load "+propertiesPath+" or "+propertiesTemplatePath+"\n" +
+				"Make sure you are running the installer from the directory containing\n" +
+				propertiesTemplatePath+"."
 			);
 			return 1;
 		}
@@ -139,7 +135,7 @@ public class Installer {
 			} else {
 				writeUnixRunner( w, classPath, repoName, repoPath);
 				w.close();
-				scriptFile.setExecutable(true);
+				Runtime.getRuntime().exec(new String[]{"chmod","+x",scriptFile.getAbsolutePath()});
 			}
 		} catch( IOException e ) {
 			throw new RuntimeException(e);

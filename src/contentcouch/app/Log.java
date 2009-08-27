@@ -74,8 +74,14 @@ public class Log {
 			}
 		});
 		addLogger( EVENT_PUT, stderrLogger );
-		addLogger( EVENT_REPLACED, stderrLogger );
 		addLogger( EVENT_STORED, stderrLogger );
+		addLogger( EVENT_REPLACED, new Logger() {
+			public void log(String eventName, String[] arguments) {
+				String replacedUri = arguments[1];
+				String replacedWithUri = arguments[0];
+				System.err.println("Replaced " + replacedUri + " with " + replacedWithUri);
+			}
+		});
 
 		if( level < LEVEL_VERBOSE   ) return;
 		addLogger( EVENT_KEPT, stderrLogger );

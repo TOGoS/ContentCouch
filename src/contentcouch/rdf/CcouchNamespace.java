@@ -45,9 +45,9 @@ public class CcouchNamespace {
 	/** Namespace for ccouch-specific Request metadata */
 	public static final String CC_REQ_NS = CC_NS + "Request/";
 	
+	public static final String REQ_LOCAL_REPOS_ONLY   = CC_REQ_NS + "searchLocalReposOnly";
 	public static final String REQ_STORE_SECTOR       = CC_REQ_NS + "storeSector";
 	public static final String REQ_HARDLINK_DESIRED   = CC_REQ_NS + "hardlinkDesired";
-	public static final String REQ_REHARDLINK_DESIRED = CC_REQ_NS + "rehardlinkDesired";
 	public static final String REQ_SKIP_PREVIOUSLY_STORED_DIRS = CC_REQ_NS + "skipPreviouslyStoredDirectories";
 	public static final String REQ_USE_URI_DOT_FILES  = CC_REQ_NS + "useUriDotFiles";
 	public static final String REQ_CREATE_URI_DOT_FILES = CC_REQ_NS + "createUriDotFiles";

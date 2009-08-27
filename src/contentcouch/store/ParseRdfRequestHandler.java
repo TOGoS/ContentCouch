@@ -19,7 +19,7 @@ public class ParseRdfRequestHandler extends BaseRequestHandler {
 		}
 		
 		BaseRequest subReq = new BaseRequest(req, req.getResourceName().substring("x-parse-rdf:".length()));
-		Response subRes = TheGetter.handleRequest(subReq);
+		Response subRes = TheGetter.call(subReq);
 		
 		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
 		

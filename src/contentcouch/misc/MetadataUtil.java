@@ -185,7 +185,7 @@ public class MetadataUtil {
 		if( target instanceof Ref ) {
 			String targetSourceUri = ((Ref)target).getTargetUri();
 			BaseRequest targetReq = new BaseRequest(RequestVerbs.VERB_GET, targetSourceUri );
-			Response targetRes = TheGetter.handleRequest( targetReq );
+			Response targetRes = TheGetter.call( targetReq );
 			req.content = TheGetter.getResponseValue( targetRes, targetReq );
 			req.contentMetadata = targetRes.getContentMetadata();
 			req.putContentMetadata( CcouchNamespace.SOURCE_URI, targetSourceUri );
