@@ -90,12 +90,12 @@ public class PathUtil {
 		// If p2 is absolute, return it
 		if( isUri(p2) ) return p2;
 
-		if( !isUri(p1) ) { // TODO: or if is hierarchical scheme to save some time (but should be taken care of below, anyway)
-			// if p1 looks relative or a file path, we assume that it's hierarchical,
-			// and we do simple old path appending.
+		// If p1 is relative or hierarchical, use this easy method
+		if( !isUri(p1) || isHierarchicalUri(p1) ) {
 			return appendHierarchicalPath(p1,p2,ignoreLastInHierarchical);
 		}
 
+		// Warning: ignoreLastInHierarchical will have no effect in this case
 		String unoptimized = "active:contentcouch.follow-path+" +
 			"source@" + UriUtil.uriEncode(p1) + "+" +
 			"path@" + UriUtil.uriEncode(UriUtil.makeDataUri(p2));
