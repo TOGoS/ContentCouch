@@ -1,1 +1,1 @@
-@java -cp ../web/WEB-INF/classes contentcouch.app.Installer install
+java -cp ../web/WEB-INF/classes contentcouch.app.Installer install

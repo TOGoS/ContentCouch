@@ -40,6 +40,14 @@ public class Installer {
 		return props;
 	}
 	
+	String normalizePath( String s ) {
+		if( s == null ) return null;
+		if( s.startsWith("~/") || "~".equals(s) ) {
+			s = System.getProperty("user.home") + s.substring(1);
+		}
+		return s;
+	}
+
 	String getCanonicalOrAbsolutePath( File f ) {
 		try {
 			return f.getCanonicalPath();
@@ -115,9 +123,9 @@ public class Installer {
 		}
 		Properties props = getProperties(pf);
 		String style = props.getProperty("script-style");
-		String scriptPath = props.getProperty("script-path");
+		String scriptPath = normalizePath(props.getProperty("script-path"));
 		String repoName = props.getProperty("default-repo-name", "localrepo");
-		String repoPath = props.getProperty("default-repo-path", null);
+		String repoPath = normalizePath(props.getProperty("default-repo-path", null));
 		String classPath = classPathToString(generateClassPath(appDir));
 		
 		if( scriptPath == null ) {
