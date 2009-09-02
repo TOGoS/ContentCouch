@@ -17,10 +17,10 @@ public class SwfFrontRequestHandler extends BaseRequestHandler {
 	public SwfFrontRequestHandler() {
 	}
 	
-	public void putComponent( String name, Component c ) {
+	public void putComponent( String name, Object c ) {
 		components.put(name,c);
 	}
-
+	
 	public Response call( Request request ) {
 		BaseRequest subReq = new BaseRequest(request);
 		subReq.putMetadata(SwfNamespace.COMPONENTS, components);

@@ -5,12 +5,22 @@
 
 <web-app>
 	<servlet>
-		<servlet-name>ContentCouchExplorerServlet</servlet-name>
+		<servlet-name>es1</servlet-name>
 		<servlet-class>contentcouch.app.servlet.ContentCouchExplorerServlet</servlet-class>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>es2</servlet-name>
+		<servlet-class>contentcouch.app.servlet2.CCouchServlet</servlet-class>
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>ContentCouchExplorerServlet</servlet-name>
-		<url-pattern>/</url-pattern>
+		<servlet-name>es2</servlet-name>
+		<url-pattern>/es2/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>es1</servlet-name>
+		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
 </web-app>

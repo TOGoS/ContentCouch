@@ -57,6 +57,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 
 	public Response call( Request req ) {
 		String pi = req.getResourceName();
+		System.err.println("pi: " + pi );
 		if( !pi.startsWith(SwfHttpServlet.SERVLET_PATH_URI_PREFIX) ) {
 			throw new RuntimeException("Expected " + SwfHttpServlet.SERVLET_PATH_URI_PREFIX + "..., but got " + pi);
 		}

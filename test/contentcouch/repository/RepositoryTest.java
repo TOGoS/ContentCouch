@@ -71,7 +71,7 @@ public class RepositoryTest extends TestCase {
 		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		putReq.content = dir;
 		
-		Response putRes = TheGetter.handleRequest(putReq);
+		Response putRes = TheGetter.call(putReq);
 		TheGetter.getResponseValue(putRes, putReq);
 		return MetadataUtil.getStoredIdentifier(putRes);
 	}
@@ -98,7 +98,7 @@ public class RepositoryTest extends TestCase {
 		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		putReq.content = rdfDir;
 		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, "bilge");
-		Response putRes = TheGetter.handleRequest(putReq);
+		Response putRes = TheGetter.call(putReq);
 		
 		TheGetter.getResponseValue(putRes, putReq);
 		String rdfStoredUri = MetadataUtil.getStoredIdentifier(putRes);
@@ -117,7 +117,7 @@ public class RepositoryTest extends TestCase {
 		BaseRequest storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
-		Response storeRes = TheGetter.handleRequest(storeReq);
+		Response storeRes = TheGetter.call(storeReq);
 		String originalStoredUri = MetadataUtil.getStoredIdentifier(storeRes);
 		
 		assertNotNull(originalStoredUri);
@@ -131,7 +131,7 @@ public class RepositoryTest extends TestCase {
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		storeReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
-		storeRes = TheGetter.handleRequest(storeReq);
+		storeRes = TheGetter.call(storeReq);
 		String incorrectStoredUri = MetadataUtil.getStoredIdentifier(storeRes);
 		
 		assertEquals( originalStoredUri, incorrectStoredUri );
@@ -142,7 +142,7 @@ public class RepositoryTest extends TestCase {
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		storeReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.FALSE);
-		storeRes = TheGetter.handleRequest(storeReq);
+		storeRes = TheGetter.call(storeReq);
 		String newStoredUri = MetadataUtil.getStoredIdentifier(storeRes);
 		
 		assertFalse( newStoredUri.equals(originalStoredUri) );

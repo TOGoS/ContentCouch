@@ -37,7 +37,7 @@ public class ContentCouchExplorerServlet extends SwfHttpServlet {
 		this.requestHandler = ccerh;
 		File configFile = getConfigFile();
 		String configFileUri = PathUtil.maybeNormalizeFileUri(configFile.getAbsolutePath());
-		ccerh.init(configFileUri, PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("")));
+		ccerh.init(configFileUri, PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("es1-resources")));
 	}
 	
 	protected File getConfigFile() {
