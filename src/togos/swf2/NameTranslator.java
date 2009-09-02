@@ -1,5 +1,10 @@
 package togos.swf2;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import togos.mf.api.CallHandler;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
@@ -9,17 +14,31 @@ import togos.mf.base.BaseResponse;
 import contentcouch.framework.BaseRequestHandler;
 
 public class NameTranslator extends BaseRequestHandler {
+	CallHandler backingCallHandler;
+
 	String frontPath;
 	String backPath;
 	String directoryIndex;
+	ArrayList autoAppendPaths = new ArrayList();
 	
-	CallHandler backingCallHandler;
-	
-	public NameTranslator(String frontPath, String backPath, CallHandler backingCallHandler, String directoryIndex) {
-		this.frontPath = frontPath;
-		this.backPath = backPath;
+	public NameTranslator(CallHandler backingCallHandler, Map config) {
 		this.backingCallHandler = backingCallHandler;
-		this.directoryIndex = directoryIndex;
+		
+		this.frontPath = (String)config.get("path");
+		this.backPath = (String)config.get("translatedPath");
+		this.directoryIndex = (String)config.get("directoryIndex");
+		
+		Object autoAppendPathse = config.get("autoAppendPaths");
+		if( autoAppendPathse instanceof String ) {
+			String[] app = ((String)autoAppendPathse).split(",");
+			for( int i=0; i<app.length; ++i ) {
+				autoAppendPaths.add(app[i]);
+			}
+		} else if( autoAppendPathse instanceof List ) {
+			autoAppendPaths.addAll((List)autoAppendPathse);
+		} else {
+			autoAppendPaths.add("");
+		}
 	}
 	
 	public Response call( Request req ) {
@@ -30,8 +49,11 @@ public class NameTranslator extends BaseRequestHandler {
 		
 		if( mappedPath.endsWith("/") ) mappedPath += directoryIndex;
 		
-		Response bres = backingCallHandler.call( new BaseRequest(req,mappedPath) );
-		if( bres.getStatus() == ResponseCodes.RESPONSE_DOESNOTEXIST ) return BaseResponse.RESPONSE_UNHANDLED;
-		return bres;
+		for( Iterator i=autoAppendPaths.iterator(); i.hasNext(); ) {
+			String app = (String)i.next();
+			Response bres = backingCallHandler.call( new BaseRequest(req,mappedPath+app) );
+			if( bres.getStatus() != ResponseCodes.RESPONSE_UNHANDLED && bres.getStatus() != ResponseCodes.RESPONSE_DOESNOTEXIST ) return bres;
+		}
+		return BaseResponse.RESPONSE_UNHANDLED;
 	}
 }

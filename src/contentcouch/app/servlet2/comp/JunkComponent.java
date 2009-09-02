@@ -28,7 +28,6 @@ public class JunkComponent implements Component {
 		return properties;
 	}
 	
-	@Override
 	public String getUriFor(Arguments args) {
 		String text = (String)args.getNamedArguments().get("text");
 		return this.handlePath + UriUtil.uriEncode(text);

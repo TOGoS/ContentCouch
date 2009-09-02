@@ -20,11 +20,11 @@ public class CCouchServlet extends SwfHttpServlet {
 		junkConfig.put("path", SwfHttpServlet.SERVLET_PATH_URI_PREFIX+"/junk/");
 		frh.putComponent("junk", new JunkComponent(junkConfig));
 		
-		frh.putComponent("resources", new NameTranslator(
-			SwfHttpServlet.SERVLET_PATH_URI_PREFIX+"/",
-			PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("es2-resources")),
-			new FileRequestHandler(),
-			"index.html"
-		));
+		HashMap ntConfig = new HashMap();
+		ntConfig.put("autoAppendPaths", ".html");
+		ntConfig.put("directoryIndex", "index");
+		ntConfig.put("path", SwfHttpServlet.SERVLET_PATH_URI_PREFIX+"/");
+		ntConfig.put("translatedPath", PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("es2-resources"))+"/");
+		frh.putComponent("resources", new NameTranslator(new FileRequestHandler(),ntConfig));
 	}
 }
