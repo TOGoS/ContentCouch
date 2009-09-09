@@ -36,10 +36,10 @@ public class RdfSourcePageGenerator extends PageGenerator {
 		if( url.startsWith(CcouchNamespace.URI_PARSE_PREFIX) ) {
 			// Then show 2 links
 			String noParsePart = url.substring(CcouchNamespace.URI_PARSE_PREFIX.length());
-			return formatLink2(processUri("explore",url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
-				formatLink2(processUri("explore",noParsePart), noParsePart);
+			return formatLink2(processUri("default",url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
+				formatLink2(processUri("default",noParsePart), noParsePart);
 		} else {
-			return formatLink2(processUri("explore",url), url);
+			return formatLink2(processUri("default",url), url);
 		}
 	}
 	

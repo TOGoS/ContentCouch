@@ -78,6 +78,8 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		String uri = null;
 		String[] pathComp = pi.substring(1).split("/");
 		String inputUri = (String)args.getNamedArguments().get("uri");
+		String defaultUriProcessorName = "explore";
+		
 		if( "process".equals(pathComp[0]) ) {
 			shouldRewriteRelativeUris = true;
 		    String processor = (String)args.getNamedArguments().get("processor");
@@ -93,7 +95,20 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, "" );
 			}
 			uri = getExploreUri(inputUri);
+		} else if( "album".equals(pathComp[0]) ) {
+			defaultUriProcessorName = "album";
+		    if( inputUri != null ) {
+				shouldRewriteRelativeUris = true;
+			} else if( pi.startsWith("/album/") ) {
+				inputUri = PathUtil.appendPath("x-ccouch-repo://", pi.substring(7));
+				shouldRewriteRelativeUris = false;
+			} else {
+				// TODO: redirect
+				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, "" );
+			}
+		    uri = getProcessingUri("contentcouch.photoalbum.make-album-page", inputUri, "Viewing");
 		} else if( "raw".equals(pathComp[0]) ) {
+			defaultUriProcessorName = "raw";
 			if( inputUri != null ) {
 				shouldRewriteRelativeUris = true;
 			} else if( pi.startsWith("/raw/") ) {
@@ -115,26 +130,37 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, uri);
 		try {
 			Context.push("funk", "Bring the funk");
-			BaseUriProcessor.push( "explore", new BaseUriProcessor(BaseUriProcessor.getInstance("explore"), shouldRewriteRelativeUris) {
+			BaseUriProcessor exploreUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance("explore"), shouldRewriteRelativeUris) {
 				public String processUri(String uri) {
 					return pathToRoot + "explore?uri=" + UriUtil.uriEncode(uri);
 				}
-			});
-			BaseUriProcessor.push( "raw", new BaseUriProcessor(BaseUriProcessor.getInstance("raw"), shouldRewriteRelativeUris) {
+			};
+			BaseUriProcessor rawUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance("explore"), shouldRewriteRelativeUris) {
 				public String processUri(String uri) {
 					return pathToRoot + "raw?uri=" + UriUtil.uriEncode(uri);
 				}
-			});
-			BaseUriProcessor.push( "album", new BaseUriProcessor(BaseUriProcessor.getInstance("raw"), shouldRewriteRelativeUris) {
+			};
+			BaseUriProcessor albumUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance("raw"), shouldRewriteRelativeUris) {
 				public String processUri(String uri) {
-					return pathToRoot + "process?processor=contentcouch.photoalbum.make-album-page&uri=" + UriUtil.uriEncode(uri);
+					return pathToRoot + "album?uri=" + UriUtil.uriEncode(uri);
 				}
-			});
+			};
+			
+			if( "raw".equals(defaultUriProcessorName) ) {
+				BaseUriProcessor.push( "default", rawUriProcessor);
+			} else if( "album".equals(defaultUriProcessorName) ) {
+				BaseUriProcessor.push( "default", albumUriProcessor);
+			} else {
+				BaseUriProcessor.push( "default", exploreUriProcessor);
+			}
+			BaseUriProcessor.push( "explore", exploreUriProcessor);
+			BaseUriProcessor.push( "raw", rawUriProcessor);
+			BaseUriProcessor.push( "album", albumUriProcessor);
 			subReq.contextVars = Context.getInstance();
 			Response subRes = TheGetter.call(subReq);
 			
 			if( subRes.getContent() instanceof Directory ) {
-				subRes = Explorify.explorifyDirectory( uri, (Directory)subRes.getContent(),
+				subRes = new Explorify().explorifyDirectory( uri, (Directory)subRes.getContent(),
 					"<html><head><style>/*<!CDATA[*/\n" + BuiltInData.getString("default-page-style") + "/*]]>*/</style><body>\n", null );
 			}
 			
@@ -147,6 +173,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			}
 			return res;
 		} finally {
+			BaseUriProcessor.pop("default");
 			BaseUriProcessor.pop("raw");
 			BaseUriProcessor.pop("explore");
 			BaseUriProcessor.pop("album");

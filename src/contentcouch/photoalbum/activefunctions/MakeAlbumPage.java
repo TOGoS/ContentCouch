@@ -10,7 +10,6 @@ import java.util.Set;
 
 import togos.mf.api.Response;
 import contentcouch.active.Context;
-import contentcouch.active.expression.Expression;
 import contentcouch.activefunctions.Explorify;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
@@ -22,7 +21,7 @@ import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
 public class MakeAlbumPage extends Explorify {
-	protected class AlbumPageGenerator extends DirectoryPageGenerator {
+	protected static class AlbumPageGenerator extends DirectoryPageGenerator {
 		public AlbumPageGenerator( Directory dir, String uri, Map context, String header, String footer ) {
 			super( dir, uri, context, header, footer );
 		}
@@ -91,7 +90,7 @@ public class MakeAlbumPage extends Explorify {
 				for( Iterator i=miscEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String href = getUnprocessedHref( e, false );
-					href = processRelativeUri("raw", uri, href);
+					href = processRelativeUri("album", uri, href);
 					String name = e.getName();
 					if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
 						if( !name.endsWith("/") ) name += "/";
@@ -129,20 +128,31 @@ public class MakeAlbumPage extends Explorify {
 		}
 	}
 	
+	public Response explorifyDirectory(String uri, Directory d, String header, String footer ) {
+		return getPageGeneratorResult(new AlbumPageGenerator(d, uri, Context.getSnapshot(), header, footer ));
+	}
+
+	/*
 	public Response call(Map argumentExpressions) {
 		Expression e = (Expression)argumentExpressions.get("operand");
 		String uri = e.toUri();
 		Context.pushNewDynamicScope();
 		try {
+			Object v = getArgumentValue(argumentExpressions, "operand", null);
 			Context.put("processed-uri", uri);
-			Directory dir = (Directory)getArgumentValue(argumentExpressions, "operand", null);
-			String header = getHeader(argumentExpressions);
-			String footer = getFooter(argumentExpressions);
-			return getPageGeneratorResult(new AlbumPageGenerator(dir, uri, Context.getInstance(), header, footer ));
+			if( v instanceof Directory ) {
+				Directory dir = (Directory)v;
+				String header = getHeader(argumentExpressions);
+				String footer = getFooter(argumentExpressions);
+				return getPageGeneratorResult(new AlbumPageGenerator(dir, uri, Context.getInstance(), header, footer ));
+			} else {
+				
+			}
 		} finally {
 			Context.popInstance();
 		}
 	}
+	*/
 
 	protected String getPathArgumentName() {
 		return "operand";

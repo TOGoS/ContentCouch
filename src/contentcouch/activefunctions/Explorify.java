@@ -58,26 +58,42 @@ public class Explorify extends BaseActiveFunction {
 		}
 	}
 	
-	protected static String getHeader(Map argumentExpressions) {
+	protected String getHeader(Map argumentExpressions) {
 		return ValueUtil.getString(getArgumentValue(argumentExpressions, "header", null));
 	}
 	
-	protected static String getFooter(Map argumentExpressions) {
+	protected String getFooter(Map argumentExpressions) {
 		return ValueUtil.getString(getArgumentValue(argumentExpressions, "footer", null));
 	}
 	
-	public static Response explorifyDirectory(String uri, Directory d, String header, String footer ) {
+	public Response explorifyDirectory(String uri, Directory d, String header, String footer ) {
 		return getPageGeneratorResult(new DirectoryPageGenerator(d, uri, Context.getSnapshot(), header, footer ));
 	}
 	
-	public static Response explorifyXmlBlob(String uri, Blob b, String header, String footer ) {
+	public Response explorifyXmlBlob(String uri, Blob b, String header, String footer ) {
 		return getPageGeneratorResult(new RdfSourcePageGenerator(b, uri, Context.getSnapshot(), header, footer ));
 	}
 	
-	public static Response explorifySlfBlob(String uri, Blob b, String header, String footer ) {
+	public Response explorifySlfBlob(String uri, Blob b, String header, String footer ) {
 		return getPageGeneratorResult(new SlfSourcePageGenerator(b, uri, Context.getSnapshot(), header, footer ));
 	}
-		
+	
+	public Response explorifyNonDirectory( Map argumentExpressions, String uri, Response subRes ) {
+		Blob blob = BlobUtil.getBlob(subRes.getContent());
+		String type = MetadataUtil.getContentType(subRes);
+		if( (type != null && type.matches("application/(.*\\+)?xml")) ||
+		    MetadataUtil.looksLikeRdfBlob(blob) )
+		{
+			return explorifyXmlBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
+		} else if( MetadataUtil.CT_SLF.equals(type) ) {
+			return explorifySlfBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
+		} else if( type != null ) {
+			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, blob, type);
+		} else {
+			return subRes;
+		}
+	}
+	
 	public Response call(Map argumentExpressions) {
 		Expression e = (Expression)argumentExpressions.get("operand");
 		String uri = e.toUri();
@@ -88,22 +104,11 @@ public class Explorify extends BaseActiveFunction {
 			if( subRes.getContent() instanceof Directory ) {
 				return explorifyDirectory(uri, (Directory)subRes.getContent(), getHeader(argumentExpressions), getFooter(argumentExpressions));
 			} else {
-				Blob blob = BlobUtil.getBlob(subRes.getContent());
-				String type = MetadataUtil.getContentType(subRes);
-				if( (type != null && type.matches("application/(.*\\+)?xml")) ||
-				    MetadataUtil.looksLikeRdfBlob(blob) )
-				{
-					return explorifyXmlBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
-				} else if( MetadataUtil.CT_SLF.equals(type) ) {
-					return explorifySlfBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
-				} else if( type != null ) {
-					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, blob, type);
-				}
+				return explorifyNonDirectory(argumentExpressions, uri, subRes);
 			}
 		} finally {
 			Context.pop("processed-uri");
 		}
-		return subRes;
 	}
 
 	//// Path simplification ////
