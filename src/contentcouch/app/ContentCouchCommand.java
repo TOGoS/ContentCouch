@@ -627,6 +627,7 @@ public class ContentCouchCommand {
 		}
 		
 		BaseRequest getStoreFileReq = new BaseRequest(RequestVerbs.VERB_GET, id);
+		getStoreFileReq.putMetadata(CcouchNamespace.REQ_LOCAL_REPOS_ONLY, Boolean.TRUE);
 		Response getStoreFileRes = TheGetter.call(getStoreFileReq);
 		int status = getStoreFileRes.getStatus();
 		if( status == ResponseCodes.RESPONSE_DOESNOTEXIST || status == ResponseCodes.RESPONSE_UNHANDLED ) {
