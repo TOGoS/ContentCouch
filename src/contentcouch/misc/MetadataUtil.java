@@ -28,20 +28,26 @@ public class MetadataUtil {
 	
 	public static String CT_RDF  = "application/rdf+xml";
 	public static String CT_SLF  = "application/x-simple-list-file";
-	public static String CT_HTML = "text/html";
 	public static String CT_TEXT = "text/plain";
+	public static String CT_HTML = "text/html";
+	public static String CT_BMP  = "image/bmp";
 	public static String CT_PNG  = "image/png";
 	public static String CT_GIF  = "image/gif";
 	public static String CT_JPEG = "image/jpeg";
+	public static String CT_OGG  = "audio/ogg";
+	public static String CT_MP3  = "audio/mpeg";
 	
 	public static HashMap commonTypesByExtension = new HashMap();
 	static {
-		commonTypesByExtension.put("txt", CT_TEXT);
-		commonTypesByExtension.put("html", CT_HTML);
-		commonTypesByExtension.put("gif", CT_GIF);
-		commonTypesByExtension.put("png", CT_PNG);
 		commonTypesByExtension.put("rdf", CT_RDF);
 		commonTypesByExtension.put("slf", CT_SLF);
+		commonTypesByExtension.put("txt", CT_TEXT);
+		commonTypesByExtension.put("html", CT_HTML);
+		commonTypesByExtension.put("bmp", CT_BMP);
+		commonTypesByExtension.put("gif", CT_GIF);
+		commonTypesByExtension.put("png", CT_PNG);
+		commonTypesByExtension.put("ogg", CT_OGG);
+		commonTypesByExtension.put("mp3", CT_MP3);
 	}
 	
 	public static boolean looksLikeRdfBlob( Blob b ) {
@@ -112,6 +118,7 @@ public class MetadataUtil {
 
 			switch( (magicN >> 16) & 0xFFFF ) {
 			case( 0xFFD8 ): return CT_JPEG;
+			case( 0x424D ): return CT_BMP;
 			}
 		}
 
