@@ -16,6 +16,10 @@ public class PathUtil {
 		return URIPATTERN.matcher(pathOrUri).matches();
 	}
 	
+	public static boolean isFileUri( String uri ) {
+		return uri.startsWith("file:");
+	}
+	
 	public static boolean isAbsolute( String pathOrUri ) {
 		if( isUri(pathOrUri) ) return true;
 		int slashi = pathOrUri.indexOf('/');

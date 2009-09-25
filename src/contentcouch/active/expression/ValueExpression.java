@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -28,7 +29,7 @@ public class ValueExpression implements Expression {
 		metadata.put(key, value);
 	}
 
-	public Response eval() {
+	public Response eval( Request req ) {
 		BaseResponse bre = new BaseResponse( ResponseCodes.RESPONSE_NORMAL, value );
 		bre.metadata = metadata;
 		return bre;

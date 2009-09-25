@@ -3,6 +3,7 @@ package contentcouch.activefunctions;
 import java.util.Iterator;
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -15,10 +16,10 @@ import contentcouch.value.BaseRef;
 
 public class CreateDirectory extends BaseActiveFunction {
 
-	public Response call(Map argumentExpressions) {
+	public Response call(Request req, Map argumentExpressions) {
 		SimpleDirectory result = new SimpleDirectory();
 		
-		boolean lazy = ValueUtil.getBoolean(getArgumentValue(argumentExpressions, "lazy", null), false);
+		boolean lazy = ValueUtil.getBoolean(getArgumentValue(req, argumentExpressions, "lazy", null), false);
 		
 		for( Iterator i=argumentExpressions.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
@@ -33,7 +34,7 @@ public class CreateDirectory extends BaseActiveFunction {
 					newEntry.name = entryKey;
 					result.addDirectoryEntry(newEntry);
 				} else {
-					result.put( entryKey, TheGetter.getResponseValue( targetExpression.eval(), targetExpression.toUri() ) );
+					result.put( entryKey, TheGetter.getResponseValue( targetExpression.eval(req), targetExpression.toUri() ) );
 				}
 			}
 		}

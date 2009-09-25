@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -25,13 +26,13 @@ public class CreateCommit extends BaseActiveFunction {
 		return r;
 	}
 	
-	public Response call(Map argumentExpressions) {
-		String message = ValueUtil.getString(getArgumentValue(argumentExpressions, "message", null));
-		String author = ValueUtil.getString(getArgumentValue(argumentExpressions, "author", null));
-		Date date = DateUtil.getDate(getArgumentValue(argumentExpressions, "date", null));
-		Object target = getArgumentValue(argumentExpressions, "target", null);
-		List parents = getPositionalArgumentValues(argumentExpressions, "parent");
-		if( target == null ) target = getArgumentValue(argumentExpressions, "operand", null);
+	public Response call(Request req, Map argumentExpressions) {
+		String message = ValueUtil.getString(getArgumentValue(req, argumentExpressions, "message", null));
+		String author = ValueUtil.getString(getArgumentValue(req, argumentExpressions, "author", null));
+		Date date = DateUtil.getDate(getArgumentValue(req, argumentExpressions, "date", null));
+		Object target = getArgumentValue(req, argumentExpressions, "target", null);
+		List parents = getPositionalArgumentValues(req, argumentExpressions, "parent");
+		if( target == null ) target = getArgumentValue(req, argumentExpressions, "operand", null);
 		if( date == null ) date = new Date(); // Right now!
 		
 		SimpleCommit commit = new SimpleCommit();

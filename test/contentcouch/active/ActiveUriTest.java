@@ -2,6 +2,8 @@ package contentcouch.active;
 
 import java.util.TreeMap;
 
+import togos.mf.base.BaseRequest;
+
 import junit.framework.TestCase;
 import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;
@@ -88,14 +90,14 @@ public class ActiveUriTest extends TestCase {
 	}
 	
 	public void testGetFunctionByClassName() {
-		Object f = new FunctionByNameExpression("contentcouch.hello").eval().getContent();
+		Object f = new FunctionByNameExpression("contentcouch.hello").eval(new BaseRequest()).getContent();
 		assertTrue("Got " + (f == null ? "null" : "a " + f.getClass()) + " but expected a Hello", f instanceof Hello);
-		assertEquals("Hello, world", ((ActiveFunction)f).call(new TreeMap()).getContent());
+		assertEquals("Hello, world", ((ActiveFunction)f).call(new BaseRequest(), new TreeMap()).getContent());
 	}
 	
 	public void testParseQuotedString() {
 		Expression e = ActiveUtil.parseExpression("\"foo\nbar\"");
-		assertEquals("foo\nbar", e.eval().getContent());
+		assertEquals("foo\nbar", e.eval(new BaseRequest()).getContent());
 	}
 
 	public void testParseQuotedString2() {

@@ -1,9 +1,8 @@
 package contentcouch.active.expression;
 
-import togos.mf.api.RequestVerbs;
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
-import contentcouch.active.Context;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathSimplifiableExpression;
 import contentcouch.path.PathUtil;
@@ -24,10 +23,9 @@ public class UriExpression implements Expression, PathSimplifiableExpression {
 		return UriUtil.sanitizeUri(uri);
 	}
 	
-	public Response eval() {
-		BaseRequest req = new BaseRequest( RequestVerbs.VERB_GET, uri );
-		req.contextVars = Context.getInstance();
-		return TheGetter.call(req);
+	public Response eval( Request req ) {
+		BaseRequest subReq = new BaseRequest( req, uri );
+		return TheGetter.call(subReq);
 	}
 	
 	public String toUri() {

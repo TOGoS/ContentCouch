@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -17,13 +18,13 @@ public class Concat extends BaseActiveFunction {
 
 	static long maxLength = 1024*1024; // 1 GB should be enough until we change this to lazy-load data...
 	
-	public Response call( Map argumentExpressions ) {
+	public Response call( Request req, Map argumentExpressions ) {
 		boolean prev = false;
 		long totalLength = 0;
 		
-		Blob separator = BlobUtil.getBlob(getArgumentValue( argumentExpressions, "separator", "" ));
+		Blob separator = BlobUtil.getBlob(getArgumentValue( req, argumentExpressions, "separator", "" ));
 		
-		List values = getPositionalArgumentValues(argumentExpressions);
+		List values = getPositionalArgumentValues(req, argumentExpressions);
 		List blobs = new ArrayList();
 		for( Iterator i=values.iterator(); i.hasNext(); ) {
 			Object v = i.next();

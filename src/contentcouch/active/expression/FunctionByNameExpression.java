@@ -2,11 +2,10 @@ package contentcouch.active.expression;
 
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
-
-import contentcouch.active.Context;
 import contentcouch.misc.UriUtil;
 
 public class FunctionByNameExpression implements Expression {
@@ -80,8 +79,8 @@ public class FunctionByNameExpression implements Expression {
 		return getClassByNameIfExists( className );
 	}
 	
-	public Response eval() {
-		Map functions = (Map)Context.getInstance().get(FUNCTION_MAP_VARNAME);
+	public Response eval(Request req) {
+		Map functions = (Map)req.getContextVars().get(FUNCTION_MAP_VARNAME);
 
 		// Check function map
 		if( functions != null ) {

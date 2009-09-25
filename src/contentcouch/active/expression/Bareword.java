@@ -1,5 +1,6 @@
 package contentcouch.active.expression;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 
 public class Bareword implements Expression {
@@ -19,7 +20,7 @@ public class Bareword implements Expression {
 		throw new RuntimeException("Bareword cannot be converted to a URI! (" + text + ")");
 	}
 
-	public Response eval() {
+	public Response eval(Request req) {
 		throw new RuntimeException("Bareword cannot be evaluated!");
 	}
 	

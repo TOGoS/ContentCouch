@@ -2,6 +2,7 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -10,8 +11,8 @@ import contentcouch.misc.ValueUtil;
 
 public class Delay extends BaseActiveFunction {
 
-	public Response call(Map argumentExpressions) {
-		Number delay = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "operand", new Integer(5)));
+	public Response call(Request req, Map argumentExpressions) {
+		Number delay = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "operand", new Integer(5)));
 		long millis = (long)(delay.doubleValue() * 1000);
 		try {
 			Thread.sleep(millis);

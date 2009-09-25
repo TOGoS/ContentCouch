@@ -7,6 +7,7 @@ import contentcouch.active.BaseActiveFunction;
 import contentcouch.graphics.ImageUtil;
 import contentcouch.misc.ValueUtil;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -21,21 +22,21 @@ public class ScaleImage extends BaseActiveFunction {
 	 * height - give new height
 	 */
 	
-	public Response call( Map argumentExpressions ) {
-		BufferedImage img = ImageUtil.getImage(getArgumentValue(argumentExpressions, "operand", null));
+	public Response call( Request req, Map argumentExpressions ) {
+		BufferedImage img = ImageUtil.getImage(getArgumentValue(req, argumentExpressions, "operand", null));
 		if( img == null ) return null;
 
 		int oldWidth = img.getWidth();
 		int oldHeight = img.getHeight();
 		
-		Number scale = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "scale", null));
-		Number scaleX = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "scalex", null));
-		Number scaleY = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "scaley", null));
-		Number width = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "width", null));
-		Number height = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "height", null));
-		Number maxWidth = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "max-width", null));
-		Number maxHeight = ValueUtil.getNumber(getArgumentValue(argumentExpressions, "max-height", null));
-		boolean preserveAspectRatio = ValueUtil.getBoolean(getArgumentValue(argumentExpressions, "preserve-aspect-ratio", null), true);
+		Number scale = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "scale", null));
+		Number scaleX = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "scalex", null));
+		Number scaleY = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "scaley", null));
+		Number width = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "width", null));
+		Number height = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "height", null));
+		Number maxWidth = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "max-width", null));
+		Number maxHeight = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "max-height", null));
+		boolean preserveAspectRatio = ValueUtil.getBoolean(getArgumentValue(req, argumentExpressions, "preserve-aspect-ratio", null), true);
 		
 		int newWidth = -1;
 		int newHeight = -1;

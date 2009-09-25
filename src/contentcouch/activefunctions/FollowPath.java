@@ -3,8 +3,10 @@ package contentcouch.activefunctions;
 import java.util.Map;
 import java.util.TreeMap;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
+import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.ActiveUtil;
 import contentcouch.active.BaseActiveFunction;
@@ -20,10 +22,10 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class FollowPath extends BaseActiveFunction implements PathSimplifiableActiveFunction {
-	public Response call(Map argumentExpressions) {
-		Object source = getArgumentValue(argumentExpressions, "source", null);
+	public Response call(Request req, Map argumentExpressions) {
+		Object source = getArgumentValue(req, argumentExpressions, "source", null);
 		if( source == null ) throw new RuntimeException("No source");
-		String path = ValueUtil.getString(getArgumentValue(argumentExpressions, "path", null));
+		String path = ValueUtil.getString(getArgumentValue(req, argumentExpressions, "path", null));
 		if( path == null ) throw new RuntimeException("No path");
 		
 		String[] pathParts = path.split("/+");
@@ -53,7 +55,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 		Expression pathExpression = (Expression)argumentExpressions.get("path");
 		if( pathExpression == null ) throw new RuntimeException("No path expression");		
 		if( !pathExpression.isConstant() ) return null;
-		String firstPath = ValueUtil.getString(TheGetter.getResponseValue(pathExpression.eval(), pathExpression.toUri()));
+		String firstPath = ValueUtil.getString(TheGetter.getResponseValue(pathExpression.eval(new BaseRequest()), pathExpression.toUri()));
 		if( firstPath == null ) throw new RuntimeException("No path");
 		String newPath = PathUtil.appendPath(firstPath, path);
 		TreeMap newArgumentExpressions = new TreeMap();
@@ -72,7 +74,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 
 		if( pathExpression == null ) throw new RuntimeException("No path expression");		
 		if( !pathExpression.isConstant() ) return null;
-		String path = ValueUtil.getString(TheGetter.getResponseValue(pathExpression.eval(), pathExpression.toUri()));
+		String path = ValueUtil.getString(TheGetter.getResponseValue(pathExpression.eval(new BaseRequest()), pathExpression.toUri()));
 		if( path == null ) throw new RuntimeException("No path");
 
 		return ((PathSimplifiableExpression)sourceExpression).appendPath(path);

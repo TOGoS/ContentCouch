@@ -9,8 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import togos.swf2.HttpServletRequestHandler;
 
-import contentcouch.active.Context;
-
 public abstract class PageGenerator implements HttpServletRequestHandler {
 	public String uri;
 	public Map context;
@@ -25,10 +23,10 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 	}
 	
 	protected String processUri( String whichProcessor, String uri ) {
-		return BaseUriProcessor.getInstance(whichProcessor).processUri(uri);
+		return BaseUriProcessor.getInstance( context, whichProcessor ).processUri(uri);
 	}
 	protected String processRelativeUri( String whichProcessor, String baseUri, String relativeUri ) {
-		return BaseUriProcessor.getInstance(whichProcessor).processRelativeUri(baseUri, relativeUri);
+		return BaseUriProcessor.getInstance( context, whichProcessor ).processRelativeUri(baseUri, relativeUri);
 	}
 	
 	////
@@ -42,14 +40,9 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 	}
 	
 	public void write(PrintWriter w) {
-		Context.pushInstance(context);
-		try {
-			w.println(header);
-			writeContent(w);
-			w.println(footer);
-		} finally {
-			Context.popInstance();
-		}
+		w.println(header);
+		writeContent(w);
+		w.println(footer);
 	}
 	
 	public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {

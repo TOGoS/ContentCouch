@@ -2,6 +2,7 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -10,8 +11,8 @@ import contentcouch.store.TheGetter;
 import contentcouch.value.Commit;
 
 public class GetCommitTarget extends BaseActiveFunction {
-	public Response call(Map argumentExpressions) {
-		Commit c = (Commit)getArgumentValue(argumentExpressions, "operand", null);
+	public Response call(Request req, Map argumentExpressions) {
+		Commit c = (Commit)getArgumentValue(req, argumentExpressions, "operand", null);
 		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, TheGetter.dereference(c.getTarget()));
 	}
 }

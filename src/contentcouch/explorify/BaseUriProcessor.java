@@ -1,6 +1,9 @@
 package contentcouch.explorify;
 
-import contentcouch.active.Context;
+import java.util.Map;
+
+import togos.mf.api.Request;
+import togos.mf.base.BaseRequest;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 
@@ -8,21 +11,17 @@ public class BaseUriProcessor implements UriProcessor {
 	public static final String CTXVAR = CcouchNamespace.INTERNAL_NS + "uriProcessor";
 	public static final BaseUriProcessor BASEINSTANCE = new BaseUriProcessor( null, false );
 
-	public static UriProcessor getInstance(String whichOne) {
-		UriProcessor proc = (UriProcessor)Context.get(CTXVAR + "/" + whichOne);
+	public static UriProcessor getInstance( Map ctx, String whichOne) {
+		UriProcessor proc = (UriProcessor)ctx.get(CTXVAR + "/" + whichOne);
 		return ( proc == null ) ? BASEINSTANCE : proc;
 	}
-	
-	public static void setInstance( String whichOne, UriProcessor proc ) {
-		Context.put( CTXVAR + "/" + whichOne, proc);
+
+	public static UriProcessor getInstance( Request req, String whichOne) {
+		return getInstance( req.getContextVars(), whichOne );
 	}
 	
-	public static void push( String whichOne, UriProcessor proc ) {
-		Context.push( CTXVAR + "/" + whichOne, proc );
-	}
-	
-	public static Object pop( String whichOne ) {
-		return Context.pop( CTXVAR + "/" + whichOne );
+	public static void setInstance( BaseRequest req, String whichOne, UriProcessor proc ) {
+		req.putContextVar( CTXVAR + "/" + whichOne, proc);
 	}
 	
 	protected UriProcessor postProcessor;

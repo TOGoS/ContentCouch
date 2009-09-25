@@ -1,7 +1,6 @@
 package contentcouch.app.servlet;
 
 import togos.mf.api.Request;
-import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
@@ -10,7 +9,6 @@ import togos.mf.value.Arguments;
 import togos.mf.value.Blob;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfHttpServlet;
-import contentcouch.active.Context;
 import contentcouch.activefunctions.Explorify;
 import contentcouch.builtindata.BuiltInData;
 import contentcouch.explorify.BaseUriProcessor;
@@ -127,56 +125,47 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			shouldRewriteRelativeUris = false;
 		}
 		
-		BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, uri);
-		try {
-			Context.push("funk", "Bring the funk");
-			BaseUriProcessor exploreUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance("explore"), shouldRewriteRelativeUris) {
-				public String processUri(String uri) {
-					return pathToRoot + "explore?uri=" + UriUtil.uriEncode(uri);
-				}
-			};
-			BaseUriProcessor rawUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance("explore"), shouldRewriteRelativeUris) {
-				public String processUri(String uri) {
-					return pathToRoot + "raw?uri=" + UriUtil.uriEncode(uri);
-				}
-			};
-			BaseUriProcessor albumUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance("raw"), shouldRewriteRelativeUris) {
-				public String processUri(String uri) {
-					return pathToRoot + "album?uri=" + UriUtil.uriEncode(uri);
-				}
-			};
-			
-			if( "raw".equals(defaultUriProcessorName) ) {
-				BaseUriProcessor.push( "default", rawUriProcessor);
-			} else if( "album".equals(defaultUriProcessorName) ) {
-				BaseUriProcessor.push( "default", albumUriProcessor);
-			} else {
-				BaseUriProcessor.push( "default", exploreUriProcessor);
+		BaseRequest subReq = new BaseRequest(req, uri);
+		BaseUriProcessor exploreUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance(req, "explore"), shouldRewriteRelativeUris) {
+			public String processUri(String uri) {
+				return pathToRoot + "explore?uri=" + UriUtil.uriEncode(uri);
 			}
-			BaseUriProcessor.push( "explore", exploreUriProcessor);
-			BaseUriProcessor.push( "raw", rawUriProcessor);
-			BaseUriProcessor.push( "album", albumUriProcessor);
-			subReq.contextVars = Context.getInstance();
-			Response subRes = TheGetter.call(subReq);
-			
-			if( subRes.getContent() instanceof Directory ) {
-				subRes = new Explorify().explorifyDirectory( uri, (Directory)subRes.getContent(),
-					"<html><head><style>/*<!CDATA[*/\n" + BuiltInData.getString("default-page-style") + "/*]]>*/</style><body>\n", null );
+		};
+		BaseUriProcessor rawUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance(req, "explore"), shouldRewriteRelativeUris) {
+			public String processUri(String uri) {
+				return pathToRoot + "raw?uri=" + UriUtil.uriEncode(uri);
 			}
-			
-			BaseResponse res = new BaseResponse(subRes);
-			
-			String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
-			if( type == null && subRes.getContent() instanceof Blob ) {
-				type = MetadataUtil.guessContentType((Blob)subRes.getContent());
-				res.putContentMetadata(DcNamespace.DC_FORMAT, type);
+		};
+		BaseUriProcessor albumUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance(req, "raw"), shouldRewriteRelativeUris) {
+			public String processUri(String uri) {
+				return pathToRoot + "album?uri=" + UriUtil.uriEncode(uri);
 			}
-			return res;
-		} finally {
-			BaseUriProcessor.pop("default");
-			BaseUriProcessor.pop("raw");
-			BaseUriProcessor.pop("explore");
-			BaseUriProcessor.pop("album");
+		};
+		
+		if( "raw".equals(defaultUriProcessorName) ) {
+			BaseUriProcessor.setInstance( subReq, "default", rawUriProcessor);
+		} else if( "album".equals(defaultUriProcessorName) ) {
+			BaseUriProcessor.setInstance( subReq, "default", albumUriProcessor);
+		} else {
+			BaseUriProcessor.setInstance( subReq, "default", exploreUriProcessor);
 		}
+		BaseUriProcessor.setInstance( subReq, "explore", exploreUriProcessor);
+		BaseUriProcessor.setInstance( subReq, "raw", rawUriProcessor);
+		BaseUriProcessor.setInstance( subReq, "album", albumUriProcessor);
+		Response subRes = TheGetter.call(subReq);
+		
+		if( subRes.getContent() instanceof Directory ) {
+			subRes = new Explorify().explorifyDirectory( subReq, uri, (Directory)subRes.getContent(),
+				"<html><head><style>/*<!CDATA[*/\n" + BuiltInData.getString("default-page-style") + "/*]]>*/</style><body>\n", null );
+		}
+		
+		BaseResponse res = new BaseResponse(subRes);
+		
+		String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
+		if( type == null && subRes.getContent() instanceof Blob ) {
+			type = MetadataUtil.guessContentType((Blob)subRes.getContent());
+			res.putContentMetadata(DcNamespace.DC_FORMAT, type);
+		}
+		return res;
 	}
 }

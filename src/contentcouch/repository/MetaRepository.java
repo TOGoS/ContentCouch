@@ -26,6 +26,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.framework.BaseRequestHandler;
+import contentcouch.framework.MfArgUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.misc.Function1;
 import contentcouch.misc.MetadataUtil;
@@ -587,6 +588,8 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	*/
 	
+	//// Identify stuff ////
+	
 	protected String identifyBlob( Blob blob, RepoConfig repoConfig ) {
 		return repoConfig.dataScheme.hashToUrn(getHash(repoConfig, blob));
 	}
@@ -609,10 +612,40 @@ public class MetaRepository extends BaseRequestHandler {
 		Blob blob = BlobUtil.getBlob(content, false);
 		if( blob != null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, identifyBlob( blob, repoConfig ), "text/plain");
 		
-		throw new RuntimeException("I don't know how to identify " + content.getClass().getName());
+		throw new RuntimeException("I don't know how to identify " + (content == null ? "null" : content.getClass().getName()));
 	}
 	
-	//
+	//// Use the index ////
+	
+	/*
+	protected LuceneMetadataStore getMetadataStore(RepoConfig rc, String sector) {
+		if( !PathUtil.isFileUri(rc.uri) ) {
+			throw new RuntimeException("Can't use metadata store of non-local repo ("+rc.uri+")");
+		}
+		// rc.uri should end with '/', so ignoreLastInHierarchical should have no effect, here.
+		// Otherwise, not sure if it should be true or false
+		String indexDirPath = PathUtil.appendHierarchicalPath(rc.uri, "indexes/"+sector, false);
+		File indexDir = new File(indexDirPath);
+		if( !indexDir.exists() ) indexDir.mkdirs();
+		FSDirectory dir;
+		try {
+			dir = FSDirectory.open(indexDir);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return new LuceneMetadataStore(dir);
+	}
+	*/
+	
+	protected Response putMetadata( RepoConfig repoConfig, Request req ) {
+		return BaseResponse.RESPONSE_UNHANDLED;
+	}
+	
+	protected Response getMetadata( RepoConfig repoConfig, Request req ) {
+		return BaseResponse.RESPONSE_UNHANDLED;
+	}
+
+	////
 	
 	MetaRepoConfig config;
 	
@@ -623,8 +656,11 @@ public class MetaRepository extends BaseRequestHandler {
 	protected RepoConfig lastHitRepoConfig;
 	protected String lastHitDataSectorUri;
 	
+	//// Handle requests ////
+	
 	public Response call( Request req ) {
 		if( "x-ccouch-repo://".equals(req.getResourceName()) ) {
+			// Return a directory listing of all registered repositories
 			SimpleDirectory sd = new SimpleDirectory();
 			for( Iterator i=this.config.namedRepoConfigs.values().iterator(); i.hasNext(); ) {
 				RepoConfig repoConfig = (RepoConfig)i.next();
@@ -636,6 +672,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, sd);
 		} else if( req.getResourceName().startsWith("x-ccouch-head:") || req.getResourceName().startsWith("x-ccouch-repo:") ) {
+			req = MfArgUtil.argumentizeQueryString(req);
 			RepoRef repoRef = RepoRef.parse(req.getResourceName(), false);
 			RepoConfig repoConfig;
 			if( repoRef.repoName == null ) {
@@ -654,9 +691,23 @@ public class MetaRepository extends BaseRequestHandler {
 				}
 			}
 			
+			if( "identify".equals(repoRef.subPath) ) {
+				return identify( repoConfig, MfArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata() );
+			}
+			
 			if( RequestVerbs.VERB_PUT.equals(req.getVerb()) || RequestVerbs.VERB_POST.equals(req.getVerb()) ) {
-				if( "identify".equals(repoRef.subPath) ) {
-					return identify( repoConfig, req.getContent(), req.getContentMetadata() );
+				if( repoRef.subPath.equals("metadata") || repoRef.subPath.startsWith("metadata/") ) {
+					String[] dataAndSector = repoRef.subPath.split("/");
+					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
+						BaseRequest sectorOverrideReq = new BaseRequest();
+						sectorOverrideReq.metadata = req.getMetadata();
+						sectorOverrideReq.metadata.put(CcouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
+						sectorOverrideReq.content = req.getContent();
+						sectorOverrideReq.contentMetadata = req.getContentMetadata();
+						req = sectorOverrideReq;
+					}
+					
+					return putMetadata( repoConfig, req );
 				} else if( repoRef.subPath.equals("data") || repoRef.subPath.startsWith("data/") ) {
 					String[] dataAndSector = repoRef.subPath.split("/");
 					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
@@ -685,6 +736,8 @@ public class MetaRepository extends BaseRequestHandler {
 					path = repoConfig.uri + "files";
 				} else if( path.startsWith("files/") ) {
 					path = repoConfig.uri + path.substring("files/".length());
+				} else if( path.equals("metadata") ) {
+					return getMetadata( repoConfig, MfArgUtil.argumentizeQueryString(req) );
 				} else if( path.equals("") ) {
 					SimpleDirectory sd = new SimpleDirectory();
 					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));

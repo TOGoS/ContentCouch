@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -17,16 +18,16 @@ import contentcouch.path.PathSimplifiableExpression;
 
 
 public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifiableActiveFunction {
-	protected static Response getArgumentResponse( Map argumentExpressions, String name ) {
+	protected static Response getArgumentResponse( Request req, Map argumentExpressions, String name ) {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Missing argument " + name, "text/plain");
-		return e.eval();
+		return e.eval(req);
 	}
 	
-	protected static Object getArgumentValue( Map argumentExpressions, String name, Object defaultValue ) {
+	protected static Object getArgumentValue( Request req, Map argumentExpressions, String name, Object defaultValue ) {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return defaultValue;
-		Response res = e.eval();
+		Response res = e.eval(req);
 		if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 			if( res.getContent() == null ) return defaultValue;
 			return res.getContent();
@@ -59,11 +60,11 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 		return getPositionalArgumentExpressions( argumentExpressions, "operand" );
 	}
 
-	protected static List getArgumentExpressionValues( List argumentExpressions ) {
+	protected static List getArgumentExpressionValues( Request req, List argumentExpressions ) {
 		List values = new ArrayList();
 		for( Iterator i=argumentExpressions.iterator(); i.hasNext(); ) {
 			Expression exp = (Expression)i.next();
-			Response res = exp != null ? exp.eval() : null;
+			Response res = exp != null ? exp.eval(req) : null;
 			if( res != null ) {
 				if( res != null && res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 					values.add( res.getContent() );
@@ -77,12 +78,12 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 		return values;
 	}
 	
-	protected static List getPositionalArgumentValues( Map argumentExpressions ) {
-		return getArgumentExpressionValues( getPositionalArgumentExpressions( argumentExpressions ) );
+	protected static List getPositionalArgumentValues( Request req, Map argumentExpressions ) {
+		return getArgumentExpressionValues( req, getPositionalArgumentExpressions( argumentExpressions ) );
 	}
 
-	protected static List getPositionalArgumentValues( Map argumentExpressions, String startingWith ) {
-		return getArgumentExpressionValues( getPositionalArgumentExpressions( argumentExpressions, startingWith ) );
+	protected static List getPositionalArgumentValues( Request req, Map argumentExpressions, String startingWith ) {
+		return getArgumentExpressionValues( req, getPositionalArgumentExpressions( argumentExpressions, startingWith ) );
 	}
 	
 	//// Path simplification ////

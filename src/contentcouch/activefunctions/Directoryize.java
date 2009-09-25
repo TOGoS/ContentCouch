@@ -2,6 +2,7 @@ package contentcouch.activefunctions;
 
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
@@ -13,9 +14,9 @@ import contentcouch.misc.UriUtil;
 import contentcouch.value.Directory;
 
 public class Directoryize extends BaseActiveFunction {
-	public Response call(Map argumentExpressions) {
+	public Response call(Request req, Map argumentExpressions) {
 		Expression e = (Expression)argumentExpressions.get("operand");
-		Response subRes = getArgumentResponse(argumentExpressions, "operand");
+		Response subRes = getArgumentResponse(req, argumentExpressions, "operand");
 		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
 		if( e instanceof UriExpression ) {
 			String uri = ((UriExpression)e).getUri();

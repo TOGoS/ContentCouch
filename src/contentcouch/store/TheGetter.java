@@ -4,14 +4,13 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
-import togos.mf.api.Request;
 import togos.mf.api.CallHandler;
+import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.value.Blob;
-import contentcouch.active.Context;
 import contentcouch.app.Log;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
@@ -31,8 +30,8 @@ public class TheGetter {
 	
 	public static CallHandler globalInstance;
 	
-	public static CallHandler getGenericGetter() {
-		CallHandler theGetter = (CallHandler)Context.get(CTXVAR);
+	public static CallHandler getGenericGetter(Request req) {
+		CallHandler theGetter = (CallHandler)req.getContextVars().get(CTXVAR);
 		if( theGetter == null ) {
 			theGetter = globalInstance;
 		}
@@ -52,7 +51,7 @@ public class TheGetter {
 	
 	public static Response call( Request req ) {
 		Log.log(Log.EVENT_REQUEST_SUBMITTED, req.getVerb(), req.getResourceName(), (req.getContent() == null ? "" : describeContent(req.getContent())) );
-		return getGenericGetter().call(req);
+		return getGenericGetter(req).call(req);
 	}
 
 	public static Object getResponseValue( Response res, String verb, String uri ) {

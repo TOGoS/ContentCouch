@@ -7,12 +7,13 @@ import java.io.PipedOutputStream;
 import java.io.PrintWriter;
 import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
+import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import togos.mf.value.Blob;
 import contentcouch.active.BaseActiveFunction;
-import contentcouch.active.Context;
 import contentcouch.active.expression.Expression;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.InputStreamBlob;
@@ -58,35 +59,35 @@ public class Explorify extends BaseActiveFunction {
 		}
 	}
 	
-	protected String getHeader(Map argumentExpressions) {
-		return ValueUtil.getString(getArgumentValue(argumentExpressions, "header", null));
+	protected String getHeader(Request req, Map argumentExpressions) {
+		return ValueUtil.getString(getArgumentValue(req, argumentExpressions, "header", null));
 	}
 	
-	protected String getFooter(Map argumentExpressions) {
-		return ValueUtil.getString(getArgumentValue(argumentExpressions, "footer", null));
+	protected String getFooter(Request req, Map argumentExpressions) {
+		return ValueUtil.getString(getArgumentValue(req, argumentExpressions, "footer", null));
 	}
 	
-	public Response explorifyDirectory(String uri, Directory d, String header, String footer ) {
-		return getPageGeneratorResult(new DirectoryPageGenerator(d, uri, Context.getSnapshot(), header, footer ));
+	public Response explorifyDirectory(Request req, String uri, Directory d, String header, String footer ) {
+		return getPageGeneratorResult(new DirectoryPageGenerator(d, uri, req.getContextVars(), header, footer ));
 	}
 	
-	public Response explorifyXmlBlob(String uri, Blob b, String header, String footer ) {
-		return getPageGeneratorResult(new RdfSourcePageGenerator(b, uri, Context.getSnapshot(), header, footer ));
+	public Response explorifyXmlBlob(Request req, String uri, Blob b, String header, String footer ) {
+		return getPageGeneratorResult(new RdfSourcePageGenerator(b, uri, req.getContextVars(), header, footer ));
 	}
 	
-	public Response explorifySlfBlob(String uri, Blob b, String header, String footer ) {
-		return getPageGeneratorResult(new SlfSourcePageGenerator(b, uri, Context.getSnapshot(), header, footer ));
+	public Response explorifySlfBlob(Request req, String uri, Blob b, String header, String footer ) {
+		return getPageGeneratorResult(new SlfSourcePageGenerator(b, uri, req.getContextVars(), header, footer ));
 	}
 	
-	public Response explorifyNonDirectory( Map argumentExpressions, String uri, Response subRes ) {
+	public Response explorifyNonDirectory( Request req, Map argumentExpressions, String uri, Response subRes ) {
 		Blob blob = BlobUtil.getBlob(subRes.getContent());
 		String type = MetadataUtil.getContentType(subRes);
 		if( (type != null && type.matches("application/(.*\\+)?xml")) ||
 		    MetadataUtil.looksLikeRdfBlob(blob) )
 		{
-			return explorifyXmlBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
+			return explorifyXmlBlob( req, uri, blob, getHeader(req, argumentExpressions), getFooter(req, argumentExpressions) );
 		} else if( MetadataUtil.CT_SLF.equals(type) ) {
-			return explorifySlfBlob( uri, blob, getHeader(argumentExpressions), getFooter(argumentExpressions) );
+			return explorifySlfBlob( req, uri, blob, getHeader(req, argumentExpressions), getFooter(req, argumentExpressions) );
 		} else if( type != null ) {
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, blob, type);
 		} else {
@@ -94,20 +95,17 @@ public class Explorify extends BaseActiveFunction {
 		}
 	}
 	
-	public Response call(Map argumentExpressions) {
+	public Response call(Request req, Map argumentExpressions) {
 		Expression e = (Expression)argumentExpressions.get("operand");
 		String uri = e.toUri();
-		Response subRes = getArgumentResponse(argumentExpressions, "operand");
+		Response subRes = getArgumentResponse(req, argumentExpressions, "operand");
 		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
-		Context.push("processed-uri", uri);
-		try {
-			if( subRes.getContent() instanceof Directory ) {
-				return explorifyDirectory(uri, (Directory)subRes.getContent(), getHeader(argumentExpressions), getFooter(argumentExpressions));
-			} else {
-				return explorifyNonDirectory(argumentExpressions, uri, subRes);
-			}
-		} finally {
-			Context.pop("processed-uri");
+		BaseRequest subReq = new BaseRequest(req);
+		subReq.putContextVar("processed-uri", uri);
+		if( subRes.getContent() instanceof Directory ) {
+			return explorifyDirectory(subReq, uri, (Directory)subRes.getContent(), getHeader(req, argumentExpressions), getFooter(req, argumentExpressions));
+		} else {
+			return explorifyNonDirectory(subReq, argumentExpressions, uri, subRes);
 		}
 	}
 

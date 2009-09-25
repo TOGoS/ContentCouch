@@ -8,8 +8,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import togos.mf.api.Request;
 import togos.mf.api.Response;
-import contentcouch.active.Context;
 import contentcouch.activefunctions.Explorify;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
@@ -128,8 +128,8 @@ public class MakeAlbumPage extends Explorify {
 		}
 	}
 	
-	public Response explorifyDirectory(String uri, Directory d, String header, String footer ) {
-		return getPageGeneratorResult(new AlbumPageGenerator(d, uri, Context.getSnapshot(), header, footer ));
+	public Response explorifyDirectory( Request req, String uri, Directory d, String header, String footer ) {
+		return getPageGeneratorResult(new AlbumPageGenerator(d, uri, req.getContextVars(), header, footer ));
 	}
 
 	/*
