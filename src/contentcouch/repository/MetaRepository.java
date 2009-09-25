@@ -42,7 +42,6 @@ import contentcouch.value.BaseRef;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
-import contentcouch.value.RelativeRef;
 
 public class MetaRepository extends BaseRequestHandler {
 	public static class RepoRef {
@@ -54,7 +53,7 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 		
 		public String getHeadPath() {
-			if( subPath.startsWith("files/heads/") ) return subPath.substring("files/heads/".length());
+			if( subPath.startsWith("heads/") ) return subPath.substring("heads/".length());
 			return null;
 		}
 		
@@ -81,7 +80,7 @@ public class MetaRepository extends BaseRequestHandler {
 				}
 			}
 			if( uri.startsWith("/") ) uri = uri.substring(1);
-			return new RepoRef(repoName, assumeHead ? "files/heads/" + uri : uri );
+			return new RepoRef(repoName, assumeHead ? "heads/" + uri : uri );
 		}
 		
 		public String toString() {
@@ -183,7 +182,7 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	/**
 	 * @param repoConfig the RepoConfig for the repository we are looking for heads in
-	 * @param headPath the part of the URI *after* "x-ccouch-head:/" or "x-ccouch-repo:.../files/heads/",
+	 * @param headPath the part of the URI *after* "x-ccouch-head:/" or "x-ccouch-repo:.../heads/",
 	 *   e.g. "someserver/someproject/latest"
 	 * @param defaultBaseName if headPath ends with /, act like th
 	 * @return the URI to the backing resource
@@ -658,9 +657,9 @@ public class MetaRepository extends BaseRequestHandler {
 			if( RequestVerbs.VERB_PUT.equals(req.getVerb()) || RequestVerbs.VERB_POST.equals(req.getVerb()) ) {
 				if( "identify".equals(repoRef.subPath) ) {
 					return identify( repoConfig, req.getContent(), req.getContentMetadata() );
-				} else if( repoRef.subPath.equals("files/data") || repoRef.subPath.startsWith("files/data/") ) {
+				} else if( repoRef.subPath.equals("data") || repoRef.subPath.startsWith("data/") ) {
 					String[] dataAndSector = repoRef.subPath.split("/");
-					if( dataAndSector.length > 1 ) {
+					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
 						BaseRequest sectorOverrideReq = new BaseRequest();
 						sectorOverrideReq.metadata = req.getMetadata();
 						sectorOverrideReq.metadata.put(CcouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
@@ -670,8 +669,8 @@ public class MetaRepository extends BaseRequestHandler {
 					}
 					
 					return putData( repoConfig, req );
-				} else if( repoRef.subPath.startsWith("files/heads/") ) {
-					String headPath = repoRef.subPath.substring("files/heads/".length());
+				} else if( repoRef.subPath.startsWith("heads/") ) {
+					String headPath = repoRef.subPath.substring("heads/".length());
 					BaseRequest subReq = new BaseRequest( req, resolveHeadPath(repoConfig, headPath, "") );
 					return TheGetter.call(subReq);
 				} else {
@@ -679,8 +678,8 @@ public class MetaRepository extends BaseRequestHandler {
 				}
 			} else {
 				String path = repoRef.subPath;
-				if( path.startsWith("files/heads/") ) {
-					String headPath = repoRef.subPath.substring("files/heads/".length());
+				if( path.startsWith("heads/") ) {
+					String headPath = repoRef.subPath.substring("heads/".length());
 					path = resolveHeadPath(repoConfig, headPath, "");
 				} else if( path.equals("files") ) {
 					path = repoConfig.uri + "files";
@@ -689,6 +688,7 @@ public class MetaRepository extends BaseRequestHandler {
 				} else if( path.equals("") ) {
 					SimpleDirectory sd = new SimpleDirectory();
 					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
+					sd.addDirectoryEntry(new SimpleDirectory.Entry("heads",new BaseRef(req.getResourceName(),"heads"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
 					return new BaseResponse( 200, sd );
 				}
 				BaseRequest subReq = new BaseRequest(req, path);

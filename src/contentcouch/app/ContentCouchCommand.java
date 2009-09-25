@@ -781,7 +781,7 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		String dataDestUri = "x-ccouch-repo:data/";;
+		String dataDestUri = "x-ccouch-repo:data";;
 		String storedUri = null;
 		for( Iterator i=sourceUris.iterator(); i.hasNext(); ) {
 			String sourceUri = (String)i.next();
