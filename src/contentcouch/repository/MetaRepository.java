@@ -1,6 +1,7 @@
 package contentcouch.repository;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.lucene.document.Document;
+import org.apache.lucene.store.FSDirectory;
 
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
@@ -31,6 +35,7 @@ import contentcouch.hashcache.FileHashCache;
 import contentcouch.misc.Function1;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
+import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
@@ -631,6 +636,52 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	//// Use the index ////
 	
+	protected org.apache.lucene.store.Directory getLuceneDir(String path) {
+		File f = new File(path);
+		if( !f.exists() ) f.mkdirs();
+		try {
+			return FSDirectory.open(f);
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	protected org.apache.lucene.store.Directory getLuceneDir( RepoConfig repoConfig, String sector, String indexName ) {
+		if( !PathUtil.isFileUri(repoConfig.uri) ) {
+			throw new RuntimeException("Can't use metadata store of non-local repo ("+repoConfig.uri+")");
+		}
+		String indexDirPath = PathUtil.appendHierarchicalPath(repoConfig.uri, "indexes/"+sector+"/"+indexName, false);
+		return getLuceneDir( indexDirPath );
+	}
+	
+	protected LuceneIndex getLuceneIndex( RepoConfig repoConfig, String sector, String indexName, boolean readable, boolean writable ) {
+		return new LuceneIndex( getLuceneDir( repoConfig, sector, indexName ), readable, writable );
+	}
+	
+	protected void putFunctionResult( RepoConfig repoConfig, String storeSector, String key, String value ) {
+		getLuceneIndex( repoConfig, storeSector, "funcresults", true, true ).storePair("key", key, "value", value);
+	}
+	
+	protected void putFunctionResultUri( RepoConfig repoConfig, String storeSector, String key, String valueUri ) {
+		getLuceneIndex( repoConfig, storeSector, "funcresults", true, true ).storePair("key", key, "valueUri", valueUri);
+	}
+	
+	protected void putFunctionResult( RepoConfig repoConfig, String storeSector, String key, Object value ) {
+		if( value instanceof Ref ) {
+			putFunctionResultUri( repoConfig, storeSector, key, ((Ref)value).getTargetUri() );
+		} else {
+			putFunctionResult( repoConfig, storeSector, key, ValueUtil.getString(value) );
+		}
+	}
+	
+	protected Object getFunctionResult( RepoConfig repoConfig, String storeSector, String key ) {
+		Document doc = getLuceneIndex( repoConfig, storeSector, "funcresults", true, false ).getPairDocument("key", key);
+		String value = doc.get("value");
+		String valueUri = doc.get("valueUri");
+		if( valueUri != null ) return new BaseRef(valueUri);
+		return value;
+	}
+	
 	protected Response putMetadata( RepoConfig repoConfig, Request req ) {
 		return new BaseResponse( 200, "Thank you for entering metadata (actually I didn't do anything)");
 	}
@@ -693,23 +744,30 @@ public class MetaRepository extends BaseRequestHandler {
 				if( repoRef.subPath.equals("metadata") || repoRef.subPath.startsWith("metadata/") ) {
 					String[] dataAndSector = repoRef.subPath.split("/");
 					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
-						BaseRequest sectorOverrideReq = new BaseRequest();
-						sectorOverrideReq.metadata = req.getMetadata();
+						BaseRequest sectorOverrideReq = new BaseRequest(req);
 						sectorOverrideReq.metadata.put(CcouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
-						sectorOverrideReq.content = req.getContent();
-						sectorOverrideReq.contentMetadata = req.getContentMetadata();
 						req = sectorOverrideReq;
 					}
 					
 					return putMetadata( repoConfig, req );
+				} else if( repoRef.subPath.startsWith("function-result-cache/") ) {
+					String[] pathParts = repoRef.subPath.substring("function-result-cache/".length()).split("/");
+					String storeSector, key;
+					if( pathParts.length > 2 && pathParts[1].length() > 0 ) {
+						storeSector = pathParts[0];
+						key = UriUtil.uriDecode(pathParts[1]);
+					} else {
+						storeSector = getRequestedStoreSector( req, repoConfig );
+						key = UriUtil.uriDecode(pathParts[0]);
+					}
+					
+					putFunctionResult( repoConfig, storeSector, key, req.getContent() );
+					return new BaseResponse( ResponseCodes.RESPONSE_NORMAL, "OK" );
 				} else if( repoRef.subPath.equals("data") || repoRef.subPath.startsWith("data/") ) {
 					String[] dataAndSector = repoRef.subPath.split("/");
 					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
-						BaseRequest sectorOverrideReq = new BaseRequest();
-						sectorOverrideReq.metadata = req.getMetadata();
+						BaseRequest sectorOverrideReq = new BaseRequest(req);
 						sectorOverrideReq.metadata.put(CcouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
-						sectorOverrideReq.content = req.getContent();
-						sectorOverrideReq.contentMetadata = req.getContentMetadata();
 						req = sectorOverrideReq;
 					}
 					
@@ -732,6 +790,18 @@ public class MetaRepository extends BaseRequestHandler {
 					path = repoConfig.uri + path.substring("files/".length());
 				} else if( path.equals("metadata") ) {
 					return getMetadata( repoConfig, MfArgUtil.argumentizeQueryString(req) );
+				} else if( path.startsWith("function-result-cache/") ) {
+					String[] pathParts = repoRef.subPath.substring("function-result-cache/".length()).split("/");
+					String storeSector, key;
+					if( pathParts.length > 2 && pathParts[1].length() > 0 ) {
+						storeSector = pathParts[0];
+						key = UriUtil.uriDecode(pathParts[1]);
+					} else {
+						storeSector = getRequestedStoreSector( req, repoConfig );
+						key = UriUtil.uriDecode(pathParts[0]);
+					}
+					
+					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, getFunctionResult(repoConfig, storeSector, key));
 				} else if( path.equals("") ) {
 					SimpleDirectory sd = new SimpleDirectory();
 					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
