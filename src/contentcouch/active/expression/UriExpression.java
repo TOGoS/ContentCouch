@@ -7,15 +7,16 @@ import contentcouch.misc.UriUtil;
 import contentcouch.path.PathSimplifiableExpression;
 import contentcouch.path.PathUtil;
 import contentcouch.store.TheGetter;
+import contentcouch.value.Ref;
 
-public class UriExpression implements Expression, PathSimplifiableExpression {
+public class UriExpression implements Ref, Expression, PathSimplifiableExpression {
 	String uri;
 	
 	public UriExpression( String uri ) {
 		this.uri = uri;
 	}
 	
-	public String getUri() {
+	public String getTargetUri() {
 		return uri;
 	}
 	

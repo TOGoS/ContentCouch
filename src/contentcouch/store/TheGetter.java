@@ -5,12 +5,15 @@ import java.util.Collections;
 import java.util.Map;
 
 import togos.mf.api.CallHandler;
+import togos.mf.api.ContentAndMetadata;
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
+import togos.mf.base.BaseResponse;
 import togos.mf.value.Blob;
+import contentcouch.active.expression.Expression;
 import contentcouch.app.Log;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
@@ -53,7 +56,23 @@ public class TheGetter {
 		Log.log(Log.EVENT_REQUEST_SUBMITTED, req.getVerb(), req.getResourceName(), (req.getContent() == null ? "" : describeContent(req.getContent())) );
 		return getGenericGetter(req).call(req);
 	}
-
+	
+	public static Response callAndThrowIfNonNormalResponse( Request req ) {
+		return throwIfNonNormalResponse( call(req), req );
+	}
+	
+	public static Response throwIfNonNormalResponse( Response res, String verb, String resourceName ) {
+		switch( res.getStatus() ) {
+		case( ResponseCodes.RESPONSE_NORMAL ): return res;
+		default:
+			throw new AbnormalResponseException( verb, resourceName, res.getStatus(), res.getContent() );
+		}
+	}
+	
+	public static Response throwIfNonNormalResponse( Response res, Request req ) {
+		return throwIfNonNormalResponse( res, req.getVerb(), req.getResourceName() );
+	}
+	
 	public static Object getResponseValue( Response res, String verb, String uri ) {
 		switch( res.getStatus() ) {
 		case( ResponseCodes.RESPONSE_NORMAL ): return res.getContent();
@@ -94,9 +113,6 @@ public class TheGetter {
 		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.call(idReq), idReq.uri));
 	}
 	
-	public static Object dereference( Object o ) {
-		return o instanceof Ref ? get(((Ref)o).getTargetUri()) : o;
-	}
 	public static String reference( Object o, boolean allowFileUris, boolean allowContentUris ) {
 		if( o instanceof Ref ) {
 			return ((Ref)o).getTargetUri();
@@ -109,5 +125,22 @@ public class TheGetter {
 			identify(o, Collections.EMPTY_MAP);
 		}
 		throw new RuntimeException("Don't know how to reference " + (o == null ? "null" : "a " + o.getClass().getName()));
+	}
+	
+	public static ContentAndMetadata dereferenceAsResponse( Object content, Map contentMetadata ) {
+		if( content instanceof Ref ) {
+			return callAndThrowIfNonNormalResponse(new BaseRequest( RequestVerbs.VERB_GET, ((Ref)content).getTargetUri()));
+		}
+		if( content instanceof Expression ) {
+			BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, "(no URI passed to expression.eval)");
+			return throwIfNonNormalResponse(((Expression)content).eval(subReq), subReq);
+		}
+		BaseResponse res = new BaseResponse( ResponseCodes.RESPONSE_NORMAL, content );
+		res.contentMetadata = contentMetadata;
+		return res;
+	}
+	
+	public static Object dereference( Object o ) {
+		return dereferenceAsResponse( o, Collections.EMPTY_MAP ).getContent();
 	}
 }

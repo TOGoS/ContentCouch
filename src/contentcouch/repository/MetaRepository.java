@@ -58,6 +58,13 @@ public class MetaRepository extends BaseRequestHandler {
 			return null;
 		}
 		
+		/**
+		 * Parses [x-ccouch-{repo|head}:][//reponame][/]stuff into RepoRefs.
+		 * If reponame is not given, return repoRef.repoName will be null, indicating 'default'
+		 * @param uri string to parse
+		 * @param assumeHead when no scheme explicitly given, treat as x-ccouch-head URI
+		 * @return
+		 */
 		public static RepoRef parse(String uri, boolean assumeHead) {
 			String repoName = null;
 			if( uri.startsWith("x-ccouch-head:") ) {
@@ -595,6 +602,7 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected Response identify( RepoConfig repoConfig, Object content, Map contentMetadata ) {
+		String id = null;
 		if( content instanceof RdfNode ) {
 			Object parsedFrom = contentMetadata.get(CcouchNamespace.PARSED_FROM);
 			if( parsedFrom == null ) {
@@ -602,43 +610,29 @@ public class MetaRepository extends BaseRequestHandler {
 				parsedFrom = BlobUtil.getBlob( content.toString() );
 			}
 			String parsedFromUri = ValueUtil.getString(identify( repoConfig, parsedFrom, Collections.EMPTY_MAP ).getContent());
+			// TODO: Make sure repoConfig.dataScheme.wouldHandleUrn(parsedFromUri)?
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL,	"x-parse-rdf:" + parsedFromUri, "text/plain");
 		} else if( content instanceof Commit ) {
 			return identify( repoConfig, new RdfCommit( (Commit)content, getTargetRdfifier(false, false) ), contentMetadata );
 		} else if( content instanceof Directory ) {
 			return identify( repoConfig, new RdfDirectory( (Directory)content, getTargetRdfifier(false, false) ), contentMetadata );
+		} else if( content instanceof Ref && repoConfig.dataScheme.wouldHandleUrn(((Ref)content).getTargetUri()) ) {
+			id = ((Ref)content).getTargetUri();
+		} else {
+			content = TheGetter.dereference(content);
+			Blob blob = BlobUtil.getBlob(content, false);
+			if( blob != null ) id = identifyBlob( blob, repoConfig );
 		}
-
-		Blob blob = BlobUtil.getBlob(content, false);
-		if( blob != null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, identifyBlob( blob, repoConfig ), "text/plain");
+		
+		if( id != null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, id, "text/plain");
 		
 		throw new RuntimeException("I don't know how to identify " + (content == null ? "null" : content.getClass().getName()));
 	}
 	
 	//// Use the index ////
 	
-	/*
-	protected LuceneMetadataStore getMetadataStore(RepoConfig rc, String sector) {
-		if( !PathUtil.isFileUri(rc.uri) ) {
-			throw new RuntimeException("Can't use metadata store of non-local repo ("+rc.uri+")");
-		}
-		// rc.uri should end with '/', so ignoreLastInHierarchical should have no effect, here.
-		// Otherwise, not sure if it should be true or false
-		String indexDirPath = PathUtil.appendHierarchicalPath(rc.uri, "indexes/"+sector, false);
-		File indexDir = new File(indexDirPath);
-		if( !indexDir.exists() ) indexDir.mkdirs();
-		FSDirectory dir;
-		try {
-			dir = FSDirectory.open(indexDir);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		return new LuceneMetadataStore(dir);
-	}
-	*/
-	
 	protected Response putMetadata( RepoConfig repoConfig, Request req ) {
-		return BaseResponse.RESPONSE_UNHANDLED;
+		return new BaseResponse( 200, "Thank you for entering metadata (actually I didn't do anything)");
 	}
 	
 	protected Response getMetadata( RepoConfig repoConfig, Request req ) {

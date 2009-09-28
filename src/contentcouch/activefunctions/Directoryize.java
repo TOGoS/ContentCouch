@@ -19,7 +19,7 @@ public class Directoryize extends BaseActiveFunction {
 		Response subRes = getArgumentResponse(req, argumentExpressions, "operand");
 		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
 		if( e instanceof UriExpression ) {
-			String uri = ((UriExpression)e).getUri();
+			String uri = ((UriExpression)e).getTargetUri();
 			if( uri.matches("^https?://.*/$") ) {
 				Directory d = DirectoryUtil.getDirectory(subRes, "active:contentcouch.directoryize+operand@"+UriUtil.uriEncode(uri) );
 				return new BaseResponse( ResponseCodes.RESPONSE_NORMAL, d );
