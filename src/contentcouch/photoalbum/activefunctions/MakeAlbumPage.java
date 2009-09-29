@@ -109,12 +109,16 @@ public class MakeAlbumPage extends Explorify {
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String imageUri = getUnprocessedHref(e, false);
+					/*
 					String shrunkUri =
 						"active:contentcouch.graphics.serialize-image+operand@" + UriUtil.uriEncode( 
 							"active:contentcouch.graphics.scale-image+operand@" + UriUtil.uriEncode(imageUri) +
 							"+max-width@" + UriUtil.uriEncode(UriUtil.makeDataUri("128")) +
 							"+max-height@" + UriUtil.uriEncode(UriUtil.makeDataUri("128"))
 						) + "+format@" + UriUtil.uriEncode(UriUtil.makeDataUri("jpeg"));
+					*/
+					String shrunkUri =
+						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri);
 					w.println("<div class=\"image-thumbnail-box\">");
 					w.println("<div class=\"image-thumbnail-title\">" + e.getName() + "</div>");
 					w.print("<div class=\"image-thumbnail-inner-box\">");

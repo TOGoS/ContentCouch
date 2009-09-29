@@ -5,6 +5,7 @@ body > h2 { color:white }
 
 .main-content { border:1px solid; margin:4px; padding: 0px; background-color:#CCC; }
 .main-content > pre { margin: 1em 2em; }
+.main-content > p { margin: 0.5em; padding: 0.5em; }
 
 /* SLF Formatting */
 .chunk { border:1px solid; margin:4px; padding: 0px; background-color:silver }

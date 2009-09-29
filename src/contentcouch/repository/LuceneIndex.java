@@ -1,6 +1,5 @@
 package contentcouch.repository;
 
-
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -29,24 +28,18 @@ import org.apache.lucene.util.Version;
 
 public class LuceneIndex {
 	Directory dir;
-	IndexReader indexReader;
-	IndexWriter indexWriter;
+//	IndexReader indexReader;
+//	IndexWriter indexWriter;
 	Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_CURRENT);
 	String defaultSearchField = "tags";
 	
-	public LuceneIndex( Directory dir, boolean readable, boolean writable ) {
-		try {
-			this.dir = dir;
-			if( readable ) this.indexReader = IndexReader.open(dir,!writable);
-			if( writable ) this.indexWriter = new IndexWriter( dir, analyzer, MaxFieldLength.LIMITED );
-		} catch( IOException e ) {
-			throw new RuntimeException(e);
-		}
+	public LuceneIndex( Directory dir ) {
+		this.dir = dir;
 	}
 	
 	//// Low-level functions
 	
-	public void addDocument( Document doc ) {
+	public void addDocument( IndexWriter indexWriter, Document doc ) {
 		try {
 			indexWriter.addDocument(doc);
 		} catch( CorruptIndexException e ) {
@@ -56,9 +49,9 @@ public class LuceneIndex {
 		}
 	}
 		
-	public TopDocs search( Query q, int nDocs ) {
+	public TopDocs search( IndexReader indexReader, Query q, int nDocs ) {
 		try {
-			return new IndexSearcher( indexReader ).search( null, nDocs );
+			return new IndexSearcher( indexReader ).search( q, nDocs );
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -72,8 +65,8 @@ public class LuceneIndex {
 		}
 	}
 	
-	public TopDocs search( String qs, int nDocs ) {
-		return search( parseQuery(qs), nDocs );
+	public TopDocs search( IndexReader indexReader, String qs, int nDocs ) {
+		return search( indexReader, parseQuery(qs), nDocs );
 	}
 	
 	//// For treating search results as iterators
@@ -166,13 +159,13 @@ public class LuceneIndex {
 		}
 	}
 	
-	public Iterator searchAsIterator( Query q, int nDocs ) {
-		return new TopDocsDocumentIterator( indexReader, search(q,nDocs), 0, nDocs );
+	public Iterator searchAsIterator( IndexReader indexReader, Query q, int nDocs ) {
+		return new TopDocsDocumentIterator( indexReader, search(indexReader,q,nDocs), 0, nDocs );
 	}
 	
 	//// Use index as k->v store
 	
-	public void storePair( String keyFieldName, String key, String valueFieldName, String value ) {
+	public void storePair( IndexWriter indexWriter, String keyFieldName, String key, String valueFieldName, String value ) {
 		Document newDoc = new Document();
 		newDoc.add(new Field( keyFieldName, key, Store.YES, Index.NOT_ANALYZED ));
 		newDoc.add(new Field( valueFieldName, value, Store.YES, Index.NOT_ANALYZED ));
@@ -186,17 +179,79 @@ public class LuceneIndex {
 		}
 	}
 	
-	public Document getPairDocument( String keyFieldName, String key ) {
-		TopDocs r = search(new TermQuery(new Term(keyFieldName, key)), 1);
-		ScoreDoc[] s = r.scoreDocs;
-		if( s.length > 0 ) try {
-			return indexReader.document(s[0].doc);
-		} catch (CorruptIndexException e) {
+	Object writeLock = new Object();
+	
+	protected IndexWriter openIndexWriter() {
+		try {
+			return new IndexWriter( dir, analyzer, MaxFieldLength.LIMITED );
+		} catch( CorruptIndexException e ) {
+			throw new RuntimeException(e);
+		} catch (LockObtainFailedException e) {
 			throw new RuntimeException(e);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		return null;
+	}
+	
+	protected void closeIndexWriter( IndexWriter indexWriter ) {
+		try {
+			indexWriter.close();
+		} catch( CorruptIndexException e ) {
+			return;
+		} catch( IOException e ) {
+			return;
+		}
+	}
+	
+	protected IndexReader openIndexReader( boolean writable ) {
+		try {
+			return IndexReader.open( dir, writable );
+		} catch( CorruptIndexException e ) {
+			throw new RuntimeException(e);
+		} catch (LockObtainFailedException e) {
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	protected void closeIndexReader( IndexReader indexReader ) {
+		try {
+			indexReader.close();
+		} catch( CorruptIndexException e ) {
+			return;
+		} catch( IOException e ) {
+			return;
+		}
+	}
+
+	public void storePair( String keyFieldName, String key, String valueFieldName, String value ) {
+		synchronized( writeLock ) {
+			IndexWriter indexWriter = openIndexWriter();
+			try {
+				storePair( indexWriter, keyFieldName, key, valueFieldName, value );
+			} finally {
+				closeIndexWriter(indexWriter);
+			}
+		}
+	}
+	
+	public Document getPairDocument( String keyFieldName, String key ) {
+		IndexReader indexReader = openIndexReader(false);
+		try {
+			TopDocs r = search(indexReader, new TermQuery(new Term(keyFieldName, key)), 1);
+			ScoreDoc[] s = r.scoreDocs;
+			if( s.length > 0 ) try {
+				return indexReader.document(s[0].doc);
+			} catch (CorruptIndexException e) {
+				throw new RuntimeException(e);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			return null;
+		} finally {
+			closeIndexReader(indexReader);
+		}
 	}
 	
 	

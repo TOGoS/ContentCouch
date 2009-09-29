@@ -41,8 +41,8 @@ public class InternalStreamRequestHandler extends BaseRequestHandler {
 		if( oso == null ) throw new RuntimeException("No such stream: " + streamName);
 		if( !(oso instanceof OutputStream) ) throw new RuntimeException("Not an output stream: " + streamName);
 		OutputStream os = (OutputStream)oso;
-		BlobUtil.writeBlobToOutputStream(blob, os);
 		try {
+			BlobUtil.writeBlobToOutputStream(blob, os);
 			os.close();
 		} catch( IOException e ) {
 			throw new RuntimeException(e);

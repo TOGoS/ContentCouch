@@ -29,7 +29,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		this.webRoot = webRoot;
 		TheGetter.globalInstance = metaRepoConfig.getRequestKernel();
 		metaRepoConfig.handleArguments(new String[]{"-file",configFileUri}, 0, configFileUri);
-		contentcouch.app.Log.setStandardLogLevel( 60 );
+		//contentcouch.app.Log.setStandardLogLevel( 60 );
 	}
 
 	protected String getProcessingUri(String processor, String uri, String verb) {
@@ -55,7 +55,6 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 
 	public Response call( Request req ) {
 		String pi = req.getResourceName();
-		System.err.println("pi: " + pi );
 		if( !pi.startsWith(SwfHttpServlet.SERVLET_PATH_URI_PREFIX) ) {
 			throw new RuntimeException("Expected " + SwfHttpServlet.SERVLET_PATH_URI_PREFIX + "..., but got " + pi);
 		}

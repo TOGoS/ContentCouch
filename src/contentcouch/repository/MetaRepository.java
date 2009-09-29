@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -636,46 +637,68 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	//// Use the index ////
 	
-	protected org.apache.lucene.store.Directory getLuceneDir(String path) {
+	protected static String FUNCTION_RESULT_CACHE_INDEX_NAME = "function-result-cache";
+	protected static String FUNCTION_RESULT_CACHE_PREFIX = "function-result-cache/";
+	
+	protected org.apache.lucene.store.Directory getLuceneDir(String path, boolean writable) {
 		File f = new File(path);
-		if( !f.exists() ) f.mkdirs();
+		if( !f.exists() & !writable ) {
+			return null;
+		}
+
 		try {
+			//FSDirectory.
 			return FSDirectory.open(f);
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	protected org.apache.lucene.store.Directory getLuceneDir( RepoConfig repoConfig, String sector, String indexName ) {
+	protected org.apache.lucene.store.Directory getLuceneDir( RepoConfig repoConfig, String indexName, boolean writable ) {
 		if( !PathUtil.isFileUri(repoConfig.uri) ) {
 			throw new RuntimeException("Can't use metadata store of non-local repo ("+repoConfig.uri+")");
 		}
-		String indexDirPath = PathUtil.appendHierarchicalPath(repoConfig.uri, "indexes/"+sector+"/"+indexName, false);
-		return getLuceneDir( indexDirPath );
+		String indexDirUri = PathUtil.appendHierarchicalPath(repoConfig.uri, "indexes/"+indexName, false);
+		PathUtil.Path p = PathUtil.parseFilePathOrUri(indexDirUri);
+		return getLuceneDir( p.toString(), writable );
 	}
 	
-	protected LuceneIndex getLuceneIndex( RepoConfig repoConfig, String sector, String indexName, boolean readable, boolean writable ) {
-		return new LuceneIndex( getLuceneDir( repoConfig, sector, indexName ), readable, writable );
+	Map luceneIndexes = new HashMap();
+	
+	protected synchronized LuceneIndex openLuceneIndex( RepoConfig repoConfig, String indexName, boolean readable, boolean writable ) {
+		LuceneIndex idx = (LuceneIndex)luceneIndexes.get(indexName);
+		if( idx == null ) {
+			org.apache.lucene.store.Directory ldir = getLuceneDir( repoConfig, indexName, writable );
+			if( ldir == null ) return null;
+			idx =  new LuceneIndex( ldir );
+			luceneIndexes.put( indexName, idx );
+		}
+		return idx;
 	}
 	
-	protected void putFunctionResult( RepoConfig repoConfig, String storeSector, String key, String value ) {
-		getLuceneIndex( repoConfig, storeSector, "funcresults", true, true ).storePair("key", key, "value", value);
+	protected void putFunctionResult( RepoConfig repoConfig, String subIndexName, String key, String value ) {
+		LuceneIndex li = openLuceneIndex( repoConfig, "function-result-cache/"+subIndexName, false, true );
+		li.storePair("key", key, "value", value);
 	}
 	
-	protected void putFunctionResultUri( RepoConfig repoConfig, String storeSector, String key, String valueUri ) {
-		getLuceneIndex( repoConfig, storeSector, "funcresults", true, true ).storePair("key", key, "valueUri", valueUri);
+	protected void putFunctionResultUri( RepoConfig repoConfig, String subIndexName, String key, String valueUri ) {
+		LuceneIndex li = openLuceneIndex( repoConfig, "function-result-cache/"+subIndexName, false, true );
+		li.storePair("key", key, "valueUri", valueUri);
 	}
 	
-	protected void putFunctionResult( RepoConfig repoConfig, String storeSector, String key, Object value ) {
+	protected void putFunctionResult( RepoConfig repoConfig, String subIndexName, String key, Object value ) {
 		if( value instanceof Ref ) {
-			putFunctionResultUri( repoConfig, storeSector, key, ((Ref)value).getTargetUri() );
+			putFunctionResultUri( repoConfig, subIndexName, key, ((Ref)value).getTargetUri() );
 		} else {
-			putFunctionResult( repoConfig, storeSector, key, ValueUtil.getString(value) );
+			putFunctionResult( repoConfig, subIndexName, key, ValueUtil.getString(value) );
 		}
 	}
 	
-	protected Object getFunctionResult( RepoConfig repoConfig, String storeSector, String key ) {
-		Document doc = getLuceneIndex( repoConfig, storeSector, "funcresults", true, false ).getPairDocument("key", key);
+	protected Object getFunctionResult( RepoConfig repoConfig, String subIndexName, String key ) {
+		LuceneIndex li = openLuceneIndex( repoConfig, "function-result-cache/"+subIndexName, true, false );
+		if( li == null ) return null;
+		Document doc = li.getPairDocument("key", key);
+		if( doc == null ) return null;
 		String value = doc.get("value");
 		String valueUri = doc.get("valueUri");
 		if( valueUri != null ) return new BaseRef(valueUri);
@@ -750,18 +773,18 @@ public class MetaRepository extends BaseRequestHandler {
 					}
 					
 					return putMetadata( repoConfig, req );
-				} else if( repoRef.subPath.startsWith("function-result-cache/") ) {
-					String[] pathParts = repoRef.subPath.substring("function-result-cache/".length()).split("/");
-					String storeSector, key;
-					if( pathParts.length > 2 && pathParts[1].length() > 0 ) {
-						storeSector = pathParts[0];
+				} else if( repoRef.subPath.startsWith(FUNCTION_RESULT_CACHE_PREFIX) ) {
+					String[] pathParts = repoRef.subPath.substring(FUNCTION_RESULT_CACHE_PREFIX.length()).split("/");
+					String subIndexName, key;
+					if( pathParts.length > 1 && pathParts[0].length() > 0 ) {
+						subIndexName = pathParts[0];
 						key = UriUtil.uriDecode(pathParts[1]);
 					} else {
-						storeSector = getRequestedStoreSector( req, repoConfig );
+						subIndexName = getRequestedStoreSector( req, repoConfig );
 						key = UriUtil.uriDecode(pathParts[0]);
 					}
 					
-					putFunctionResult( repoConfig, storeSector, key, req.getContent() );
+					putFunctionResult( repoConfig, subIndexName, key, req.getContent() );
 					return new BaseResponse( ResponseCodes.RESPONSE_NORMAL, "OK" );
 				} else if( repoRef.subPath.equals("data") || repoRef.subPath.startsWith("data/") ) {
 					String[] dataAndSector = repoRef.subPath.split("/");
@@ -790,18 +813,18 @@ public class MetaRepository extends BaseRequestHandler {
 					path = repoConfig.uri + path.substring("files/".length());
 				} else if( path.equals("metadata") ) {
 					return getMetadata( repoConfig, MfArgUtil.argumentizeQueryString(req) );
-				} else if( path.startsWith("function-result-cache/") ) {
-					String[] pathParts = repoRef.subPath.substring("function-result-cache/".length()).split("/");
-					String storeSector, key;
-					if( pathParts.length > 2 && pathParts[1].length() > 0 ) {
-						storeSector = pathParts[0];
+				} else if( path.startsWith(FUNCTION_RESULT_CACHE_PREFIX) ) {
+					String[] pathParts = repoRef.subPath.substring(FUNCTION_RESULT_CACHE_PREFIX.length()).split("/");
+					String subIndexName, key;
+					if( pathParts.length > 1 && pathParts[0].length() > 0 ) {
+						subIndexName = pathParts[0];
 						key = UriUtil.uriDecode(pathParts[1]);
 					} else {
-						storeSector = getRequestedStoreSector( req, repoConfig );
+						subIndexName = getRequestedStoreSector( req, repoConfig );
 						key = UriUtil.uriDecode(pathParts[0]);
 					}
 					
-					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, getFunctionResult(repoConfig, storeSector, key));
+					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, getFunctionResult(repoConfig, subIndexName, key));
 				} else if( path.equals("") ) {
 					SimpleDirectory sd = new SimpleDirectory();
 					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));

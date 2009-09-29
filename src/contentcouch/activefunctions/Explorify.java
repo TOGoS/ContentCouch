@@ -24,6 +24,8 @@ import contentcouch.explorify.SlfSourcePageGenerator;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.value.Directory;
+import contentcouch.value.Ref;
+import contentcouch.xml.XML;
 
 public class Explorify extends BaseActiveFunction {
 	
@@ -80,10 +82,25 @@ public class Explorify extends BaseActiveFunction {
 	}
 	
 	public Response explorifyNonDirectory( Request req, Map argumentExpressions, String uri, Response subRes ) {
-		Blob blob = BlobUtil.getBlob(subRes.getContent());
-		String type = MetadataUtil.getContentType(subRes);
+		Blob blob;
+		String type;
+		if( subRes.getContent() instanceof Ref ) {
+			final String targetUri = ((Ref)subRes.getContent()).getTargetUri();
+			return getPageGeneratorResult(new PageGenerator(uri, req.getContextVars(), getHeader(req, argumentExpressions), getFooter(req, argumentExpressions)) {
+				public void writeContent(PrintWriter w) {
+					w.println("<div class=\"main-content\">");
+					w.println("<h3>You found a Ref!</h3>");
+					w.println("<p><a href=\""+XML.xmlEscapeAttributeValue(processUri("default",targetUri))+"\">"+XML.xmlEscapeText(targetUri)+"</a></p>");
+					w.println("</div>");
+				}
+			});
+		} else {
+			blob = BlobUtil.getBlob(subRes.getContent());
+			type = MetadataUtil.getContentType(subRes);
+		}
+		
 		if( (type != null && type.matches("application/(.*\\+)?xml")) ||
-		    MetadataUtil.looksLikeRdfBlob(blob) )
+		    (blob != null && MetadataUtil.looksLikeRdfBlob(blob)) )
 		{
 			return explorifyXmlBlob( req, uri, blob, getHeader(req, argumentExpressions), getFooter(req, argumentExpressions) );
 		} else if( MetadataUtil.CT_SLF.equals(type) ) {

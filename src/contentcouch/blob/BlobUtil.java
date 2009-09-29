@@ -1,6 +1,7 @@
 package contentcouch.blob;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -83,27 +84,44 @@ public class BlobUtil {
 	
 	public static final int READ_CHUNK_SIZE = 8*1024;
 
-	public static void writeBlobToOutputStream( Blob blob, OutputStream os ) {
-		try {
-			if( blob instanceof InputStreamBlob ) {
-				((InputStreamBlob)blob).writeTo(os, 0);
-			} else if( blob instanceof File ) {
-				FileInputStream is = new FileInputStream((File)blob);
-				try {
-					StreamUtil.copyInputToOutput(is, os);
-				} finally {
-					is.close();
-				}
-			} else if( blob instanceof ByteArrayBlob ) {
-				os.write(((ByteArrayBlob)blob).bytes);
-			} else {
-				long len = blob.getLength();
-				for( long i=0; i<len; i+=READ_CHUNK_SIZE ) {
-					os.write(blob.getData(i, (int)(len > i+READ_CHUNK_SIZE ? READ_CHUNK_SIZE : len-i) ));
-				}
+	public static Blob readInputStreamIntoBlob(InputStream inputStream, long maxLength)
+		throws IOException 
+	{
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] data = new byte[READ_CHUNK_SIZE];
+		int read;
+		long totalRead = 0;
+		do {
+			long readThisTime = maxLength - totalRead;
+			if( readThisTime > data.length ) readThisTime = data.length;
+			if( readThisTime == 0 ) break;
+			read = inputStream.read(data, 0, (int)readThisTime );
+			if( read == -1 ) break;
+			totalRead += read;
+			baos.write(data, 0, read);
+		} while( read > 0 );
+		return new ByteArrayBlob( baos.toByteArray() );
+	}
+	
+	public static void writeBlobToOutputStream( Blob blob, OutputStream os )
+		throws IOException
+	{
+		if( blob instanceof InputStreamBlob ) {
+			((InputStreamBlob)blob).writeTo(os, 0);
+		} else if( blob instanceof File ) {
+			FileInputStream is = new FileInputStream((File)blob);
+			try {
+				StreamUtil.copyInputToOutput(is, os);
+			} finally {
+				is.close();
 			}
-		} catch( IOException e ) {
-			throw new RuntimeException(e);
+		} else if( blob instanceof ByteArrayBlob ) {
+			os.write(((ByteArrayBlob)blob).bytes);
+		} else {
+			long len = blob.getLength();
+			for( long i=0; i<len; i+=READ_CHUNK_SIZE ) {
+				os.write(blob.getData(i, (int)(len > i+READ_CHUNK_SIZE ? READ_CHUNK_SIZE : len-i) ));
+			}
 		}
 	}
 	

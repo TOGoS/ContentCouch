@@ -17,6 +17,7 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
+import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.DcNamespace;
@@ -47,11 +48,22 @@ public class SwfHttpServlet extends HttpServlet {
 			default:
 				response.sendError(500, "RRA Error " + subRes.getStatus()); break;
 			}
-			if( type != null ) response.setHeader("Content-Type", type);
-			BlobUtil.writeBlobToOutputStream( BlobUtil.getBlob( subRes.getContent() ), response.getOutputStream() );
+			Blob b = BlobUtil.getBlob( subRes.getContent() );
+			if( b == null ) {
+				response.setHeader("Content-Type", "text/plain");
+				response.getWriter().println("No content");
+			} else {
+				if( type != null ) response.setHeader("Content-Type", type);
+				long len = b.getLength();
+				if( len != -1 ) {
+					response.setHeader("Content-Length", ""+len);
+				}
+				BlobUtil.writeBlobToOutputStream( b, response.getOutputStream() );
+			}
 		} catch( Exception e ) {
 			response.setHeader("Content-Type", "text/plain");
 			e.printStackTrace(response.getWriter());
+			e.printStackTrace(System.err);
 		}
 	}
 	
