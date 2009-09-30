@@ -60,15 +60,19 @@ public class FunctionCallExpression implements Expression, PathSimplifiableExpre
 		return s;
 	}
 
-	public Response eval(Request req) {
+	protected ActiveFunction getFunction(Request req) {
 		Response fRes = funcExpression.eval(req);
 		if( fRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) throw new RuntimeException("Could not load function " + funcExpression.toString() + ": " + fRes.getStatus() + ": " + fRes.getContent() );
 		if( !(fRes.getContent() instanceof ActiveFunction) ) throw new RuntimeException( "Object returned by " + funcExpression.toString() + " is not an ActiveFunction");
-		return ((ActiveFunction)fRes.getContent()).call(req, argumentExpressions);
+		return (ActiveFunction)fRes.getContent();
+	}
+	
+	public Response eval(Request req) {
+		return getFunction(req).call(req, argumentExpressions);
 	}
 	
 	public boolean isConstant() {
-		return false;
+		return funcExpression.isConstant() && getFunction(new BaseRequest()).isConstant(argumentExpressions);
 	}
 
 	protected ActiveFunction getStaticActiveFunction( Expression funcExpression ) {

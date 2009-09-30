@@ -118,7 +118,8 @@ public class MakeAlbumPage extends Explorify {
 						) + "+format@" + UriUtil.uriEncode(UriUtil.makeDataUri("jpeg"));
 					*/
 					String shrunkUri =
-						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri);
+						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
+						"+width@data:,128+height@data:,128";
 					w.println("<div class=\"image-thumbnail-box\">");
 					w.println("<div class=\"image-thumbnail-title\">" + e.getName() + "</div>");
 					w.print("<div class=\"image-thumbnail-inner-box\">");

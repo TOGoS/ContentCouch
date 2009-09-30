@@ -4,31 +4,22 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import togos.mf.api.Request;
-import togos.mf.api.RequestVerbs;
-import togos.mf.api.Response;
-import togos.mf.api.ResponseCodes;
-import togos.mf.base.BaseRequest;
-import togos.mf.base.BaseResponse;
 import togos.mf.value.Blob;
 import togos.swf2.ConfigUtil;
 import togos.swf2.SwfNamespace;
-import contentcouch.active.BaseActiveFunction;
-import contentcouch.active.expression.Expression;
+import contentcouch.active.CachingActiveFunction;
+import contentcouch.active.expression.ValueExpression;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.blob.BlobUtil;
 import contentcouch.graphics.ImageUtil;
-import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
-import contentcouch.store.TheGetter;
-import contentcouch.value.BaseRef;
-import contentcouch.value.Ref;
 
-public class Thumbnail extends BaseActiveFunction {
+public class Thumbnail extends CachingActiveFunction {
 	/*
 	 * To use ImageMagick to convert images instead of converting internally
 	 * (this handles more input formats and results in higher-quality thumbnails)
@@ -152,45 +143,25 @@ public class Thumbnail extends BaseActiveFunction {
 		}
 	}
 	
-	public Response call(Request req, Map argumentExpressions) {
-		Expression operandExpression = (Expression)argumentExpressions.get("operand");
-		boolean cacheable = operandExpression.isConstant(); 
-		String id = TheGetter.identify(operandExpression, Collections.EMPTY_MAP);
-		String resultCacheUri = "x-ccouch-repo:function-result-cache/thumbnails/"+UriUtil.uriEncode(id);
-		Object cached = cacheable ? TheGetter.get(resultCacheUri) : null;
-		String thumbnailUri;
-		if( cached == null ) {
-			int twidth = 128;
-			int theight = 128;
-			Blob input = (Blob)getArgumentValue(req, argumentExpressions, "operand", null);
-			if( input == null ) throw new RuntimeException("No value for operand");
-			Blob output;
-			output = thumbnailify(input, twidth, theight, req);
-			
-			if( cacheable ) {
-				BaseRequest storeReq = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:data", output, Collections.EMPTY_MAP);
-				storeReq.putMetadata( CcouchNamespace.REQ_STORE_SECTOR, "function-results" );
-				storeReq.putMetadata( CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_IGNORE );
-				Response storeRes = TheGetter.call(storeReq);
-				thumbnailUri = (String)storeRes.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER);
-				
-				TheGetter.put(resultCacheUri, new BaseRef(thumbnailUri));
-			} else {
-				return new BaseResponse( ResponseCodes.RESPONSE_NORMAL, output );
-			}
-		} else {
-			if( cached instanceof Ref ) { // oughta be
-				thumbnailUri = ((Ref)cached).getTargetUri();
-			} else {
-				throw new RuntimeException("Object returned from cache was not ref: " + cached);
-			}
-		}
-		if( thumbnailUri == null ) {
-			throw new RuntimeException( "No thumbnailUri" );
-		}
-		
-		return TheGetter.call( new BaseRequest( RequestVerbs.VERB_GET, thumbnailUri ) );
-		
-		//return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Thumbnail of "+id, "text/plain");
+	protected String getCacheIndexName( Request req, Map argumentExpressions ) {
+		return "thumbnails";
+	}
+	
+	protected Map getCanonicalArgumentExpressions( Map argumentExpressions ) {
+		HashMap ae = new HashMap();
+		ae.put("operand", argumentExpressions.get("operand"));
+		ae.put("width", argumentExpressions.get("width"));
+		ae.put("height", argumentExpressions.get("height"));
+		if( ae.get("width") == null ) ae.put("width", new ValueExpression("64"));
+		if( ae.get("height") == null ) ae.put("height", new ValueExpression("64"));
+		return ae;
+	}
+	
+	protected Object _getResult( Request req, Map canonArgExpressions ) {
+		int twidth = ValueUtil.getNumber(getArgumentValue(req, canonArgExpressions, "width", "32")).intValue();
+		int theight = ValueUtil.getNumber(getArgumentValue(req, canonArgExpressions, "height", "32")).intValue();
+		Blob input = (Blob)getArgumentValue(req, canonArgExpressions, "operand", null);
+		if( input == null ) throw new RuntimeException("No value for operand");
+		return thumbnailify(input, twidth, theight, req);
 	}
 }

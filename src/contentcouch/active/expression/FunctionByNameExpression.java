@@ -22,7 +22,7 @@ public class FunctionByNameExpression implements Expression {
 	}
 	
 	public String toUri() {
-		return this.funcName;
+		return "x-activefunction:" + UriUtil.uriEncode(this.funcName);
 	}
 	
 	protected static final Class getClassByNameIfExists(String name) {

@@ -1,8 +1,3 @@
-- Create functions to help make photo album pages
-  - Cache results of active functions in the datastore, remembering active:... -> urn:... mapping
-  * Function to create listing of photos referencing thumbnails
-    /process?processor=contentcouch.photoalbum.make-album-page&uri=x-parse-rdf:urn:sha1:OCJIRSUCWLZGHKM5DXHDYQDI5IU6VVTD
-
 - RDFify should have option to use alternate RDF writing method for large documents
   - RDFDirectory objects would not be created - data would be serialized more directly
   - Would write standard namespaces out first
@@ -26,6 +21,11 @@
   - This is very low priority, since all RDF docs currently used only contain absolute URIs.
 
 == Done ==
+
+* Create functions to help make photo album pages
+  * Cache results of active functions in the datastore, remembering active:... -> urn:... mapping
+  * Function to create listing of photos referencing thumbnails
+    /process?processor=contentcouch.photoalbum.make-album-page&uri=x-parse-rdf:urn:sha1:OCJIRSUCWLZGHKM5DXHDYQDI5IU6VVTD
 
 * Checkout causes a lot of x-undefined:source URIs to be reported; change to report actual source when possible.
 

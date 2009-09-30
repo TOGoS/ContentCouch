@@ -18,6 +18,10 @@ import contentcouch.path.PathSimplifiableExpression;
 
 
 public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifiableActiveFunction {
+	public boolean isConstant( Map argumentExpressions ) {
+		return false;
+	}
+
 	protected static Response getArgumentResponse( Request req, Map argumentExpressions, String name ) {
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Missing argument " + name, "text/plain");
