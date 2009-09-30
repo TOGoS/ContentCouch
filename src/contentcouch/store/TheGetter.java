@@ -13,12 +13,12 @@ import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import togos.mf.value.Blob;
+import togos.swf2.SwfNamespace;
 import contentcouch.active.expression.Expression;
 import contentcouch.app.Log;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
@@ -29,7 +29,7 @@ public class TheGetter {
 		}
 	}
 	
-	public static final String CTXVAR = CcouchNamespace.INTERNAL_NS + "getter"; 
+	public static final String CTXVAR = SwfNamespace.CTX_GETTER; 
 	
 	public static CallHandler globalInstance;
 	

@@ -33,6 +33,7 @@ import contentcouch.stream.InternalStreamRequestHandler;
 public class MetaRepoConfig {
 	public Map namedRepoConfigs = new HashMap();
 	public Map cmdArgs = new HashMap();
+	public Map config = new HashMap();
 	public RepoConfig defaultRepoConfig = new RepoConfig();
 	public List localRepoConfigs = new ArrayList();
 	public List remoteRepoConfigs = new ArrayList();
@@ -134,6 +135,13 @@ public class MetaRepoConfig {
 			++offset;
 			defaultRepoConfig.name = name;
 			namedRepoConfigs.put(name, defaultRepoConfig);
+		} else if( "-config".equals(arg) ) {
+			++offset;
+			String key = args[offset];
+			++offset;
+			String value = args[offset];
+			config.put(key, value);
+			++offset;
 		}
 		return offset;
 	}

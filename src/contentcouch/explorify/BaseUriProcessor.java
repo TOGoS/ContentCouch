@@ -8,7 +8,7 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
 
 public class BaseUriProcessor implements UriProcessor {
-	public static final String CTXVAR = CcouchNamespace.INTERNAL_NS + "uriProcessor";
+	public static final String CTXVAR = CcouchNamespace.CTX_NS + "uriProcessor";
 	public static final BaseUriProcessor BASEINSTANCE = new BaseUriProcessor( null, false );
 
 	public static UriProcessor getInstance( Map ctx, String whichOne) {

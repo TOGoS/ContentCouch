@@ -10,7 +10,8 @@ public class CcouchNamespace {
 	public static final String URI_PARSE_PREFIX = "x-parse-rdf:";
 	
 	public static final String CC_NS = "http://ns.nuke24.net/ContentCouch/";
-	public static final String INTERNAL_NS = CC_NS + "Internal/";
+	public static final String CTX_NS = CC_NS + "Context/";
+	public static final String CFG_NS = CC_NS + "Config/";
 	public static final String BZ_NS = "http://bitzi.com/xmlns/2002/01/bz-core#";
 	
 	public static final String NAME             = CC_NS + "name";

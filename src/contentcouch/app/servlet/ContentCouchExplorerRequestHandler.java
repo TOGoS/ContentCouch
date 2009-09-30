@@ -3,10 +3,10 @@ package contentcouch.app.servlet;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
-import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import togos.mf.value.Arguments;
 import togos.mf.value.Blob;
+import togos.swf2.SwfBaseRequest;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfHttpServlet;
 import contentcouch.activefunctions.Explorify;
@@ -124,7 +124,8 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			shouldRewriteRelativeUris = false;
 		}
 		
-		BaseRequest subReq = new BaseRequest(req, uri);
+		SwfBaseRequest subReq = new SwfBaseRequest(req, uri);
+		subReq.putAllConfig(metaRepoConfig.config, true);
 		BaseUriProcessor exploreUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance(req, "explore"), shouldRewriteRelativeUris) {
 			public String processUri(String uri) {
 				return pathToRoot + "explore?uri=" + UriUtil.uriEncode(uri);
