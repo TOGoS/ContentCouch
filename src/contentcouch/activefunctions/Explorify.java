@@ -120,7 +120,7 @@ public class Explorify extends BaseActiveFunction {
 		BaseRequest subReq = new BaseRequest(req);
 		subReq.putContextVar("processed-uri", uri);
 		if( subRes.getContent() instanceof Directory ) {
-			return explorifyDirectory(subReq, uri, (Directory)subRes.getContent(), getHeader(req, argumentExpressions), getFooter(req, argumentExpressions));
+			return explorifyDirectory(subReq, uri, (Directory)subRes.getContent(), getHeader(subReq, argumentExpressions), getFooter(subReq, argumentExpressions));
 		} else {
 			return explorifyNonDirectory(subReq, argumentExpressions, uri, subRes);
 		}
