@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.nio.channels.FileLock;
 import java.util.Arrays;
 
 import togos.mf.value.Blob;
@@ -11,12 +12,14 @@ import togos.mf.value.Blob;
 
 /** Format of this kind of file:
  * 
- * [header]
- * [index chunk]
- * [data and reclaimable chunks]
- * [end-of-file chunk]
+ * overall structure:
+ *   [header]
+ *   [index chunk]
+ *   [data and reclaimable chunks]
+ *   [end-of-file chunk]
  * 
- * header:     [128 bytes of padding]
+ * header:
+ *   [128 bytes of padding]
  * 
  * chunk:
  *   [4-byte offset of physical prev chunk]
@@ -27,7 +30,7 @@ import togos.mf.value.Blob;
  *   [chunk content]
  *   
  * chunk types:
- *   'RECL' - recycle (it is unused)
+ *   'RECL' - to be recycled
  *   'INDX' - index
  *   'LIST' - placeholder for first/last item in a list
  *   'PAIR' - dictionary item
@@ -101,6 +104,11 @@ public class SimpleListFile {
 	protected RandomAccessFile raf;
 	protected boolean writeMode;
 	protected int indexSize;
+	/**
+	 * If true, high-level functions will automatically aquire a lock on the
+	 * underlying file before reading and writing
+	 * */
+	protected boolean autoLockingEnabled = true;
 	
 	//// 'life cycle' functions ////
 	
@@ -523,14 +531,8 @@ public class SimpleListFile {
 	public byte[] getPairValue( int pairOffset ) throws IOException {
 		return getPairPart(pairOffset, 1);
 	}
-	
-	public byte[] get( int index, byte[] identifier ) throws IOException {
-		Chunk pc = getPairChunk( index, identifier );
-		if( pc == null ) return null;
-		return getPairValue( pc.offset );
-	}
-	
-	protected byte[] getPairData(byte[] identifier, byte[] value) {
+
+	protected static byte[] encodePair(byte[] identifier, byte[] value) {
 		byte[] data = new byte[identifier.length + value.length + 12];
 		intToBytes(identifier.length, data, 0);
 		for( int i=0, j=4; i<identifier.length; ++i, ++j ) {
@@ -544,24 +546,60 @@ public class SimpleListFile {
 		return data;
 	}
 	
-	public void put( int index, byte[] identifier, byte[] value ) throws IOException {
-		Chunk pc = getPairChunk( index, identifier );
-		if( pc != null ) {
-			if( Arrays.equals(getPairValue(pc.offset), value) ) return;
-			if( pc.nextOffset != 0 && pc.nextOffset - pc.offset - CHUNK_HEADER_LENGTH - identifier.length - value.length - 12 >= 0 ) {
-				raf.seek(pc.offset + CHUNK_HEADER_LENGTH + identifier.length + 4);
-				writeInt(value.length);
-				raf.write(value);
-				writeInt(0);
-				return;
-			}
-			recycleChunk(pc);
-		}
-		addChunkToIndexList(index, CHUNK_TYPE_PAIR, getPairData(identifier, value));
+	public FileLock getReadLock() throws IOException {
+		return raf.getChannel().lock(0l, Long.MAX_VALUE, true);
 	}
 	
-	// A very simple (and not secure) hash function found at
-	// http://www.partow.net/programming/hashfunctions/
+	public FileLock getWriteLock() throws IOException {
+		return raf.getChannel().lock(0l, Long.MAX_VALUE, false);
+	}
+	
+	//// Mid-level functions to get/set pairs with file locking ////
+
+	/**
+	 * Find the value associated with the given key.
+	 * If autoLockingEnabled is true, will aquire a shared lock on the underlying file during the operation. 
+	 */
+	public synchronized byte[] get( int index, byte[] identifier ) throws IOException {
+		FileLock lock = autoLockingEnabled ? getReadLock() : null;
+		try {
+			Chunk pc = getPairChunk( index, identifier );
+			if( pc == null ) return null;
+			return getPairValue( pc.offset );
+		} finally {
+			if( lock != null ) lock.release();
+		}
+	}
+	
+	/**
+	 * Associate the given key with the given value.
+	 * If autoLockingEnabled is true, will aquire an exclusive lock on the underlying file during the operation. 
+	 */
+	public synchronized void put( int index, byte[] identifier, byte[] value ) throws IOException {
+		FileLock lock = autoLockingEnabled ? getWriteLock() : null;
+		try {
+			Chunk pc = getPairChunk( index, identifier );
+			if( pc != null ) {
+				if( Arrays.equals(getPairValue(pc.offset), value) ) return;
+				if( pc.nextOffset != 0 && pc.nextOffset - pc.offset - CHUNK_HEADER_LENGTH - identifier.length - value.length - 12 >= 0 ) {
+					raf.seek(pc.offset + CHUNK_HEADER_LENGTH + identifier.length + 4);
+					writeInt(value.length);
+					raf.write(value);
+					writeInt(0);
+					return;
+				}
+				recycleChunk(pc);
+			}
+			addChunkToIndexList(index, CHUNK_TYPE_PAIR, encodePair(identifier, value));
+		} finally {
+			if( lock != null ) lock.release();
+		}
+	}
+	
+	/**
+	 * A very simple (and not secure) hash function found at
+	 * http://www.partow.net/programming/hashfunctions/
+	 */
 	public int hash( byte[] identifier ) {
 		int b    = 378551;
 		int a    = 63689;
