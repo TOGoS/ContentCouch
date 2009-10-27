@@ -181,7 +181,7 @@ public class LuceneIndex {
 	
 	Object writeLock = new Object();
 	
-	protected IndexWriter openIndexWriter() {
+	public IndexWriter openIndexWriter() {
 		try {
 			return new IndexWriter( dir, analyzer, MaxFieldLength.LIMITED );
 		} catch( CorruptIndexException e ) {
@@ -193,7 +193,7 @@ public class LuceneIndex {
 		}
 	}
 	
-	protected void closeIndexWriter( IndexWriter indexWriter ) {
+	public void closeIndexWriter( IndexWriter indexWriter ) {
 		try {
 			indexWriter.close();
 		} catch( CorruptIndexException e ) {
@@ -203,7 +203,7 @@ public class LuceneIndex {
 		}
 	}
 	
-	protected IndexReader openIndexReader( boolean writable ) {
+	public IndexReader openIndexReader( boolean writable ) {
 		try {
 			return IndexReader.open( dir, writable );
 		} catch( CorruptIndexException e ) {
@@ -215,7 +215,7 @@ public class LuceneIndex {
 		}
 	}
 	
-	protected void closeIndexReader( IndexReader indexReader ) {
+	public void closeIndexReader( IndexReader indexReader ) {
 		try {
 			indexReader.close();
 		} catch( CorruptIndexException e ) {

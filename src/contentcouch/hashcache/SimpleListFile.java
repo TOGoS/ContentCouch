@@ -592,7 +592,10 @@ public class SimpleListFile {
 			}
 			addChunkToIndexList(index, CHUNK_TYPE_PAIR, encodePair(identifier, value));
 		} finally {
-			if( lock != null ) lock.release();
+			if( lock != null ) {
+				raf.getChannel().force(true);
+				lock.release();
+			}
 		}
 	}
 	

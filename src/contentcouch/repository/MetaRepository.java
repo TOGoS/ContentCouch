@@ -13,9 +13,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.lucene.document.Document;
-import org.apache.lucene.store.FSDirectory;
-
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
@@ -30,9 +27,11 @@ import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
+import contentcouch.file.FileUtil;
 import contentcouch.framework.BaseRequestHandler;
 import contentcouch.framework.MfArgUtil;
 import contentcouch.hashcache.FileHashCache;
+import contentcouch.hashcache.SimpleListFile;
 import contentcouch.misc.Function1;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
@@ -635,55 +634,47 @@ public class MetaRepository extends BaseRequestHandler {
 		throw new RuntimeException("I don't know how to identify " + (content == null ? "null" : content.getClass().getName()));
 	}
 	
-	//// Use the index ////
+	////
 	
-	protected static String FUNCTION_RESULT_CACHE_INDEX_NAME = "function-result-cache";
 	protected static String FUNCTION_RESULT_CACHE_PREFIX = "function-result-cache/";
+	Map slfFiles = new HashMap();
 	
-	protected org.apache.lucene.store.Directory getLuceneDir(String path, boolean writable) {
-		File f = new File(path);
-		if( !f.exists() & !writable ) {
-			return null;
+	protected synchronized SimpleListFile getSlf( File f ) {
+		SimpleListFile slf = (SimpleListFile)slfFiles.get( f.getAbsolutePath() );
+		if( slf == null ) {
+			try {
+				FileUtil.mkParentDirs(f);
+				slf = new SimpleListFile(f, "rw");
+				slf.init(65536, 1024*1024);
+				slfFiles.put(f.getAbsolutePath(), slf);
+			} catch( IOException e ) {
+				throw new RuntimeException("Couldn't open cache file in 'w' mode", e);
+			}
 		}
-
+		return slf;
+	}
+	
+	protected synchronized SimpleListFile getSlf( RepoConfig repoConfig, String subPath ) {
+		PathUtil.Path p = PathUtil.parseFilePathOrUri( repoConfig.uri );
+		return getSlf( new File(p.toString() + subPath) );
+	}
+	
+	protected void putFunctionResult( RepoConfig repoConfig, String subIndexName, String key, String value ) {
+		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName );
 		try {
-			//FSDirectory.
-			return FSDirectory.open(f);
+			slf.put(key, ValueUtil.getBytes("\""+value) );
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	protected org.apache.lucene.store.Directory getLuceneDir( RepoConfig repoConfig, String indexName, boolean writable ) {
-		if( !PathUtil.isFileUri(repoConfig.uri) ) {
-			throw new RuntimeException("Can't use metadata store of non-local repo ("+repoConfig.uri+")");
-		}
-		String indexDirUri = PathUtil.appendHierarchicalPath(repoConfig.uri, "indexes/"+indexName, false);
-		PathUtil.Path p = PathUtil.parseFilePathOrUri(indexDirUri);
-		return getLuceneDir( p.toString(), writable );
-	}
-	
-	Map luceneIndexes = new HashMap();
-	
-	protected synchronized LuceneIndex openLuceneIndex( RepoConfig repoConfig, String indexName, boolean readable, boolean writable ) {
-		LuceneIndex idx = (LuceneIndex)luceneIndexes.get(indexName);
-		if( idx == null ) {
-			org.apache.lucene.store.Directory ldir = getLuceneDir( repoConfig, indexName, writable );
-			if( ldir == null ) return null;
-			idx =  new LuceneIndex( ldir );
-			luceneIndexes.put( indexName, idx );
-		}
-		return idx;
-	}
-	
-	protected void putFunctionResult( RepoConfig repoConfig, String subIndexName, String key, String value ) {
-		LuceneIndex li = openLuceneIndex( repoConfig, "function-result-cache/"+subIndexName, false, true );
-		li.storePair("key", key, "value", value);
-	}
-	
 	protected void putFunctionResultUri( RepoConfig repoConfig, String subIndexName, String key, String valueUri ) {
-		LuceneIndex li = openLuceneIndex( repoConfig, "function-result-cache/"+subIndexName, false, true );
-		li.storePair("key", key, "valueUri", valueUri);
+		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName );
+		try {
+			slf.put(key, ValueUtil.getBytes("<"+valueUri) );
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	protected void putFunctionResult( RepoConfig repoConfig, String subIndexName, String key, Object value ) {
@@ -695,6 +686,20 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected Object getFunctionResult( RepoConfig repoConfig, String subIndexName, String key ) {
+		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName );
+		try {
+			byte[] b = slf.get(key);
+			if( b == null ) {
+				return null;
+			} else if( b[0] == (byte)'<' ) {
+				return new BaseRef(ValueUtil.getString(b, 1, b.length-1));
+			} else {
+				return ValueUtil.getString(b, 1, b.length-1);
+			}
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+		/*
 		LuceneIndex li = openLuceneIndex( repoConfig, "function-result-cache/"+subIndexName, true, false );
 		if( li == null ) return null;
 		Document doc = li.getPairDocument("key", key);
@@ -703,14 +708,7 @@ public class MetaRepository extends BaseRequestHandler {
 		String valueUri = doc.get("valueUri");
 		if( valueUri != null ) return new BaseRef(valueUri);
 		return value;
-	}
-	
-	protected Response putMetadata( RepoConfig repoConfig, Request req ) {
-		return new BaseResponse( 200, "Thank you for entering metadata (actually I didn't do anything)");
-	}
-	
-	protected Response getMetadata( RepoConfig repoConfig, Request req ) {
-		return BaseResponse.RESPONSE_UNHANDLED;
+		*/
 	}
 
 	////
@@ -764,16 +762,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			
 			if( RequestVerbs.VERB_PUT.equals(req.getVerb()) || RequestVerbs.VERB_POST.equals(req.getVerb()) ) {
-				if( repoRef.subPath.equals("metadata") || repoRef.subPath.startsWith("metadata/") ) {
-					String[] dataAndSector = repoRef.subPath.split("/");
-					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
-						BaseRequest sectorOverrideReq = new BaseRequest(req);
-						sectorOverrideReq.metadata.put(CcouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
-						req = sectorOverrideReq;
-					}
-					
-					return putMetadata( repoConfig, req );
-				} else if( repoRef.subPath.startsWith(FUNCTION_RESULT_CACHE_PREFIX) ) {
+				if( repoRef.subPath.startsWith(FUNCTION_RESULT_CACHE_PREFIX) ) {
 					String[] pathParts = repoRef.subPath.substring(FUNCTION_RESULT_CACHE_PREFIX.length()).split("/");
 					String subIndexName, key;
 					if( pathParts.length > 1 && pathParts[0].length() > 0 ) {
@@ -811,8 +800,6 @@ public class MetaRepository extends BaseRequestHandler {
 					path = repoConfig.uri + "files";
 				} else if( path.startsWith("files/") ) {
 					path = repoConfig.uri + path.substring("files/".length());
-				} else if( path.equals("metadata") ) {
-					return getMetadata( repoConfig, MfArgUtil.argumentizeQueryString(req) );
 				} else if( path.startsWith(FUNCTION_RESULT_CACHE_PREFIX) ) {
 					String[] pathParts = repoRef.subPath.substring(FUNCTION_RESULT_CACHE_PREFIX.length()).split("/");
 					String subIndexName, key;

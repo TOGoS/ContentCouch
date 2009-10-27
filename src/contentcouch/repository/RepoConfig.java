@@ -14,6 +14,7 @@ public class RepoConfig {
 	
 	public String disposition = DISPOSITION_DEFAULT;
 	public String name = "junky-unnamed-repository";
+	/** Path of the root of the repository - should always end with '/' */
 	public String uri = "file:junk-repository/";
 	public String userStoreSector   = "user";
 	public String remoteCacheSector = "remote";

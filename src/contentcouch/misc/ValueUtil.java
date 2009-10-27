@@ -41,6 +41,14 @@ public class ValueUtil {
 		}
 	}
 	
+	public static String getString(byte[] bytes, int offset, int length) {
+		try {
+			return new String(bytes, offset, length, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public static String getString(Object obj) {
 		if( obj == null ) return null;
 		if( obj instanceof String ) return (String)obj;
