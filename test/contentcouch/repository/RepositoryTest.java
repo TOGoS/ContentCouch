@@ -31,7 +31,7 @@ public class RepositoryTest extends TestCase {
 		String urn = testRepoConfig.dataScheme.hashToUrn(hash);
 		
 		TheGetter.put("x-ccouch-repo://test-repo/data", testBlob);
-		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get("x-ccouch-repo://test-repo/data/user/" + fp), testBlob));
+		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get("x-ccouch-repo://test-repo/files/data/user/" + fp), testBlob));
 		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get(urn), testBlob));
 	}
 
@@ -106,7 +106,7 @@ public class RepositoryTest extends TestCase {
 		assertEquals( originalStoredUri, rdfStoredUri );
 		
 		// Ensure that hello1 blob was actually stored in the 'bilge' sector
-		Blob bilgeBlob = (Blob)TheGetter.get("x-ccouch-repo://test-repo/data/bilge/SQ/SQ5HALIG6NCZTLXB7DNI56PXFFQDDVUZ");
+		Blob bilgeBlob = (Blob)TheGetter.get("x-ccouch-repo://test-repo/files/data/bilge/SQ/SQ5HALIG6NCZTLXB7DNI56PXFFQDDVUZ");
 		assertNotNull( bilgeBlob );
 		assertEquals("Hello, world!", BlobUtil.getString(bilgeBlob));
 	}
