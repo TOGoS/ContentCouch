@@ -109,7 +109,7 @@ public class Thumbnail extends CachingActiveFunction {
 				inputFilename = "-";
 				inputBlob = input;
 			}
-			return execWithBlobIO( new String[]{getConvertExe(req),inputFilename,"-thumbnail",(twidth+"x"+theight+">"),"jpg:-"}, inputBlob );
+			return execWithBlobIO( new String[]{getConvertExe(req),inputFilename,"-thumbnail",(twidth+"x"+theight+">"),"-quality","75","jpg:-"}, inputBlob );
 		} catch( IOException e ) {
 			throw new RuntimeException("IOException while trying to generate thumbnail using 'convert'", e);
 		}
