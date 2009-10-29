@@ -96,7 +96,7 @@ public class AlbumPage extends Explorify {
 			}
 			w.println("</head>");
 			w.println("<body onload=\"getPreviewer().showPreviewBasedOnUrl()\">");
-			w.println("<h2>Viewing </h2>");
+			w.println("<h2>Viewing "+context.get("processed-uri")+"</h2>");
 
 			w.println("<div class=\"main-content\">");
 			if( dirEntryList.size() > 0 ) {
@@ -217,6 +217,7 @@ public class AlbumPage extends Explorify {
 				w.println("pp.nextThumbnail     = document.getElementById('next-thumbnail');");
 				w.println("pp.previousLinkBox   = document.getElementById('previous-link-box');");
 				w.println("pp.previousThumbnail = document.getElementById('previous-thumbnail');");
+				w.println("window.onkeydown = function(evt) { switch(evt.keyCode) { case(39): goToNextPreview(); break; case(37): goToPreviousPreview(); } }");
 				w.println("</script>");
 			}
 			w.println("<div style=\"clear:both\"></div>");

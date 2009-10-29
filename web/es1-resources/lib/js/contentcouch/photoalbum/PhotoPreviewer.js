@@ -1,7 +1,7 @@
 var pa = module("contentcouch.photoalbum");
 pa.PhotoPreviewer = function() {
 	this.previews = [];
-	this.currentPreviewIndex = 0;
+	this.currentPreviewIndex = null;
 }
 var ppp = pa.PhotoPreviewer.prototype;
 
@@ -17,15 +17,24 @@ ppp.addPreview = function( smallUrl, mediumUrl, largeUrl ) {
 	return index;
 }
 ppp.showPreview = function( index ) {
+	if( index < 0 || index >= this.previews.length ) {
+		index = null;
+	}
+
 	if( index != null ) {
 		this.currentPreviewIndex = index|0;
 		//alert( "Index "+index );
 		this.previewContainer.style.display = "block";
 		this.previewContainer.style.position = "fixed";
-		//this.previewContainer.style.width = ((window.innerWidth|0) - 96) + "px";
-		//this.previewContainer.style.height = ((window.innerHeight|0) - 64) + "px";
-		//this.previewContainer.style.top = (((window.innerHeight|0)-500)/2)+"px";
-		//this.previewContainer.style.left = "16px";
+		
+		// Find a good place to put it, assuming size = about 1016x760
+		var left = ((window.innerWidth|0) - 1016 )/2;
+		var top = ((window.innerHeight|0) - 760 )/2;
+		if( left < 0 ) left = 0;
+		if( top < 0 ) top = 0;
+		this.previewContainer.style.left = left+"px";
+		this.previewContainer.style.top = top+"px";
+
 		var preview = this.previews[index];
 		this.previewLink.href = preview.largeUrl;
 		this.previewImage.src = this.loadingImageUrl;
@@ -43,6 +52,7 @@ ppp.showPreview = function( index ) {
 			this.nextThumbnail.src = nextPreview.smallUrl;
 		}
 	} else {
+		this.currentPreviewIndex = null;
 		this.previewContainer.style.display = "none";
 	}
 }
@@ -63,8 +73,14 @@ ppp.goToPreview = function( index ) {
 	return false;
 }
 ppp.goToPreviousPreview = function() {
+	if( this.currentPreviewIndex == null ) {
+		this.currentPreviewIndex = this.previews.length;
+	}
 	return this.goToPreview(this.currentPreviewIndex-1);
 }
 ppp.goToNextPreview = function() {
+	if( this.currentPreviewIndex == null ) {
+		this.currentPreviewIndex = -1;
+	}
 	return this.goToPreview(this.currentPreviewIndex+1);
 }
