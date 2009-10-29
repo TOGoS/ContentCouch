@@ -10,23 +10,30 @@ import java.util.Set;
 
 import togos.mf.api.Request;
 import togos.mf.api.Response;
+import togos.swf2.SwfNamespace;
 import contentcouch.activefunctions.Explorify;
+import contentcouch.builtindata.BuiltInData;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
+import contentcouch.explorify.BaseUriProcessor;
 import contentcouch.explorify.DirectoryPageGenerator;
+import contentcouch.explorify.UriProcessor;
+import contentcouch.json.JSON;
 import contentcouch.misc.UriUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
 import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
-public class MakeAlbumPage extends Explorify {
+public class AlbumPage extends Explorify {
 	protected static class AlbumPageGenerator extends DirectoryPageGenerator {
 		public AlbumPageGenerator( Directory dir, String uri, Map context, String header, String footer ) {
 			super( dir, uri, context, header, footer );
 		}
 		
-		public void writeContent(PrintWriter w) {
+		public void write(PrintWriter w) {
+			UriProcessor rawUriProcessor = BaseUriProcessor.getInstance( context, "raw" );
+			
 			Set entries = dir.getDirectoryEntrySet();
 
 			ArrayList dirEntryList = new ArrayList();
@@ -54,6 +61,43 @@ public class MakeAlbumPage extends Explorify {
 			Collections.sort(imageEntryList, EntryComparators.NAME_COMPARATOR);
 			Collections.sort(miscEntryList, EntryComparators.NAME_COMPARATOR);
 
+			////
+			
+			w.println("<html>");
+			w.println("<head>");
+			w.println("<style>/*<![CDATA[*/");
+			w.println(BuiltInData.getString("default-page-style"));
+			w.println("/*]]>*/</style>");
+			if( imageEntryList.size() > 0 ) {
+				w.println( generateScriptInclude("module.js") );
+				w.println( generateScriptInclude("contentcouch/photoalbum/PhotoPreviewer.js") );
+				w.println("<script type=\"application/javascript\">//<![CDATA[");
+				w.println("var pp = new contentcouch.photoalbum.PhotoPreviewer();");
+				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
+					Entry e = (Entry)i.next();
+					String imageUri = getUnprocessedHref(e, false);
+					String shrunkUri =
+						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
+						"+width@data:,128+height@data:,128";
+					String previewUri =
+						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
+						"+width@data:,640+height@data:,480";
+					w.println("pp.addPreview("+
+						JSON.encodeObject(rawUriProcessor.processUri(shrunkUri))+","+
+						JSON.encodeObject(rawUriProcessor.processUri(previewUri))+","+
+						JSON.encodeObject(rawUriProcessor.processUri(imageUri))+
+					");");
+				}
+				w.println("function goToPreview(index) { return pp.goToPreview(index); }");
+				w.println("function goToPreviousPreview() { return pp.goToPreviousPreview(); }");
+				w.println("function goToNextPreview() { return pp.goToNextPreview(); }");
+				w.println("function getPreviewer() { return pp; }");
+				w.println("//]]></script>");
+			}
+			w.println("</head>");
+			w.println("<body onload=\"getPreviewer().showPreviewBasedOnUrl()\">");
+			w.println("<h2>Viewing </h2>");
+
 			w.println("<div class=\"main-content\">");
 			if( dirEntryList.size() > 0 ) {
 				w.println("<h3>Subdirectories</h3>");
@@ -79,6 +123,7 @@ public class MakeAlbumPage extends Explorify {
 				}
 				w.println("</table>");
 			}
+			
 			if( miscEntryList.size() > 0 ) {
 				w.println("<h3>Misc. files</h3>");
 				w.println("<table class=\"dir-list\">");
@@ -106,6 +151,38 @@ public class MakeAlbumPage extends Explorify {
 			
 			if( imageEntryList.size() > 0 ) {
 				w.println("<h3>Images</h3>");
+				
+				w.println("<div id=\"preview-container\" class=\"preview-container\" style=\"display:none;\">");
+
+				w.println("<div class=\"preview-close-box\"><a onclick=\"return goToPreview(null)\" href=\"#\">Close preview window</a></div>");
+
+				w.println("<div style=\"float:left; width: 680px; height:500px\" class=\"preview-inner-box\">");
+				w.println("<a id=\"preview-link\" href=\"\"><img id=\"preview-image\"/></a><br />");
+				w.println("</div>");
+				
+				//w.println("<div style=\"margin:0; padding:0; float:right; clear:right\"></div>");
+				
+				w.println("<div id=\"previous-link-box\" class=\"preview-nav-box\">");
+				w.println("<div class=\"image-thumbnail-title\">Previous</div>");
+				w.print("<div class=\"image-thumbnail-inner-box\">");
+				w.print("<a onclick=\"return goToPreviousPreview()\" href=\"#\">");
+				w.print("<img id=\"previous-thumbnail\" src=\"\"/>");
+				w.println("</a></div></div>");
+
+				w.println("<div id=\"next-link-box\" class=\"preview-nav-box\">");
+				w.println("<div class=\"image-thumbnail-title\">Next</div>");
+				w.print("<div class=\"image-thumbnail-inner-box\">");
+				w.print("<a onclick=\"return goToNextPreview()\" href=\"#\">");
+				w.print("<img id=\"next-thumbnail\" src=\"\"/>");
+				w.println("</a></div></div>");
+
+				/*
+				w.println("<div class=\"preview-nav\" id=\"previous-link-box\"><a onclick=\"return goToPreviousPreview()\" href=\"#\">Previous<div class=\"image-thumbnail-inner-box\"><img id=\"previous-thumbnail\"/></div></a></div>");
+				w.println("<div class=\"preview-nav\" id=\"next-link-box\"><a onclick=\"return goToNextPreview()\" href=\"#\">Next<div class=\"image-thumbnail-inner-box\"><img id=\"next-thumbnail\"/></div></a></div>");
+				*/
+				w.println("</div>");
+
+				int index = 0;
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String imageUri = getUnprocessedHref(e, false);
@@ -123,13 +200,30 @@ public class MakeAlbumPage extends Explorify {
 					w.println("<div class=\"image-thumbnail-box\">");
 					w.println("<div class=\"image-thumbnail-title\">" + e.getName() + "</div>");
 					w.print("<div class=\"image-thumbnail-inner-box\">");
-					w.print("<a href=\"" + XML.xmlEscapeAttributeValue(processUri("explore",imageUri)) + "\">");
-					w.print("<img src=\"" + XML.xmlEscapeAttributeValue(processUri("explore",shrunkUri)) + "\"/>");
+					w.print("<a onclick=\"return goToPreview("+index+")\" href=\"" + XML.xmlEscapeAttributeValue(processUri("explore",imageUri)) + "\">");
+					w.print("<img src=\"" + XML.xmlEscapeAttributeValue(rawUriProcessor.processUri(shrunkUri)) + "\"/>");
 					w.println("</a></div></div>");
+					++index;
 				}
+				
+				String loadingImageUri = SwfNamespace.SERVLET_PATH_URI_PREFIX + "style/ajax-loader.gif";
+				
+				w.println("<script type=\"application/javascript\">//<![CDATA[");
+				w.println("pp.loadingImageUrl   = "+JSON.encodeObject(rawUriProcessor.processUri(loadingImageUri))+";");
+				w.println("pp.previewContainer  = document.getElementById('preview-container');");
+				w.println("pp.previewLink       = document.getElementById('preview-link');");
+				w.println("pp.previewImage      = document.getElementById('preview-image');");
+				w.println("pp.nextLinkBox       = document.getElementById('next-link-box');");
+				w.println("pp.nextThumbnail     = document.getElementById('next-thumbnail');");
+				w.println("pp.previousLinkBox   = document.getElementById('previous-link-box');");
+				w.println("pp.previousThumbnail = document.getElementById('previous-thumbnail');");
+				w.println("</script>");
 			}
-			w.print("<div style=\"clear:both\"></div>");
+			w.println("<div style=\"clear:both\"></div>");
 			w.println("</div>");
+
+			w.println("</body>");
+			w.println("</html>");
 		}
 	}
 	

@@ -8,10 +8,11 @@ import togos.mf.value.Arguments;
 import togos.mf.value.Blob;
 import togos.swf2.SwfBaseRequest;
 import togos.swf2.SwfFrontRequestHandler;
-import togos.swf2.SwfHttpServlet;
+import togos.swf2.SwfNamespace;
 import contentcouch.activefunctions.Explorify;
 import contentcouch.builtindata.BuiltInData;
 import contentcouch.explorify.BaseUriProcessor;
+import contentcouch.explorify.UriProcessor;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
@@ -22,6 +23,32 @@ import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 
 public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
+	static class ServletUriProcessor extends BaseUriProcessor {
+		String pathToWebRoot;
+		public ServletUriProcessor( UriProcessor postProcessor, boolean shouldRewriteRelativeUris, String pathToWebRoot ) {
+			super( postProcessor, shouldRewriteRelativeUris );
+			this.pathToWebRoot = pathToWebRoot;
+		}
+		
+		protected String processServletUri(String uri) {
+			uri = uri.substring(SwfNamespace.SERVLET_PATH_URI_PREFIX.length());
+			if( uri.startsWith("/") ) uri = uri.substring(1);
+			return pathToWebRoot + uri;
+		}
+		
+		public String processExternalUri(String uri) {
+			return uri;
+		}
+		
+		public String processUri(String uri) {
+			if( uri.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX) ) {
+				return processServletUri(uri);
+			} else {
+				return processExternalUri( uri );
+			}
+		}
+	}
+	
 	protected MetaRepoConfig metaRepoConfig = new MetaRepoConfig();
 	protected String webRoot;
 	
@@ -55,10 +82,10 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 
 	public Response call( Request req ) {
 		String pi = req.getResourceName();
-		if( !pi.startsWith(SwfHttpServlet.SERVLET_PATH_URI_PREFIX) ) {
-			throw new RuntimeException("Expected " + SwfHttpServlet.SERVLET_PATH_URI_PREFIX + "..., but got " + pi);
+		if( !pi.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX) ) {
+			throw new RuntimeException("Expected " + SwfNamespace.SERVLET_PATH_URI_PREFIX + "..., but got " + pi);
 		}
-		pi = pi.substring(SwfHttpServlet.SERVLET_PATH_URI_PREFIX.length());
+		pi = pi.substring(SwfNamespace.SERVLET_PATH_URI_PREFIX.length());
 		
 		Arguments args = null;
 		if( req.getContent() instanceof Arguments ) {
@@ -75,7 +102,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		String uri = null;
 		String[] pathComp = pi.substring(1).split("/");
 		String inputUri = (String)args.getNamedArguments().get("uri");
-		String defaultUriProcessorName = "explore";
+		String defaultUriProcessorName = "raw";
 		
 		if( "process".equals(pathComp[0]) ) {
 			shouldRewriteRelativeUris = true;
@@ -103,7 +130,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 				// TODO: redirect
 				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, "" );
 			}
-		    uri = getProcessingUri("contentcouch.photoalbum.make-album-page", inputUri, "Viewing");
+		    uri = getProcessingUri("contentcouch.photoalbum.album-page", inputUri, "Viewing");
 		} else if( "raw".equals(pathComp[0]) ) {
 			defaultUriProcessorName = "raw";
 			if( inputUri != null ) {
@@ -120,20 +147,20 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			uri = PathUtil.appendPath(webRoot, "_index.html");
 			shouldRewriteRelativeUris = false;
 		} else {
-			uri = PathUtil.appendPath(webRoot, pi.substring(1) + ".html");
+			uri = PathUtil.appendPath(webRoot, pi.substring(1));
 			shouldRewriteRelativeUris = false;
 		}
 		
 		SwfBaseRequest subReq = new SwfBaseRequest(req, uri);
 		subReq.putAllConfig(metaRepoConfig.config, true);
+		BaseUriProcessor rawUriProcessor = new ServletUriProcessor(BaseUriProcessor.getInstance(req, "explore"), shouldRewriteRelativeUris, pathToRoot) {
+			public String processExternalUri(String uri) {
+				return pathToRoot + "raw?uri=" + UriUtil.uriEncode(uri);
+			}
+		};
 		BaseUriProcessor exploreUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance(req, "explore"), shouldRewriteRelativeUris) {
 			public String processUri(String uri) {
 				return pathToRoot + "explore?uri=" + UriUtil.uriEncode(uri);
-			}
-		};
-		BaseUriProcessor rawUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance(req, "explore"), shouldRewriteRelativeUris) {
-			public String processUri(String uri) {
-				return pathToRoot + "raw?uri=" + UriUtil.uriEncode(uri);
 			}
 		};
 		BaseUriProcessor albumUriProcessor = new BaseUriProcessor(BaseUriProcessor.getInstance(req, "raw"), shouldRewriteRelativeUris) {

@@ -120,7 +120,8 @@ public class BlobUtil {
 		} else {
 			long len = blob.getLength();
 			for( long i=0; i<len; i+=READ_CHUNK_SIZE ) {
-				os.write(blob.getData(i, (int)(len > i+READ_CHUNK_SIZE ? READ_CHUNK_SIZE : len-i) ));
+				byte[] chunk = blob.getData(i, (int)(len > i+READ_CHUNK_SIZE ? READ_CHUNK_SIZE : len-i));
+				os.write( chunk );
 			}
 		}
 	}

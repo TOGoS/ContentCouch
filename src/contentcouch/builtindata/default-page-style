@@ -27,11 +27,47 @@ body > h2 { color:white }
 }
 
 /* Photo Album Formatting */
-.image-thumbnail-box {
+.preview-container {
+	background: #222;
+	border: 8px solid black;
+	padding: 16px;
+}
+.preview-inner-box > * {
+	margin: 8px;
+}
+.preview-inner-box {
 	background: black;
+	text-align: center;
+	padding: 16px;
+	margin: 0;
+}
+.preview-inner-box > * {
+	vertical-align: middle;
+}
+.preview-nav-box, .preview-close-box {
+	float:right;
+	clear: right;
+	border: 1px solid silver;
+	margin:0.5em;
+}
+.preview-close-box {
+	padding: 0.5em;
+}
+.preview-nav a, .preview-close-box a {
+	color: orange;
+}
+.image-thumbnail-box {
 	float: left;
 	border: 2px outset #222;
+}
+.image-thumbnail-box, .preview-nav-box {
+	background: black;
 	text-align: center;
+}
+.image-thumbnail-box img, .preview-nav-box img, .preview-inner-box img {
+	border: 0;
+}
+.image-thumbnail-box, .preview-nav-box, .preview-close-box {
 	margin: 4px;
 	color: white;
 }

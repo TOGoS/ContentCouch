@@ -81,11 +81,13 @@ public class InputStreamBlob implements Blob {
 			os.write(previousRead, (int)(offset-(position-previousRead.length)), (int)(position-offset));
 		}
 		StreamUtil.copyInputToOutput(inputStream, os);
+		/*
 		int br;
 		byte[] readed = new byte[BlobUtil.READ_CHUNK_SIZE];
 		while( (br = inputStream.read(readed)) > 0 ) {
 			position += br;
 			os.write(readed, 0, br);
 		}
+		*/
 	}
 }

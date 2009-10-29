@@ -36,6 +36,7 @@ public class MetadataUtil {
 	public static String CT_JPEG = "image/jpeg";
 	public static String CT_OGG  = "audio/ogg";
 	public static String CT_MP3  = "audio/mpeg";
+	public static String CT_JS   = "application/javascript";
 	
 	public static HashMap commonTypesByExtension = new HashMap();
 	static {
@@ -48,6 +49,7 @@ public class MetadataUtil {
 		commonTypesByExtension.put("png", CT_PNG);
 		commonTypesByExtension.put("ogg", CT_OGG);
 		commonTypesByExtension.put("mp3", CT_MP3);
+		commonTypesByExtension.put("js", CT_JS);
 	}
 	
 	public static boolean looksLikeRdfBlob( Blob b ) {
@@ -113,6 +115,7 @@ public class MetadataUtil {
 				((magic[2] & 0xFF) <<  8) |
 				((magic[3] & 0xFF) <<  0);
 			switch( magicN ) {
+			case( 0x47494638 ): return CT_GIF; 
 			case( 0x89504E47 ): return CT_PNG;
 			}
 

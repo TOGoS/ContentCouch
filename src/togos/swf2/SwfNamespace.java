@@ -20,4 +20,6 @@ public class SwfNamespace {
 	public static final String CFG_NS = SWF2_NS + "Config/";
 	public static final String CFG_EXTAPPS = CFG_NS + "ExternalApplications/";
 
+	public static final String SERVLET_PATH_URI_PREFIX = "x-servlet-path:";
+
 }

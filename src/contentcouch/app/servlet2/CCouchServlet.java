@@ -8,6 +8,7 @@ import contentcouch.path.PathUtil;
 import togos.swf2.NameTranslator;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfHttpServlet;
+import togos.swf2.SwfNamespace;
 
 public class CCouchServlet extends SwfHttpServlet {
 	public CCouchServlet() {}
@@ -17,13 +18,13 @@ public class CCouchServlet extends SwfHttpServlet {
 		this.requestHandler = frh;
 		
 		HashMap junkConfig = new HashMap();
-		junkConfig.put("path", SwfHttpServlet.SERVLET_PATH_URI_PREFIX+"/junk/");
+		junkConfig.put("path", SwfNamespace.SERVLET_PATH_URI_PREFIX+"/junk/");
 		frh.putComponent("junk", new JunkComponent(junkConfig));
 		
 		HashMap ntConfig = new HashMap();
 		ntConfig.put("autoAppendPaths", ".html");
 		ntConfig.put("directoryIndex", "index");
-		ntConfig.put("path", SwfHttpServlet.SERVLET_PATH_URI_PREFIX+"/");
+		ntConfig.put("path", SwfNamespace.SERVLET_PATH_URI_PREFIX+"/");
 		ntConfig.put("translatedPath", PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("es2-resources"))+"/");
 		frh.putComponent("resources", new NameTranslator(new FileRequestHandler(),ntConfig));
 	}

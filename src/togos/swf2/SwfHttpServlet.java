@@ -24,8 +24,6 @@ import contentcouch.rdf.DcNamespace;
 
 public class SwfHttpServlet extends HttpServlet {
 	protected CallHandler requestHandler;
-	public static final String SERVLET_PATH_URI_PREFIX = "x-servlet-path:";
-	
 	public SwfHttpServlet() { }
 	
 	public SwfHttpServlet(CallHandler rh) {
@@ -34,6 +32,7 @@ public class SwfHttpServlet extends HttpServlet {
 
 	protected void doGeneric( Request subReq, HttpServletResponse response ) throws ServletException, IOException {
 		try {
+			System.err.println("Serving "+subReq.getResourceName());
 			Response subRes = requestHandler.call(subReq);
 			String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
 			switch( subRes.getStatus() ) {
@@ -80,7 +79,7 @@ public class SwfHttpServlet extends HttpServlet {
 	protected void doGet( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
 		subReq.verb = RequestVerbs.VERB_GET;
-		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getPathInfo();
+		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
@@ -90,7 +89,7 @@ public class SwfHttpServlet extends HttpServlet {
 	protected void doPost( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
 		subReq.verb = RequestVerbs.VERB_POST;
-		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getPathInfo();
+		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
@@ -100,7 +99,7 @@ public class SwfHttpServlet extends HttpServlet {
 	protected void doPut( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
 		subReq.verb = RequestVerbs.VERB_PUT;
-		subReq.uri = SERVLET_PATH_URI_PREFIX + req.getPathInfo();
+		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);

@@ -7,7 +7,11 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import contentcouch.misc.UriUtil;
+import contentcouch.xml.XML;
+
 import togos.swf2.HttpServletRequestHandler;
+import togos.swf2.SwfNamespace;
 
 public abstract class PageGenerator implements HttpServletRequestHandler {
 	public String uri;
@@ -25,8 +29,15 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 	protected String processUri( String whichProcessor, String uri ) {
 		return BaseUriProcessor.getInstance( context, whichProcessor ).processUri(uri);
 	}
+	
 	protected String processRelativeUri( String whichProcessor, String baseUri, String relativeUri ) {
 		return BaseUriProcessor.getInstance( context, whichProcessor ).processRelativeUri(baseUri, relativeUri);
+	}
+	
+	protected String generateScriptInclude( String scriptName ) {
+		String ppUri = SwfNamespace.SERVLET_PATH_URI_PREFIX + "lib/js/"+UriUtil.uriEncode(scriptName);
+		ppUri = processUri("raw", ppUri);
+		return "<script type=\"application/javascript\" src=\"" + XML.xmlEscapeAttributeValue(ppUri) + "\"></script>";
 	}
 	
 	////
@@ -40,8 +51,16 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 	}
 	
 	public void write(PrintWriter w) {
-		w.println(header);
+		writeHeader(w);
 		writeContent(w);
+		writeFooter(w);
+	}
+	
+	public void writeHeader(PrintWriter w) {
+		w.println(header);
+	}
+	
+	public void writeFooter(PrintWriter w) {
 		w.println(footer);
 	}
 	
