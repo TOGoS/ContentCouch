@@ -84,7 +84,9 @@ public abstract class CachingActiveFunction extends BaseActiveFunction {
 			throw new RuntimeException( "No thumbnailUri" );
 		}
 		
-		return TheGetter.call( new BaseRequest( RequestVerbs.VERB_GET, thumbnailUri ) );
+		BaseResponse subRes = new BaseResponse( TheGetter.call( new BaseRequest( RequestVerbs.VERB_GET, thumbnailUri ) ) );
+		if( cacheable ) subRes.putMetadata( CcouchNamespace.RES_CACHEABLE, Boolean.TRUE );
+		return subRes;
 		
 		//return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Thumbnail of "+id, "text/plain");
 	}

@@ -19,7 +19,9 @@ import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
 import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
+import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.ValueUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 
 public class SwfHttpServlet extends HttpServlet {
@@ -32,7 +34,6 @@ public class SwfHttpServlet extends HttpServlet {
 
 	protected void doGeneric( Request subReq, HttpServletResponse response ) throws ServletException, IOException {
 		try {
-			System.err.println("Serving "+subReq.getResourceName());
 			Response subRes = requestHandler.call(subReq);
 			String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
 			switch( subRes.getStatus() ) {
@@ -52,6 +53,10 @@ public class SwfHttpServlet extends HttpServlet {
 				response.setHeader("Content-Type", "text/plain");
 				response.getWriter().println("No content");
 			} else {
+				if( MetadataUtil.isEntryTrue(subRes.getMetadata(), CcouchNamespace.RES_CACHEABLE) ) {
+					response.setHeader("Pragma", "cache");
+					response.setHeader("Cache-Control", "cache");
+				}
 				if( type != null ) response.setHeader("Content-Type", type);
 				long len = b.getLength();
 				if( len != -1 ) {
