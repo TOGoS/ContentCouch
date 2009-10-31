@@ -1,3 +1,8 @@
+- Update documentation
+  - Help given by ccouch id <invalid option> is wrong
+  - README is out of date
+  - doc/ is full of outdated stuff
+
 - RDFify should have option to use alternate RDF writing method for large documents
   - RDFDirectory objects would not be created - data would be serialized more directly
   - Would write standard namespaces out first
