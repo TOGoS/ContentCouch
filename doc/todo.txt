@@ -1,6 +1,6 @@
 - Update documentation
-  - Help given by ccouch id <invalid option> is wrong
-  - README is out of date
+  * Help given by ccouch id <invalid option> is wrong
+  * README is out of date
   - doc/ is full of outdated stuff
 
 - RDFify should have option to use alternate RDF writing method for large documents

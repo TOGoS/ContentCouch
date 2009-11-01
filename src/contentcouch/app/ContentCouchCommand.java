@@ -585,7 +585,7 @@ public class ContentCouchCommand {
 			} else {
 				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(CACHE_HEADS_USAGE);
+				System.err.println(ID_USAGE);
 				System.err.println();
 				return 1;
 			}

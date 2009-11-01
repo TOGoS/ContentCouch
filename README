@@ -54,25 +54,11 @@ options are given in /home/ted/ccouch/ccouch-config).
 - main - this is the repository that will be checked first when loading
   files, and that files will be stored in when 'ccouch store' is invoked.
   This repository can reference any number of local and remote
-  repositories, and one cache repository (which may be itself).
+  repositories.
 
 - local - these are other repositories that can be accessed quickly
   (i.e. on the same filesystem or computer as the main repository).
   
-  It could be useful to have several 'main' repositories on a single computer
-  if you wanted to keep data for different purposes separate.  For example,
-  you might have one repository dedicated to storing photos, and one dedicated
-  to storing music.  These separate repositories could reference eachother
-  as '-local-repo:<name>'
-  
-- cache - if one is specified, blobs downloaded from remote repositories
-  are cached in the cache repository for fast access.  The cache repository
-  should, like local repositories, be on the same computer as the main repo.
-  It is useful to have this be separate from the main repository, since the
-  main repository holds files that are important to the user of this computer,
-  but the cache repository is more likely to hold less valuable files and/or
-  files that can be re-downloaded from elsewhere.
-
 - remote - a repository residing on a machine that is slow or difficult
   to access, such as one connected only by a low-bandwidth link (such as
   the internet).  You generally want to cache files that are loaded from
@@ -95,8 +81,8 @@ information created by other repositories while providing some namespacing.
 If togos-ubn has heads for togos-win, that is saying that togos-ubn is
 storing these heads in togos-win's name.  It may be that togos-ubn has its
 own music archives (in fact, it does) which may or may not mirror what is
-on togos-win.  Because these things are namespaced, it is easy to tell
-which version of music-archives you are accessing.
+on togos-win.  Because these things are namespaced, the files don't conflict
+and it is easy to tell which version of music-archives you are accessing.
 
 The project name part of the head path can itself be split up by sub-project.
 You could have a head named like:
@@ -109,8 +95,7 @@ The ccouch commands and servlet recognise a URI form that looks like:
 
 Using these URIs you can reference specific heads.  If <repo-name> is
 included, the URI references the head in that specific repository. Otherwise,
-only the main, local, and cache repositories are checked (except by the
-'ccouch cache-heads', which will also load remote heads in some cases).
+only the main and local (except by the 'cache-heads' command, which will default to using <origin-repo-name> as <repo-name>).
 
 If the URI ends with /latest, it will reference the latest version found
 in whichever repositories are being checked, where 'latest' is interpreted
@@ -148,7 +133,9 @@ ContentCouch project.  This directory contains:
   WEB-INF/web.xml - servlet configuration file
 
 repo-config in the web folder should generally be a single line pointing
-to the actual location of the main repository.
+to the actual location of the main repository, e.g.
+
+  -repo F:/datastore/ccouch/
 
 == Example: Joe's Laptop == 
 
@@ -159,12 +146,12 @@ repositories.  He sets up one repository for the bulk of his files and
 calls it "joe-laptop".  He keeps his work on a separate hard drive, and
 so it makes sense for him to have a separate repository on that hard drive
 for storing work stuff so that he can store and checkout using hardlinks.
-He also wants to use this laptop to back up files from a friend's server,
-and so sets up a cache repository where those files can be stored.
+(Note that if his work was on the same drive as his other files, he could
+get away with using a single repository, and still keep data separate by
+storing it in different 'sectors')
 
   joe-laptop       ; catch-all repository for files archived from joe-laptop
   joe-laptop-work  ; a repository storing joe's work-related files
-  joe-laptop-cache ; joe-laptop's cache for files downloaded from elsewhere
 
 Joe's 'work' hard drive is C, and his photos and music are stored on F, so
 he sets up his repositores to be on the same drives as the files they are
@@ -172,45 +159,40 @@ storing (again, so that he can use hardlinks):
 
   C:/ccouch/work/
   F:/ccouch/main/
-  F:/ccouch/cache/
 
 Joe eventually decides that he wants other people to be able to pull from
 his repositories, and so he sets up a web server and maps his ccouch
 repositories to the following URLs:
 
   http://laptop.joe.example.org/ccouch/main/
-  http://laptop.joe.example.org/ccouch/cache/
   http://laptop.joe.example.org/ccouch/work/
 
 Next Joe is going to set up a script that will back up files from his friend
-Bill.  Bill has a the following repositories set up:
+Bill.  Bill has a the following repository set up:
 
   (repo name)  (repo URL)
   bill         http://ccouch.billstuff.example.org/bill/
-  bill-cache   http://ccouch.billstuff.example.org/bill-cache/
   
-(Note that Bill was not required to include the name of his repositories in
-their URLs, but doing so makes management simpler).
+(Note that Bill was not required to include the name of his repository in
+its URL, but doing so makes management easier).
 
-Joe now adds references to Bill's repositories to his main repository's
+Joe now adds a reference to Bill's repository to his main repository's
 config file, F:/ccouch/main/ccouch-config:
 
   # Local stuff:
   -repo-name joe-laptop
   -local-repo C:/ccouch/work
-  -cache-repo F:/ccouch/cache
-  # Bill's repositories:
+  # Bill's repository:
   -remote-repo:bill http://ccouch.billstuff.example.org/bill/
-  -remote-repo:bill-cache http://ccouch.billstuff.example.org/bill-cache/
 
-  # I always wanna symlink:
+  # I always wanna use hardlinks to store:
   [checkout]
   -link
   
   [store]
   -link
 
-Now Joe is all set up to backup Bill's stuff.  Here is the shell script:
+Now Joe is all set up to back up Bill's stuff.  Here is the shell script:
 
   # Download all heads from bill that originated there
   ccouch -repo F:/ccouch/main/ cache-heads x-ccouch-head://bill/bill/
@@ -222,5 +204,6 @@ Now Joe is all set up to backup Bill's stuff.  Here is the shell script:
   # And cache Dave's music:
   ccouch -repo F:/ccouch/main/ cache x-parse-rdf:x-ccouch-head:dave/music/latest
 
-Now Joe can run that script to back up files from Bill and Dave.  He might even
-run it from a cron job so that those things get automatically backed up every day.
+Now Joe can run that script to back up files from Bill and Dave.  He
+might even run it from a cron job so that those things get
+automatically backed up every night.
