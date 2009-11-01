@@ -1,3 +1,6 @@
+- Seems paths being reported by 'store' are still not quite right
+  (missing parts between given path and last segment?)
+
 - Update documentation
   * Help given by ccouch id <invalid option> is wrong
   * README is out of date
