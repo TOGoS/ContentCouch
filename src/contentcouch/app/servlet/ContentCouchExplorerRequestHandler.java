@@ -187,6 +187,11 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		}
 		
 		BaseResponse res = new BaseResponse(subRes);
+
+		Number refreshi = ValueUtil.getNumber(args.getNamedArguments().get("refresh-interval"), null);
+		if( refreshi != null ) {
+			res.putMetadata(SwfNamespace.RES_HTTP_EQUIV + "Refresh", refreshi.toString());
+		}
 		
 		String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
 		if( type == null && subRes.getContent() instanceof Blob ) {

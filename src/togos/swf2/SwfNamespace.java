@@ -15,6 +15,11 @@ public class SwfNamespace {
 	public static final String CTX_GETTER = CTX_NS + "getter";
 	public static final String CTX_CONFIG = CTX_NS + "config";
 	
+	//// Response vars ////
+	
+	public static final String RES = SWF2_NS + "Res/";
+	public static final String RES_HTTP_EQUIV = SWF2_NS + "HTTP/";
+	
 	//// Config vars ////
 	
 	public static final String CFG_NS = SWF2_NS + "Config/";

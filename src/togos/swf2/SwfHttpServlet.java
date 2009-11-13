@@ -53,9 +53,19 @@ public class SwfHttpServlet extends HttpServlet {
 				response.setHeader("Content-Type", "text/plain");
 				response.getWriter().println("No content");
 			} else {
+				// Copy over cache-related headers
 				if( MetadataUtil.isEntryTrue(subRes.getMetadata(), CcouchNamespace.RES_CACHEABLE) ) {
 					response.setHeader("Pragma", "cache");
 					response.setHeader("Cache-Control", "cache");
+				}
+				// Copy over http-equivalent headers
+				for( Iterator mdi=subRes.getMetadata().entrySet().iterator(); mdi.hasNext(); ) {
+					Map.Entry e = (Map.Entry)mdi.next();
+					String mdk = ValueUtil.getString(e.getKey()); 
+					if( mdk.startsWith( SwfNamespace.RES_HTTP_EQUIV ) ) {
+						response.setHeader( mdk.substring(SwfNamespace.RES_HTTP_EQUIV.length()),
+							ValueUtil.getString(e.getValue()) ); 
+					}
 				}
 				if( type != null ) response.setHeader("Content-Type", type);
 				long len = b.getLength();
