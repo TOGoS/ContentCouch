@@ -113,7 +113,7 @@ public class TheGetter {
 		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.call(idReq), idReq.uri));
 	}
 	
-	public static String reference( Object o, boolean allowFileUris, boolean allowContentUris ) {
+	public static String reference( Object o, boolean allowFileUris, boolean allowGenerateContentUris ) {
 		if( o instanceof Ref ) {
 			return ((Ref)o).getTargetUri();
 		}
@@ -121,7 +121,7 @@ public class TheGetter {
 			File f = (File)o;
 			return PathUtil.maybeNormalizeFileUri(f.isDirectory() ? f.getAbsolutePath() + "/" : f.getAbsolutePath());
 		}
-		if( allowContentUris ) {
+		if( allowGenerateContentUris ) {
 			identify(o, Collections.EMPTY_MAP);
 		}
 		throw new RuntimeException("Don't know how to reference " + (o == null ? "null" : "a " + o.getClass().getName()));

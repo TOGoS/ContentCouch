@@ -86,7 +86,8 @@ public class DirectoryUtil {
 		return getDirectory(res.getContent(), res.getContentMetadata(), uri);
 	}
 
-	protected static Object getTargetValue( Object target ) {
+	public static Object resolveTarget( Directory.Entry e ) {
+		Object target = e.getTarget();
 		return ( target instanceof Ref ) ? TheGetter.get(((Ref)target).getTargetUri()) : target;
 	}
 }

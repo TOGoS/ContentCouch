@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import contentcouch.directory.DirectoryUtil;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
@@ -146,15 +147,6 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		return newEntry;
 	}
 
-	protected Object getActualEntryValue( Directory.Entry e ) {
-		Object value = e.getTarget();
-		if( value instanceof Ref ) {
-			return TheGetter.get(((Ref)value).getTargetUri());
-		} else {
-			return value;
-		}
-	}
-	
 	//// Map implementation ////
 
 	public void clear() {
@@ -171,7 +163,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 	
 	public Object get(Object key) {
 		Directory.Entry e = getDirectoryEntry(key.toString());
-		return (e == null) ? null : getActualEntryValue(e);
+		return (e == null) ? null : DirectoryUtil.resolveTarget(e);
 	}
 
 	public boolean isEmpty() {
@@ -217,7 +209,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 	public Collection values() {
 		ArrayList values = new ArrayList();
 		for( Iterator i=entryMap.values().iterator(); i.hasNext(); ) {
-			values.add( getActualEntryValue((Entry)i.next()) );
+			values.add( DirectoryUtil.resolveTarget((Entry)i.next()) );
 		}
 		return values;
 	}

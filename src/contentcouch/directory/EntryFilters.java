@@ -6,17 +6,24 @@ import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.Directory;
 
 public class EntryFilters {
-	public static Function1 BLOBFILTER = new Function1() {
-		public Object apply(Object input) {
-			Directory.Entry e = (Directory.Entry)input;
-			if( e == null ) {
+	public static Function1 createTypeFilter( final String typeString, final boolean resolve, final Class klass ) {
+		return new Function1() {
+			public Object apply(Object input) {
+				Directory.Entry e = (Directory.Entry)input;
+				if( e == null ) {
+					return null;
+				} else if( e.getTargetType() == null ) {
+					Object target = resolve ? DirectoryUtil.resolveTarget(e) : e.getTarget();
+					if( klass.isInstance(target) ) return e;
+				} else if( typeString.equals(e.getTargetType()) ) {
+					return e;
+				}
 				return null;
-			} else if( e.getTargetType() == null ) {
-				if( e.getTarget() instanceof Blob ) return e;
-			} else if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(e.getTargetType()) ) {
-				return e;
 			}
-			return null;
-		}
-	};
+		};
+	}
+	
+	public static Function1 BLOBFILTER = createTypeFilter( CcouchNamespace.OBJECT_TYPE_BLOB, false, Blob.class );
+	
+	public static Function1 DIRECTORYFILTER = createTypeFilter( CcouchNamespace.OBJECT_TYPE_DIRECTORY, false, Directory.class );
 }

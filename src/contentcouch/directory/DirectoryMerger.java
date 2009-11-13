@@ -95,8 +95,8 @@ public class DirectoryMerger {
 			int e2tt = CloneUtil.getTargetTypeIndex(e2);
 			if( e1tt == e2tt && e1tt == CloneUtil.CLONE_TARGETTYPE_BLOB ) {
 				if( fileMergeMethod.startsWith("Same?") ) {
-					Blob b1 = BlobUtil.getBlob(DirectoryUtil.getTargetValue(e1.getTarget()));
-					Blob b2 = BlobUtil.getBlob(DirectoryUtil.getTargetValue(e2.getTarget()));
+					Blob b1 = BlobUtil.getBlob(DirectoryUtil.resolveTarget(e1));
+					Blob b2 = BlobUtil.getBlob(DirectoryUtil.resolveTarget(e2));
 					String[] options = fileMergeMethod.substring(5).split(":");
 					if( blobsAreEqual(b1, b2, srcUri, destUri) ) {
 						mergeBlob( dir, e1, e2, options[0] );
@@ -108,11 +108,11 @@ public class DirectoryMerger {
 				}
 			} else if( e1tt == e2tt && e1tt == CloneUtil.CLONE_TARGETTYPE_DIR ) {
 				if( CcouchNamespace.REQ_DIRMERGE_MERGE.equals(dirMergeMethod) ) {
-					Object t = DirectoryUtil.getTargetValue(e1.getTarget());
+					Object t = DirectoryUtil.resolveTarget(e1);
 					if( !(t instanceof WritableDirectory) ) {
 						throw new RuntimeException( "Can't merge into " + e1.getName() + "; not a WritableDirectory" );
 					}
-					Object s = DirectoryUtil.getTargetValue(e2.getTarget());
+					Object s = DirectoryUtil.resolveTarget(e2);
 					if( !(s instanceof Directory) ) {
 						throw new RuntimeException( "Can't merge from " + e2.getName() + "; not a Directory" );
 					}

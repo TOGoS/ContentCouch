@@ -73,6 +73,11 @@ public class Explorify extends BaseActiveFunction {
 		return getPageGeneratorResult(new DirectoryPageGenerator(d, uri, req.getContextVars(), header, footer ));
 	}
 	
+	public Response explorifyDirectoryEntry(Request req, Map argumentExpressions, String uri, Directory.Entry de ) {
+		return explorifyNonDirectory( req, argumentExpressions, uri,
+			new BaseResponse( ResponseCodes.RESPONSE_NORMAL, BlobUtil.getBlob(de)) );
+	}
+
 	public Response explorifyXmlBlob(Request req, String uri, Blob b, String header, String footer ) {
 		return getPageGeneratorResult(new RdfSourcePageGenerator(b, uri, req.getContextVars(), header, footer ));
 	}
@@ -121,6 +126,8 @@ public class Explorify extends BaseActiveFunction {
 		subReq.putContextVar("processed-uri", uri);
 		if( subRes.getContent() instanceof Directory ) {
 			return explorifyDirectory(subReq, uri, (Directory)subRes.getContent(), getHeader(subReq, argumentExpressions), getFooter(subReq, argumentExpressions));
+		} else if( subRes.getContent() instanceof Directory.Entry ) {
+			return explorifyDirectoryEntry(subReq, argumentExpressions, uri, (Directory.Entry)subRes.getContent());
 		} else {
 			return explorifyNonDirectory(subReq, argumentExpressions, uri, subRes);
 		}

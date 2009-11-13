@@ -15,17 +15,33 @@ import contentcouch.activefunctions.Explorify;
 import contentcouch.builtindata.BuiltInData;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
+import contentcouch.directory.HasLongPath;
 import contentcouch.explorify.BaseUriProcessor;
 import contentcouch.explorify.DirectoryPageGenerator;
+import contentcouch.explorify.PageGenerator;
 import contentcouch.explorify.UriProcessor;
 import contentcouch.json.JSON;
 import contentcouch.misc.UriUtil;
 import contentcouch.rdf.CcouchNamespace;
+import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
 public class AlbumPage extends Explorify {
+	protected static String getThumbnailUri( String imageUri, Map context ) {
+		return
+			"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
+			"+width@data:,128+height@data:,128";
+	}
+	
+	protected static String getPreviewUri( String imageUri, Map context ) {
+		return
+			"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
+			"+width@data:,640+height@data:,480";
+
+	}
+	
 	protected static class AlbumPageGenerator extends DirectoryPageGenerator {
 		public AlbumPageGenerator( Directory dir, String uri, Map context, String header, String footer ) {
 			super( dir, uri, context, header, footer );
@@ -76,12 +92,8 @@ public class AlbumPage extends Explorify {
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String imageUri = getUnprocessedHref(e, false);
-					String shrunkUri =
-						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
-						"+width@data:,128+height@data:,128";
-					String previewUri =
-						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
-						"+width@data:,640+height@data:,480";
+					String shrunkUri = getThumbnailUri(imageUri, context);
+					String previewUri = getPreviewUri(imageUri, context);
 					w.println("pp.addPreview("+
 						JSON.encodeObject(rawUriProcessor.processUri(shrunkUri))+","+
 						JSON.encodeObject(rawUriProcessor.processUri(previewUri))+","+
@@ -156,7 +168,7 @@ public class AlbumPage extends Explorify {
 
 				w.println("<div class=\"preview-close-box\"><a onclick=\"return goToPreview(null)\" href=\"#\">Close preview window</a></div>");
 
-				w.println("<div style=\"float:left; width: 680px; height:500px\" class=\"preview-inner-box\">");
+				w.println("<div style=\"float:left; width: 680px; height:540px\" class=\"preview-inner-box\">");
 				w.println("<a id=\"preview-link\" href=\"\"><img id=\"preview-image\"/></a><br />");
 				w.println("</div>");
 				
@@ -228,8 +240,50 @@ public class AlbumPage extends Explorify {
 		}
 	}
 	
+	protected static class AlbumEntryPageGenerator extends PageGenerator {
+		Directory.Entry directoryEntry;
+		
+		public AlbumEntryPageGenerator( Directory.Entry de, String uri, Map context, String header, String footer ) {
+			super( uri, context, header, footer );
+			directoryEntry = de;
+		}
+		
+		public void writeContent(PrintWriter w) {
+			UriProcessor rawUriProcessor = BaseUriProcessor.getInstance( context, "raw" );
+
+			String imageUri = TheGetter.reference(directoryEntry.getTarget(), true, true);
+			String previewUri = getPreviewUri(imageUri, context);
+			
+			w.println("<div class=\"preview-container\" style=\"text-align:center\">");
+			w.println("<div style=\"width: 680px; height:540px; margin:auto\" class=\"preview-inner-box\">");
+			w.print("<a href=\"" + XML.xmlEscapeAttributeValue(rawUriProcessor.processUri(imageUri)) + "\">");
+			w.print("<img src=\"" + XML.xmlEscapeAttributeValue(rawUriProcessor.processUri(previewUri)) + "\"/>");
+			w.print("</a>");
+			w.print("<div class=\"preview-caption\">");
+			
+			String caption;
+			if( directoryEntry instanceof HasLongPath ) {
+				caption = ((HasLongPath)directoryEntry).getLongPath();
+			} else {
+				caption = directoryEntry.getName();
+			}
+			if( caption.length() > 75 ) {
+				caption = "..."+caption.substring(caption.length()-73);
+			}
+			
+			w.print(XML.xmlEscapeText(caption));
+			w.println("</div>");
+			w.println("</div>");
+			w.println("</div>");
+		}
+	}
+	
 	public Response explorifyDirectory( Request req, String uri, Directory d, String header, String footer ) {
 		return getPageGeneratorResult(new AlbumPageGenerator(d, uri, req.getContextVars(), header, footer ));
+	}
+	
+	public Response explorifyDirectoryEntry(Request req, Map argumentExpressions, String uri, Directory.Entry de ) {
+		return getPageGeneratorResult(new AlbumEntryPageGenerator(de, uri, req.getContextVars(), getHeader(req, argumentExpressions), getFooter(req, argumentExpressions) ));
 	}
 
 	/*

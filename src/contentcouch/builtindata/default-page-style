@@ -32,17 +32,23 @@ body > h2 { color:white }
 	border: 8px solid black;
 	padding: 16px;
 }
-.preview-inner-box > * {
-	margin: 8px;
-}
 .preview-inner-box {
 	background: black;
 	text-align: center;
 	padding: 16px;
 	margin: 0;
+	display: table;
 }
 .preview-inner-box > * {
+	margin: 8px;
 	vertical-align: middle;
+	display: table-row;
+}
+.preview-caption {
+	color: white;
+}
+.preview-inner-box .preview-caption {
+	vertical-align: bottom;
 }
 .preview-nav-box, .preview-close-box {
 	float:right;
