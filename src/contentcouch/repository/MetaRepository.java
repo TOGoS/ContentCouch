@@ -3,6 +3,7 @@ package contentcouch.repository;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -25,6 +26,7 @@ import com.eekboom.utils.Strings;
 
 import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
+import contentcouch.contentaddressing.ContentAddressingScheme;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
@@ -722,8 +724,65 @@ public class MetaRepository extends BaseRequestHandler {
 	protected RepoConfig lastHitRepoConfig;
 	protected String lastHitDataSectorUri;
 	
-	//// Handle requests ////
+	//// Validate and cache blobs fetched from remote repos ////
 	
+	protected static class HashMismatchException extends Exception {
+		public ContentAddressingScheme dataScheme;
+		public byte[] expected, calculated;
+		public HashMismatchException( ContentAddressingScheme dataScheme, byte[] expected, byte[] calculated ) {
+			this.dataScheme = dataScheme;
+			this.expected = expected;
+			this.calculated = calculated;
+		}
+	}
+	
+	protected Response maybeCacheBlob( Response res, Request req ) throws HashMismatchException {
+		String urn = req.getResourceName();
+		String cs = (String)req.getMetadata().get(CcouchNamespace.REQ_CACHE_SECTOR);
+		if( cs != null && config.defaultRepoConfig.dataScheme.wouldHandleUrn(urn) ) {
+			// Then fetch the blob, validate it, store it, fetch what you just stored back out of
+			// the store, and give *that* to the user.
+			Blob blob = BlobUtil.getBlob(res.getContent(), true);
+			byte[] expected = config.defaultRepoConfig.dataScheme.urnToHash(urn);
+			byte[] calculated = config.defaultRepoConfig.dataScheme.getHash(blob);
+			if( !Arrays.equals( calculated, expected ) ) {
+				throw new HashMismatchException( config.defaultRepoConfig.dataScheme, expected, calculated );
+			}
+			
+			// Otherwise it's all good...we'll store the blob
+			BaseRequest putReq = new BaseRequest(req);
+			putReq.verb = RequestVerbs.VERB_PUT;
+			putReq.uri = "data"; // Will not be used...
+			putReq.content = res.getContent();
+			putReq.contentMetadata = res.getContentMetadata();
+			putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, cs);
+			Response putRes = putData(config.defaultRepoConfig, putReq);
+			
+			String storedUrn = MetadataUtil.getStoredIdentifier( putRes );
+			if( storedUrn == null ) {
+				throw new RuntimeException( "Received no stored URN when caching" );
+			}
+			
+			if( !storedUrn.equals(urn)) {
+				Log.log( Log.EVENT_WARNING, "After caching "+urn+", stored blob has different URN: "+storedUrn );
+			}
+			
+			Log.log(Log.EVENT_STORED, "Cached "+urn+" oh yeah");
+			
+			// Then fetch it again.
+			return call(new BaseRequest( req, storedUrn ));
+		}
+		return res;
+	}
+		
+	protected void logHashMismatch( Request req, ContentAddressingScheme dataScheme, byte[] expected, byte[] calculated ) {
+		Log.log(Log.EVENT_WARNING, "Received apparently bad content from "+req.getResourceName()+"; expected hash="+
+			dataScheme.hashToUrn(expected) + ", received="+dataScheme.hashToUrn(calculated)
+		);
+	}
+	
+	//// Handle requests ////
+		
 	public Response call( Request req ) {
 		if( "x-ccouch-repo://".equals(req.getResourceName()) ) {
 			// Return a directory listing of all registered repositories
@@ -851,7 +910,13 @@ public class MetaRepository extends BaseRequestHandler {
 					
 					BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(lastHitDataSectorUri, psp));
 					Response res = TheGetter.call(subReq);
-					if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) return res;
+					if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+						try {
+							return maybeCacheBlob(res, req);
+						} catch( HashMismatchException hme ) {
+							logHashMismatch( subReq, hme.dataScheme, hme.expected, hme.calculated );
+						}
+					}
 				}
 				
 				// Check all remote repos (unless we are explicitly asked not to)
@@ -869,7 +934,11 @@ public class MetaRepository extends BaseRequestHandler {
 						if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 							lastHitDataSectorUri = dataSectorUri;
 							lastHitRepoConfig = repoConfig;
-							return res;
+							try {
+								return maybeCacheBlob(res, req);
+							} catch( HashMismatchException hme ) {
+								logHashMismatch( subReq, hme.dataScheme, hme.expected, hme.calculated );
+							}
 						}
 					}
 				}

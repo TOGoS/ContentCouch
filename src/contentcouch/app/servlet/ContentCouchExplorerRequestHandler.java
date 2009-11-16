@@ -17,6 +17,7 @@ import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
@@ -152,6 +153,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		}
 		
 		SwfBaseRequest subReq = new SwfBaseRequest(req, uri);
+		subReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, "webcache");
 		subReq.putAllConfig(metaRepoConfig.config, true);
 		BaseUriProcessor rawUriProcessor = new ServletUriProcessor(BaseUriProcessor.getInstance(req, "explore"), shouldRewriteRelativeUris, pathToRoot) {
 			public String processExternalUri(String uri) {
