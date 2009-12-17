@@ -107,7 +107,7 @@ public class AlbumPage extends Explorify {
 				w.println("//]]></script>");
 			}
 			w.println("</head>");
-			w.println("<body onload=\"getPreviewer().showPreviewBasedOnUrl()\">");
+			w.println("<body>");
 			w.println("<h2>Viewing "+context.get("processed-uri")+"</h2>");
 
 			w.println("<div class=\"main-content\">");
@@ -235,6 +235,12 @@ public class AlbumPage extends Explorify {
 			w.println("<div style=\"clear:both\"></div>");
 			w.println("</div>");
 
+			/*
+			w.println("<script type=\"application/javascript\">//<![CDATA[");
+			w.println("getPreviewer().showPreviewBasedOnUrl();");
+			w.println("</script>");
+			*/
+			
 			w.println("</body>");
 			w.println("</html>");
 		}
