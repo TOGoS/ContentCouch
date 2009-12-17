@@ -1,14 +1,13 @@
 package contentcouch.active;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import sun.misc.BASE64Decoder;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
+import contentcouch.encoding.Base64;
 import contentcouch.framework.BaseRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.rdf.DcNamespace;
@@ -26,17 +25,14 @@ public class DataUriResolver extends BaseRequestHandler {
 			String junkPart = junk[i];
 			if( "base64".equals(junkPart) ) {
 				base64Encoded = true;
+				// Someday I might want to handle different charsets and things...
 			} else {
 				metadataDest.put(DcNamespace.DC_FORMAT, junkPart);
 			}
 		}
 		byte[] data;
 		if( base64Encoded ) {
-			try {
-				data = new BASE64Decoder().decodeBuffer(uri.substring(commaPos+1));
-			} catch( IOException e ) {
-				throw new RuntimeException(e);
-			}
+			data = Base64.decode(uri.substring(commaPos+1));
 		} else {
 			data = UriUtil.uriDecodeBytes( uri.substring(commaPos+1) );
 		}

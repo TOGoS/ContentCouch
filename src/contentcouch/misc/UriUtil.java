@@ -15,11 +15,11 @@ public class UriUtil {
 		while( inidx < inbytes.length ) {
 			byte c = inbytes[inidx++];
 			if( (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-			    (c >= '0' && c <= '9') || c == '.' || c == ',' ||
-			    c == '/' || c == '-' || c == '_' ||
+			    (c >= '0' && c <= '9') || (c == '.') || (c == ',') ||
+			    (c == '/') || (c == '-') || (c == '_') ||
 			    (keepUriSpecialChars && (
-			    	c == '%' || c == '+' || c == ':' || c == ';' ||
-			    	c == '?' || c == '&' || c == '=' || c == '#'
+			    	(c == '%') || (c == '+') || (c == ':') || (c == ';') ||
+			    	(c == '?') || (c == '&') || (c == '=') || (c == '#')
 			    )))
 			{
 				outchars[outidx++] = (char)c;
@@ -88,7 +88,7 @@ public class UriUtil {
 	}
 	
 	public static String makeDataUri( byte[] data ) {
-		return "data:," + uriEncode(data, true);
+		return "data:," + uriEncode(data, false);
 	}
 
 	public static String makeDataUri( String data ) {
