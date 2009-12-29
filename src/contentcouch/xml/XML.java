@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class XML {
 	public static String xmlEscapeText( String text ) {
-		return text.replaceAll("&","&amp").replaceAll("<", "&lt;").replaceAll(">","&gt;");
+		return text.replaceAll("&","&amp;").replaceAll("<", "&lt;").replaceAll(">","&gt;");
 	}
 	
 	public static String xmlEscapeName( String text ) {

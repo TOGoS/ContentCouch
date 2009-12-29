@@ -8,10 +8,9 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.util.Map;
 
+import togos.mf.api.Request;
 import togos.mf.value.Blob;
-
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.ValueUtil;
@@ -22,8 +21,8 @@ public class SlfSourcePageGenerator extends PageGenerator {
 	Blob blob;
 	String title;
 	
-	public SlfSourcePageGenerator( Blob b, String uri, Map context, String header, String footer ) {
-		super( uri, context, header, footer );
+	public SlfSourcePageGenerator( Blob b, Request req ) {
+		super( req );
 		this.blob = b;
 	}
 	

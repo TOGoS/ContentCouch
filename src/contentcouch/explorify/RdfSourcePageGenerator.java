@@ -3,12 +3,11 @@ package contentcouch.explorify;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import togos.mf.api.Request;
 import togos.mf.value.Blob;
-
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.xml.XML;
@@ -16,8 +15,8 @@ import contentcouch.xml.XML;
 public class RdfSourcePageGenerator extends PageGenerator {
 	Blob blob;
 	
-	public RdfSourcePageGenerator( Blob b, String uri, Map context, String header, String footer ) {
-		super( uri, context, header, footer );
+	public RdfSourcePageGenerator( Blob b, Request req ) {
+		super( req );
 		this.blob = b;
 	}
 	

@@ -1,33 +1,46 @@
-package contentcouch.activefunctions;
+package contentcouch.app.servlet2.comp;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Map;
 
 import togos.mf.api.Request;
+import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
+import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import togos.mf.value.Arguments;
 import togos.mf.value.Blob;
-import contentcouch.active.BaseActiveFunction;
-import contentcouch.active.expression.Expression;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.InputStreamBlob;
-import contentcouch.explorify.DirectoryPageGenerator;
 import contentcouch.explorify.PageGenerator;
 import contentcouch.explorify.RdfSourcePageGenerator;
 import contentcouch.explorify.SlfSourcePageGenerator;
 import contentcouch.misc.MetadataUtil;
-import contentcouch.misc.ValueUtil;
+import contentcouch.photoalbum.activefunctions.AlbumPage;
+import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 import contentcouch.xml.XML;
 
-public class Explorify extends BaseActiveFunction {
+public class PhotoAlbumComponent extends BaseComponent {
+	public PhotoAlbumComponent(Map config) {
+		properties = new HashMap(config);
+		if( properties.get("title") == null ) properties.put("title", "Photo Album Viewer");
+		if( properties.get("path") == null ) properties.put("path", "x-internal:album");
+		
+		this.handlePath = (String)properties.get("path");
+	}
+	
+	public Map getProperties() {
+		return properties;
+	}
 	
 	protected static BaseResponse getPageGeneratorResult( final PageGenerator pg ) {
 		// TODO: Maybe use some sort of resettable-input-stream blob?
@@ -61,32 +74,25 @@ public class Explorify extends BaseActiveFunction {
 		}
 	}
 	
-	protected String getHeader(Request req, Map argumentExpressions) {
-		return ValueUtil.getString(getArgumentValue(req, argumentExpressions, "header", null));
+	public Response explorifyDirectory(Request req, String uri, Directory d ) {
+		//return getPageGeneratorResult(new DirectoryPageGenerator(d, req));
+		return getPageGeneratorResult(new AlbumPage.AlbumPageGenerator(d, req));
 	}
 	
-	protected String getFooter(Request req, Map argumentExpressions) {
-		return ValueUtil.getString(getArgumentValue(req, argumentExpressions, "footer", null));
-	}
-	
-	public Response explorifyDirectory(Request req, String uri, Directory d, String header, String footer ) {
-		return getPageGeneratorResult(new DirectoryPageGenerator(d, req));
-	}
-	
-	public Response explorifyDirectoryEntry(Request req, Map argumentExpressions, String uri, Directory.Entry de ) {
-		return explorifyNonDirectory( req, argumentExpressions, uri,
+	public Response explorifyDirectoryEntry(Request req, String uri, Directory.Entry de ) {
+		return explorifyNonDirectory( req, uri,
 			new BaseResponse( ResponseCodes.RESPONSE_NORMAL, BlobUtil.getBlob(de)) );
 	}
 
-	public Response explorifyXmlBlob(Request req, String uri, Blob b, String header, String footer ) {
+	public Response explorifyXmlBlob(Request req, Blob b) {
 		return getPageGeneratorResult(new RdfSourcePageGenerator(b, req));
 	}
 	
-	public Response explorifySlfBlob(Request req, String uri, Blob b, String header, String footer ) {
+	public Response explorifySlfBlob(Request req, Blob b) {
 		return getPageGeneratorResult(new SlfSourcePageGenerator(b, req));
 	}
 	
-	public Response explorifyNonDirectory( Request req, Map argumentExpressions, String uri, Response subRes ) {
+	public Response explorifyNonDirectory( Request req, String uri, Response subRes ) {
 		Blob blob;
 		String type;
 		if( subRes.getContent() instanceof Ref ) {
@@ -107,35 +113,39 @@ public class Explorify extends BaseActiveFunction {
 		if( (type != null && type.matches("application/(.*\\+)?xml")) ||
 		    (blob != null && MetadataUtil.looksLikeRdfBlob(blob)) )
 		{
-			return explorifyXmlBlob( req, uri, blob, getHeader(req, argumentExpressions), getFooter(req, argumentExpressions) );
+			return explorifyXmlBlob( req, blob );
 		} else if( MetadataUtil.CT_SLF.equals(type) ) {
-			return explorifySlfBlob( req, uri, blob, getHeader(req, argumentExpressions), getFooter(req, argumentExpressions) );
+			return explorifySlfBlob( req, blob );
 		} else if( type != null ) {
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, blob, type);
 		} else {
 			return subRes;
 		}
 	}
-	
-	public Response call(Request req, Map argumentExpressions) {
-		Expression e = (Expression)argumentExpressions.get("operand");
-		String uri = e.toUri();
-		Response subRes = getArgumentResponse(req, argumentExpressions, "operand");
-		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
-		BaseRequest subReq = new BaseRequest(req);
-		subReq.putContextVar("operand-uri", uri);
+
+	protected Response explorify( Request subReq, String uri, Response subRes ) {
 		if( subRes.getContent() instanceof Directory ) {
-			return explorifyDirectory(subReq, uri, (Directory)subRes.getContent(), getHeader(subReq, argumentExpressions), getFooter(subReq, argumentExpressions));
+			return explorifyDirectory(subReq, uri, (Directory)subRes.getContent());
 		} else if( subRes.getContent() instanceof Directory.Entry ) {
-			return explorifyDirectoryEntry(subReq, argumentExpressions, uri, (Directory.Entry)subRes.getContent());
+			return explorifyDirectoryEntry(subReq, uri, (Directory.Entry)subRes.getContent());
 		} else {
-			return explorifyNonDirectory(subReq, argumentExpressions, uri, subRes);
+			return explorifyNonDirectory(subReq, uri, subRes);
 		}
 	}
-
-	//// Path simplification ////
 	
-	protected String getPathArgumentName() {
-		return "operand";
+	public Response _call(Request req) {
+		Arguments args = (Arguments)req.getContent();
+		if( args == null ) args = new BaseArguments();
+		
+		String uri = (String)args.getNamedArguments().get("uri");
+		BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, uri);
+		subReq.contextVars = req.getContextVars();
+		
+		Response subRes = TheGetter.call(subReq);
+		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
+
+		subReq = new BaseRequest(req);
+		subReq.putContextVar("operand-uri", uri);
+		return explorify( subReq, uri, subRes );
 	}
 }

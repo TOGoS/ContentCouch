@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
+import togos.mf.api.Request;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
 import contentcouch.path.PathUtil;
@@ -21,8 +21,8 @@ import contentcouch.xml.XML;
 public class DirectoryPageGenerator extends PageGenerator {
 	protected Directory dir;
 
-	public DirectoryPageGenerator( Directory dir, String uri, Map context, String header, String footer ) {
-		super( uri, context, header, footer );
+	public DirectoryPageGenerator( Directory dir, Request req ) {
+		super( req );
 		this.dir = dir;
 	}
 	
@@ -33,7 +33,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 		} else if( e.getTarget() instanceof Ref ) {
 			href = ((Ref)e.getTarget()).getTargetUri();
 		} else {
-			href = allowRelative ? e.getName() : PathUtil.appendPath(uri, e.getName());
+			href = allowRelative ? e.getName() : PathUtil.appendPath(getOperandUri(), e.getName());
 		}
 		if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
 			if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
@@ -60,7 +60,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
 				if( !name.endsWith("/") ) name += "/";
 			}
-			href = processRelativeUri("default", uri, href);
+			href = processRelativeUri("default", getOperandUri(), href);
 			w.write("<tr>");
 			w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
 			w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");

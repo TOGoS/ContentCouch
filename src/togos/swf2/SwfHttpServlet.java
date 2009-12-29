@@ -96,8 +96,8 @@ public class SwfHttpServlet extends HttpServlet {
 		subReq.verb = RequestVerbs.VERB_GET;
 		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
 		subReq.content = parseContent(req);
-		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
-		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
+		subReq.putContextVar(SwfNamespace.HTTP_SERVLET_REQUEST, req);
+		subReq.putContextVar(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
 		doGeneric(subReq, resp);
 	}
 
@@ -106,8 +106,8 @@ public class SwfHttpServlet extends HttpServlet {
 		subReq.verb = RequestVerbs.VERB_POST;
 		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
 		subReq.content = parseContent(req);
-		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
-		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
+		subReq.putContextVar(SwfNamespace.HTTP_SERVLET_REQUEST, req);
+		subReq.putContextVar(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
 		doGeneric(subReq, resp);
 	}
 
@@ -116,8 +116,8 @@ public class SwfHttpServlet extends HttpServlet {
 		subReq.verb = RequestVerbs.VERB_PUT;
 		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
 		subReq.content = parseContent(req);
-		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
-		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
+		subReq.putContextVar(SwfNamespace.HTTP_SERVLET_REQUEST, req);
+		subReq.putContextVar(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
 		doGeneric(subReq, resp);
 	}
 }

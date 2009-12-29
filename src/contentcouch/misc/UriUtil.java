@@ -33,6 +33,7 @@ public class UriUtil {
 	}
 	
 	public static String uriEncode( String text, boolean keepUriSpecialChars ) {
+		if( text == null ) return null;
 		byte[] inbytes;
 		try {
 			inbytes = text.getBytes("UTF-8");

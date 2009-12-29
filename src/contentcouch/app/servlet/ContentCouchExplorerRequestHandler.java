@@ -69,9 +69,9 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			"  " + uri + "\n" +
 			"  header=(contentcouch.let\n" +
 			"    vars/page-title=(contentcouch.concat\n" +
-			"      \"" + verb + " \" x-context-var:processed-uri \"\")\n" +
+			"      \"" + verb + " \" x-context-var:operand-uri \"\")\n" +
 			"    vars/page-title2=(contentcouch.concat\n" +
-			"      \"" + verb + " \" x-context-var:processed-uri \"\")\n" +
+			"      \"" + verb + " \" x-context-var:operand-uri \"\")\n" +
 			"    (contentcouch.eval\n" +
 			"       (contentcouch.builtindata.get \"default-page-header-expression\"))\n" +
 			"  )\n" +
@@ -110,6 +110,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		    String processor = (String)args.getNamedArguments().get("processor");
 			uri = getProcessingUri(processor, inputUri, "Album view of");
 		} else if( "explore".equals(pathComp[0]) ) {
+			defaultUriProcessorName = "explore";
 		    if( inputUri != null ) {
 				shouldRewriteRelativeUris = true;
 			} else if( pi.startsWith("/explore/") ) {

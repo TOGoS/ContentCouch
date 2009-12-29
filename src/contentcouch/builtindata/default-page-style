@@ -1,7 +1,12 @@
 body { background: #88B; color: black; }
 body > h2 { color:white }
 
-.main-content > h3 { margin: 0; padding: 4pt 2em 4pt 2em; background: darkgray }
+h1, h2, h3, h4, h5, h6 {
+	padding: 4pt;
+	margin: 4pt;
+}
+
+.main-content > h3 { margin: 0; padding: 4pt 1em 4pt 1em; background: darkgray }
 
 .main-content { border:1px solid; margin:4px; padding: 0px; background-color:#CCC; }
 .main-content > pre { margin: 1em 2em; }
@@ -24,6 +29,21 @@ body > h2 { color:white }
 	padding-right: 1ex;
 	font-family: Courier;
 	border-left: 1px outset;
+}
+
+/* Crumbs */
+ul.crumbtrail {
+	margin: 0.5em; padding: 0.5em;
+}
+ul.crumbtrail > li {
+	color: white;
+	display: inline;
+}
+ul.crumbtrail > li > a {
+	color: aqua;
+}
+ul.crumbtrail > :before {
+	content: " > "
 }
 
 /* Photo Album Formatting */
