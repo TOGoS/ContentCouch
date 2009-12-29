@@ -47,7 +47,7 @@ import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
 	public String USAGE =
-		"ContentCouch by TOGoS; RRA branch\n" +
+		"ContentCouch, by TOGoS\n" +
 		"\n" +
 		"Usage: ccouch [general options] <sub-command> [command-args]\n" +
 		"General options:\n" +

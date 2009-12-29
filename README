@@ -5,7 +5,7 @@ ContentCouch at a basic level.
 
 == Installation ==
 
-* cd into the 'install' directory
+* cd into the 'installler' directory
 * run install.bat or install.sh
   - this should create a file, 'ccouch-install.properties'
 * edit ccouch-install.properties, following the instructions therein
