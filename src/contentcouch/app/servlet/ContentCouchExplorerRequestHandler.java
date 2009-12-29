@@ -65,17 +65,10 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			throw new RuntimeException( "Null URI given to getProcessingUri" );
 		}
 		return
-			"(" + processor + "\n" +
+			"( " + processor + "\n" +
 			"  " + uri + "\n" +
-			"  header=(contentcouch.let\n" +
-			"    vars/page-title=(contentcouch.concat\n" +
-			"      \"" + verb + " \" x-context-var:operand-uri \"\")\n" +
-			"    vars/page-title2=(contentcouch.concat\n" +
-			"      \"" + verb + " \" x-context-var:operand-uri \"\")\n" +
-			"    (contentcouch.eval\n" +
-			"       (contentcouch.builtindata.get \"default-page-header-expression\"))\n" +
-			"  )\n" +
-			")\n";
+			"  header=(contentcouch.eval\n" +
+			"           (contentcouch.builtindata.get \"default-page-header-expression\")))";
 	}
 	protected String getExploreUri(String uri) {
 		return getProcessingUri("contentcouch.explorify", uri, "Exploring");
@@ -146,7 +139,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			}
 			uri = inputUri;
 		} else if( pi.equals("/") ) {
-			uri = PathUtil.appendPath(webRoot, "_index.html");
+			uri = PathUtil.appendPath(webRoot, "index.html");
 			shouldRewriteRelativeUris = false;
 		} else {
 			uri = PathUtil.appendPath(webRoot, pi.substring(1));

@@ -43,7 +43,7 @@ ul.crumbtrail > li > a {
 	color: aqua;
 }
 ul.crumbtrail > :before {
-	content: " > "
+	content: " \BB  "
 }
 
 /* Photo Album Formatting */

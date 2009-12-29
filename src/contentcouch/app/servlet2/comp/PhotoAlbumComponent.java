@@ -74,13 +74,13 @@ public class PhotoAlbumComponent extends BaseComponent {
 		}
 	}
 	
-	public Response explorifyDirectory(Request req, String uri, Directory d ) {
+	public Response explorifyDirectory(Request req, Directory d ) {
 		//return getPageGeneratorResult(new DirectoryPageGenerator(d, req));
 		return getPageGeneratorResult(new AlbumPage.AlbumPageGenerator(d, req));
 	}
 	
-	public Response explorifyDirectoryEntry(Request req, String uri, Directory.Entry de ) {
-		return explorifyNonDirectory( req, uri,
+	public Response explorifyDirectoryEntry(Request req, Directory.Entry de ) {
+		return explorifyNonDirectory( req,
 			new BaseResponse( ResponseCodes.RESPONSE_NORMAL, BlobUtil.getBlob(de)) );
 	}
 
@@ -92,7 +92,7 @@ public class PhotoAlbumComponent extends BaseComponent {
 		return getPageGeneratorResult(new SlfSourcePageGenerator(b, req));
 	}
 	
-	public Response explorifyNonDirectory( Request req, String uri, Response subRes ) {
+	public Response explorifyNonDirectory( Request req, Response subRes ) {
 		Blob blob;
 		String type;
 		if( subRes.getContent() instanceof Ref ) {
@@ -123,13 +123,13 @@ public class PhotoAlbumComponent extends BaseComponent {
 		}
 	}
 
-	protected Response explorify( Request subReq, String uri, Response subRes ) {
+	protected Response explorify( Request subReq, Response subRes ) {
 		if( subRes.getContent() instanceof Directory ) {
-			return explorifyDirectory(subReq, uri, (Directory)subRes.getContent());
+			return explorifyDirectory(subReq, (Directory)subRes.getContent());
 		} else if( subRes.getContent() instanceof Directory.Entry ) {
-			return explorifyDirectoryEntry(subReq, uri, (Directory.Entry)subRes.getContent());
+			return explorifyDirectoryEntry(subReq, (Directory.Entry)subRes.getContent());
 		} else {
-			return explorifyNonDirectory(subReq, uri, subRes);
+			return explorifyNonDirectory(subReq, subRes);
 		}
 	}
 	
@@ -138,14 +138,18 @@ public class PhotoAlbumComponent extends BaseComponent {
 		if( args == null ) args = new BaseArguments();
 		
 		String uri = (String)args.getNamedArguments().get("uri");
+		if( uri == null || uri == "" ) uri = "x-ccouch-repo://";
+
 		BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, uri);
 		subReq.contextVars = req.getContextVars();
 		
 		Response subRes = TheGetter.call(subReq);
 		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
 
+		BaseArguments subArgs = new BaseArguments(args);
+		subArgs.putNamedArgument("uri", uri); // In case it was defaulted
 		subReq = new BaseRequest(req);
-		subReq.putContextVar("operand-uri", uri);
-		return explorify( subReq, uri, subRes );
+		subReq.content = subArgs;
+		return explorify( subReq, subRes );
 	}
 }

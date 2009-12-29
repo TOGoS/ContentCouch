@@ -67,7 +67,7 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 	}
 	
 	protected String getOperandUri() {
-		return ValueUtil.getString(req.getContextVars().get("operand-uri"));
+		return getArgument("uri");
 	}
 	
 	protected Component getSwfComponent() {

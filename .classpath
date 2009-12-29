@@ -8,7 +8,7 @@
 	<classpathentry kind="lib" path="ext-lib/winstone-0.9.10.jar"/>
 	<classpathentry kind="lib" path="ext-lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="ext-lib/lucene-core-2.9-20090811.022310-1.jar" sourcepath="ext-lib/lucene-core-2.9-20090811.022310-1-sources.jar"/>
-	<classpathentry kind="lib" path="ext-lib/togos.mf-2009.12.28.jar"/>
+	<classpathentry kind="lib" path="ext-lib/togos.mf-latest.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="output" path="web/WEB-INF/classes"/>
 </classpath>
