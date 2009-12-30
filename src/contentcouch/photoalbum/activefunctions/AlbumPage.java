@@ -16,7 +16,6 @@ import togos.swf2.Component;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfNamespace;
 import contentcouch.activefunctions.Explorify;
-import contentcouch.builtindata.BuiltInData;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
 import contentcouch.directory.HasLongPath;
@@ -140,9 +139,8 @@ public class AlbumPage extends Explorify {
 			
 			w.println("<html>");
 			w.println("<head>");
-			w.println("<style>/*<![CDATA[*/");
-			w.println(BuiltInData.getString("default-page-style"));
-			w.println("/*]]>*/</style>");
+			String cssExternalUri = getExternalResourceUri( req, "style/default.css" );
+			w.println("<link rel=\"stylesheet\" type=\"text/css\" href=\""+XML.xmlEscapeAttributeValue(cssExternalUri)+"\"/>");
 			if( imageEntryList.size() > 0 ) {
 				w.println( generateScriptInclude("module.js") );
 				w.println( generateScriptInclude("contentcouch/photoalbum/PhotoPreviewer.js") );
@@ -301,10 +299,10 @@ public class AlbumPage extends Explorify {
 					++index;
 				}
 				
-				String loadingImageUri = SwfNamespace.SERVLET_PATH_URI_PREFIX + "style/ajax-loader.gif";
+				String loadingImageExternalUri = getExternalResourceUri( req, "style/ajax-loader.gif" );
 				
 				w.println("<script type=\"application/javascript\">//<![CDATA[");
-				w.println("pp.loadingImageUrl   = "+JSON.encodeObject(getRawUri(loadingImageUri))+";");
+				w.println("pp.loadingImageUrl   = "+JSON.encodeObject( loadingImageExternalUri )+";");
 				w.println("pp.previewContainer  = document.getElementById('preview-container');");
 				w.println("pp.previewLink       = document.getElementById('preview-link');");
 				w.println("pp.previewImage      = document.getElementById('preview-image');");
@@ -367,7 +365,7 @@ public class AlbumPage extends Explorify {
 		}
 	}
 	
-	public Response explorifyDirectory( Request req, String uri, Directory d, String header, String footer ) {
+	public Response explorifyDirectory( Request req, Directory d ) {
 		return getPageGeneratorResult(new AlbumPageGenerator(d, req));
 	}
 	

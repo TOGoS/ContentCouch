@@ -3,6 +3,7 @@ package contentcouch.app.servlet;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
+import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseResponse;
 import togos.mf.value.Arguments;
 import togos.mf.value.Blob;
@@ -10,7 +11,6 @@ import togos.swf2.SwfBaseRequest;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfNamespace;
 import contentcouch.activefunctions.Explorify;
-import contentcouch.builtindata.BuiltInData;
 import contentcouch.explorify.BaseUriProcessor;
 import contentcouch.explorify.UriProcessor;
 import contentcouch.misc.MetadataUtil;
@@ -64,11 +64,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		if( uri == null ) {
 			throw new RuntimeException( "Null URI given to getProcessingUri" );
 		}
-		return
-			"( " + processor + "\n" +
-			"  " + uri + "\n" +
-			"  header=(contentcouch.eval\n" +
-			"           (contentcouch.builtindata.get \"default-page-header-expression\")))";
+		return "(" + processor + " " + uri + ")";
 	}
 	protected String getExploreUri(String uri) {
 		return getProcessingUri("contentcouch.explorify", uri, "Exploring");
@@ -146,7 +142,15 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 			shouldRewriteRelativeUris = false;
 		}
 		
+		BaseArguments subArgs;
+		if( req.getContent() instanceof Arguments ) {
+			subArgs = new BaseArguments( (Arguments)req.getContent() );
+		} else {
+			subArgs = new BaseArguments();
+		}
+		subArgs.putNamedArgument("uri", inputUri);
 		SwfBaseRequest subReq = new SwfBaseRequest(req, uri);
+		subReq.content = subArgs;
 		subReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, "webcache");
 		subReq.putAllConfig(metaRepoConfig.config, true);
 		BaseUriProcessor rawUriProcessor = new ServletUriProcessor(BaseUriProcessor.getInstance(req, "explore"), shouldRewriteRelativeUris, pathToRoot) {
@@ -178,8 +182,7 @@ public class ContentCouchExplorerRequestHandler extends SwfFrontRequestHandler {
 		Response subRes = TheGetter.call(subReq);
 		
 		if( subRes.getContent() instanceof Directory ) {
-			subRes = new Explorify().explorifyDirectory( subReq, uri, (Directory)subRes.getContent(),
-				"<html><head><style>/*<!CDATA[*/\n" + BuiltInData.getString("default-page-style") + "/*]]>*/</style><body>\n", null );
+			subRes = new Explorify().explorifyDirectory( subReq, (Directory)subRes.getContent() );
 		}
 		
 		BaseResponse res = new BaseResponse(subRes);

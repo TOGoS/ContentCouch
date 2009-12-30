@@ -76,15 +76,8 @@ public class CCouchServlet extends SwfHttpServlet {
 		ntConfig.put("autoAppendPaths", "");
 		ntConfig.put("directoryIndex", "index.html");
 		ntConfig.put("path", SwfNamespace.SERVLET_PATH_URI_PREFIX+"/");
-		ntConfig.put("translatedPath", PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("es2-resources"))+"/");
-		frh.putComponent("es2-resources", new NameTranslator(new FileRequestHandler(),ntConfig));
-
-		ntConfig = new HashMap();
-		ntConfig.put("autoAppendPaths", "");
-		ntConfig.put("directoryIndex", "index.html");
-		ntConfig.put("path", SwfNamespace.SERVLET_PATH_URI_PREFIX+"/");
-		ntConfig.put("translatedPath", PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("es1-resources"))+"/");
-		frh.putComponent("es1-resources", new NameTranslator(new FileRequestHandler(),ntConfig));
+		ntConfig.put("translatedPath", PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("resources"))+"/");
+		frh.putComponent("resources", new NameTranslator(new FileRequestHandler(),ntConfig));
 
 		File configFile = getConfigFile();
 		String configFileUri = PathUtil.maybeNormalizeFileUri(configFile.getAbsolutePath());

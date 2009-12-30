@@ -69,7 +69,7 @@ public class Explorify extends BaseActiveFunction {
 		return ValueUtil.getString(getArgumentValue(req, argumentExpressions, "footer", null));
 	}
 	
-	public Response explorifyDirectory(Request req, String uri, Directory d, String header, String footer ) {
+	public Response explorifyDirectory(Request req, Directory d ) {
 		return getPageGeneratorResult(new DirectoryPageGenerator(d, req));
 	}
 	
@@ -124,7 +124,7 @@ public class Explorify extends BaseActiveFunction {
 		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
 		BaseRequest subReq = new BaseRequest(req);
 		if( subRes.getContent() instanceof Directory ) {
-			return explorifyDirectory(subReq, uri, (Directory)subRes.getContent(), getHeader(subReq, argumentExpressions), getFooter(subReq, argumentExpressions));
+			return explorifyDirectory(subReq, (Directory)subRes.getContent());
 		} else if( subRes.getContent() instanceof Directory.Entry ) {
 			return explorifyDirectoryEntry(subReq, argumentExpressions, uri, (Directory.Entry)subRes.getContent());
 		} else {

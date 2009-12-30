@@ -138,7 +138,14 @@ public class PhotoAlbumComponent extends BaseComponent {
 		if( args == null ) args = new BaseArguments();
 		
 		String uri = (String)args.getNamedArguments().get("uri");
-		if( uri == null || uri == "" ) uri = "x-ccouch-repo://";
+		if( uri == null || uri == "" ) {
+			String pi = req.getResourceName().substring(handlePath.length());
+			if( pi.length() > 0 && pi.charAt(0) == '/' ) {
+				uri = "x-ccouch-repo:/" + pi;
+			} else {
+				uri = "x-ccouch-repo://";
+			}
+		}
 
 		BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, uri);
 		subReq.contextVars = req.getContextVars();

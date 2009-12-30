@@ -91,6 +91,22 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 		return externalUriCache;
 	}
 	
+	protected String getResourceUri( String path ) {
+		if( path.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX) ) return path;
+		if( path.charAt(0) != '/' ) path = "/" + path;
+		return SwfNamespace.SERVLET_PATH_URI_PREFIX + path;
+	}
+	
+	protected String getExternalResourceUri( Request req, String path ) {
+		String resourceUri = getResourceUri(path);
+		SwfFrontRequestHandler swfFront = getSwfFront();
+		if( swfFront != null ) {
+			return swfFront.getExternalUri(req, resourceUri);
+		} else {
+			return processUri("raw", resourceUri);
+		}
+	}
+	
 	protected String getName() {
 		String name = (String)getArguments().getNamedArguments().get("name");
 		return (name == null) ? getOperandUri() : name;
@@ -105,6 +121,7 @@ public abstract class PageGenerator implements HttpServletRequestHandler {
 				return frh.getExternalUri(req, uri);
 			}
 			// eek, whichProcessor currently ignored! :{}
+			// probably should have component names = processor names 
 			BaseArguments linkArgs;
 			if( crumbName != null ) {
 				linkArgs = new BaseArguments(getArguments());

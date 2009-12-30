@@ -22,22 +22,34 @@ public class SwfFrontRequestHandler extends BaseRequestHandler {
 		components.put(name,c);
 	}
 	
-	public String getExternalUri( Request req, String internalUri ) {
-		if( internalUri == null ) return internalUri;
-		if( internalUri.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX) ) {
-			return "/es2" +internalUri.substring(SwfNamespace.SERVLET_PATH_URI_PREFIX.length());
-			/*
-			TODO: fancy ../ optimizations
+	protected String getUriPreQueryPart( String uri ) {
+		String[] parts = uri.split("[\\?\\#]",2);
+		return parts[0];
+	}
+	
+	public String getExternalUri( Request req, String dest ) {
+		if( dest == null ) return dest;
+		if( dest.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX) ) {
+			String source = req.getResourceName();
+			if( !source.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX) ) {
+				throw new RuntimeException( "Current URI is not a servlet URI! " + source );
+			}
 			
-			int qidx = internalUri.indexOf('?');
-			int pidx = internalUri.indexOf('#');
-			int end = -1;
-			if( qidx > -1 && (end == -1 || qidx > end) ) end = qidx;
-			if( pidx > -1 && (end == -1 || pidx > end) ) end = pidx;
-			String path = (end == -1) ? internalUri : internalUri.substring(0,end);
-			*/
+			String destP = dest.substring(SwfNamespace.SERVLET_PATH_URI_PREFIX.length());
+			if( destP.charAt(0) == '/' ) destP = destP.substring(1);
+			
+			String sourceP = getUriPreQueryPart( source.substring(SwfNamespace.SERVLET_PATH_URI_PREFIX.length()) );
+			if( sourceP.charAt(0) == '/' ) sourceP = sourceP.substring(1);
+			//String destPath = getUriPreQueryPart( dest );
+
+			String relativePath = "";
+			for( int i=1; i<sourceP.length(); ++i ) {
+				if( sourceP.charAt(i) == '/' ) relativePath += "../";
+			}
+			relativePath += destP;
+			return relativePath;
 		}
-		return internalUri;
+		return dest;
 	}
 	
 	public String getExternalComponentUri( Request req, Component component, Arguments args ) {
