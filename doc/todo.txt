@@ -1,3 +1,9 @@
+- 'store' does not add an updated commit to heads/ when the parent commit
+  (even if not in heads/) would have the same target.
+  - Use separate checks for 'create new commit' (only when target differs
+    from parent's), and 'store updated commit' (only when previous commit
+    in heads/ has different target).
+
 - Seems paths being reported by 'store' are still not quite right
   (missing parts between given path and last segment?)
   example:
@@ -6,7 +12,6 @@
 	put x-rdfified:file:./08 file:///home/tog/datastore/ccouch/data/user/BS/BSTBMRATPJA6LU2YKUCOUMBOUJU2WIAK
 	put x-rdfified:file:./2008 file:///home/tog/datastore/ccouch/data/user/34/34IQE6IGIPU6S4BFFXCLUZNHE744X26P
 	put x-rdfified:file:./ file:///home/tog/datastore/ccouch/data/user/BK/BKRCYIV4KBRRSQVE3W6EZS62SBYKLQL3
-
 
 - Update documentation
   * Help given by ccouch id <invalid option> is wrong
