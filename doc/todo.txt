@@ -1,3 +1,7 @@
+- 'check' does not default properly, or it doesn't actually use URIs, only
+  working when given a filesystem path.  It should be able to run using
+  arbitrary URIs.
+
 - 'store' does not add an updated commit to heads/ when the parent commit
   (even if not in heads/) would have the same target.
   - Use separate checks for 'create new commit' (only when target differs
