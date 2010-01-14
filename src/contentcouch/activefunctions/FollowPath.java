@@ -18,16 +18,12 @@ import contentcouch.path.PathSimplifiableActiveFunction;
 import contentcouch.path.PathSimplifiableExpression;
 import contentcouch.path.PathUtil;
 import contentcouch.store.TheGetter;
+import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class FollowPath extends BaseActiveFunction implements PathSimplifiableActiveFunction {
-	public Response call(Request req, Map argumentExpressions) {
-		Object source = getArgumentValue(req, argumentExpressions, "source", null);
-		if( source == null ) throw new RuntimeException("No source");
-		String path = ValueUtil.getString(getArgumentValue(req, argumentExpressions, "path", null));
-		if( path == null ) throw new RuntimeException("No path");
-		
+	public static Response followPath( Object source, String path ) {
 		String[] pathParts = path.split("/+");
 		for( int i=0; i<pathParts.length; ++i ) {
 			if( source instanceof Ref ) {
@@ -35,8 +31,16 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 			}
 			if( source instanceof Directory ) {
 				Directory.Entry e = ((Directory)source).getDirectoryEntry(pathParts[i]);
-				if( e == null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, pathParts[i] + " not found");
+				if( e == null ) {
+					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "'" + pathParts[i] + "' not found in "+source.getClass().getName());
+				}
 				source = e.getTarget();
+			} else if( source instanceof Commit ) {
+				if( "target".equals(pathParts[i]) ) {
+					source = ((Commit)source).getTarget();
+				} else { 
+					return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Cannot follow path " + path + " ('"+pathParts[i]+"' cannot be applied to a commit)");
+				}
 			} else {
 				return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Cannot follow path " + path);
 			}
@@ -45,6 +49,15 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 			source = TheGetter.get( ((Ref)source).getTargetUri() );
 		}
 		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, source);
+	}
+	
+	public Response call(Request req, Map argumentExpressions) {
+		Object source = getArgumentValue(req, argumentExpressions, "source", null);
+		if( source == null ) throw new RuntimeException("No source");
+		String path = ValueUtil.getString(getArgumentValue(req, argumentExpressions, "path", null));
+		if( path == null ) throw new RuntimeException("No path");
+		
+		return followPath( source, path );
 	}
 	
 	//// Path simplification ////
