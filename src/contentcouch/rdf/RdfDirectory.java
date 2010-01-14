@@ -144,10 +144,12 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public Directory.Entry getDirectoryEntry(String key) {
+		if( key == null ) return null;
+		
 		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
-			if( e.getName() == key ) {
+			if( key.equals(e.getName()) ) {
 				return e;
 			}
 		}
