@@ -82,6 +82,9 @@ public class RandomFile extends BaseActiveFunction {
 	
 	public Response call(Request req, Map argumentExpressions) {
 		Directory d = (Directory)getArgumentValue(req, argumentExpressions, "directory", null);
+		if( d == null ) {
+			return new BaseResponse( ResponseCodes.RESPONSE_CALLER_ERROR, "directory not specified" );
+		}
 		boolean returnEntries = ValueUtil.getBoolean( getArgumentValue(req, argumentExpressions, "return-entries", null), false);
 		boolean returnRefs = ValueUtil.getBoolean( getArgumentValue(req, argumentExpressions, "return-refs", null), false);
 		
