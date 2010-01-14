@@ -24,6 +24,7 @@ import togos.mf.value.Blob;
 
 import com.eekboom.utils.Strings;
 
+import contentcouch.activefunctions.FollowPath;
 import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.ContentAddressingScheme;
@@ -44,6 +45,7 @@ import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
+import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNode;
 import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;
@@ -855,6 +857,33 @@ public class MetaRepository extends BaseRequestHandler {
 				if( path.startsWith("heads/") ) {
 					String headPath = repoRef.subPath.substring("heads/".length());
 					path = resolveHeadPath(repoConfig, headPath, "");
+				} else if( path.startsWith("parsed-heads/") ) {
+					String inputHeadPath = repoRef.subPath.substring("parsed-heads/".length());
+					String headPath = inputHeadPath;
+					String resolvedHeadPath = resolveHeadPath(repoConfig, headPath, "");
+
+					// Try just getting it
+					BaseRequest subReq = new BaseRequest(req, resolvedHeadPath);
+					Response subRes = TheGetter.call(subReq);
+					if( subRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+						return subRes;
+					}
+					
+					// If that fails, try getting initial parts before '/'
+					// and parsing them
+					while( headPath.lastIndexOf('/') != -1 ) {
+						headPath = headPath.substring(0, headPath.lastIndexOf('/'));
+						resolvedHeadPath = resolveHeadPath(repoConfig, headPath, "");
+						subReq = new BaseRequest(req, resolvedHeadPath);
+						subRes = TheGetter.call(subReq);
+						if( subRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+							String headContent = ValueUtil.getString( subRes.getContent() );
+							Object head = RdfIO.parseRdf(headContent, resolvedHeadPath);
+							return FollowPath.followPath(head, inputHeadPath.substring(headPath.length()+1));
+						}
+					}
+					
+					return subRes;
 				} else if( path.equals("files") ) {
 					path = repoConfig.uri + "files";
 				} else if( path.startsWith("files/") ) {
@@ -875,6 +904,7 @@ public class MetaRepository extends BaseRequestHandler {
 					SimpleDirectory sd = new SimpleDirectory();
 					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
 					sd.addDirectoryEntry(new SimpleDirectory.Entry("heads",new BaseRef(req.getResourceName(),"heads"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
+					sd.addDirectoryEntry(new SimpleDirectory.Entry("parsed-heads",new BaseRef(req.getResourceName(),"parsed-heads"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
 					return new BaseResponse( 200, sd );
 				}
 				BaseRequest subReq = new BaseRequest(req, path);
