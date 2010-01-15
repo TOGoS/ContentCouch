@@ -1,13 +1,3 @@
-- 'check' does not default properly, or it doesn't actually use URIs, only
-  working when given a filesystem path.  It should be able to run using
-  arbitrary URIs.
-
-- 'store' does not add an updated commit to heads/ when the parent commit
-  (even if not in heads/) would have the same target.
-  - Use separate checks for 'create new commit' (only when target differs
-    from parent's), and 'store updated commit' (only when previous commit
-    in heads/ has different target).
-
 - Seems paths being reported by 'store' are still not quite right
   (missing parts between given path and last segment?)
   example:
@@ -16,6 +6,56 @@
 	put x-rdfified:file:./08 file:///home/tog/datastore/ccouch/data/user/BS/BSTBMRATPJA6LU2YKUCOUMBOUJU2WIAK
 	put x-rdfified:file:./2008 file:///home/tog/datastore/ccouch/data/user/34/34IQE6IGIPU6S4BFFXCLUZNHE744X26P
 	put x-rdfified:file:./ file:///home/tog/datastore/ccouch/data/user/BK/BKRCYIV4KBRRSQVE3W6EZS62SBYKLQL3
+
+- Data format overhaul
+  - Should still support old formats!
+    - options to force writing in old or new format
+    - default to old if sufficient for representing object and if
+      identical RDF blob exists 
+  - x-parse-rdf: -> x-rdf-subject:
+  - RdfNodes should not be same object as subject
+    - Something like RdfConversion.getRdfSubject( RdfNode ... )
+    - RdfNodes are also refs
+      - e.g., the following would be equivalent:
+        <prop rdf:ref="http://blah"/>
+        <prop><rdf:Description rdf:about="http://blah"/></prop>
+      - would more easily allow metadata in directory entries
+  - new directory entry format:
+    - removes need for 'targetType', 'targetSize' nonsense
+    - modification time is still a property of the entry, not the target
+    - e.g.
+      <DirectoryEntry>
+        <name>a place</name>
+        <dc:modified
+        <target>
+          <Directory rdf:about="x-rdf-subject:..."/>
+        </target>
+      </DirectoryEntry>
+      <DirectoryEntry>
+        <name>a place</name>
+        <target>
+          <Blob rdf:about="urn:sha1:...">
+            <dc:size>12345</dc:size>
+            <dc:format>text/awsum</dc:format>
+          </Blob>
+        </target>
+      </DirectoryEntry>
+
+- 'store' does not add an updated commit to heads/ when the parent commit
+  (even if not in heads/) would have the same target.
+  - Use separate checks for 'create new commit' (only when target differs
+    from parent's), and 'store updated commit' (only when previous commit
+    in heads/ has different target).
+
+- Implement changeset merging, 'update' command
+  - CommitUtil.findCommonAncestor( Commit a, Commit b )
+  - CommitUtil.getChangesBetween( Commit old, Commit new )
+  - CommitUtil.applyChanges( changes, WritableDirectory )
+  - CommitUtil.update( WritableDirectory, Commit current, Commit new )
+
+- 'check' does not default properly, or it doesn't actually use URIs, only
+  working when given a filesystem path.  It should probably be able to run
+  using arbitrary URIs.
 
 - Update documentation
   * Help given by ccouch id <invalid option> is wrong
@@ -39,6 +79,15 @@
   - Sub-command to import metadata into datastore from RDF files
   - Sub-command to export metadata as RDF based on a query
   - Allow metadata 'documents' to be signed?  Metadata may then be able to take the place of 'heads'.
+
+- Allow pushing to remote repositories over HTTP
+  - Service to take a list of URIs and return those of blobs not present on the server
+  - On web server, option to allow validated blobs to be pushed to certain sectors
+    - Require SHA-1 to be passed in, and blob must match
+    - Option to only allow RDF blobs in certain sectors
+    - Only allow from [certain] authenticated users
+  - POST .../missing-blob-list with \n-separated urn:sha1:... content
+  - PUT .../data/<sector>;uri=urn:sha1:...
 
 - RdfNodes ought to read relative URIs as relative to the node's source URI.
   - I don't think I ever did this.
