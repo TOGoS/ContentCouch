@@ -11,7 +11,8 @@
   - Should still support old formats!
     - options to force writing in old or new format
     - default to old if sufficient for representing object and if
-      identical RDF blob exists 
+      identical RDF blob exists
+    - Unit tests fr1st, plz 
   - x-parse-rdf: -> x-rdf-subject:
   - RdfNodes should not be same object as subject
     - Something like RdfConversion.getRdfSubject( RdfNode ... )

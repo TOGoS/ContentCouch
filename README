@@ -1,3 +1,6 @@
+ContentCouch is an RDF-and-URI-based system for storing and sharing
+snapshots of a hierarchical filesystem.
+
 More conceptual details about ContentCouch can be found on the wiki at
 http://wiki.github.com/TOGoS/contentcouch and under doc/ in the project
 directory.  This file is intended only to help you get started using
@@ -46,24 +49,26 @@ it.  For example, if there is a file, /home/ted/ccouch.conf:
   -repo /home/ted/ccouch/
 
 Then invoking 'ccouch -repo /home/ted/ccouch.conf' would be equivalent to
-'ccouch -repo /home/ted/ccouch/' (which, indicates to use
-/home/ted/ccouch/ as the root directory of the main repository and also
-load plus whatever options are given in /home/ted/ccouch/ccouch-config).
+'ccouch -repo /home/ted/ccouch/' (which indicates to use /home/ted/ccouch/
+as the root directory of the main repository and also load whatever
+options are given in /home/ted/ccouch/ccouch-config).
 
 == Repository Roles ==
 
 - main - this is the repository that will be checked first when loading
   files, and that files will be stored in when 'ccouch store' is invoked.
   This repository can reference any number of local and remote
-  repositories.
+  repositories.  The repository specified using -repo <path> is the main one.
 
 - local - these are other repositories that can be accessed quickly
   (i.e. on the same filesystem or computer as the main repository).
+  Specify a local repository using -local-repo[:<name>] <path>.
   
 - remote - a repository residing on a machine that is slow or difficult
   to access, such as one connected only by a low-bandwidth link (such as
   the internet).  You generally want to cache files that are loaded from
   remote repositories rather than downloading them each time they are needed.
+  Specify a remote repository using -remote-repo[:<name>] <path>.
 
 == Heads ==
 
@@ -98,12 +103,12 @@ Using these URIs you can reference specific heads.  If <repo-name> is
 included, the URI references the head in that specific repository. Otherwise,
 only the main and local (except by the 'cache-heads' command, which will default to using <origin-repo-name> as <repo-name>).
 
-If the URI ends with /latest, it will reference the latest version found
+If the URI ends with0 "/latest", it will reference the latest version found
 in whichever repositories are being checked, where 'latest' is interpreted
 as 'highest filename using natural comparison'.
 
-If the URI ends with a slash, it is interpreted as pointing the entire
-directory of heads.
+If the URI ends with "/", it is interpreted as pointing the entire directory
+of heads.
 
 If a head is to be interpreted as an RDF document (usually heads contain
 RDFified Commit objects), its URI must be prepended with "x-parse-rdf:".
