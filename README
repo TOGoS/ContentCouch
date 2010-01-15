@@ -5,12 +5,13 @@ ContentCouch at a basic level.
 
 == Installation ==
 
+* Compile java classes by running build.sh or using Eclipse
 * cd into the 'installler' directory
-* run install.bat or install.sh
+* Run install.bat or install.sh
   - this should create a file, 'ccouch-install.properties'
-* edit ccouch-install.properties, following the instructions therein
-* run install.bat/sh again
-  - this will create a script with the classpath and default repository
+* Edit ccouch-install.properties, following the instructions therein
+* Run install.bat/sh again
+  - This will create a script with the classpath and default repository
     configured at the 'script-path' you gave in ccouch-install.properties.
 
 You should now be able to run ccouch at the command line simply by typing
@@ -45,9 +46,9 @@ it.  For example, if there is a file, /home/ted/ccouch.conf:
   -repo /home/ted/ccouch/
 
 Then invoking 'ccouch -repo /home/ted/ccouch.conf' would be equivalent to
-'ccouch -repo /home/ted/ccouch/' (which, in turn, is equivalent to using
-/home/ted/ccouch/ as the root directory of the main repository plus whatever
-options are given in /home/ted/ccouch/ccouch-config).
+'ccouch -repo /home/ted/ccouch/' (which, indicates to use
+/home/ted/ccouch/ as the root directory of the main repository and also
+load plus whatever options are given in /home/ted/ccouch/ccouch-config).
 
 == Repository Roles ==
 
