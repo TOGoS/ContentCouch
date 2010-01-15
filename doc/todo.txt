@@ -27,16 +27,18 @@
     - e.g.
       <DirectoryEntry>
         <name>a place</name>
-        <dc:modified
         <target>
           <Directory rdf:about="x-rdf-subject:..."/>
         </target>
       </DirectoryEntry>
       <DirectoryEntry>
-        <name>a place</name>
+        <name>a thing</name>
+        <dc:modified>2010-01-15 18:51:38 GMT</dc:modified>
         <target>
           <Blob rdf:about="urn:sha1:...">
             <dc:size>12345</dc:size>
+            <!-- Normally format would not be included, but this shows how -->
+            <!-- arbitrary metadata about the target could be stored here. -->
             <dc:format>text/awsum</dc:format>
           </Blob>
         </target>
