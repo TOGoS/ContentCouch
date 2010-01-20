@@ -9,7 +9,7 @@
     - Something like RdfConversion.getRdfSubject( RdfNode ... )
     - RdfNodes are also refs
       - e.g., the following would be equivalent:
-        <prop rdf:ref="http://blah"/>
+        <prop rdf:resource="http://blah"/>
         <prop><rdf:Description rdf:about="http://blah"/></prop>
       - would more easily allow metadata in directory entries
   - new directory entry format:
@@ -34,6 +34,8 @@
           </Blob>
         </target>
       </DirectoryEntry>
+
+- Use internal data for imaging tests, not that bunny .jpg on nuke24.net
 
 - 'store' does not add an updated commit to heads/ when the parent commit
   (even if not in heads/) would have the same target.

@@ -15,18 +15,14 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.value.Blob;
-import contentcouch.active.ActiveRequestHandler;
-import contentcouch.active.DataUriResolver;
 import contentcouch.app.Log;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.file.FileRequestHandler;
 import contentcouch.framework.MultiRequestHandler;
 import contentcouch.http.HttpRequestHandler;
-import contentcouch.misc.ContextVarRequestHandler;
 import contentcouch.misc.MemTempRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.store.ParseRdfRequestHandler;
 import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
 
@@ -218,14 +214,11 @@ public class MetaRepoConfig {
 		if( requestKernelCache == null ) {
 			requestKernelCache = new MultiRequestHandler();
 			requestKernelCache.addRequestHandler(new MemTempRequestHandler());
-			requestKernelCache.addRequestHandler(getMetaRepository());
-			requestKernelCache.addRequestHandler(new ActiveRequestHandler());
-			requestKernelCache.addRequestHandler(new DataUriResolver());
 			requestKernelCache.addRequestHandler(new HttpRequestHandler());
 			requestKernelCache.addRequestHandler(new FileRequestHandler());
 			requestKernelCache.addRequestHandler(InternalStreamRequestHandler.getInstance());
-			requestKernelCache.addRequestHandler(new ParseRdfRequestHandler());
-			requestKernelCache.addRequestHandler(new ContextVarRequestHandler());
+			requestKernelCache.addRequestHandler(getMetaRepository());
+			TheGetter.initializeBasicCallHandlers(requestKernelCache);
 		}
 		return requestKernelCache;
 	}

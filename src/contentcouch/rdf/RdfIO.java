@@ -23,7 +23,7 @@ public class RdfIO {
 	{
 		if( value instanceof RdfNode ) {
 			RdfNode desc = (RdfNode)value;
-			String valueNodeName = XML.longToShort(desc.typeName, CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations );
+			String valueNodeName = XML.longToShort(desc.getRdfClassName(), CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations );
 			w.write(padding + "<" + valueNodeName + ">\n");
 			writeRdfProperties( w, desc, padding + "\t", usedNsAbbreviations);
 			w.write(padding + "</" + valueNodeName + ">\n");
@@ -76,6 +76,7 @@ public class RdfIO {
 	{
 		for( Iterator propIter = sort(properties.keySet()).iterator(); propIter.hasNext(); ) {
 			String propName = (String)propIter.next();
+			if( RdfNamespace.RDF_CLASS.equals(propName) ) continue;
 			Object value = properties.get(propName);
 			
 			if( value instanceof Collection ) { // Should always be, unless the RDF.Description was created wrong
@@ -99,12 +100,12 @@ public class RdfIO {
 				}
 				writeRdfProperties( subWriter, desc, "\t", usedNsAbbreviations );
 	
-				String nodeName = XML.longToShort(desc.typeName, CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
+				String nodeName = XML.longToShort(desc.getRdfClassName(), CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
 				Writer outerWriter = new StringWriter();
 				outerWriter.write( "<" + nodeName );
 				XML.writeXmlns( outerWriter, usedNsAbbreviations );
-				if( desc instanceof Description && ((Description)desc).about != null ) {
-					outerWriter.write(" rdf:about=\"" + XML.xmlEscapeAttributeValue(((Description)desc).about.getTargetUri()) + "\"");
+				if( desc.getSubjectUri() != null ) {
+					outerWriter.write(" rdf:about=\"" + XML.xmlEscapeAttributeValue(desc.getSubjectUri()) + "\"");
 				}
 				outerWriter.write( ">\n" );
 				outerWriter.write( subWriter.toString() );
@@ -135,24 +136,27 @@ public class RdfIO {
 			XML.XmlOpenTag descOpenTag = (XML.XmlOpenTag)xmlPart;
 			Map descNsAbbreviatios = XML.updateNamespaces( descOpenTag, nsAbbreviations );
 			descOpenTag = (XML.XmlOpenTag)XML.namespaceXmlPart(descOpenTag, descNsAbbreviatios);
-			
+
+			// TODO:
+			// Always return regular RdfNodes
+			// Subject should not _be_ the RDF node, but gotten by
+			// Calling RdfInterpreter#interpretSubject
 			if( RdfNamespace.RDF_DESCRIPTION.equals(descOpenTag.name) ) {
-				 desc = new Description();
-				 String about = (String)descOpenTag.attributes.get(RdfNamespace.RDF_ABOUT);
-				 if( about != null ) ((Description)desc).about = new BaseRef(about);
+				 desc = new RdfNode(null);
 			} else if( CcouchNamespace.DIRECTORY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory();
-				desc.typeName = descOpenTag.name;
+				desc.setRdfClassName( descOpenTag.name );
 			} else if( CcouchNamespace.DIRECTORYENTRY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory.Entry();
-				desc.typeName = descOpenTag.name;
+				desc.setRdfClassName( descOpenTag.name );
 			} else if( CcouchNamespace.COMMIT.equals(descOpenTag.name) ) {
 				desc = new RdfCommit();
-				desc.typeName = descOpenTag.name;
+				desc.setRdfClassName( descOpenTag.name );
 			} else {
 				 desc = new RdfNode(descOpenTag.name);
 			}
-			desc.sourceUri = sourceUri; 
+			desc.subjectUri = (String)descOpenTag.attributes.get(RdfNamespace.RDF_ABOUT);
+			desc.sourceUri = sourceUri;
 			
 			if( descOpenTag.closed ) {
 				return new XML.ParseResult( desc, offset );

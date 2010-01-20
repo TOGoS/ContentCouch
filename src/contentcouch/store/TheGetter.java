@@ -14,8 +14,12 @@ import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import togos.mf.value.Blob;
 import togos.swf2.SwfNamespace;
+import contentcouch.active.ActiveRequestHandler;
+import contentcouch.active.DataUriResolver;
 import contentcouch.active.expression.Expression;
 import contentcouch.app.Log;
+import contentcouch.framework.MultiRequestHandler;
+import contentcouch.misc.ContextVarRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
@@ -50,6 +54,22 @@ public class TheGetter {
 			desc += " (" + ((Blob)content).getLength() + " bytes)";
 		}
 		return desc;
+	}
+	
+	public static void initializeBasicCallHandlers( MultiRequestHandler mrh ) {
+		mrh.addRequestHandler(new ParseRdfRequestHandler());
+		mrh.addRequestHandler(new ContextVarRequestHandler());
+		mrh.addRequestHandler(new ActiveRequestHandler());
+		mrh.addRequestHandler(new DataUriResolver());
+		mrh.addRequestHandler(new ParseRdfRequestHandler());
+		mrh.addRequestHandler(new ContextVarRequestHandler());
+
+	}
+	
+	public static CallHandler getBasicCallHandler() {
+		MultiRequestHandler mrh = new MultiRequestHandler();
+		initializeBasicCallHandlers(mrh);
+		return mrh;
 	}
 	
 	public static Response call( Request req ) {

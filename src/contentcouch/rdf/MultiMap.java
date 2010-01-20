@@ -23,6 +23,12 @@ public class MultiMap extends HashMap {
 		i.add(value);
 	}
 	
+	public void putSingle(Object key, Object value) {
+		Set i = new HashSet();
+		i.add(value);
+		put(key, i);
+	}
+
 	public Set getSet(Object key) {
 		return (Set)get(key);
 	}
