@@ -1,12 +1,3 @@
-- Seems paths being reported by 'store' are still not quite right
-  (missing parts between given path and last segment?)
-  example:
-	put x-rdfified:file:./01 file:///home/tog/datastore/ccouch/data/user/D6/D6TUSFTYCUWE4WRJCPKMHWOQAAMY6XKS
-	put x-rdfified:file:./2007 file:///home/tog/datastore/ccouch/data/user/RX/RXUIHNFTEBHF3RUMZ4AI7RW3EV2PVIZZ
-	put x-rdfified:file:./08 file:///home/tog/datastore/ccouch/data/user/BS/BSTBMRATPJA6LU2YKUCOUMBOUJU2WIAK
-	put x-rdfified:file:./2008 file:///home/tog/datastore/ccouch/data/user/34/34IQE6IGIPU6S4BFFXCLUZNHE744X26P
-	put x-rdfified:file:./ file:///home/tog/datastore/ccouch/data/user/BK/BKRCYIV4KBRRSQVE3W6EZS62SBYKLQL3
-
 - Data format overhaul
   - Should still support old formats!
     - options to force writing in old or new format
@@ -97,6 +88,16 @@
   - This is very low priority, since all RDF docs currently used only contain absolute URIs.
 
 == Done ==
+
+* Seems paths being reported by 'store' are still not quite right
+  (missing parts between given path and last segment?)
+  example:
+	put x-rdfified:file:./01 file:///home/tog/datastore/ccouch/data/user/D6/D6TUSFTYCUWE4WRJCPKMHWOQAAMY6XKS
+	put x-rdfified:file:./2007 file:///home/tog/datastore/ccouch/data/user/RX/RXUIHNFTEBHF3RUMZ4AI7RW3EV2PVIZZ
+	put x-rdfified:file:./08 file:///home/tog/datastore/ccouch/data/user/BS/BSTBMRATPJA6LU2YKUCOUMBOUJU2WIAK
+	put x-rdfified:file:./2008 file:///home/tog/datastore/ccouch/data/user/34/34IQE6IGIPU6S4BFFXCLUZNHE744X26P
+	put x-rdfified:file:./ file:///home/tog/datastore/ccouch/data/user/BK/BKRCYIV4KBRRSQVE3W6EZS62SBYKLQL3
+  (fixed with a ", false", I think).
 
 * Create functions to help make photo album pages
   * Cache results of active functions in the datastore, remembering active:... -> urn:... mapping

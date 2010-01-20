@@ -328,7 +328,7 @@ public class MetaRepository extends BaseRequestHandler {
 				target = TheGetter.get( targetSourceUri );
 			} else {
 				if( sourceUri != null ) {
-					targetSourceUri = PathUtil.appendPath(sourceUri, e.getName());
+					targetSourceUri = PathUtil.appendPath(sourceUri, e.getName(), false);
 				} else {
 					targetSourceUri = null;
 				}
