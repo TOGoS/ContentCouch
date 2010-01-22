@@ -16,6 +16,7 @@ import togos.mf.value.Blob;
 import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;
 import contentcouch.misc.Function1;
+import contentcouch.misc.ValueUtil;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -133,9 +134,15 @@ public class RdfDirectory extends RdfNode implements Directory {
 		}
 
 		public long getTargetSize() {
-			String lm = (String)getSingle(CcouchNamespace.SIZE);
-			if( lm == null ) return -1;
-			return Long.parseLong(lm);
+			String explicitSize = (String)getSingle(CcouchNamespace.SIZE);
+			if( explicitSize != null ) return Long.parseLong(explicitSize);;
+
+			Object targetNode = getTargetNode();
+			if( targetNode instanceof RdfNode ) {
+				Number lengthNum = ValueUtil.getNumber( ((RdfNode)targetNode).getSingle(BitziNamespace.BZ_FILELENGTH) );
+				if( lengthNum != null ) return lengthNum.longValue();
+			}
+			return -1;
 		}
 
 		public long getTargetLastModified() {

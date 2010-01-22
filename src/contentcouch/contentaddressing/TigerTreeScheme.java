@@ -4,9 +4,8 @@ import org.bitpedia.util.Base32;
 import org.bitpedia.util.TigerTree;
 
 import togos.mf.value.Blob;
-
 import contentcouch.digest.DigestUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.BitziNamespace;
 
 public class TigerTreeScheme implements ContentAddressingScheme {
 	public static final TigerTreeScheme instance = new TigerTreeScheme();
@@ -17,7 +16,7 @@ public class TigerTreeScheme implements ContentAddressingScheme {
 		return "Base32-encoded Tiger-Tree";
 	}
 	public String getRdfKey() {
-		return CcouchNamespace.BASE32TIGERTREE;
+		return BitziNamespace.BZ_BASE32TIGERTREE;
 	}
 	
 	public static String TIGERTREEURNPREFIX = "urn:tree:tiger:";

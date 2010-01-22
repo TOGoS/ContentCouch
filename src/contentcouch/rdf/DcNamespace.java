@@ -1,13 +1,13 @@
 package contentcouch.rdf;
 
 public class DcNamespace {
-	public static final String DC_NS  = "http://purl.org/dc/terms/";
+	public static final String DCTERMS_NS = "http://purl.org/dc/terms/";
 
-	public static final String DC_CREATOR              = DC_NS + "creator";
-	public static final String DC_CREATED              = DC_NS + "created";
-	public static final String DC_MODIFIED             = DC_NS + "modified";
-	public static final String DC_FORMAT               = DC_NS + "format";
-	public static final String DC_TITLE                = DC_NS + "title";
-	public static final String DC_DESCRIPTION          = DC_NS + "description";
-	public static final String DC_SUBJECT              = DC_NS + "subject";
+	public static final String DC_CREATOR              = DCTERMS_NS + "creator";
+	public static final String DC_CREATED              = DCTERMS_NS + "created";
+	public static final String DC_MODIFIED             = DCTERMS_NS + "modified";
+	public static final String DC_FORMAT               = DCTERMS_NS + "format";
+	public static final String DC_TITLE                = DCTERMS_NS + "title";
+	public static final String DC_DESCRIPTION          = DCTERMS_NS + "description";
+	public static final String DC_SUBJECT              = DCTERMS_NS + "subject";
 }

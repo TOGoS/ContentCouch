@@ -1,5 +1,8 @@
 package contentcouch.rdf;
 
+import java.text.ParseException;
+
+import contentcouch.date.DateUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
@@ -8,27 +11,36 @@ import junit.framework.TestCase;
 
 public class RdfInterpreterTest extends TestCase {
 	static String OLDSTYLE_DIR_RDF_STRING =
-		"<Directory xmlns=\"http://ns.nuke24.net/ContentCouch/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">" +
-		"<entries rdf:parseType=\"Collection\">" +
-		"<DirectoryEntry>" +
-		"<name>bob</name>" +
-		"<targetType>Blob</targetType>" +
-		"<target rdf:resource=\"data:,Hello,%20world!\"/>" +
-		"</DirectoryEntry>" +
-		"</entries>" +
+		"<Directory xmlns=\"http://ns.nuke24.net/ContentCouch/\" " +
+		"    xmlns:dcterms=\"http://purl.org/dc/terms/\"\n" +
+		"    xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n" +
+		"  <entries rdf:parseType=\"Collection\">\n" +
+		"    <DirectoryEntry>\n" +
+		"      <name>bob</name>\n" +
+		"      <dcterms:modified>2010-01-22 15:20:35 GMT</dcterms:modified>\n" +
+		"      <size>13</size>\n" +
+		"      <target rdf:resource=\"data:,Hello,%20world!\"/>\n" +
+		"      <targetType>Blob</targetType>\n" +
+		"    </DirectoryEntry>\n" +
+		"  </entries>\n" +
 		"</Directory>";
 	
 	static String NEWSTYLE_DIR_RDF_STRING =
-		"<Directory xmlns=\"http://ns.nuke24.net/ContentCouch/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">" +
-		"<entries rdf:parseType=\"Collection\">" +
-		"<DirectoryEntry>" +
-		"<name>bob</name>" +
-		"<target>" +
-		"<Blob rdf:about=\"data:,Hello,%20world!\"/>" +
-		"<size>13</size>" +
-		"</target>" +
-		"</DirectoryEntry>" +
-		"</entries>" +
+		"<Directory xmlns=\"http://ns.nuke24.net/ContentCouch/\"\n" +
+		"    xmlns:bz=\"http://bitzi.com/xmlns/2002/01/bz-core#\"\n" +
+		"    xmlns:dcterms=\"http://purl.org/dc/terms/\"\n" +
+		"    xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n" +
+		"  <entries rdf:parseType=\"Collection\">\n" +
+		"    <DirectoryEntry>\n" +
+		"      <name>bob</name>\n" +
+		"      <dcterms:modified>2010-01-22 15:20:35 GMT</dcterms:modified>\n" +
+		"      <target>\n" +
+		"        <Blob rdf:about=\"data:,Hello,%20world!\">\n" +
+		"          <bz:fileLength>13</bz:fileLength>\n" +
+		"        </Blob>\n" +
+		"      </target>\n" +
+		"    </DirectoryEntry>\n" +
+		"  </entries>\n" +
 		"</Directory>";
 
 	public void setUp() {
@@ -48,6 +60,12 @@ public class RdfInterpreterTest extends TestCase {
 		assertNotNull( bob );
 		assertEquals( CcouchNamespace.TT_SHORTHAND_BLOB, bob.getTargetType() );
 		assertTrue( bob.getTarget() instanceof Ref );
+		assertEquals( 13l, bob.getTargetSize() );
+		try {
+			assertEquals( DateUtil.parseDate("2010-01-22 15:20:35 GMT").getTime(), bob.getTargetLastModified() );
+		} catch( ParseException e ) {
+			throw new RuntimeException(e);
+		}
 		Ref bobTargetRef = (Ref)bob.getTarget();
 		String rs = ValueUtil.getString( TheGetter.get( bobTargetRef.getTargetUri() ) );
 		assertEquals( "Hello, world!", rs );
