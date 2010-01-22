@@ -186,7 +186,7 @@ public class MetadataUtil {
 		uriDotFileEntry.target = BlobUtil.getBlob(dirUri);
 		uriDotFileEntry.targetLastModified = new Date().getTime();
 		uriDotFileEntry.name = ".ccouch-uri";
-		uriDotFileEntry.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
+		uriDotFileEntry.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
 		uriDotFileEntry.targetSize = ((Blob)uriDotFileEntry.target).getLength();
 		((WritableDirectory)dir).addDirectoryEntry(uriDotFileEntry);
 	}

@@ -9,7 +9,18 @@ public class RdfNamespace {
 	public static final String RDF_RESOURCE            = RDF_NS + "resource";
 	public static final String RDF_PARSETYPE           = RDF_NS + "parseType";
 
-	// Stand-in for actual value - may be 'class' but may be something else.
-	// It's what rdf:Description is one of.
-	public static final String RDF_CLASS               = RDF_NS + "class";
+	/**
+	 * Value should be a ref.
+	 * 
+	 * e.g.
+	 * <somens:Thing>
+	 * </somens:Thing>
+	 * 
+	 * is equivalent to
+	 * 
+	 * <rdf:Description>
+	 *   <rdf:type rdf:resource="http://somens.com/Thing"/>
+	 * </rdf:Description>
+	 */
+	public static final String RDF_TYPE               = RDF_NS + "type";
 }

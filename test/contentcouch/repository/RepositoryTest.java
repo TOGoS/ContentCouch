@@ -54,7 +54,7 @@ public class RepositoryTest extends TestCase {
 		SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 		e.name = name;
 		e.target = BlobUtil.getBlob(content);
-		e.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
+		e.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
 		e.targetLastModified = 1000l;
 		e.targetSize = ((Blob)e.target).getLength();
 		return e;

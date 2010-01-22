@@ -23,7 +23,7 @@ public class RdfIO {
 	{
 		if( value instanceof RdfNode ) {
 			RdfNode desc = (RdfNode)value;
-			String valueNodeName = XML.longToShort(desc.getRdfClassName(), CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations );
+			String valueNodeName = XML.longToShort(desc.getRdfTypeUri(), CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations );
 			w.write(padding + "<" + valueNodeName + ">\n");
 			writeRdfProperties( w, desc, padding + "\t", usedNsAbbreviations);
 			w.write(padding + "</" + valueNodeName + ">\n");
@@ -76,7 +76,7 @@ public class RdfIO {
 	{
 		for( Iterator propIter = sort(properties.keySet()).iterator(); propIter.hasNext(); ) {
 			String propName = (String)propIter.next();
-			if( RdfNamespace.RDF_CLASS.equals(propName) ) continue;
+			if( RdfNamespace.RDF_TYPE.equals(propName) ) continue;
 			Object value = properties.get(propName);
 			
 			if( value instanceof Collection ) { // Should always be, unless the RDF.Description was created wrong
@@ -100,7 +100,7 @@ public class RdfIO {
 				}
 				writeRdfProperties( subWriter, desc, "\t", usedNsAbbreviations );
 	
-				String nodeName = XML.longToShort(desc.getRdfClassName(), CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
+				String nodeName = XML.longToShort(desc.getRdfTypeUri(), CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
 				Writer outerWriter = new StringWriter();
 				outerWriter.write( "<" + nodeName );
 				XML.writeXmlns( outerWriter, usedNsAbbreviations );
@@ -145,13 +145,13 @@ public class RdfIO {
 				 desc = new RdfNode(null);
 			} else if( CcouchNamespace.DIRECTORY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory();
-				desc.setRdfClassName( descOpenTag.name );
+				desc.setRdfTypeUri( descOpenTag.name );
 			} else if( CcouchNamespace.DIRECTORYENTRY.equals(descOpenTag.name) ) {
 				desc = new RdfDirectory.Entry();
-				desc.setRdfClassName( descOpenTag.name );
+				desc.setRdfTypeUri( descOpenTag.name );
 			} else if( CcouchNamespace.COMMIT.equals(descOpenTag.name) ) {
 				desc = new RdfCommit();
-				desc.setRdfClassName( descOpenTag.name );
+				desc.setRdfTypeUri( descOpenTag.name );
 			} else {
 				 desc = new RdfNode(descOpenTag.name);
 			}

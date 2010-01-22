@@ -90,7 +90,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry entry = (Directory.Entry)i.next();
 			Object target;
-			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(entry.getTargetType()) ) {
+			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(entry.getTargetType()) ) {
 				target = directoryTargetProcessor.apply(entry.getTarget());
 			} else {
 				target = blobTargetProcessor.apply(entry.getTarget());
@@ -114,7 +114,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			sde.targetLastModified = -1;
 			sde.target = e.getValue();
 			sde.targetSize = -1;
-			sde.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+			sde.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
 			addDirectoryEntry(sde);
 		}
 	}
@@ -140,9 +140,9 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		newEntry.target = value;
 		newEntry.name = name;
 		if( value instanceof Directory ) {
-			newEntry.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+			newEntry.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
 		} else {
-			newEntry.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
+			newEntry.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
 		}
 		return newEntry;
 	}

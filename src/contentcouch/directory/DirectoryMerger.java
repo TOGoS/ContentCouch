@@ -164,7 +164,7 @@ public class DirectoryMerger {
 			return true;
 		} else {
 			Log.log(Log.EVENT_PUT, srcUri, destUri );
-			if( copyNewDirectories && CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(newEntry.getTargetType()) ) {
+			if( copyNewDirectories && CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(newEntry.getTargetType()) ) {
 				Object target = newEntry.getTarget();
 				SimpleDirectory.Entry simpleEntry = new SimpleDirectory.Entry( newEntry );
 				simpleEntry.target = deepCloneDirectory(target);

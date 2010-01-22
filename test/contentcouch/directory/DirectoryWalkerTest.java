@@ -51,8 +51,8 @@ public class DirectoryWalkerTest extends TestCase {
 		Function1 bf = EntryFilters.BLOBFILTER;
 		assertNull( bf.apply(new SimpleDirectory.Entry("x", new SimpleDirectory(), null)) );
 		assertNotNull( bf.apply(new SimpleDirectory.Entry("x", BlobUtil.getBlob("x"), null)) );
-		assertNotNull( bf.apply(new SimpleDirectory.Entry("x", new SimpleDirectory(), CcouchNamespace.OBJECT_TYPE_BLOB)) );
-		assertNull( bf.apply(new SimpleDirectory.Entry("x", BlobUtil.getBlob("x"), CcouchNamespace.OBJECT_TYPE_DIRECTORY)) );
+		assertNotNull( bf.apply(new SimpleDirectory.Entry("x", new SimpleDirectory(), CcouchNamespace.TT_SHORTHAND_BLOB)) );
+		assertNull( bf.apply(new SimpleDirectory.Entry("x", BlobUtil.getBlob("x"), CcouchNamespace.TT_SHORTHAND_DIRECTORY)) );
 	}
 	
 	public void testBlobOnlyDirectoryWalk() {

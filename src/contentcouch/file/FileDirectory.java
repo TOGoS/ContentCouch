@@ -54,9 +54,9 @@ public class FileDirectory extends File implements WritableDirectory {
 
 		public String getTargetType() {
 			if( isDirectory() ) {
-				return CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+				return CcouchNamespace.TT_SHORTHAND_DIRECTORY;
 			} else {
-				return CcouchNamespace.OBJECT_TYPE_BLOB;
+				return CcouchNamespace.TT_SHORTHAND_BLOB;
 			}
 		}
 		

@@ -109,7 +109,7 @@ public class AlbumPage extends Explorify {
 			for( Iterator i=entries.iterator(); i.hasNext(); ) {
 				Directory.Entry e = (Directory.Entry)i.next();
 				
-				if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+				if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
 					dirEntryList.add(e);
 					continue;
 				}
@@ -204,7 +204,7 @@ public class AlbumPage extends Explorify {
 					String href = getUnprocessedHref( e, true );
 					String ename = e.getName();
 					href = processRelativeUri("album", getOperandUri(), href, ename);
-					if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+					if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
 						if( !ename.endsWith("/") ) ename += "/";
 					}
 					w.write("<tr>");
@@ -229,7 +229,7 @@ public class AlbumPage extends Explorify {
 					String href = getUnprocessedHref( e, false );
 					href = processRelativeUri("album", getOperandUri(), href);
 					String ename = e.getName();
-					if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+					if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
 						if( !ename.endsWith("/") ) ename += "/";
 					}
 					w.write("<tr>");

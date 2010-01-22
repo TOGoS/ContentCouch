@@ -23,7 +23,7 @@ public class EntryFilters {
 		};
 	}
 	
-	public static Function1 BLOBFILTER = createTypeFilter( CcouchNamespace.OBJECT_TYPE_BLOB, false, Blob.class );
+	public static Function1 BLOBFILTER = createTypeFilter( CcouchNamespace.TT_SHORTHAND_BLOB, false, Blob.class );
 	
-	public static Function1 DIRECTORYFILTER = createTypeFilter( CcouchNamespace.OBJECT_TYPE_DIRECTORY, false, Directory.class );
+	public static Function1 DIRECTORYFILTER = createTypeFilter( CcouchNamespace.TT_SHORTHAND_DIRECTORY, false, Directory.class );
 }

@@ -49,8 +49,8 @@ public class CloneUtil {
 	
 	public static final String getTargetTypeName( int typeIndex ) {
 		switch( typeIndex & CLONE_TARGETTYPE_MASK ) {
-		case( CLONE_TARGETTYPE_BLOB ): return CcouchNamespace.OBJECT_TYPE_BLOB;
-		case( CLONE_TARGETTYPE_DIR ): return CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+		case( CLONE_TARGETTYPE_BLOB ): return CcouchNamespace.TT_SHORTHAND_BLOB;
+		case( CLONE_TARGETTYPE_DIR ): return CcouchNamespace.TT_SHORTHAND_DIRECTORY;
 		default: return "Unknown";
 		}
 	}
@@ -60,9 +60,9 @@ public class CloneUtil {
 	}
 	
 	public static final int getTargetTypeIndex( Object obj, String type ) {
-		if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(type) ) {
+		if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(type) ) {
 			return CLONE_TARGETTYPE_BLOB;
-		} else if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(type) ) {
+		} else if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(type) ) {
 			return CLONE_TARGETTYPE_DIR;
 		} else {
 			if( obj instanceof Directory ) {

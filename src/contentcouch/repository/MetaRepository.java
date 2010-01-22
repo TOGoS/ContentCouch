@@ -157,7 +157,7 @@ public class MetaRepository extends BaseRequestHandler {
 		Directory d = (Directory)dirRes.getContent();
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
-			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
 				l.add(PathUtil.appendPath(dataDirUri, e.getName() + "/"));
 			}
 		}
@@ -793,7 +793,7 @@ public class MetaRepository extends BaseRequestHandler {
 				RepoConfig repoConfig = (RepoConfig)i.next();
 				SimpleDirectory.Entry entry = new SimpleDirectory.Entry();
 				entry.name = repoConfig.name;
-				entry.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+				entry.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
 				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.uri);
 				sd.addDirectoryEntry(entry);
 			}
@@ -902,9 +902,9 @@ public class MetaRepository extends BaseRequestHandler {
 					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, getFunctionResult(repoConfig, subIndexName, key));
 				} else if( path.equals("") ) {
 					SimpleDirectory sd = new SimpleDirectory();
-					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
-					sd.addDirectoryEntry(new SimpleDirectory.Entry("heads",new BaseRef(req.getResourceName(),"heads"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
-					sd.addDirectoryEntry(new SimpleDirectory.Entry("parsed-heads",new BaseRef(req.getResourceName(),"parsed-heads"),CcouchNamespace.OBJECT_TYPE_DIRECTORY));
+					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+					sd.addDirectoryEntry(new SimpleDirectory.Entry("heads",new BaseRef(req.getResourceName(),"heads"),CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+					sd.addDirectoryEntry(new SimpleDirectory.Entry("parsed-heads",new BaseRef(req.getResourceName(),"parsed-heads"),CcouchNamespace.TT_SHORTHAND_DIRECTORY));
 					return new BaseResponse( 200, sd );
 				}
 				BaseRequest subReq = new BaseRequest(req, path);

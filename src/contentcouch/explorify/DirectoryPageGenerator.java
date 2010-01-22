@@ -35,7 +35,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 		} else {
 			href = allowRelative ? e.getName() : PathUtil.appendPath(getOperandUri(), e.getName());
 		}
-		if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+		if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
 			if( !PathUtil.isAbsolute(href) && !href.endsWith("/")) href += "/";
 		}
 		return href;
@@ -57,7 +57,7 @@ public class DirectoryPageGenerator extends PageGenerator {
 			Entry e = (Entry)i.next();
 			String href = getUnprocessedHref(e, true);
 			String name = e.getName();
-			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(e.getTargetType()) ) {
+			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
 				if( !name.endsWith("/") ) name += "/";
 			}
 			href = processRelativeUri("default", getOperandUri(), href);

@@ -23,8 +23,8 @@ public class EntryComparators {
 			if( tt1 == null ) return 1;
 			if( tt2 == null ) return -1;
 			if( tt1.equals(tt2) ) return 0;
-			if( tt1.equals(CcouchNamespace.OBJECT_TYPE_DIRECTORY) ) return -1;
-			if( tt2.equals(CcouchNamespace.OBJECT_TYPE_DIRECTORY) ) return 1;
+			if( tt1.equals(CcouchNamespace.TT_SHORTHAND_DIRECTORY) ) return -1;
+			if( tt2.equals(CcouchNamespace.TT_SHORTHAND_DIRECTORY) ) return 1;
 			return 0;
 		}
 		

@@ -45,13 +45,13 @@ public class DirectoryUtil {
 					if( !href.endsWith("/") ) {
 						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 						e.name = href;
-						e.targetType = CcouchNamespace.OBJECT_TYPE_BLOB;
+						e.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
 						e.target = new BaseRef(identifier, href);
 						dir.addDirectoryEntry(e);
 					} else {
 						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 						e.name = href.substring(0, href.length()-1);
-						e.targetType = CcouchNamespace.OBJECT_TYPE_DIRECTORY;
+						e.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
 						e.target = new BaseRef(identifier, e.name + "/");
 						dir.addDirectoryEntry(e);
 					}

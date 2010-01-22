@@ -1,19 +1,26 @@
 package contentcouch.rdf;
 
+import contentcouch.value.BaseRef;
+import contentcouch.value.Ref;
+
 public class RdfNode extends MultiMap {
 	public String subjectUri;
 	public String sourceUri;
 	
-	public RdfNode(String typeName) {
-		this.setRdfClassName( typeName );
-	}
-
-	public String getRdfClassName() {
-		return (String)getSingle(RdfNamespace.RDF_CLASS);
+	public RdfNode() {
 	}
 	
-	public void setRdfClassName( String typeName ) {
-		this.putSingle(RdfNamespace.RDF_CLASS, typeName);
+	public RdfNode(String typeName) {
+		this.setRdfTypeUri( typeName );
+	}
+
+	public String getRdfTypeUri() {
+		Ref typeRef = (Ref)getSingle(RdfNamespace.RDF_TYPE);
+		return typeRef == null ? null : typeRef.getTargetUri();
+	}
+	
+	public void setRdfTypeUri( String typeName ) {
+		this.putSingle(RdfNamespace.RDF_TYPE, new BaseRef(typeName));
 	}
 
 	public String getSubjectUri() {

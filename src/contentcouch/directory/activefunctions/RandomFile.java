@@ -30,9 +30,9 @@ public class RandomFile extends BaseActiveFunction {
 		for( Iterator i=entries.iterator(); i.hasNext(); ) {
 			Directory.Entry de = (Directory.Entry)i.next();
 			String ttype = de.getTargetType();
-			if( CcouchNamespace.OBJECT_TYPE_DIRECTORY.equals(ttype) ) {
+			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(ttype) ) {
 				dirs.add(de);
-			} else if( CcouchNamespace.OBJECT_TYPE_BLOB.equals(ttype) ) {
+			} else if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(ttype) ) {
 				files.add(de);
 			}
 		}
@@ -48,7 +48,7 @@ public class RandomFile extends BaseActiveFunction {
 			for( Iterator i=files.iterator(); i.hasNext(); ) {
 				sd.addDirectoryEntry((Directory.Entry)i.next());
 			}
-			dirs.add(new SimpleDirectory.Entry("__files", sd, CcouchNamespace.OBJECT_TYPE_DIRECTORY));
+			dirs.add(new SimpleDirectory.Entry("__files", sd, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
 			return dirs;
 		}
 	}

@@ -24,7 +24,7 @@ public class RdfInterpreterTest extends TestCase {
 		"<DirectoryEntry>" +
 		"<name>bob</name>" +
 		"<target>" +
-		"<Blob rdf:resource=\"data:,Hello,%20world!\"/>" +
+		"<Blob rdf:about=\"data:,Hello,%20world!\"/>" +
 		"<size>13</size>" +
 		"</target>" +
 		"</DirectoryEntry>" +
@@ -46,7 +46,7 @@ public class RdfInterpreterTest extends TestCase {
 		assertEquals( 1, dir.getDirectoryEntrySet().size() );
 		Directory.Entry bob = dir.getDirectoryEntry("bob"); 
 		assertNotNull( bob );
-		assertEquals( CcouchNamespace.OBJECT_TYPE_BLOB, bob.getTargetType() );
+		assertEquals( CcouchNamespace.TT_SHORTHAND_BLOB, bob.getTargetType() );
 		assertTrue( bob.getTarget() instanceof Ref );
 		Ref bobTargetRef = (Ref)bob.getTarget();
 		String rs = ValueUtil.getString( TheGetter.get( bobTargetRef.getTargetUri() ) );

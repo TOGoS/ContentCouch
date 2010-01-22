@@ -35,6 +35,7 @@ public class CcouchNamespace {
 	public static final String BASE32TIGERTREE  = BZ_NS + "fileTigerTree";
 	public static final String PARSED_FROM      = CC_NS + "parsedFrom";
 
+	public static final String BLOB             = CC_NS + "Blob";
 	public static final String DIRECTORY        = CC_NS + "Directory";
 	public static final String DIRECTORYENTRY   = CC_NS + "DirectoryEntry";
 	public static final String COMMIT           = CC_NS + "Commit";
@@ -85,11 +86,21 @@ public class CcouchNamespace {
 
 	//// Object types ////
 	
-	public static final String OBJECT_TYPE_BLOB = "Blob";
-	public static final String OBJECT_TYPE_DIRECTORY = "Directory";
-	public static final String OBJECT_TYPE_COMMIT = "Commit";
-	/** Indicates a miscellaneous RDF structure */
-	public static final String OBJECT_TYPE_RDF = "RDF";
+	/*
+	 * In old-style RDF, these are used to indicate types of
+	 * objects referenced from directory entries using <targetType>.
+	 * 
+	 * Transitioning to new style, these should be converted
+	 * to the fully namespaced versions.  e.g.
+	 * 
+	 *  <targetType>Blob</targetType> should be interpreted like
+	 *  <target><Blob>...</Blob></target>
+	 *  
+	 *  where <Blob> means thing with <rdf:type rdf:resource="http://ns.nuke24.net/ContentCouch/Blob"/>
+	 */
+	
+	public static final String TT_SHORTHAND_BLOB = "Blob";
+	public static final String TT_SHORTHAND_DIRECTORY = "Directory";
 	
 	//// XML Namespaces ////
 	

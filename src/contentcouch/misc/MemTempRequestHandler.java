@@ -56,7 +56,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 			if( obj instanceof Directory ) {
 				Directory.Entry e = ((Directory)obj).getDirectoryEntry(part);
 				if( e == null ) {
-					((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, obj = new SimpleDirectory(), CcouchNamespace.OBJECT_TYPE_DIRECTORY));
+					((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, obj = new SimpleDirectory(), CcouchNamespace.TT_SHORTHAND_DIRECTORY));
 				} else {
 					obj = e.getTarget();
 				}
@@ -67,7 +67,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 
 		String part = parts[i];
 		if( obj instanceof Directory ) {
-			((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, newObj, newObj instanceof Directory ? CcouchNamespace.OBJECT_TYPE_DIRECTORY : CcouchNamespace.OBJECT_TYPE_BLOB));
+			((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, newObj, newObj instanceof Directory ? CcouchNamespace.TT_SHORTHAND_DIRECTORY : CcouchNamespace.TT_SHORTHAND_BLOB));
 		} else {
 			return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
 		}
