@@ -35,7 +35,8 @@
         </target>
       </DirectoryEntry>
 
-- Use internal data for imaging tests, not that bunny .jpg on nuke24.net
+- Option to skip caching of directories that have already been marked as
+  having their content fully cached.
 
 - 'store' does not add an updated commit to heads/ when the parent commit
   (even if not in heads/) would have the same target.
@@ -90,6 +91,8 @@
   - This is very low priority, since all RDF docs currently used only contain absolute URIs.
 
 == Done ==
+
+* Use internal data for imaging tests, not that bunny .jpg on nuke24.net
 
 * Seems paths being reported by 'store' are still not quite right
   (missing parts between given path and last segment?)
