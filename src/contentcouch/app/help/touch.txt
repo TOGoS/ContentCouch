@@ -1,0 +1,6 @@
+Usage: ccouch [general options] touch [options] <path> <path> ...
+Touch options:
+  -r            ; Recurse into subdirectories
+
+Will remove all .ccouch-uri files from named directories, parent directories,
+and, if '-r' is given, sub-directories

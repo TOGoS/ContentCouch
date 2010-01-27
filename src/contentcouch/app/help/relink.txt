@@ -1,0 +1,4 @@
+Usage: ccouch [general options] relink [store options] <file1> <file2> ...
+Relink options:
+  -v  ; be verbose
+  -q  ; be quiet

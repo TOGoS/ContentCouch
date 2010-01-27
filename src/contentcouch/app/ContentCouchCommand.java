@@ -22,6 +22,7 @@ import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import contentcouch.app.Linker.LinkException;
+import contentcouch.app.help.ContentCouchCommandHelp;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryWalker;
 import contentcouch.directory.EntryFilters;
@@ -46,166 +47,16 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class ContentCouchCommand {
-	public String USAGE =
-		"ContentCouch, by TOGoS\n" +
-		"\n" +
-		"Usage: ccouch [general options] <sub-command> [command-args]\n" +
-		"General options:\n" +
-		"  -repo[:<name>] <location>        ; specify the default repository\n" +
-		"  -local-repo[:<name>] <location>  ; specify a secondary local repository\n" +
-		"  -remote-repo[:<name>] <location> ; specify a remote repository\n" +
-		"Sub-commands:\n" +
-		"  store <files>         ; store files in the main repo\n" +
-		"  relink <files>        ; replace files with hardlinks to the store\n" +
-		"  checkout <src> <dest> ; check files out to the filesystem\n" +
-		"  cache <urn> ...       ; cache blobs\n" +
-		"  cache-heads ...       ; cache heads from another repository\n" +
-		"  id <files>            ; give URNs for files without storing\n" +
-		"  rdfify <dir>          ; print RDF listing of a directory\n" +
-		"  check                 ; check repo integrity and delete bad files\n" +
-		"  touch                 ; remove directory content URI cache files\n" +
-		"  config                ; display the current configuration\n" +
-		"\n" +
-		"Run ccouch <subcommand> -? for further info about that command.\n" +
-		"\n" +
-		"Locations can generally be given as URIs, absolute or remote filesystem paths,\n" +
-		"pseudo-active URIs (see the documentation), or \"-\" (meaning stdin/out,\n" +
-		"depending on context)\n" +
-		"\n" +
-		"Further documentation may be found at <http://github.com/TOGoS/contentcouch/>";
-	
-	public String COPY_USAGE =
-		"Usage: ccouch [general options] copy [copy options] <src> <src> ... <dest>\n" +
-		"  <src> and <dest> can be file paths, URIs, or \"-\"\n" +
-		"Options:\n" +
-		"  -link              ; when possible, hardlink files instead of copying\n";
-
-	public String ID_USAGE =
-		"Usage: ccouch [general options] id <uri> <uri> ...\n" +
-		"Options:\n" +
-		"  -hide-inputs       ; do not show input URIs in final report\n" +
-		"\n" +
-		"Will report <input-uri>\t<identity-uri> on standard out unless -hide-inputs\n" +
-		"is specified, in which case only the identity URIs will be reported.";
-	
-	public String RELINK_USAGE =
-		"Usage: ccouch [general options] relink [store options] <file1> <file2> ...\n" +
-		"Relink options:\n" +
-		"  -v  ; be verbose\n" +
-		"  -q  ; be quiet";
-
-	public String STORE_USAGE =
-		"Usage: ccouch [general options] store [store options] <file1> <file2> ...\n" +
-		"Store options:\n" +
-		"  -m <message>       ; create a commit with this message\n" +
-		"  -a <author>        ; create a commit with this author\n" +
-		"  -n <name>          ; name your commit this\n" +
-		"  -force-commit      ; create a new commit even if nothing has changed\n" +
-		"  -link              ; hardlink files into the store instead of copying\n" +
-		"  -files-only        ; store only file content (no directory listings)\n" +
-		"  -dirs-only         ; store only directory listings (no file content)\n" +
-		"  -dont-store        ; store nothing (same as using 'ccocuch id')\n" +
-		"  -store-sector      ; data sub-dir to store data (defaults to \"user\")\n" +
-		"  -hide-inputs       ; do not show input URIs in final report\n" +
-		"  -create-uri-dot-files ; cache URNs of directories in .ccouch-uri files\n" +
-		"  -use-uri-dot-files    ; skip recursively storing directories containing\n" +
-		"                          .ccouch-uri files, instead trusting the URI within\n" +
-		"  -dcudfnt <time>    ; As an exception when creating uri dot files, don't\n" +
-		"                       create one for directories that contain any files\n" +
-		"                       modified more recently than the given time (see below)\n" +
-		"  -v                 ; verbose - report every path -> urn mapping\n" +
-		"  -q                 ; quiet - show nothing\n" +
-		"  -?                 ; display help and exit\n" +
-		"\n" +
-		"Will report <input-uri>\t<identity-uri> on standard out unless -hide-inputs\n" +
-		"is specified, in which case only the identity URIs will be reported." +
-		"\n" +
-		"If -m, -a, and/or -n are used, a commit will be created and its URN output.\n" +
-		"\n" +
-		"If -n is specified, a commit will be stored under that name as\n" +
-		"<repo-path>/heads/<main-repo-name>/<name>/<version>, where <version> is automatically\n" +
-		"incremented for new commits.\n" +
-		"\n" +
-		"<time> must be of the format '-<integer><unit>', where <unit> is one of\n" +
-		"'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', or 'years'\n";
-	
-	public String CHECKOUT_USAGE =
-		"Usage: ccouch [general options] checkout [checkout options] <source> <dest>\n" +
-		"Checkout options:\n" +
-		"  -link              ; hardlink files from the store instead of copying\n" +
-		"  -merge             ; merge source tree into destination\n" +
-		"  -replace-existing  ; when merging, always replace existing files\n" +
-		"  -keep-existing     ; when merging, always keep existing files\n" +
-		"  -v                 ; verbose - report every file visited\n" +
-		"  -?                 ; display help and exit\n" +
-		"\n" +
-		"When merging, unless -replace-existing is given:\n" +
-		"- only files that do not already exist in the destination folder will be\n" +
-		"  checked out.\n" +
-		"- If the destination file has the same content as the to-be-checked-out file,\n" +
-		"  no action is taken.\n" +
-		"- If the content is different, an error is printed and the program exits.";
-		
-	public static String TOUCH_USAGE =
-		"Usage: ccouch [general options] touch [options] <path> <path> ...\n" +
-		"Options:\n" +
-		"  -r            ; Recurse into subdirectories\n" +
-		"\n" +
-		"Will remove all .ccouch-uri files from named directories, parent directories,\n" +
-		"and, if '-r' is given, sub-directories";
-
-	public static String CACHE_USAGE =
-		"Usage: ccouch [general options] cache [options] <urn> <urn> ...\n" +
-		"Options:\n" +
-		"  -v            ; show all URNs being followed\n" +
-		"  -q            ; show nothing - not even failures\n" +
-		"  -link         ; hardlink files from the store instead of copying\n" +
-		"  -store-sector <name> ; data subdir to store data (defaults to \"remote\")\n" +
-		"\n" +
-		"Attempts to cache any objects that are not already in a local repository\n" +
-		"into your cache repository.  Directories, Commits, and Redirects will\n" +
-		"be followed and all referenced objects will be cached.\n" +
-		"\n" +
-		"By default, URIs that fail to load and ones that are newly cached are\n" +
-		"reported to stderr\n";
-	
-	public static String CACHE_HEADS_USAGE =
-		"Usage: ccouch [general options] cache-heads [options] <head-uri> ...\n" +
-		"Options:\n" +
-		"  -v           ; show all exports and skipped files\n" +
-		"  -q           ; show only failures\n" +
-		"  -all-remotes ; cache heads from each remote repository\n" +
-		"\n" +
-		"Attempts to cache heads from the given repo/paths into your cache repository.\n" +
-		"\n" +
-		"If -all-remotes is given, heads from each remote repository under a folder\n" +
-		"with the same name as the repository will be stored in the cache repository\n" +
-		"under that same name.  e.g.\n" +
-		"  x-ccouch-repo://barney-repo/barney-repo/foobar/123 will be cached at\n" +
-		"  x-ccouch-repo://my-cache-repo/barney-repo/foobar/123\n" +
-		"\n" +
-		"Otherwise, head-uri can be of any of the following forms:\n" +
-		"  //repo/path/  ; cache only a certain set of heads from a certain repository\n" +
-		"  /path/        ; cache heads under the given path from any repository that\n" +
-		"                ; has them";
-	
-	public static String RDFIFY_USAGE =
-		"Usage: ccouch [general options] rdfify [rdfify options] <dir>\n" +
-		"Rdfify options:\n" +
-		"  -nested            ; nest sub-dirs in output instead of linking to them";
-
-	public static String CHECK_USAGE =
-		"Usage: ccouch [general options] check <path> <path> ...\n" +
-		"\n" +
-		"Walks the named directories or files and ensures that all non-dot files'\n" +
-		"names match their base-32 encoded SHA-1 hash.\n" +
-		"\n" +
-		"If no paths are given, checks the data directory in the main repository";
-	
-	////
-	
 	protected MetaRepoConfig metaRepoConfig = new MetaRepoConfig();
 	
+	protected String getHelpText( String topic ) {
+		return ContentCouchCommandHelp.getString(topic);
+	}
+	
+	protected String getHelpText() {
+		return getHelpText("ccouch");
+	}
+
 	protected String[] concat( String[] s1, String[] s2 ) {
 		String[] r = new String[s1.length+s2.length];
 		int j = 0;
@@ -266,23 +117,28 @@ public class ContentCouchCommand {
 		}
 	}
 	
-	protected BaseArgumentHandler createArgumentHandler( final String commandName, final String usage ) {
+	protected BaseArgumentHandler createArgumentHandler( final String commandName, final String helpDocName ) {
 		final BaseArgumentHandler mah = new BaseArgumentHandler();
 		mah.addArgumentHandler(new ArgumentHandler() {
 			public boolean handleArguments(String current, Iterator rest) {
 				if( "-h".equals(current) || "-?".equals(current) ) {
-					System.out.println( usage );
+					System.out.println( getHelpText(helpDocName) );
 					mah.helpShown = true;
 					return true;
 				} else {
 					System.err.println( "ccouch " + commandName + ": Unrecognised argument '" + current + "'");
-					System.err.println( usage );
+					System.err.println( getHelpText(helpDocName) );
 					return false;
 				}
 			}
 		});
 		return mah;
 	}
+	
+	protected BaseArgumentHandler createArgumentHandler( final String commandName ) {
+		return createArgumentHandler( commandName, commandName );
+	}
+
 	
 	//// Dump stuff ////
 	
@@ -538,7 +394,7 @@ public class ContentCouchCommand {
 
 	public int runCopyCmd( String[] args ) {
 		GeneralOptions opts = new GeneralOptions();
-		BaseArgumentHandler bah = createArgumentHandler("copy", COPY_USAGE);
+		BaseArgumentHandler bah = createArgumentHandler("copy");
 		bah.addArgumentHandler( opts );
 		final ArrayList paths = new ArrayList();
 		bah.addArgumentHandler( new ArgumentHandler() {
@@ -556,7 +412,7 @@ public class ContentCouchCommand {
 		if( paths.size() <= 1 ) {
 			System.err.println("Must specify at least source and dest");
 			System.err.println();
-			System.err.println(COPY_USAGE);
+			System.err.println(getHelpText("copy"));
 			System.err.println();
 			return 1;
 		}
@@ -581,7 +437,7 @@ public class ContentCouchCommand {
 			if( "-hide-inputs".equals(arg) ) {
 				reportInputs = false;
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
-				System.out.println(ID_USAGE);
+				System.out.println(getHelpText("id"));
 				return 0;
 			} else if( "-dump-config".equals(arg) ) {
 				dumpConfig = true;
@@ -590,7 +446,7 @@ public class ContentCouchCommand {
 			} else {
 				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(ID_USAGE);
+				System.err.println(getHelpText("id"));
 				System.err.println();
 				return 1;
 			}
@@ -690,7 +546,7 @@ public class ContentCouchCommand {
 			} else {
 				System.err.println("ccouch relink: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(RELINK_USAGE);
+				System.err.println(getHelpText("relink"));
 				System.err.println();
 				return 1;
 			}
@@ -720,7 +576,7 @@ public class ContentCouchCommand {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
 				System.err.println();
-				System.err.println(STORE_USAGE);
+				System.err.println(getHelpText("store"));
 				System.err.println();
 				return 1;
 			} else if( "-hide-inputs".equals(arg) ) {
@@ -752,14 +608,14 @@ public class ContentCouchCommand {
 			} else if( "-force-commit".equals(arg) ) {
 				forceCommit = true;
 			} else if( "-h".equals(arg) || "-?".equals(arg) ) {
-				System.out.println(STORE_USAGE);
+				System.out.println(getHelpText("store"));
 				return 0;
 			} else if( arg.charAt(0) != '-' || "-".equals(arg) ) {
 				sourceUris.add(normalizeUri(arg,false,false));
 			} else {
 				System.err.println("ccouch store: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(STORE_USAGE);
+				System.err.println(getHelpText("store"));
 				System.err.println();
 				return 1;
 			}
@@ -956,7 +812,7 @@ public class ContentCouchCommand {
 	
 	public int runCheckoutCmd( String[] args ) {
 		GeneralOptions opts = new GeneralOptions();
-		BaseArgumentHandler bah = createArgumentHandler("checkout", CHECKOUT_USAGE);
+		BaseArgumentHandler bah = createArgumentHandler("checkout");
 		bah.addArgumentHandler( opts );
 		final ArrayList paths = new ArrayList();
 		bah.addArgumentHandler( new ArgumentHandler() {
@@ -977,7 +833,7 @@ public class ContentCouchCommand {
 		
 		if( paths.size() != 2 ) {
 			System.err.println("ccouch checkout: You must specify one source and one destination URI");
-			System.err.println(CHECKOUT_USAGE);
+			System.err.println(getHelpText("checkout"));
 			System.err.println();
 			return 1;
 		}
@@ -994,7 +850,7 @@ public class ContentCouchCommand {
 		
 		GeneralOptions opts = new GeneralOptions();
 		opts.storeSector = "remote";
-		BaseArgumentHandler bah = createArgumentHandler("cache", CACHE_USAGE);
+		BaseArgumentHandler bah = createArgumentHandler("cache");
 		bah.addArgumentHandler(opts);
 		final ArrayList paths = new ArrayList();		
 		bah.addArgumentHandler( new ArgumentHandler() {
@@ -1033,7 +889,7 @@ public class ContentCouchCommand {
 			} else if( "-v".equals(arg) ) {
 				opts.logLevel = Log.LEVEL_VERBOSE;
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
-				System.out.println(CACHE_HEADS_USAGE);
+				System.out.println(getHelpText("cache-heads"));
 				return 0;
 			} else if( "-link".equals(arg) ) {
 				opts.shouldLinkStored = true;
@@ -1042,7 +898,7 @@ public class ContentCouchCommand {
 			} else {
 				System.err.println("ccouch cache-heads: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(CACHE_HEADS_USAGE);
+				System.err.println(getHelpText("cache-heads"));
 				System.err.println();
 				return 1;
 			}
@@ -1085,7 +941,7 @@ public class ContentCouchCommand {
 			if( arg.startsWith("-" ) ) {
 				System.err.println("ccouch check: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(CHECK_USAGE);
+				System.err.println(getHelpText("check"));
 				System.err.println();
 				return 1;
 			} else {
@@ -1116,7 +972,7 @@ public class ContentCouchCommand {
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
 			if( arg.length() == 0 ) {
-				System.err.println(RDFIFY_USAGE);
+				System.err.println(getHelpText("rdfify"));
 				System.err.println();
 				return 1;
 			} else if( "-nested".equals(arg) ) {
@@ -1128,7 +984,7 @@ public class ContentCouchCommand {
 			} else {
 				System.err.println("ccouch rdfify: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(RDFIFY_USAGE);
+				System.err.println(getHelpText("rdfify"));
 				System.err.println();
 				return 1;
 			}
@@ -1139,7 +995,7 @@ public class ContentCouchCommand {
 		if( dir == null ) {
 			System.err.println("No directory specified");
 			System.err.println();
-			System.err.println(RDFIFY_USAGE);
+			System.err.println(getHelpText("rdfify"));
 			System.err.println();
 			return 1;
 		}
@@ -1194,14 +1050,14 @@ public class ContentCouchCommand {
 			if( arg.equals("-r") ) {
 				recursive = true;
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
-				System.out.println(TOUCH_USAGE);
+				System.out.println(getHelpText("touch"));
 				return 0;
 			} else if( !arg.startsWith("-") ) {
 				uris.add(normalizeUri(arg, true, true));
 			} else {
 				System.err.println("ccouch touch: Unrecognised argument: " + arg);
 				System.err.println();
-				System.err.println(TOUCH_USAGE);
+				System.err.println(getHelpText("touch"));
 				System.err.println();
 				return 1;
 			}
@@ -1242,7 +1098,7 @@ public class ContentCouchCommand {
 	
 	public int run( String[] args ) {
 		if( args.length == 0 ) {
-			System.err.println(USAGE);
+			System.err.println(getHelpText());
 			System.err.println();
 			return 1;
 		}
@@ -1252,7 +1108,7 @@ public class ContentCouchCommand {
 		for( i=0; i<args.length; ) {
 			int ni;
 			if( "-h".equals(args[i]) || "-?".equals(args[i]) ) {
-				System.out.println(USAGE);
+				System.out.println(getHelpText());
 				return 0;
 			} else if( initializeGetter() && (ni = metaRepoConfig.handleArguments(args, i, "./")) > i ) {
 				i = ni;
@@ -1262,7 +1118,7 @@ public class ContentCouchCommand {
 			} else {
 				System.err.println("ccouch: Unrecognised command: " + args[i]);
 				System.err.println();
-				System.err.println(USAGE);
+				System.err.println(getHelpText());
 				System.err.println();
 				return 1;
 			}
@@ -1270,7 +1126,7 @@ public class ContentCouchCommand {
 		if( cmd == null ) { 
 			System.err.println("ccouch: No command given");
 			System.err.println();
-			System.err.println(USAGE);
+			System.err.println(getHelpText());
 			System.err.println();
 			return 1;
 		}
@@ -1281,7 +1137,19 @@ public class ContentCouchCommand {
 		}
 		
 		int errorCount = 0;
-		if( "config".equals(cmd) ) {
+		if( "help".equals(cmd) ) {
+			String docName = "ccouch";
+			if( cmdArgs.length > 0 ) {
+				docName = cmdArgs[0];
+			}
+			String doc = ContentCouchCommandHelp.getString(docName);
+			if( doc == null ) {
+				System.err.println("ccouch: no help text for '"+docName+"'");
+				return 1;
+			}
+			System.out.println(doc);
+			return 0;
+		} else if( "config".equals(cmd) ) {
 			System.out.println("Repo configuration:");
 			errorCount += dumpRepoConfig( metaRepoConfig, System.out, "  ");
 		} else if( "copy".equals(cmd) || "cp".equals(cmd) ) {
@@ -1307,7 +1175,7 @@ public class ContentCouchCommand {
 		} else {
 			System.err.println("ccouch: Unrecognised sub-command: " + cmd);
 			System.err.println();
-			System.err.println(USAGE);
+			System.err.println(getHelpText());
 			System.err.println();
 			return 1;
 		}

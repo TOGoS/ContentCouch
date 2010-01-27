@@ -1,0 +1,6 @@
+Usage: ccouch [general options] id <uri> <uri> ...
+ID options:
+  -hide-inputs       ; do not show input URIs in final report
+
+Will report <input-uri>\t<identity-uri> on standard out unless -hide-inputs
+is specified, in which case only the identity URIs will be reported.

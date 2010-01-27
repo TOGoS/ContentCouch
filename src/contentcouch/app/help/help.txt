@@ -1,0 +1,16 @@
+Usage: ccouch help <topic>
+Help topics:
+  cache-heads
+  cache
+  ccouch
+  check
+  checkout
+  concepts
+  copy
+  help
+  id
+  rdfify
+  relink
+  store
+  touch
+  uris

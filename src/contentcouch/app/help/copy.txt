@@ -1,0 +1,4 @@
+Usage: ccouch [general options] copy [copy options] <src> <src> ... <dest>
+  <src> and <dest> can be file paths, URIs, or "-"
+Copy options:
+  -link              ; when possible, hardlink files instead of copying

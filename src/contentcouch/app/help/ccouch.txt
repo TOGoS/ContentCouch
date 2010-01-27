@@ -1,0 +1,24 @@
+ContentCouch, by TOGoS
+
+Usage: ccouch [general options] <sub-command> [command-args]
+General options:
+  -repo[:<name>] <location>        ; specify the default repository
+  -local-repo[:<name>] <location>  ; specify a secondary local repository
+  -remote-repo[:<name>] <location> ; specify a remote repository
+Sub-commands:
+  help [<subcommand>]   ; show usage instructions
+  help help             ; show a list of help topics
+  store <files>         ; store files in the main repo
+  relink <files>        ; replace files with hardlinks to the store
+  checkout <src> <dest> ; check files out to the filesystem
+  cache <urn> ...       ; cache blobs
+  cache-heads ...       ; cache heads from another repository
+  id <files>            ; give URNs for files without storing
+  rdfify <dir>          ; print RDF listing of a directory
+  check                 ; check repo integrity and delete bad files
+  touch                 ; remove directory content URI cache files
+  config                ; display the current configuration
+
+Locations can generally be given as URIs, absolute or remote filesystem paths,
+pseudo-active URIs (see the documentation), or "-" (meaning stdin/out,
+depending on context)

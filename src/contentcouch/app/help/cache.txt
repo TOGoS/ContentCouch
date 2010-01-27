@@ -1,0 +1,13 @@
+Usage: ccouch [general options] cache [options] <urn> <urn> ...
+Cache options:
+  -v            ; show all URNs being followed
+  -q            ; show nothing - not even failures
+  -link         ; hardlink files from the store instead of copying
+  -store-sector <name> ; data subdir to store data (defaults to "remote")
+
+Attempts to cache any objects that are not already in a local repository
+into your cache repository.  Directories, Commits, and Redirects will
+be followed and all referenced objects will be cached.
+
+By default, URIs that fail to load and ones that are newly cached are
+reported to standard error.

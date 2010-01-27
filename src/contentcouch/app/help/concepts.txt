@@ -1,0 +1,67 @@
+ContentCouch concepts
+
+== Blob ==
+
+A blob is a sequence of bytes.  You can also think of a blob as the
+content of a file.  That is, the actual bytes stored in the file, but
+not the name of the file or any other metadata.
+
+== Non-blob objects ==
+
+ContentCouch stores all data as blobs - even objects other than sequences
+of bytes, such as commits and directories, are represented as blobs.
+This is accomplished by serializing a representation of them as RDF.
+Objects can then be referenced using a special URI form (x-rdf-subject:)
+that identifies not a blob, but the thing that is described by the RDF
+encoded in a blob.
+
+For example, a directory could be represented by some RDF that looks like:
+
+   <Directory xmlns="..."><entries><DirectoryEntry><name>foo</name>....
+
+We can identify a blob containing XML-encoded RDF with a URI like:
+
+   urn:sha1:XYZ123
+
+To identify the directory itself, not the blob that encoded it, we can say:
+
+   x-rdf-subject:urn:sha1:XYZ123
+
+== Content Addressing ==
+
+In order to ensure data integrity, ContentCouch uses URIs based on
+hashes to identify blobs.  Because these URIs are generated entirely
+based on the hash of a blob, and because the hash algorithm used
+is 'secure' (i.e. hashing different blobs always* gives a different
+hash), there is a 1-1 relationship between hashes and blobs**, making
+such URIs very good identifiers for particular byte sequences.  If a
+file were to change, say, by appending a few bytes to the end, it
+would conceptually become a different blob, and would have a different
+identifier.
+
+Footnotes:
+
+* in practice only (see next footnote)
+
+** for every SHA-1 hash there are actually n infinite number of
+blobs that have that hash.  This system relies on the extreme improbability
+of more than one blob having the same SHA-1 hash.
+
+== Repository ==
+
+A repository is a directory with a specific internal structure that
+ContentCouch uses to store its data.  A repository can hold any number
+of blobs and heads.  In order to hardlink to blobs within repositories,
+you may want to set up one per partition on your hard drive.
+
+When ccouch is invoked, it can be given a 'main' repository with the
+-repo <path-to-repository> option.  Most configuration information is
+loaded from the main repository, but can also be passed on the command-
+-line.  Besides the main repository, secondary local and remote
+repositories can be specified using -local-repo <path> and
+-remote-repo <path> options.  These will be used to fetch data that
+cannot be found in the main repository.
+
+== Head ==
+
+A named file.  Usually an RDFified Commit object.

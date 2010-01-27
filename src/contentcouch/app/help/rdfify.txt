@@ -1,0 +1,3 @@
+Usage: ccouch [general options] rdfify [rdfify options] <dir>
+Rdfify options:
+  -nested            ; nest sub-dirs in output instead of linking to them

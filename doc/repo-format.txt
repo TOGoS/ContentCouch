@@ -1,7 +1,0 @@
-...repo/ccouch-config                         ; marker file to indicate that this is a contentcouch repo,
-                                              ; and includes configuration
-...repo/data/<section>/XX/XXZZZZZZZZZZ        ; holds all the data. Blobs are named by base32-encoded SHA-1 sum.
-                                              ; <section> is "user", "remote", or "active"
-...repo/heads/<host>/<path>/<version>         ; holds heads!
-...repo/cache/file-attrs.slf                  ; SLF full of metadata (size, last modified date, sha-1 sum, type-specific extracted info) about files in the host filesystem
-...repo/map/active-urnsha1/XX.txt             ; Mappings from active: to urn:sha1: URIs, where XX is first 2 digits of base32-encoded SHA-1 hash of URI.

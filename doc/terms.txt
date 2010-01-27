@@ -1,6 +1,0 @@
-Blob - A specific sequence of bytes.  Commonly referred to by an SHA-1 sum.
-
-Head - A named file.  Usually is an RDFified Commit object.
-
-Repository - A directory (local or remote) where a bunch of blobs and/or
-  heads and/or metadata are stored in a standardized format.

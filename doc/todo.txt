@@ -35,6 +35,10 @@
         </target>
       </DirectoryEntry>
 
+- Allow different content-addressing schemes to be specified for a repository.
+  - One repository should be able to use different schemes at different times.
+  - Probably use separate hash cache files for separate schemes. 
+
 - Option to skip caching of directories that have already been marked as
   having their content fully cached.
 
@@ -47,17 +51,14 @@
 - Implement changeset merging, 'update' command
   - CommitUtil.findCommonAncestor( Commit a, Commit b )
   - CommitUtil.getChangesBetween( Commit old, Commit new )
-  - CommitUtil.applyChanges( changes, WritableDirectory )
+  - CommitUtil.applyChanges( changes, WritableDirectoryEntry )
+    - Since a commit target may be a single file, we need to be
+      able to have the the root entry replace itself.
   - CommitUtil.update( WritableDirectory, Commit current, Commit new )
 
 - 'check' does not default properly, or it doesn't actually use URIs, only
   working when given a filesystem path.  It should probably be able to run
   using arbitrary URIs.
-
-- Update documentation
-  * Help given by ccouch id <invalid option> is wrong
-  * README is out of date
-  - doc/ is full of outdated stuff
 
 - RDFify should have option to use alternate RDF writing method for large documents
   - RDFDirectory objects would not be created - data would be serialized more directly
@@ -91,6 +92,12 @@
   - This is very low priority, since all RDF docs currently used only contain absolute URIs.
 
 == Done ==
+
+* Update documentation
+  * Help given by ccouch id <invalid option> is wrong
+  * README is out of date
+  * doc/ is full of outdated stuff
+    (deleted!  Also moved inline documentation into text files)
 
 * Use internal data for imaging tests, not that bunny .jpg on nuke24.net
 

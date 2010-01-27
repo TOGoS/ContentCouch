@@ -1,0 +1,6 @@
+Usage: ccouch [general options] check <path> <path> ...
+
+Walks the named directories or files and ensures that all non-dot files'
+names match their base-32 encoded SHA-1 hash.
+
+If no paths are given, checks the data directory in the main repository.

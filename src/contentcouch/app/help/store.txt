@@ -1,0 +1,33 @@
+Usage: ccouch [general options] store [store options] <file1> <file2> ...
+Store options:
+  -m <message>       ; create a commit with this message
+  -a <author>        ; create a commit with this author
+  -n <name>          ; name your commit this
+  -force-commit      ; create a new commit even if nothing has changed
+  -link              ; hardlink files into the store instead of copying
+  -files-only        ; store only file content (no directory listings)
+  -dirs-only         ; store only directory listings (no file content)
+  -dont-store        ; store nothing (same as using 'ccocuch id')
+  -store-sector      ; data sub-dir to store data (defaults to "user")
+  -hide-inputs       ; do not show input URIs in final report
+  -create-uri-dot-files ; cache URNs of directories in .ccouch-uri files
+  -use-uri-dot-files    ; skip recursively storing directories containing
+                          .ccouch-uri files, instead trusting the URI within
+  -dcudfnt <time>    ; As an exception when creating uri dot files, don't
+                       create one for directories that contain any files
+                       modified more recently than the given time (see below)
+  -v                 ; verbose - report every path -> urn mapping
+  -q                 ; quiet - show nothing
+  -?                 ; display help and exit
+
+Will report <input-uri>\t<identity-uri> on standard out unless -hide-inputs
+is specified, in which case only the identity URIs will be reported." +
+
+If -m, -a, and/or -n are used, a commit will be created and its URN output.
+
+If -n is specified, a commit will be stored under that name as
+<repo-path>/heads/<main-repo-name>/<name>/<version>, where <version> is automatically
+incremented for new commits.
+
+<time> must be of the format '-<integer><unit>', where <unit> is one of
+'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', or 'years'

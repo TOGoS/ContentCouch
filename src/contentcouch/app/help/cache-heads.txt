@@ -1,0 +1,18 @@
+Usage: ccouch [general options] cache-heads [options] <head-uri> ...
+Cache-head options:
+  -v           ; show all exports and skipped files
+  -q           ; show only failures
+  -all-remotes ; cache heads from each remote repository
+
+Attempts to cache heads from the given repo/paths into your cache repository.
+
+If -all-remotes is given, heads from each remote repository under a folder
+with the same name as the repository will be stored in the cache repository
+under that same name.  e.g.
+  x-ccouch-repo://barney-repo/barney-repo/foobar/123 will be cached at
+  x-ccouch-repo://my-cache-repo/barney-repo/foobar/123
+
+Otherwise, head-uri can be of any of the following forms:
+  //repo/path/  ; cache only a certain set of heads from a certain repository
+  /path/        ; cache heads under the given path from any repository that
+                ; has them
