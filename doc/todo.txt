@@ -1,3 +1,7 @@
+- 'ccouch store' shows all mappings (directory entries), even without -v
+- 'ccouch store' should accept '-sector' as alias for '-store-sector'
+- 'ccouch checkout' with '-cache-sector' doesn't seem to work
+
 - Run web servlet in JVM sandbox to ensure bugs in application-level
   authentication do not arbitrary actions on web server 
 
