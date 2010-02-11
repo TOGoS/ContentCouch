@@ -3,6 +3,7 @@ package contentcouch.directory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,13 +48,13 @@ public class DirectoryUtil {
 						e.name = href;
 						e.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
 						e.target = new BaseRef(identifier, href);
-						dir.addDirectoryEntry(e);
+						dir.addDirectoryEntry(e, Collections.EMPTY_MAP);
 					} else {
 						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 						e.name = href.substring(0, href.length()-1);
 						e.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
 						e.target = new BaseRef(identifier, e.name + "/");
-						dir.addDirectoryEntry(e);
+						dir.addDirectoryEntry(e, Collections.EMPTY_MAP);
 					}
 				}
 			}

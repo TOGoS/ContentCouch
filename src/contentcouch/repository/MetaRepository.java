@@ -757,6 +757,7 @@ public class MetaRepository extends BaseRequestHandler {
 			putReq.uri = "data"; // Will not be used...
 			putReq.content = res.getContent();
 			putReq.contentMetadata = res.getContentMetadata();
+			putReq.metadata = req.getMetadata();
 			putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, cs);
 			Response putRes = putData(config.defaultRepoConfig, putReq);
 			
@@ -795,7 +796,7 @@ public class MetaRepository extends BaseRequestHandler {
 				entry.name = repoConfig.name;
 				entry.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
 				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.uri);
-				sd.addDirectoryEntry(entry);
+				sd.addDirectoryEntry(entry, Collections.EMPTY_MAP);
 			}
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, sd);
 		} else if( req.getResourceName().startsWith("x-ccouch-head:") || req.getResourceName().startsWith("x-ccouch-repo:") ) {

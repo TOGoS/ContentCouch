@@ -279,6 +279,8 @@ public class ContentCouchCommand {
 			// Linking options
 			} else if( "-link".equals(arg) ) {
 				this.shouldLinkStored = true;
+			} else if( "-sector".equals(arg) ) {
+				this.storeSector = this.cacheSector = (String)it.next();
 			} else if( "-store-sector".equals(arg) ) {
 				this.storeSector = (String)it.next();
 			} else if( "-cache-sector".equals(arg) ) {
@@ -330,6 +332,8 @@ public class ContentCouchCommand {
 			return true;
 		}
 	}
+	
+	// TODO: Create option handling classes for each command 
 	
 	//// Shared command routines ////
 	
@@ -589,7 +593,7 @@ public class ContentCouchCommand {
 				opts.logLevel = Log.LEVEL_VERBOSE;
 			} else if( "-link".equals(arg) ) {
 				opts.shouldLinkStored = true;
-			} else if( "-store-sector".equals(arg) ) {
+			} else if( "-store-sector".equals(arg) || "-sector".equals(arg) ) {
 				opts.storeSector = args[++i];
 			} else if( "-follow-refs".equals(arg) ) {
 				followRefs = true;

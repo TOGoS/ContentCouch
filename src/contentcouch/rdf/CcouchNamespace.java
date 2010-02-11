@@ -70,7 +70,9 @@ public class CcouchNamespace {
 	public static final String REQ_DIRMERGE_IGNORE     = "Ignore";
 	public static final String REQ_DIRMERGE_MERGE      = "Merge";
 	
-	public static final String REQ_STORE_SIMPLE_DIRS   = CC_REQ_NS + "storeSimpleDirs";
+	/* When merging directories, copy directories that are new to to the destination
+	 * rather than referencing source directories directly */
+	public static final String REQ_COPY_SOURCE_DIRS    = CC_REQ_NS + "copySourceDirectories";
 	
 	//public static final String RR_DESIRED_STORE_SECTOR = CC_REQ_NS + "desiredStoreSector";
 	

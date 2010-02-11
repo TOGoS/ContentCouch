@@ -1,5 +1,7 @@
 package contentcouch.misc;
 
+import java.util.Map;
+
 import contentcouch.directory.WritableDirectory;
 import contentcouch.framework.BaseRequestHandler;
 import contentcouch.rdf.CcouchNamespace;
@@ -27,7 +29,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 			if( path.length() == 0 ) {
 				return new BaseResponse( ResponseCodes.RESPONSE_CALLER_ERROR, "Cannot PUT at " + req.getResourceName(), "text/plain");
 			}
-			return put( parts, req.getContent() );
+			return put( parts, req.getContent(), req.getMetadata() );
 		} else {
 			return BaseResponse.RESPONSE_UNHANDLED;
 		}
@@ -48,7 +50,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, obj);
 	}
 
-	public Response put( String[] parts, Object newObj ) {
+	protected Response put( String[] parts, Object newObj, Map requestMetadata ) {
 		Object obj = root;
 		int i;
 		for( i=1; i<parts.length-1; ++i ) {
@@ -56,7 +58,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 			if( obj instanceof Directory ) {
 				Directory.Entry e = ((Directory)obj).getDirectoryEntry(part);
 				if( e == null ) {
-					((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, obj = new SimpleDirectory(), CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+					((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, obj = new SimpleDirectory(), CcouchNamespace.TT_SHORTHAND_DIRECTORY), requestMetadata);
 				} else {
 					obj = e.getTarget();
 				}
@@ -67,7 +69,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 
 		String part = parts[i];
 		if( obj instanceof Directory ) {
-			((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, newObj, newObj instanceof Directory ? CcouchNamespace.TT_SHORTHAND_DIRECTORY : CcouchNamespace.TT_SHORTHAND_BLOB));
+			((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, newObj, newObj instanceof Directory ? CcouchNamespace.TT_SHORTHAND_DIRECTORY : CcouchNamespace.TT_SHORTHAND_BLOB), requestMetadata);
 		} else {
 			return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
 		}

@@ -11,6 +11,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.BitprintScheme.Bitprint;
 import contentcouch.file.FileBlob;
 import contentcouch.misc.Function1;
+import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
@@ -26,6 +27,7 @@ public class DirectoryMerger {
 	};
 	
 	public static class RegularConflictResolver implements ConflictResolver {
+		protected Map options;
 		public String dirMergeMethod;
 		public String fileMergeMethod;
 		
@@ -35,6 +37,7 @@ public class DirectoryMerger {
 		}
 		
 		public RegularConflictResolver( Map options ) {
+			this.options = options;
 			if( options != null ) {
 				dirMergeMethod = ValueUtil.getString(options.get(CcouchNamespace.REQ_DIRMERGE_METHOD));
 				fileMergeMethod = ValueUtil.getString(options.get(CcouchNamespace.REQ_FILEMERGE_METHOD));
@@ -82,7 +85,7 @@ public class DirectoryMerger {
 				Log.log(Log.EVENT_KEPT, e1.getName());
 			} else if( CcouchNamespace.REQ_FILEMERGE_REPLACE.equals(mergeMethod) ) {
 				Log.log(Log.EVENT_REPLACED, e1.getName(), e2.getName());
-				dir.addDirectoryEntry(e2);
+				dir.addDirectoryEntry(e2, options);
 			} else if( CcouchNamespace.REQ_FILEMERGE_FAIL.equals(mergeMethod) ) {
 				throw new RuntimeException( "Can't merge blobs " + e2.getName() + " into " + e1.getName() + "; file merge method = Fail" );
 			} else {
@@ -116,10 +119,10 @@ public class DirectoryMerger {
 					if( !(s instanceof Directory) ) {
 						throw new RuntimeException( "Can't merge from " + e2.getName() + "; not a Directory" );
 					}
-					new DirectoryMerger( this, true ).putAll( (WritableDirectory)t, (Directory)s, srcUri, destUri );
+					new DirectoryMerger( this, options ).putAll( (WritableDirectory)t, (Directory)s, srcUri, destUri );
 				} else if( CcouchNamespace.REQ_DIRMERGE_IGNORE.equals(dirMergeMethod) ) {
 				} else if( CcouchNamespace.REQ_DIRMERGE_REPLACE.equals(dirMergeMethod) ) {
-					dir.addDirectoryEntry(e2);
+					dir.addDirectoryEntry(e2, options);
 				} else if( CcouchNamespace.REQ_DIRMERGE_FAIL.equals(dirMergeMethod) ) {
 					throw new RuntimeException( "Can't merge dirs " + e2.getName() + " into " + e1.getName() + "; dir merge method = Fail" );
 				} else {
@@ -135,10 +138,12 @@ public class DirectoryMerger {
 	/** If true, will copy incoming directories into SimpleDirectories instead of adding the given object directly */
 	public boolean copyNewDirectories;
 	public ConflictResolver conflictResolver;
+	protected Map options;
 	
-	public DirectoryMerger( ConflictResolver conflictResolver, boolean copyNewDirectories ) {
+	public DirectoryMerger( ConflictResolver conflictResolver, Map options ) {
 		this.conflictResolver = conflictResolver;
-		this.copyNewDirectories = copyNewDirectories;
+		this.copyNewDirectories = MetadataUtil.isEntryTrue(options, CcouchNamespace.REQ_COPY_SOURCE_DIRS);
+		this.options = options;
 	}
 
 	protected Object deepCloneDirectory( Object target ) {
@@ -170,7 +175,7 @@ public class DirectoryMerger {
 				simpleEntry.target = deepCloneDirectory(target);
 				newEntry = simpleEntry;
 			}
-			dir.addDirectoryEntry(newEntry);
+			dir.addDirectoryEntry(newEntry, options);
 			return false;
 		}
 	}

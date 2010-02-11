@@ -32,7 +32,7 @@ public class CreateDirectory extends BaseActiveFunction {
 					SimpleDirectory.Entry newEntry = new SimpleDirectory.Entry();
 					newEntry.target = new BaseRef(targetExpression.toUri());
 					newEntry.name = entryKey;
-					result.addDirectoryEntry(newEntry);
+					result.addDirectoryEntry(newEntry, req.getMetadata());
 				} else {
 					result.put( entryKey, TheGetter.getResponseValue( targetExpression.eval(req), targetExpression.toUri() ) );
 				}

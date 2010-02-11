@@ -2,6 +2,7 @@ package contentcouch.misc;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -102,7 +103,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			newEntry.targetType = entry.getTargetType();
 			newEntry.targetSize = entry.getTargetSize();
 			newEntry.targetLastModified = entry.getTargetLastModified();
-			addDirectoryEntry(newEntry);
+			addDirectoryEntry(newEntry, Collections.EMPTY_MAP);
 		}
 	}
 	
@@ -115,7 +116,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			sde.target = e.getValue();
 			sde.targetSize = -1;
 			sde.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
-			addDirectoryEntry(sde);
+			addDirectoryEntry(sde, Collections.EMPTY_MAP);
 		}
 	}
 	
@@ -129,8 +130,12 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		return (Directory.Entry)entryMap.get(name);
 	}
 	
-	public void addDirectoryEntry(Directory.Entry e) {
+	public void addDirectoryEntry(Directory.Entry e, Map requestMetadata) {
 		entryMap.put(e.getName(), new Entry(e));
+	}
+	
+	public void addDirectoryEntry(Directory.Entry e) {
+		addDirectoryEntry(e, Collections.EMPTY_MAP);
 	}
 	
 	////

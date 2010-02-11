@@ -2,6 +2,7 @@ package contentcouch.misc;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -172,13 +173,17 @@ public class MetadataUtil {
 		return sourceUri;
 	}
 	
-	public static boolean isEntryTrue( Map m, String key ) {
+	public static boolean isEntryTrue( Map m, String key, boolean defaultValue ) {
 		Object o = m.get(key);
-		if( o == null ) return false;
+		if( o == null ) return defaultValue;
 		if( o == Boolean.FALSE ) return false;
 		if( o instanceof Number && ((Number)o).intValue() == 0 ) return false;
 		if( o instanceof String && ((String)o).length() == 0 ) return false;
 		return true;
+	}
+	
+	public static boolean isEntryTrue( Map m, String key ) {
+		return isEntryTrue(m, key, false);
 	}
 	
 	public static void saveCcouchUri( WritableDirectory dir, String dirUri ) {
@@ -188,7 +193,7 @@ public class MetadataUtil {
 		uriDotFileEntry.name = ".ccouch-uri";
 		uriDotFileEntry.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
 		uriDotFileEntry.targetSize = ((Blob)uriDotFileEntry.target).getLength();
-		((WritableDirectory)dir).addDirectoryEntry(uriDotFileEntry);
+		((WritableDirectory)dir).addDirectoryEntry(uriDotFileEntry, Collections.EMPTY_MAP);
 	}
 
 	public static void dereferenceTargetToRequest( Object target, BaseRequest req ) {

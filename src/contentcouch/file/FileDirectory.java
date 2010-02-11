@@ -2,8 +2,11 @@ package contentcouch.file;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import togos.mf.api.RequestVerbs;
+import togos.mf.base.BaseRequest;
 import togos.mf.value.Blob;
 
 import contentcouch.blob.BlobUtil;
@@ -66,7 +69,7 @@ public class FileDirectory extends File implements WritableDirectory {
 			if( time > 0 ) this.setLastModified(time);
 		}
 		
-		public void setTarget(Object value) {
+		public void setTarget(Object value, Map requestMetadata) {
 			if( this.exists() ) {
 				if( !this.delete() ) {
 					if( this.isDirectory() ) {
@@ -80,14 +83,16 @@ public class FileDirectory extends File implements WritableDirectory {
 			String sourceUri;
 			if( value instanceof Ref ) {
 				sourceUri = ((Ref)value).getTargetUri();
-				value = TheGetter.get(sourceUri);
+				BaseRequest getReq = new BaseRequest( RequestVerbs.VERB_GET, sourceUri );
+				getReq.metadata = requestMetadata;
+				value = TheGetter.getResponseValue(TheGetter.call(getReq), getReq);
 			} else {
 				sourceUri = "x-undefined:source";
 			}
 			
 			if( value instanceof Directory ) {
 				FileUtil.mkdirs(this);
-				new DirectoryMerger( null, false ).putAll(getTargetDirectory(), (Directory)value, sourceUri, PathUtil.maybeNormalizeFileUri(getPath()) );
+				new DirectoryMerger( null, requestMetadata ).putAll(getTargetDirectory(), (Directory)value, sourceUri, PathUtil.maybeNormalizeFileUri(getPath()) );
 				return;
 			}
 			
@@ -125,11 +130,11 @@ public class FileDirectory extends File implements WritableDirectory {
 		return new Entry(f);
 	}
 	
-	public void addDirectoryEntry(Directory.Entry entry) {
+	public void addDirectoryEntry(Directory.Entry entry, Map requestMetadata) {
 		File f = new File(this.getPath() + "/" + entry.getName());
 		//if( f.exists() ) throw new RuntimeException("Cannot add entry; file already exists at " + this + "/" + entry.getName());
 		Entry e = new Entry(f);
-		e.setTarget(entry.getTarget());
+		e.setTarget(entry.getTarget(), requestMetadata);
 		e.setTargetLastModified(entry.getTargetLastModified());
 	}
 }

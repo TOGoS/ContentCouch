@@ -33,7 +33,7 @@ public class MergeDirectories extends BaseActiveFunction {
 			Expression exp = (Expression)i.next();
 			String uri = exp.toString();
 			Directory indir = (Directory)TheGetter.getResponseValue(exp.eval(req), uri);
-			new DirectoryMerger( conflictResolver, true ).putAll( result, indir, uri, "x-undefined:new-directory" );
+			new DirectoryMerger( conflictResolver, req.getMetadata() ).putAll( result, indir, uri, "x-undefined:new-directory" );
 		}
 		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, result);
 	}

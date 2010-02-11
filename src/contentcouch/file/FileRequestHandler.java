@@ -50,7 +50,7 @@ public class FileRequestHandler extends BaseRequestHandler {
 			}
 			BaseResponse res = new BaseResponse();
 			
-			DirectoryMerger merger = new DirectoryMerger( new DirectoryMerger.RegularConflictResolver(req.getMetadata()), false );
+			DirectoryMerger merger = new DirectoryMerger( new DirectoryMerger.RegularConflictResolver(req.getMetadata()), req.getMetadata() );
 			
 			if( merger.put(destDir, newEntry, MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getResourceName()) ) {
 				res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
