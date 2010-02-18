@@ -1,3 +1,11 @@
+- During caching or checkout, I got this error:
+  Exception in thread "main" java.lang.RuntimeException: Can't merge blobs
+  K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42 into K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42;
+  file merge method = Fail
+  - Cause: blob in repository was corrupted!
+  - Run 'ccouch check' to clean up corrupted blobs, then run cache again.
+    Hopefully a non-corrupt version of the blob is available!
+
 - 'ccouch store' shows all mappings (directory entries), even without -v
 - 'ccouch store' should accept '-sector' as alias for '-store-sector'
 

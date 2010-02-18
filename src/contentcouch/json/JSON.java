@@ -214,6 +214,12 @@ public class JSON {
 	{
 		if( v == null ) {
 			w.write("null");
+		} else if( v instanceof Boolean ) {
+			if( ((Boolean)v).booleanValue() ) {
+				w.write("true");
+			} else {
+				w.write("false");
+			}
 		} else if( v instanceof CharSequence ) {
 			CharSequence s = (CharSequence) v;
 			w.write('"');

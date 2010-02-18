@@ -17,7 +17,7 @@ public class RepoChecker {
 	}
 	
 	public void fileFoundInvalid(File f, String b32sha1) {
-		System.err.println("INVALID: " + f.getName() + "'s sha-1 sum does not match: " + b32sha1);
+		System.err.println("INVALID: " + f.getPath() + "'s sha-1 sum does not match filename.  Calculated " + b32sha1 +".  Deleting.");
 		f.delete();
 	}
 	

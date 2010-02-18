@@ -33,6 +33,7 @@ import contentcouch.misc.SimpleCommit;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
+import contentcouch.path.PathUtil.Path;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
@@ -961,8 +962,13 @@ public class ContentCouchCommand {
 		for( Iterator i=checkPaths.iterator(); i.hasNext(); ) {
 			String path = (String)i.next();
 			System.err.println("Checking " + path);
-			File f = new File(path);
-			rc.checkFiles(f);
+			Path p = PathUtil.parseFilePathOrUri(path);
+			if( p == null ) {
+				System.err.println("Couldn't parse '"+path+"' as file path");
+			} else {
+				File f = new File(p.toString());
+				rc.checkFiles(f);
+			}
 		}
 		return 0;
 	}
