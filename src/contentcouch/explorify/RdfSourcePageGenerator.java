@@ -7,6 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import togos.mf.api.Request;
+import togos.mf.api.Response;
 import togos.mf.value.Blob;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
@@ -15,8 +16,8 @@ import contentcouch.xml.XML;
 public class RdfSourcePageGenerator extends CCouchExplorerPageGenerator {
 	Blob blob;
 	
-	public RdfSourcePageGenerator( Blob b, Request req ) {
-		super( req );
+	public RdfSourcePageGenerator( Request req, Response subRes, Blob b ) {
+		super( req, subRes );
 		this.blob = b;
 	}
 	
@@ -35,10 +36,10 @@ public class RdfSourcePageGenerator extends CCouchExplorerPageGenerator {
 		if( url.startsWith(CcouchNamespace.URI_PARSE_PREFIX) ) {
 			// Then show 2 links
 			String noParsePart = url.substring(CcouchNamespace.URI_PARSE_PREFIX.length());
-			return formatLink2(getExternalUri("default",url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
-				formatLink2(getExternalUri("default",noParsePart), noParsePart);
+			return formatLink2(getExternalUri(url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
+				formatLink2(getExternalUri(noParsePart), noParsePart);
 		} else {
-			return formatLink2(getExternalUri("default",url), url);
+			return formatLink2(getExternalUri(url), url);
 		}
 	}
 	

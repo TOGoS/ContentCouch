@@ -55,6 +55,12 @@ public class SwfFrontRequestHandler extends BaseRequestHandler {
 	public String getExternalComponentUri( Request req, Component component, Arguments args ) {
 		return getExternalUri( req, component.getUriFor(args) );
 	}
+
+	public String getExternalComponentUri( Request req, String componentName, Arguments args ) {
+		Component comp = (Component)components.get(componentName);
+		if( comp == null ) throw new RuntimeException("No component called \""+componentName+"\"");
+		return getExternalComponentUri( req, comp, args );
+	}
 	
 	public Response call( Request request ) {
 		BaseRequest subReq = new BaseRequest(request);

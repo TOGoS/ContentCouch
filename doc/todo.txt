@@ -1,20 +1,3 @@
-- More friendly URL formats recognised by web interface:
-  /<output-style>?uri=<uri>[&name=<nice-name>][&path=<uriencoded(root-uri)>/<path>/<path>/<nice-name>]
-  /<output-style>/<repo-name>/[<path>[/<path>[/...]]]
-  /<output-style>/blob/<blob-uri>[/<user-friendly-filename>]
-  /<output-style>/dir/<dir-uri>/[<user-friendly-dirnamename>[/<path>]]
-  /<output-style>/dir/<commit-uri>/[<user-friendly-commitname>/target[/<path>]]
-  
-  All <path parts> must be uri encoded.
-  
-  Paths to directory objects must end with '/', or else we need to be
-  very careful to ensure that links to subdirs follow the above formats.
-  
-  Note that commits are treated as directories with the single entry 'target'
-  referring to the commit target.
-  
-  When a directory is referenced by one of the above formats 
-
 - During caching or checkout, I got this error:
   Exception in thread "main" java.lang.RuntimeException: Can't merge blobs
   K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42 into K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42;
@@ -144,6 +127,21 @@
 
 == Done ==
 
+* More friendly URL formats recognised by web interface:
+  /<output-style>?uri=<uri>[&name=<nice-name>][&path=<uriencoded(root-uri)>/<path>/<path>/<nice-name>]
+  /<output-style>/<repo-name>/[<path>[/<path>[/...]]]
+  /<output-style>/<blob-uri>[/<user-friendly-filename>]
+  /<output-style>/<dir-uri>/[<user-friendly-dirnamename>[/<path>]]
+  /<output-style>/<commit-uri>/[<user-friendly-commitname>/target[/<path>]]
+  
+  All <path parts> must be uri encoded.
+  
+  Paths to directory objects must end with '/', or else we need to be
+  very careful to ensure that links to subdirs follow the above formats.
+  
+  Note that commits are treated as directories with the single entry 'target'
+  referring to the commit target.
+  
 * Update documentation
   * Help given by ccouch id <invalid option> is wrong
   * README is out of date

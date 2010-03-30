@@ -5,14 +5,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 import togos.mf.api.Request;
-import togos.mf.base.BaseArguments;
-import togos.swf2.Component;
-import togos.swf2.SwfFrontRequestHandler;
-import togos.swf2.SwfNamespace;
+import togos.mf.api.Response;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
 import contentcouch.directory.HasLongPath;
@@ -25,35 +21,24 @@ import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
 public class AlbumPage {
-	protected static String getThumbnailUri( String imageUri, Map context ) {
+	protected static String getThumbnailUri( String imageUri, int width, int height ) {
 		return
 			"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
-			"+width@data:,128+height@data:,128";
+			"+width@data:,"+width+"+height@data:,"+height;
 	}
 	
-	protected static String getPreviewUri( String imageUri, Map context ) {
-		return
-			"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
-			"+width@data:,640+height@data:,480";
-
+	protected static String getThumbnailName( String name, int w, int h ) {
+		int li = name.lastIndexOf('.');
+		if( li == -1 ) {
+			return name + "-"+w+"x"+h;
+		} else {
+			return name.substring(0,li)+"-"+w+"x"+h+name.substring(li);
+		}
 	}
 	
 	public static class AlbumPageGenerator extends DirectoryPageGenerator {
-		public AlbumPageGenerator( Directory dir, Request req ) {
-			super( dir, req );
-		}
-		
-		protected String getRawUri( String operandUri ) {
-			SwfFrontRequestHandler swf = getSwfFront();
-			if( swf == null ) {
-				return getExternalUri("raw", operandUri);
-			} else {
-				// TODO: add raw component and replace album with raw!
-				Component raw = (Component)((Map)req.getContextVars().get(SwfNamespace.COMPONENTS)).get("album");
-				BaseArguments linkArgs = new BaseArguments();
-				linkArgs.putNamedArgument("uri", operandUri);
-				return getExternalComponentUri( req, raw, linkArgs );
-			}
+		public AlbumPageGenerator( Request req, Response subRes, Directory dir ) {
+			super( req, subRes, dir );
 		}
 		
 		protected String getPageLongTitle() {
@@ -102,13 +87,16 @@ public class AlbumPage {
 				w.println("var pp = new contentcouch.photoalbum.PhotoPreviewer();");
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String imageUri = getResourceUri(e);
-					String shrunkUri = getThumbnailUri(imageUri, req.getContextVars());
-					String previewUri = getPreviewUri(imageUri, req.getContextVars());
+					String imageUri = getResourceUri(e); 
+					String imageHref = getExternalUri(e, true);
+					String shrunkUri = getThumbnailUri(imageUri, 128, 128);
+					String shrunkName = getThumbnailName(e.getName(), 128, 128);
+					String previewUri = getThumbnailUri(imageUri, 640, 480);
+					String previewName = getThumbnailName(e.getName(), 640, 480);
 					w.println("pp.addPreview("+
-						JSON.encodeObject(getExternalUri("raw", shrunkUri))+","+
-						JSON.encodeObject(getExternalUri("raw", previewUri))+","+
-						JSON.encodeObject(getExternalUri("raw", imageUri))+
+						JSON.encodeObject(getExternalBlobUri(shrunkUri, shrunkName))+","+
+						JSON.encodeObject(getExternalBlobUri(previewUri, previewName))+","+
+						JSON.encodeObject(imageHref)+
 					");");
 				}
 				w.println("function goToPreview(index) { return pp.goToPreview(index); }");
@@ -122,7 +110,9 @@ public class AlbumPage {
 			w.println("<body>");
 			
 			w.println("<h2>" + XML.xmlEscapeText(getPageShortTitle()) + "</h2>");
-				
+			
+			writeDirectLink(w);
+			
 			w.println("<div class=\"main-content\">");
 			if( dirEntryList.size() > 0 ) {
 				w.println("<h3>Subdirectories</h3>");
@@ -134,9 +124,8 @@ public class AlbumPage {
 				w.write("</tr>\n");
 				for( Iterator i=dirEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String href = getResourceUri(e, true);
+					String href = getExternalUri(e, true);
 					String ename = e.getName() + (isDirectory(e) ? "/" : "");
-					href = getExternalUri("album", getOperandUri(), href, true);
 					w.write("<tr>");
 					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
 					w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
@@ -157,7 +146,7 @@ public class AlbumPage {
 				for( Iterator i=miscEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String href = getResourceUri(e, true);
-					href = getExternalUri("album", getOperandUri(), href, true);
+					href = getExternalUri(e, true);
 					String ename = e.getName() + (isDirectory(e) ? "/" : "");
 					w.write("<tr>");
 					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
@@ -195,34 +184,21 @@ public class AlbumPage {
 				w.print("<img id=\"next-thumbnail\" src=\"\"/>");
 				w.println("</a></div></div>");
 
-				/*
-				w.println("<div class=\"preview-nav\" id=\"previous-link-box\"><a onclick=\"return goToPreviousPreview()\" href=\"#\">Previous<div class=\"image-thumbnail-inner-box\"><img id=\"previous-thumbnail\"/></div></a></div>");
-				w.println("<div class=\"preview-nav\" id=\"next-link-box\"><a onclick=\"return goToNextPreview()\" href=\"#\">Next<div class=\"image-thumbnail-inner-box\"><img id=\"next-thumbnail\"/></div></a></div>");
-				*/
 				w.println("</div>");
 
 				int index = 0;
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String imageHref = getExternalUri("raw",  getOperandUri(), getResourceUri(e, true), true);
+					String imageHref = getExternalUri(e, true);
 					String absoluteImageUri = getResourceUri(e);
-					/*
-					String shrunkUri =
-						"active:contentcouch.graphics.serialize-image+operand@" + UriUtil.uriEncode( 
-							"active:contentcouch.graphics.scale-image+operand@" + UriUtil.uriEncode(imageUri) +
-							"+max-width@" + UriUtil.uriEncode(UriUtil.makeDataUri("128")) +
-							"+max-height@" + UriUtil.uriEncode(UriUtil.makeDataUri("128"))
-						) + "+format@" + UriUtil.uriEncode(UriUtil.makeDataUri("jpeg"));
-					*/
-					String shrunkUri =
-						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(absoluteImageUri) +
-						"+width@data:,128+height@data:,128";
+					String shrunkUri = getThumbnailUri(absoluteImageUri, 128, 128);
+					String shrunkName = getThumbnailName(e.getName(), 128, 128);
 					w.println("<div class=\"image-thumbnail-box\">");
 					w.println("<div class=\"image-thumbnail-title\">" + e.getName() + "</div>");
 					w.print("<div class=\"image-thumbnail-inner-box\">");
 					
 					w.print("<a onclick=\"return goToPreview("+index+")\" href=\"" + XML.xmlEscapeAttributeValue(imageHref) + "\">");
-					w.print("<img src=\"" + XML.xmlEscapeAttributeValue(getRawUri(shrunkUri)) + "\"/>");
+					w.print("<img src=\"" + XML.xmlEscapeAttributeValue(getExternalBlobUri(shrunkUri, shrunkName)) + "\"/>");
 					w.println("</a></div></div>");
 					++index;
 				}
@@ -258,20 +234,21 @@ public class AlbumPage {
 	protected static class AlbumEntryPageGenerator extends CCouchExplorerPageGenerator {
 		Directory.Entry directoryEntry;
 		
-		public AlbumEntryPageGenerator( Directory.Entry de, Request req ) {
-			super( req );
+		public AlbumEntryPageGenerator( Request req, Response subRes, Directory.Entry de ) {
+			super( req, subRes );
 			directoryEntry = de;
 		}
 		
 		public void writeContent(PrintWriter w) {
-
 			String imageUri = TheGetter.reference(directoryEntry.getTarget(), true, true);
-			String previewUri = getPreviewUri(imageUri, req.getContextVars());
+			String imageName = directoryEntry.getName(); 
+			String previewUri = getThumbnailUri(imageUri, 640, 480);
+			String previewName = getThumbnailName(imageName, 640, 480);
 			
 			w.println("<div class=\"preview-container\" style=\"text-align:center\">");
 			w.println("<div style=\"width: 680px; height:540px; margin:auto\" class=\"preview-inner-box\">");
-			w.print("<a href=\"" + XML.xmlEscapeAttributeValue(getExternalUri("raw",imageUri)) + "\">");
-			w.print("<img src=\"" + XML.xmlEscapeAttributeValue(getExternalUri("raw",previewUri)) + "\"/>");
+			w.print("<a href=\"" + XML.xmlEscapeAttributeValue(getExternalBlobUri(imageUri,imageName)) + "\">");
+			w.print("<img src=\"" + XML.xmlEscapeAttributeValue(getExternalBlobUri(previewUri,previewName)) + "\"/>");
 			w.print("</a>");
 			w.print("<div class=\"preview-caption\">");
 			

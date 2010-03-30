@@ -84,6 +84,9 @@ public class CcouchNamespace {
 	public static final String RES_CACHEABLE = CC_RES_NS + "cacheable";
 	public static final String RES_DEST_ALREADY_EXISTED = CC_RES_NS + "destinationAlreadyExisted";
 	public static final String RES_HIGHEST_BLOB_MTIME = CC_RES_NS + "highestBlobModificationTime";
+	/** If a requested URI is equivalent to a simpler one and resolved using that,
+	 * the simpler one should be returned here */
+	public static final String RES_RESOLVED_URI = CC_RES_NS + "resolvedUri";
 
 	//// Object types ////
 	

@@ -24,7 +24,7 @@ public class PhotoAlbumComponent extends ResourceExplorerComponent {
 		return properties;
 	}
 	
-	public Response explorifyDirectory(Request req, Directory d ) {
-		return getPageGeneratorResult(new AlbumPage.AlbumPageGenerator(d, req));
+	public Response explorifyDirectory(Request req, Response subRes, Directory d ) {
+		return getPageGeneratorResult(new AlbumPage.AlbumPageGenerator(req, subRes, d));
 	}
 }

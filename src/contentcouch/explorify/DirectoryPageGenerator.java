@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import togos.mf.api.Request;
+import togos.mf.api.Response;
+import togos.mf.base.BaseArguments;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
 import contentcouch.misc.UriUtil;
@@ -22,8 +24,8 @@ import contentcouch.xml.XML;
 public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 	protected Directory dir;
 
-	public DirectoryPageGenerator( Directory dir, Request req ) {
-		super( req );
+	public DirectoryPageGenerator( Request req, Response resourceResponse, Directory dir ) {
+		super( req, resourceResponse );
 		this.dir = dir;
 	}
 	
@@ -63,25 +65,56 @@ public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 		return getResourceUri( e, false, false );
 	}
 	
-	protected String getPageShortTitle() {
-		String name = getArgument("name");
-		String pageTitle;
-		if( name == null ) {
-			pageTitle = getOperandUri();
+	protected String getExternalUri( String componentName, Directory.Entry e, boolean allowRelative ) {
+		String internalUri = getResourceUri( e, allowRelative );
+		if( PathUtil.isAbsolute(internalUri) ) {
+			String tt = e.getTargetType();
+			BaseArguments args = new BaseArguments();
+			args.putNamedArgument("uri", internalUri);
+			args.putNamedArgument("name", e.getName());
+			args.putNamedArgument("objectType", tt);
+			return getExternalComponentUri( req, componentName, args );
 		} else {
-			pageTitle = name + " / " + getOperandUri();
+			return getExternalUri( componentName, internalUri, allowRelative );
 		}
-		return pageTitle;
+	}
+	
+	protected String getExternalUri( Directory.Entry e, boolean allowRelative ) {
+		return getExternalUri( null, e, allowRelative );
+	}
+	
+	protected String getOperandResolvedUrn() {
+		String resolvedUri = (String)resourceResponse.getMetadata().get(CcouchNamespace.RES_RESOLVED_URI);
+		return resolvedUri;
+	}
+
+	protected String getPath() {
+		String path = (String)getArguments().getNamedArguments().get("path");
+		return (path == null) ? getName() : path;
+	}
+	
+	protected String getPageShortTitle() {
+		return getPath();
 	}
 	
 	protected String getPageLongTitle() {
 		 return getPageShortTitle() + " - ContentCouch directory explorer";
 	}
 	
+	protected void writeDirectLink(PrintWriter w) {
+		String resolvedUrn = getOperandResolvedUrn();
+		if( resolvedUrn != null && !resolvedUrn.equals(getOperandUri()) ) {
+			String href = getExternalUriWithName(null, resolvedUrn, getShortName(), CcouchNamespace.DIRECTORY);
+			w.println("<ul class=\"crumbtrail\"><li><a href=\""+XML.xmlEscapeAttributeValue(href)+"\">"+XML.xmlEscapeText(resolvedUrn)+"</a></li></ul>");
+		}
+	}
+	
 	public void writeContent(PrintWriter w) {
 		Set entries = dir.getDirectoryEntrySet();
 		ArrayList entryList = new ArrayList(entries);
 		Collections.sort(entryList, EntryComparators.TYPE_THEN_NAME_COMPARATOR);
+		
+		writeDirectLink(w);
 		
 		w.println("<div class=\"main-content\">");
 		w.println("<table class=\"dir-list\">");
@@ -92,12 +125,9 @@ public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 		w.write("</tr>\n");
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			Entry e = (Entry)i.next();
-			String href = getResourceUri(e, true);
 			String name = e.getName();
-			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
-				if( !name.endsWith("/") ) name += "/";
-			}
-			href = getExternalUri("default", getOperandUri(), href, true);
+			if( isDirectory(e) ) name += "/";
+			String href = getExternalUri(e, true);
 			w.write("<tr>");
 			w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
 			w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");

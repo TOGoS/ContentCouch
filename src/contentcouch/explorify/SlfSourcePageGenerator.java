@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 
 import togos.mf.api.Request;
+import togos.mf.api.Response;
 import togos.mf.value.Blob;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
@@ -21,8 +22,8 @@ public class SlfSourcePageGenerator extends CCouchExplorerPageGenerator {
 	Blob blob;
 	String title;
 	
-	public SlfSourcePageGenerator( Blob b, Request req ) {
-		super( req );
+	public SlfSourcePageGenerator( Request req, Response subRes, Blob b ) {
+		super( req, subRes );
 		this.blob = b;
 	}
 	

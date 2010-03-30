@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import togos.mf.api.Request;
+import togos.mf.api.Response;
 import togos.mf.base.BaseArguments;
 import togos.mf.value.Arguments;
 import togos.swf2.Component;
@@ -26,11 +27,13 @@ public class CCouchExplorerPageGenerator extends PageGenerator
 	public static String PREFER_RELATIVE_RESOURCE_URIS = "preferRelativeResourceUris";
 	
 	protected Request req;
+	protected Response resourceResponse;
 	protected boolean allowRelativeResourceUris;
 	protected boolean preferRelativeResourceUris;
 	
-	public CCouchExplorerPageGenerator( Request req ) {
+	public CCouchExplorerPageGenerator( Request req, Response resourceResponse ) {
 		this.req = req;
+		this.resourceResponse = resourceResponse;
 		this.allowRelativeResourceUris = ValueUtil.getBoolean(getArgument(ALLOW_RELATIVE_RESOURCE_URIS), false);
 		this.preferRelativeResourceUris = ValueUtil.getBoolean(getArgument(PREFER_RELATIVE_RESOURCE_URIS), false);
 	}
@@ -89,6 +92,18 @@ public class CCouchExplorerPageGenerator extends PageGenerator
 		return getSwfFront().getExternalComponentUri(req, component, args);
 	}
 	
+	protected String getExternalComponentUri( Request req, Arguments args ) {
+		return getSwfFront().getExternalComponentUri(req, getSwfComponent(), args);
+	}
+
+	protected String getExternalComponentUri( Request req, String componentName, Arguments args ) {
+		if( componentName == null ) {
+			return getExternalComponentUri( req, args );
+		} else {
+			return getSwfFront().getExternalComponentUri(req, componentName, args);
+		}
+	}
+
 	protected String externalUriCache;
 	protected String getExternalUri() {
 		if( externalUriCache == null ) {
@@ -113,32 +128,75 @@ public class CCouchExplorerPageGenerator extends PageGenerator
 		}
 	}
 	
+	/**
+	 * Returns the URI to be sent to the browser to get a blob.
+	 * The returned URI will never be relative to the current directory resource.
+	 * 
+	 * @param internalUri internal URI of the blob
+	 * @param name what to call it (may be null)
+	 * @return
+	 */
+	protected String getExternalBlobUri( String internalUri, String name ) {
+		SwfFrontRequestHandler swf = getSwfFront();
+		if( swf == null ) {
+			return getExternalUri("raw", internalUri);
+		} else {
+			// TODO: add raw component and replace album with raw!
+			BaseArguments linkArgs = new BaseArguments();
+			linkArgs.putNamedArgument("uri", internalUri);
+			linkArgs.putNamedArgument("name", name);
+			return getExternalComponentUri( req, "raw", linkArgs );
+		}
+	}
+	
 	protected String getName() {
 		String name = (String)getArguments().getNamedArguments().get("name");
 		return (name == null) ? getOperandUri() : name;
 	}
 	
+	/**
+	 * @return a short version of the name that shall not include slashes!
+	 */
+	protected String getShortName() {
+		String name = getName();
+		String[] parts = name.split("/");
+		return parts[parts.length-1];
+	}
+
 	////
 	
-	protected String getExternalUri( String whichProcessor, String internalUri ) {
-		if( "raw".equals(whichProcessor) && internalUri.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX)) {
+	protected String getExternalUri( String componentName, String internalUri ) {
+		if( (componentName == null || "raw".equals(componentName)) && internalUri.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX)) {
 			return getSwfFront().getExternalUri(req, internalUri);
 		} else if( internalUri.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX) ) {
 			// Since getting of x-servlet-path:... URLs is not (yet) supported:
-			throw new RuntimeException("Woah man, trying to view "+internalUri+" with "+whichProcessor+" probably won't work!");
+			throw new RuntimeException("Woah man, trying to view "+internalUri+" with "+componentName+" probably won't work!");
 		} else {
 			BaseArguments args = new BaseArguments();
 			args.putNamedArgument("uri", internalUri);
-			return getExternalComponentUri( req, getSwfComponent(), args );
+			return getExternalComponentUri( req, componentName, args );
 		}
 	}
 	
-	protected String getExternalUri( String whichProcessor, String baseUri, String relativeUri, boolean allowRelative ) {
+	protected String getExternalUri( String componentName, String relativeUri, boolean allowRelative ) {
 		if( allowRelative && !PathUtil.isAbsolute(relativeUri) ) {
 			return relativeUri;
 		} else {
-			return getExternalUri( whichProcessor, PathUtil.appendPath(baseUri, relativeUri));
+			return getExternalUri( componentName, PathUtil.appendPath(getOperandUri(), relativeUri));
 		}
+	}
+	
+	protected String getExternalUriWithName( String componentName, String internalUri, String name, String objectType ) {
+		BaseArguments args = new BaseArguments();
+		args.putNamedArgument("uri", internalUri);
+		args.putNamedArgument("name", name);
+		args.putNamedArgument("objectType", objectType);
+		return getExternalComponentUri( req, componentName, args );
+	}
+	
+	
+	protected String getExternalUri( String internalUri ) {
+		return getExternalUri( null, internalUri );
 	}
 	
 	protected String generateScriptInclude( String scriptName ) {

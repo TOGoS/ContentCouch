@@ -36,9 +36,9 @@ public abstract class BaseComponent implements Component {
 		return properties;
 	}
 	
-	protected String encodeArguments( Arguments args ) {
+	protected String encodeArguments( Map namedArguments ) {
 		String encoded = "";
-		for( Iterator i=args.getNamedArguments().entrySet().iterator(); i.hasNext(); ) {
+		for( Iterator i=namedArguments.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
 			if( encoded.length() > 0 ) encoded += "&";
 			encoded += UriUtil.uriEncode(ValueUtil.getString(e.getKey())) + "=" + UriUtil.uriEncode(ValueUtil.getString(e.getValue()));
@@ -46,11 +46,20 @@ public abstract class BaseComponent implements Component {
 		return encoded;
 	}
 	
+	protected String encodeArguments( Arguments args ) {
+		return encodeArguments( args.getNamedArguments() );
+	}
+	
 	protected String encodePathAndArguments( String path, Arguments args ) {
 		String argStr = encodeArguments(args);
 		return (argStr.length() > 0) ? path + "?" + argStr : path; 
 	}
 	
+	protected String encodePathAndArguments( String path, Map namedArguments ) {
+		String argStr = encodeArguments(namedArguments);
+		return (argStr.length() > 0) ? path + "?" + argStr : path; 
+	}
+
 	public String getUriFor( Arguments args ) {
 		return encodePathAndArguments(this.handlePath, args);
 	}

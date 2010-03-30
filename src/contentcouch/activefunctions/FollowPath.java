@@ -17,6 +17,7 @@ import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathSimplifiableActiveFunction;
 import contentcouch.path.PathSimplifiableExpression;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
@@ -24,10 +25,11 @@ import contentcouch.value.Ref;
 
 public class FollowPath extends BaseActiveFunction implements PathSimplifiableActiveFunction {
 	public static Response followPath( Object source, String path ) {
+		String resolvedUri = null;
 		String[] pathParts = path.split("/+");
 		for( int i=0; i<pathParts.length; ++i ) {
 			if( source instanceof Ref ) {
-				source = TheGetter.get( ((Ref)source).getTargetUri() );
+				source = TheGetter.get( resolvedUri = ((Ref)source).getTargetUri() );
 			}
 			if( source instanceof Directory ) {
 				Directory.Entry e = ((Directory)source).getDirectoryEntry(pathParts[i]);
@@ -46,9 +48,13 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 			}
 		}
 		if( source instanceof Ref ) {
-			source = TheGetter.get( ((Ref)source).getTargetUri() );
+			source = TheGetter.get( resolvedUri = ((Ref)source).getTargetUri() );
 		}
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, source);
+		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, source);
+		if( resolvedUri != null ) {
+			res.putMetadata(CcouchNamespace.RES_RESOLVED_URI, resolvedUri);
+		}
+		return res;
 	}
 	
 	public Response call(Request req, Map argumentExpressions) {
