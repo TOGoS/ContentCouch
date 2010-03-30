@@ -264,15 +264,14 @@ public class AlbumPage {
 		}
 		
 		public void writeContent(PrintWriter w) {
-			UriProcessor rawUriProcessor = BaseUriProcessor.getInstance( req.getContextVars(), "raw" );
 
 			String imageUri = TheGetter.reference(directoryEntry.getTarget(), true, true);
 			String previewUri = getPreviewUri(imageUri, req.getContextVars());
 			
 			w.println("<div class=\"preview-container\" style=\"text-align:center\">");
 			w.println("<div style=\"width: 680px; height:540px; margin:auto\" class=\"preview-inner-box\">");
-			w.print("<a href=\"" + XML.xmlEscapeAttributeValue(rawUriProcessor.processUri(imageUri)) + "\">");
-			w.print("<img src=\"" + XML.xmlEscapeAttributeValue(rawUriProcessor.processUri(previewUri)) + "\"/>");
+			w.print("<a href=\"" + XML.xmlEscapeAttributeValue(getExternalUri("raw",imageUri)) + "\">");
+			w.print("<img src=\"" + XML.xmlEscapeAttributeValue(getExternalUri("raw",previewUri)) + "\"/>");
 			w.print("</a>");
 			w.print("<div class=\"preview-caption\">");
 			

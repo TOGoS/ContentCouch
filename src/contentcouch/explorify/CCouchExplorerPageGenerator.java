@@ -121,8 +121,11 @@ public class CCouchExplorerPageGenerator extends PageGenerator
 	////
 	
 	protected String getExternalUri( String whichProcessor, String internalUri ) {
-		if( internalUri.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX)) {
+		if( "raw".equals(whichProcessor) && internalUri.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX)) {
 			return getSwfFront().getExternalUri(req, internalUri);
+		} else if( internalUri.startsWith(SwfNamespace.SERVLET_PATH_URI_PREFIX) ) {
+			// Since getting of x-servlet-path:... URLs is not (yet) supported:
+			throw new RuntimeException("Woah man, trying to view "+internalUri+" with "+whichProcessor+" probably won't work!");
 		} else {
 			BaseArguments args = new BaseArguments();
 			args.putNamedArgument("uri", internalUri);
