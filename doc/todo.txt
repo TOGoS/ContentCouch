@@ -1,3 +1,20 @@
+- More friendly URL formats recognised by web interface:
+  /<output-style>?uri=<uri>[&name=<nice-name>][&path=<uriencoded(root-uri)>/<path>/<path>/<nice-name>]
+  /<output-style>/<repo-name>/[<path>[/<path>[/...]]]
+  /<output-style>/blob/<blob-uri>[/<user-friendly-filename>]
+  /<output-style>/dir/<dir-uri>/[<user-friendly-dirnamename>[/<path>]]
+  /<output-style>/dir/<commit-uri>/[<user-friendly-commitname>/target[/<path>]]
+  
+  All <path parts> must be uri encoded.
+  
+  Paths to directory objects must end with '/', or else we need to be
+  very careful to ensure that links to subdirs follow the above formats.
+  
+  Note that commits are treated as directories with the single entry 'target'
+  referring to the commit target.
+  
+  When a directory is referenced by one of the above formats 
+
 - During caching or checkout, I got this error:
   Exception in thread "main" java.lang.RuntimeException: Can't merge blobs
   K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42 into K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42;
@@ -10,10 +27,13 @@
 - 'ccouch store' should accept '-sector' as alias for '-store-sector'
 
 - Run web servlet in JVM sandbox to ensure bugs in application-level
-  authentication do not arbitrary actions on web server 
+  authentication do not allow arbitrary actions by web server.
 
 - Allow 'pushing' heads and data to remote repos
-  - Multiplexed HTTP over SSH?  SPDY over SSH?
+   HTTP method:
+    - Push data blobs with SHA-1 - self validation - go into 'untrusted' datastore
+    - Push GPG-signed commits or metadata files - server validates and puts in 'trusted' datastore
+   SSH method: Multiplexed HTTP over SSH?  SPDY over SSH?
     - Treat the same as /raw requests to the servlet
     - Add 'userGroups' request metadata containing set of authorizations
       'anonymous','local-user',etc - could define customer users/groups in the future
@@ -24,6 +44,8 @@
     - File modification requests (usu. POST/PUT)
       forbidden except for 'local-user' by default.
       Controlled requests (i.e., issued by a subsystem) may add additional permissions
+   Freenet method:
+    - Allow pushing to freenet-based repos?
 
 - Handle x-rdfified URIs, since that could be useful.
 
