@@ -16,6 +16,8 @@ import togos.swf2.SwfBaseRequest;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfHttpServlet;
 import togos.swf2.SwfNamespace;
+import contentcouch.app.servlet2.comp.RawResourceComponent;
+import contentcouch.app.servlet2.comp.ResourceExplorerComponent;
 import contentcouch.app.servlet2.comp.JunkComponent;
 import contentcouch.app.servlet2.comp.PhotoAlbumComponent;
 import contentcouch.file.FileRequestHandler;
@@ -71,6 +73,14 @@ public class CCouchServlet extends SwfHttpServlet {
 		HashMap albumConfig = new HashMap();
 		albumConfig.put("path", SwfNamespace.SERVLET_PATH_URI_PREFIX+"/album");
 		frh.putComponent("album", new PhotoAlbumComponent(albumConfig));
+
+		HashMap rawConfig = new HashMap();
+		rawConfig.put("path", SwfNamespace.SERVLET_PATH_URI_PREFIX+"/raw");
+		frh.putComponent("raw", new RawResourceComponent(rawConfig));
+
+		HashMap exploreConfig = new HashMap();
+		exploreConfig.put("path", SwfNamespace.SERVLET_PATH_URI_PREFIX+"/explore");
+		frh.putComponent("explore", new ResourceExplorerComponent(exploreConfig));
 		
 		HashMap ntConfig = new HashMap();
 		ntConfig.put("autoAppendPaths", "");

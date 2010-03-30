@@ -15,7 +15,7 @@ import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.ValueUtil;
 
-public class SlfSourcePageGenerator extends PageGenerator {
+public class SlfSourcePageGenerator extends CCouchExplorerPageGenerator {
 	protected char[] hexChars = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
 	Blob blob;

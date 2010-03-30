@@ -1,4 +1,4 @@
-package contentcouch.photoalbum.activefunctions;
+package contentcouch.explorify;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -9,20 +9,13 @@ import java.util.Map;
 import java.util.Set;
 
 import togos.mf.api.Request;
-import togos.mf.api.Response;
 import togos.mf.base.BaseArguments;
-import togos.mf.value.Arguments;
 import togos.swf2.Component;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfNamespace;
-import contentcouch.activefunctions.Explorify;
 import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
 import contentcouch.directory.HasLongPath;
-import contentcouch.explorify.BaseUriProcessor;
-import contentcouch.explorify.DirectoryPageGenerator;
-import contentcouch.explorify.PageGenerator;
-import contentcouch.explorify.UriProcessor;
 import contentcouch.json.JSON;
 import contentcouch.misc.UriUtil;
 import contentcouch.rdf.CcouchNamespace;
@@ -31,7 +24,7 @@ import contentcouch.value.Directory;
 import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
-public class AlbumPage extends Explorify {
+public class AlbumPage {
 	protected static String getThumbnailUri( String imageUri, Map context ) {
 		return
 			"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
@@ -46,42 +39,6 @@ public class AlbumPage extends Explorify {
 	}
 	
 	public static class AlbumPageGenerator extends DirectoryPageGenerator {
-		static class Crumb {
-			public String uri;
-			public String name;
-			public Crumb next;
-			public Crumb( String uri, String name, Crumb next ) {
-				this.uri = uri;
-				this.name = name;
-				this.next = next;
-			}
-		}
-		
-		/**
-		 * Given the URI of the latest node in a crumb trail, returns the
-		 * earliest node 
-		 * @param uri URI of the current node
-		 * @param maxDepth maximum number of items to return
-		 * @param next the next node
-		 * @return
-		 */
-		static Crumb parseCrumbTrail( String uri, int maxDepth, Crumb next ) {
-			if( maxDepth == 0 ) return next;
-			if( uri == null ) return next;
-			Arguments args = parseArgumentsFromUri( uri );
-			String prev = (String)args.getNamedArguments().get("prev");
-			String name = (String)args.getNamedArguments().get("name");
-			String opUri = (String)args.getNamedArguments().get("uri");
-			if( name == null ) name = opUri;
-			if( name == null ) name = "(no name or opUri??)";
-			if( prev == null ) {
-				return new Crumb( uri, name, next );
-			} else {
-				return parseCrumbTrail( prev, maxDepth-1, new Crumb( uri, name, next ) );
-			}
-		}
-
-		
 		public AlbumPageGenerator( Directory dir, Request req ) {
 			super( dir, req );
 		}
@@ -89,7 +46,7 @@ public class AlbumPage extends Explorify {
 		protected String getRawUri( String operandUri ) {
 			SwfFrontRequestHandler swf = getSwfFront();
 			if( swf == null ) {
-				return processUri("raw", operandUri);
+				return getExternalUri("raw", operandUri);
 			} else {
 				// TODO: add raw component and replace album with raw!
 				Component raw = (Component)((Map)req.getContextVars().get(SwfNamespace.COMPONENTS)).get("album");
@@ -97,6 +54,10 @@ public class AlbumPage extends Explorify {
 				linkArgs.putNamedArgument("uri", operandUri);
 				return getExternalComponentUri( req, raw, linkArgs );
 			}
+		}
+		
+		protected String getPageLongTitle() {
+			 return getPageShortTitle() + " - ContentCouch album explorer";
 		}
 		
 		public void write(PrintWriter w) {
@@ -129,13 +90,6 @@ public class AlbumPage extends Explorify {
 
 			////
 			
-			String name = getArgument("name");
-			String pageTitle;
-			if( name == null ) {
-				pageTitle = getOperandUri();
-			} else {
-				pageTitle = name + " / " + getOperandUri();
-			}
 			
 			w.println("<html>");
 			w.println("<head>");
@@ -148,13 +102,13 @@ public class AlbumPage extends Explorify {
 				w.println("var pp = new contentcouch.photoalbum.PhotoPreviewer();");
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String imageUri = getUnprocessedHref(e, false);
+					String imageUri = getResourceUri(e);
 					String shrunkUri = getThumbnailUri(imageUri, req.getContextVars());
 					String previewUri = getPreviewUri(imageUri, req.getContextVars());
 					w.println("pp.addPreview("+
-						JSON.encodeObject(processUri("raw", shrunkUri))+","+
-						JSON.encodeObject(processUri("raw", previewUri))+","+
-						JSON.encodeObject(processUri("raw", imageUri))+
+						JSON.encodeObject(getExternalUri("raw", shrunkUri))+","+
+						JSON.encodeObject(getExternalUri("raw", previewUri))+","+
+						JSON.encodeObject(getExternalUri("raw", imageUri))+
 					");");
 				}
 				w.println("function goToPreview(index) { return pp.goToPreview(index); }");
@@ -163,32 +117,11 @@ public class AlbumPage extends Explorify {
 				w.println("function getPreviewer() { return pp; }");
 				w.println("//]]></script>");
 			}
-			w.println("<title>" + XML.xmlEscapeText(pageTitle + " - album view") + "</title>");
+			w.println("<title>" + XML.xmlEscapeText(getPageLongTitle() + " - album view") + "</title>");
 			w.println("</head>");
 			w.println("<body>");
 			
-			BaseArguments args = new BaseArguments(getArguments());
-			boolean swfFrontAvailable = (getSwfFront() != null);
-
-			w.println("<h2>" + XML.xmlEscapeText(pageTitle) + "</h2>");
-
-			String myUri;
-			Component swfComponent = getSwfComponent();
-			if( swfFrontAvailable ) {
-				if( name == null ) name = getOperandUri();
-				myUri = getExternalComponentUri(req, swfComponent, args);
-				Crumb c = parseCrumbTrail(myUri, 5, null);
-				if( c != null ) {
-					w.println("<ul class=\"crumbtrail\">");
-					for( ; c != null; c = c.next ) {
-						w.println("<li><a href=\""+XML.xmlEscapeAttributeValue(c.uri)+"\">"+
-							XML.xmlEscapeText(c.name)+"</a></li>");
-					}
-					w.println("</ul>");
-				}
-			} else {
-				myUri = null;
-			}
+			w.println("<h2>" + XML.xmlEscapeText(getPageShortTitle()) + "</h2>");
 				
 			w.println("<div class=\"main-content\">");
 			if( dirEntryList.size() > 0 ) {
@@ -201,12 +134,9 @@ public class AlbumPage extends Explorify {
 				w.write("</tr>\n");
 				for( Iterator i=dirEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String href = getUnprocessedHref( e, true );
-					String ename = e.getName();
-					href = processRelativeUri("album", getOperandUri(), href, ename);
-					if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
-						if( !ename.endsWith("/") ) ename += "/";
-					}
+					String href = getResourceUri(e, true);
+					String ename = e.getName() + (isDirectory(e) ? "/" : "");
+					href = getExternalUri("album", getOperandUri(), href, true);
 					w.write("<tr>");
 					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
 					w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
@@ -226,12 +156,9 @@ public class AlbumPage extends Explorify {
 				w.write("</tr>\n");
 				for( Iterator i=miscEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String href = getUnprocessedHref( e, false );
-					href = processRelativeUri("album", getOperandUri(), href);
-					String ename = e.getName();
-					if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
-						if( !ename.endsWith("/") ) ename += "/";
-					}
+					String href = getResourceUri(e, true);
+					href = getExternalUri("album", getOperandUri(), href, true);
+					String ename = e.getName() + (isDirectory(e) ? "/" : "");
 					w.write("<tr>");
 					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
 					w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
@@ -277,7 +204,8 @@ public class AlbumPage extends Explorify {
 				int index = 0;
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String imageUri = getUnprocessedHref(e, false);
+					String imageHref = getExternalUri("raw",  getOperandUri(), getResourceUri(e, true), true);
+					String absoluteImageUri = getResourceUri(e);
 					/*
 					String shrunkUri =
 						"active:contentcouch.graphics.serialize-image+operand@" + UriUtil.uriEncode( 
@@ -287,13 +215,13 @@ public class AlbumPage extends Explorify {
 						) + "+format@" + UriUtil.uriEncode(UriUtil.makeDataUri("jpeg"));
 					*/
 					String shrunkUri =
-						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(imageUri) +
+						"active:contentcouch.graphics.thumbnail+operand@" + UriUtil.uriEncode(absoluteImageUri) +
 						"+width@data:,128+height@data:,128";
 					w.println("<div class=\"image-thumbnail-box\">");
 					w.println("<div class=\"image-thumbnail-title\">" + e.getName() + "</div>");
 					w.print("<div class=\"image-thumbnail-inner-box\">");
 					
-					w.print("<a onclick=\"return goToPreview("+index+")\" href=\"" + XML.xmlEscapeAttributeValue(getRawUri(imageUri)) + "\">");
+					w.print("<a onclick=\"return goToPreview("+index+")\" href=\"" + XML.xmlEscapeAttributeValue(imageHref) + "\">");
 					w.print("<img src=\"" + XML.xmlEscapeAttributeValue(getRawUri(shrunkUri)) + "\"/>");
 					w.println("</a></div></div>");
 					++index;
@@ -327,7 +255,7 @@ public class AlbumPage extends Explorify {
 		}
 	}
 	
-	protected static class AlbumEntryPageGenerator extends PageGenerator {
+	protected static class AlbumEntryPageGenerator extends CCouchExplorerPageGenerator {
 		Directory.Entry directoryEntry;
 		
 		public AlbumEntryPageGenerator( Directory.Entry de, Request req ) {
@@ -363,17 +291,5 @@ public class AlbumPage extends Explorify {
 			w.println("</div>");
 			w.println("</div>");
 		}
-	}
-	
-	public Response explorifyDirectory( Request req, Directory d ) {
-		return getPageGeneratorResult(new AlbumPageGenerator(d, req));
-	}
-	
-	public Response explorifyDirectoryEntry(Request req, Map argumentExpressions, String uri, Directory.Entry de ) {
-		return getPageGeneratorResult(new AlbumEntryPageGenerator(de, req ));
-	}
-
-	protected String getPathArgumentName() {
-		return "operand";
 	}
 }

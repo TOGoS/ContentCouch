@@ -664,7 +664,7 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected void putFunctionResult( RepoConfig repoConfig, String subIndexName, String key, String value ) {
-		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName );
+		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName+".slf" );
 		try {
 			slf.put(key, ValueUtil.getBytes("\""+value) );
 		} catch( IOException e ) {
@@ -673,7 +673,7 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected void putFunctionResultUri( RepoConfig repoConfig, String subIndexName, String key, String valueUri ) {
-		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName );
+		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName+".slf" );
 		try {
 			slf.put(key, ValueUtil.getBytes("<"+valueUri) );
 		} catch( IOException e ) {
@@ -690,7 +690,7 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected Object getFunctionResult( RepoConfig repoConfig, String subIndexName, String key ) {
-		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName );
+		SimpleListFile slf = getSlf( repoConfig, "cache/function-results/"+subIndexName+".slf" );
 		try {
 			byte[] b = slf.get(key);
 			if( b == null ) {
