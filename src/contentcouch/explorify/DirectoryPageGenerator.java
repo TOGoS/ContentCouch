@@ -83,6 +83,11 @@ public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 		return getExternalUri( null, e, allowRelative );
 	}
 	
+	protected String getExternalUri( Directory.Entry e ) {
+		boolean allowRelative = isDirectory(e) || !alwaysRebaseBlobUris;
+		return getExternalUri( null, e, allowRelative );
+	}
+
 	protected String getOperandResolvedUrn() {
 		String resolvedUri = (String)resourceResponse.getMetadata().get(CcouchNamespace.RES_RESOLVED_URI);
 		return resolvedUri;
@@ -127,7 +132,7 @@ public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 			Entry e = (Entry)i.next();
 			String name = e.getName();
 			if( isDirectory(e) ) name += "/";
-			String href = getExternalUri(e, true);
+			String href = getExternalUri(e);
 			w.write("<tr>");
 			w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(name) + "</a></td>");
 			w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");

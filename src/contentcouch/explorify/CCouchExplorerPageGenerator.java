@@ -25,17 +25,20 @@ public class CCouchExplorerPageGenerator extends PageGenerator
 {
 	public static String ALLOW_RELATIVE_RESOURCE_URIS = "allowRelativeResourceUris";
 	public static String PREFER_RELATIVE_RESOURCE_URIS = "preferRelativeResourceUris";
+	public static String ALWAYS_REBASE_BLOB_URIS = "alwaysRebaseBlobUris";
 	
 	protected Request req;
 	protected Response resourceResponse;
 	protected boolean allowRelativeResourceUris;
 	protected boolean preferRelativeResourceUris;
+	protected boolean alwaysRebaseBlobUris;
 	
 	public CCouchExplorerPageGenerator( Request req, Response resourceResponse ) {
 		this.req = req;
 		this.resourceResponse = resourceResponse;
 		this.allowRelativeResourceUris = ValueUtil.getBoolean(getArgument(ALLOW_RELATIVE_RESOURCE_URIS), false);
 		this.preferRelativeResourceUris = ValueUtil.getBoolean(getArgument(PREFER_RELATIVE_RESOURCE_URIS), false);
+		this.alwaysRebaseBlobUris = ValueUtil.getBoolean(getArgument(ALWAYS_REBASE_BLOB_URIS), false);
 	}
 	
 	//// Utility functions ////

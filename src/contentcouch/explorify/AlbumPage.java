@@ -88,7 +88,7 @@ public class AlbumPage {
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String imageUri = getResourceUri(e); 
-					String imageHref = getExternalUri(e, true);
+					String imageHref = getExternalUri(e);
 					String shrunkUri = getThumbnailUri(imageUri, 128, 128);
 					String shrunkName = getThumbnailName(e.getName(), 128, 128);
 					String previewUri = getThumbnailUri(imageUri, 640, 480);
@@ -124,7 +124,7 @@ public class AlbumPage {
 				w.write("</tr>\n");
 				for( Iterator i=dirEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String href = getExternalUri(e, true);
+					String href = getExternalUri(e);
 					String ename = e.getName() + (isDirectory(e) ? "/" : "");
 					w.write("<tr>");
 					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
@@ -146,7 +146,7 @@ public class AlbumPage {
 				for( Iterator i=miscEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String href = getResourceUri(e, true);
-					href = getExternalUri(e, true);
+					href = getExternalUri(e);
 					String ename = e.getName() + (isDirectory(e) ? "/" : "");
 					w.write("<tr>");
 					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
@@ -189,7 +189,7 @@ public class AlbumPage {
 				int index = 0;
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String imageHref = getExternalUri(e, true);
+					String imageHref = getExternalUri(e);
 					String absoluteImageUri = getResourceUri(e);
 					String shrunkUri = getThumbnailUri(absoluteImageUri, 128, 128);
 					String shrunkName = getThumbnailName(e.getName(), 128, 128);

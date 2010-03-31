@@ -186,16 +186,23 @@ public class ResourceExplorerComponent extends BaseComponent {
 		String path = name;
 		boolean allowRelativePaths = false;
 		boolean preferRelativePaths = false;
+		/** True to make more direct links to blobs even when other
+		 * links are relative. */
+		boolean alwaysRebaseBlobPaths = false;
 		if( uri == null || uri == "" ) {
 			String pi = req.getResourceName().substring(handlePath.length());
 			if( pi.length() > 0 && pi.charAt(0) == '/' ) {
-				allowRelativePaths = true;
 				preferRelativePaths = true;
 				String[] parts = pi.substring(1).split("/",3);
-				if( parts.length >= 2 && (uri = UriUtil.uriDecode(parts[0])).indexOf(':') != -1 ) {
+				if( parts.length >= 1 && (uri = UriUtil.uriDecode(parts[0])).indexOf(':') != -1 ) {
 					// .../<uri>/<name>[</more/stuff>]
-					String baseUri = UriUtil.uriDecode(parts[1]);
+					String baseUri = UriUtil.uriDecode(parts[0]);
 					String baseName = (name == null) ? baseUri : name;
+					if( parts.length >= 3 && pi.charAt(pi.length()-1) == '/' ) {
+						allowRelativePaths = true;
+					} else {
+						allowRelativePaths = false;						
+					}
 					if( parts.length > 2 ) {
 						uri = PathUtil.appendPath(uri, parts[2]);
 						path = baseName + "/" + parts[2];
@@ -203,6 +210,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 				} else {
 					// /<repo-name>/stuff/stuff/blah
 					uri = "x-ccouch-repo:/" + pi;
+					allowRelativePaths = pi.charAt(pi.length()-1) == '/';
 				}
 			} else {
 				uri = "x-ccouch-repo://";
@@ -224,6 +232,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 		subArgs.putNamedArgument("path", path);
 		subArgs.putNamedArgument( CCouchExplorerPageGenerator.ALLOW_RELATIVE_RESOURCE_URIS, Boolean.valueOf(allowRelativePaths));
 		subArgs.putNamedArgument( CCouchExplorerPageGenerator.PREFER_RELATIVE_RESOURCE_URIS, Boolean.valueOf(preferRelativePaths));
+		subArgs.putNamedArgument( CCouchExplorerPageGenerator.ALWAYS_REBASE_BLOB_URIS, Boolean.valueOf(alwaysRebaseBlobPaths));
 		// SubReq is a clone of the user request with extra args filled in
 		subReq = new BaseRequest(req);
 		subReq.content = subArgs;
