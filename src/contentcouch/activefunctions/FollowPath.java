@@ -24,6 +24,8 @@ import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class FollowPath extends BaseActiveFunction implements PathSimplifiableActiveFunction {
+	/** @todo: Fix this so it passes back response/content metadata
+	 * by using TheGetter.call instead of TheGetter.get */
 	public static Response followPath( Object source, String path ) {
 		String resolvedUri = null;
 		String[] pathParts = path.split("/+");

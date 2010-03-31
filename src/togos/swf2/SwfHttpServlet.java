@@ -1,6 +1,7 @@
 package togos.swf2;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -67,7 +68,14 @@ public class SwfHttpServlet extends HttpServlet {
 							ValueUtil.getString(e.getValue()) ); 
 					}
 				}
+				
+				Object lastModifiedo = subRes.getContentMetadata().get(DcNamespace.DC_MODIFIED);
+				System.err.println("LMO:"+lastModifiedo);
+				Date lastModified = (lastModifiedo instanceof Date) ? (Date)lastModifiedo : null;
+				
 				if( type != null ) response.setHeader("Content-Type", type);
+				if( lastModified != null ) response.setDateHeader("Last-Modified", lastModified.getTime());
+				
 				long len = b.getLength();
 				if( len != -1 ) {
 					response.setHeader("Content-Length", ""+len);

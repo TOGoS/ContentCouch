@@ -29,6 +29,7 @@ import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.DcNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -107,7 +108,9 @@ public class ResourceExplorerComponent extends BaseComponent {
 		} else if( MetadataUtil.CT_SLF.equals(type) ) {
 			return explorifySlfBlob( req, subRes, blob );
 		} else if( type != null ) {
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, blob, type);
+			BaseResponse res = new BaseResponse(subRes);
+			res.putContentMetadata(DcNamespace.DC_FORMAT, type);
+			return res;
 		} else {
 			return subRes;
 		}
