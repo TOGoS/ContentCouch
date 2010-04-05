@@ -142,7 +142,7 @@ public class MetaRepoConfig {
 		return offset;
 	}
 
-	static Pattern argPattern = Pattern.compile("(?:\\S|\"(?:[^\\\\\"]|\\\\\\\\|\\\\\")*\")+");
+	static Pattern argPattern = Pattern.compile("(?:\"(?:[^\\\\\"]|\\\\\\\\|\\\\\")*\"|\\S)+");
 	
 	protected static String unescape(String arg) {
 		StringBuffer res = new StringBuffer();
