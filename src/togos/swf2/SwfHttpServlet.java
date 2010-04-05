@@ -70,7 +70,6 @@ public class SwfHttpServlet extends HttpServlet {
 				}
 				
 				Object lastModifiedo = subRes.getContentMetadata().get(DcNamespace.DC_MODIFIED);
-				System.err.println("LMO:"+lastModifiedo);
 				Date lastModified = (lastModifiedo instanceof Date) ? (Date)lastModifiedo : null;
 				
 				if( type != null ) response.setHeader("Content-Type", type);
