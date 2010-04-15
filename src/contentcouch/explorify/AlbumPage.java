@@ -125,9 +125,15 @@ public class AlbumPage {
 				for( Iterator i=dirEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String href = getExternalUri(e);
+					String directHref = getExternalUri(e,false);
 					String ename = e.getName() + (isDirectory(e) ? "/" : "");
 					w.write("<tr>");
-					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
+					w.write("<td>");
+					w.write("<a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a>");
+					if( !directHref.equals(href) ) {
+						w.write(" [<a href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\">short</a>]");
+					}
+					w.write("</td>");
 					w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
 					w.write("<td>" + (e.getTargetLastModified() > -1 ? DateUtil.DISPLAYFORMAT.format(new Date(e.getTargetLastModified())) : "") + "</td>");
 					w.write("</tr>\n");
@@ -147,9 +153,15 @@ public class AlbumPage {
 					Entry e = (Entry)i.next();
 					String href = getResourceUri(e, true);
 					href = getExternalUri(e);
+					String directHref = getExternalUri(e,false);
 					String ename = e.getName() + (isDirectory(e) ? "/" : "");
 					w.write("<tr>");
-					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
+					w.write("<td>");
+					w.write("<a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a>");
+					if( !directHref.equals(href) ) {
+						w.write(" [<a href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\">short</a>]");
+					}
+					w.write("</td>");
 					w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
 					w.write("<td>" + (e.getTargetLastModified() > -1 ? DateUtil.DISPLAYFORMAT.format(new Date(e.getTargetLastModified())) : "") + "</td>");
 					w.write("</tr>\n");
@@ -190,6 +202,7 @@ public class AlbumPage {
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String imageHref = getExternalUri(e);
+					String directHref = getExternalUri(e,false);
 					String absoluteImageUri = getResourceUri(e);
 					String shrunkUri = getThumbnailUri(absoluteImageUri, 128, 128);
 					String shrunkName = getThumbnailName(e.getName(), 128, 128);
@@ -199,7 +212,9 @@ public class AlbumPage {
 					
 					w.print("<a onclick=\"return goToPreview("+index+")\" href=\"" + XML.xmlEscapeAttributeValue(imageHref) + "\">");
 					w.print("<img src=\"" + XML.xmlEscapeAttributeValue(getExternalBlobUri(shrunkUri, shrunkName)) + "\"/>");
-					w.println("</a></div></div>");
+					w.println("</a></div>");
+					w.println("[<a href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\">short</a>]");
+					w.println("</div>");
 					++index;
 				}
 				
