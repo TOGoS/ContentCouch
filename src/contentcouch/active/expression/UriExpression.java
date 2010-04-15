@@ -21,7 +21,7 @@ public class UriExpression implements Ref, Expression, PathSimplifiableExpressio
 	}
 	
 	public String toString() {
-		return UriUtil.sanitizeUri(uri);
+		return UriUtil.uriEncode(uri,UriUtil.VALID_CHARS_NOFUNC);
 	}
 	
 	public Response eval( Request req ) {

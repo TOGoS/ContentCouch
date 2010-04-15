@@ -56,7 +56,7 @@ public class ValueExpression implements Expression {
 	}
 	
 	public String toUri() {
-		return "data:," + UriUtil.uriEncode(ValueUtil.getBytes(value), false);
+		return "data:," + UriUtil.uriEncode(ValueUtil.getBytes(value));
 	}
 	
 	public boolean isConstant() {
