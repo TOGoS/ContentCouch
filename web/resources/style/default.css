@@ -6,6 +6,15 @@ h1, h2, h3, h4, h5, h6 {
 	margin: 4pt;
 }
 
+.tinylink {
+	font-size: 8pt;
+	border: 1px solid white;
+	padding: 2px 4px;
+	text-decoration: none;
+	margin: 2px 4px;
+}
+
+
 .main-content > h3 { margin: 0; padding: 4pt 1em 4pt 1em; background: darkgray }
 
 .main-content { border:1px solid; margin:4px; padding: 0px; background-color:#CCC; }
@@ -30,6 +39,10 @@ h1, h2, h3, h4, h5, h6 {
 	font-family: Courier;
 	border-left: 1px outset;
 }
+.dir-list td.colext {
+	border-left: none;
+}
+
 
 /* Crumbs */
 ul.crumbtrail {
@@ -45,6 +58,7 @@ ul.crumbtrail > li > a {
 ul.crumbtrail > :before {
 	content: " \BB  "
 }
+
 
 /* Photo Album Formatting */
 .preview-container {
@@ -110,4 +124,17 @@ ul.crumbtrail > :before {
 .image-thumbnail-inner-box > * {
 	display: table-cell;
 	vertical-align: middle;
+}
+.image-thumbnail-footer {
+	text-align: left;
+	padding-left: 12px;
+	padding-bottom: 4px;
+}
+
+/* Bright colored links for areas with black backgrounds */
+.preview-container a:link, .image-thumbnail-box a:link {
+	color: orange;
+}
+.preview-container a:visited, .image-thumbnail-box a:visited {
+	color: darkorange;
 }

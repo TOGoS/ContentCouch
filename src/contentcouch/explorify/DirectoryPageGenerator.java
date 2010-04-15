@@ -110,7 +110,7 @@ public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 		String resolvedUrn = getOperandResolvedUrn();
 		if( resolvedUrn != null && !resolvedUrn.equals(getOperandUri()) ) {
 			String href = getExternalUriWithName(null, resolvedUrn, getShortName(), CcouchNamespace.DIRECTORY);
-			w.println("<ul class=\"crumbtrail\"><li><a href=\""+XML.xmlEscapeAttributeValue(href)+"\">"+XML.xmlEscapeText(resolvedUrn)+"</a></li></ul>");
+			w.println("<ul class=\"crumbtrail\"><li><a href=\""+XML.xmlEscapeAttributeValue(href)+"\" title=\"Short URL for this page\">"+XML.xmlEscapeText(resolvedUrn)+"</a></li></ul>");
 		}
 	}
 	

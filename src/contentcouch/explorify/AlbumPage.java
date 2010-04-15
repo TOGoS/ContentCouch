@@ -88,7 +88,7 @@ public class AlbumPage {
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String imageUri = getResourceUri(e); 
-					String imageHref = getExternalUri(e);
+					String imageHref = getExternalUri("raw", e, false);
 					String shrunkUri = getThumbnailUri(imageUri, 128, 128);
 					String shrunkName = getThumbnailName(e.getName(), 128, 128);
 					String previewUri = getThumbnailUri(imageUri, 640, 480);
@@ -115,11 +115,11 @@ public class AlbumPage {
 			
 			w.println("<div class=\"main-content\">");
 			if( dirEntryList.size() > 0 ) {
-				w.println("<h3>Subdirectories</h3>");
+				w.println("<h3 title=\"Short URL\">Subdirectories</h3>");
 				w.println("<table class=\"dir-list\">");
 				w.write("<tr>");
-				w.write("<th>Name</th>");
-				w.write("<th>Size</th>");
+				w.write("<th colspan=\"2\">Name</th>");
+				w.write("<th title=\"Short URL\">Size</th>");
 				w.write("<th>Modified</th>");
 				w.write("</tr>\n");
 				for( Iterator i=dirEntryList.iterator(); i.hasNext(); ) {
@@ -128,10 +128,10 @@ public class AlbumPage {
 					String directHref = getExternalUri(e,false);
 					String ename = e.getName() + (isDirectory(e) ? "/" : "");
 					w.write("<tr>");
-					w.write("<td>");
-					w.write("<a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a>");
+					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
+					w.write("<td class=\"colext\">");
 					if( !directHref.equals(href) ) {
-						w.write(" [<a href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\">short</a>]");
+						w.write(" <a class=\"tinylink\" href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\" title=\"Short URL\">S</a>");
 					}
 					w.write("</td>");
 					w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
@@ -145,21 +145,20 @@ public class AlbumPage {
 				w.println("<h3>Misc. files</h3>");
 				w.println("<table class=\"dir-list\">");
 				w.write("<tr>");
-				w.write("<th>Name</th>");
-				w.write("<th>Size</th>");
+				w.write("<th colspan=\"2\">Name</th>");
+				w.write("<th title=\"Short URL\">Size</th>");
 				w.write("<th>Modified</th>");
 				w.write("</tr>\n");
 				for( Iterator i=miscEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
-					String href = getResourceUri(e, true);
-					href = getExternalUri(e);
+					String href = getExternalUri(e);
 					String directHref = getExternalUri(e,false);
 					String ename = e.getName() + (isDirectory(e) ? "/" : "");
 					w.write("<tr>");
-					w.write("<td>");
-					w.write("<a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a>");
+					w.write("<td><a href=\"" + XML.xmlEscapeAttributeValue(href) + "\">" + XML.xmlEscapeText(ename) + "</a></td>");
+					w.write("<td class=\"colext\">");
 					if( !directHref.equals(href) ) {
-						w.write(" [<a href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\">short</a>]");
+						w.write(" <a class=\"tinylink\" href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\" title=\"Short URL\">S</a>");
 					}
 					w.write("</td>");
 					w.write("<td align=\"right\">" + (e.getTargetSize() > -1 ? Long.toString(e.getTargetSize()) : "") + "</td>");
@@ -202,7 +201,7 @@ public class AlbumPage {
 				for( Iterator i=imageEntryList.iterator(); i.hasNext(); ) {
 					Entry e = (Entry)i.next();
 					String imageHref = getExternalUri(e);
-					String directHref = getExternalUri(e,false);
+					String directHref = getExternalUri("raw",e,false);
 					String absoluteImageUri = getResourceUri(e);
 					String shrunkUri = getThumbnailUri(absoluteImageUri, 128, 128);
 					String shrunkName = getThumbnailName(e.getName(), 128, 128);
@@ -212,8 +211,11 @@ public class AlbumPage {
 					
 					w.print("<a onclick=\"return goToPreview("+index+")\" href=\"" + XML.xmlEscapeAttributeValue(imageHref) + "\">");
 					w.print("<img src=\"" + XML.xmlEscapeAttributeValue(getExternalBlobUri(shrunkUri, shrunkName)) + "\"/>");
-					w.println("</a></div>");
-					w.println("[<a href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\">short</a>]");
+					w.print("</a>");
+					w.println("</div>");
+					w.println("<div class=\"image-thumbnail-footer\">");
+					w.println("<a class=\"tinylink\" href=\"" + XML.xmlEscapeAttributeValue(directHref) + "\" title=\"Short URL\">S</a>");
+					w.print("</div>");
 					w.println("</div>");
 					++index;
 				}
