@@ -203,7 +203,7 @@ public class CCouchExplorerPageGenerator extends PageGenerator
 	}
 	
 	protected String generateScriptInclude( String scriptName ) {
-		String ppUri = SwfNamespace.SERVLET_PATH_URI_PREFIX + "/lib/js/"+UriUtil.uriEncode(scriptName);
+		String ppUri = SwfNamespace.SERVLET_PATH_URI_PREFIX + "/lib/js/"+UriUtil.uriEncode(scriptName,UriUtil.PATH_SAFE);
 		ppUri = getExternalUri("raw", ppUri);
 		return "<script type=\"application/javascript\" src=\"" + XML.xmlEscapeAttributeValue(ppUri) + "\"></script>";
 	}

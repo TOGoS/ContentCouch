@@ -52,9 +52,14 @@ public class UriUtil {
 	};
 	
 	/** It is generally safe to include these unescaped within a path component */
-	public static byte[] PATH_SAFE = join(
+	public static byte[] PATH_SEGMENT_SAFE = join(
 		UNRESERVED_CHARS,
 		new byte[] { ':','!','$','\'','(',')','*',',' }
+	);
+
+	public static byte[] PATH_SAFE = join(
+		PATH_SEGMENT_SAFE,
+		new byte[] { '/' }
 	);
 	
 	/** Characters that have special meaning in URIs */
