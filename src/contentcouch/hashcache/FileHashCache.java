@@ -118,13 +118,17 @@ public class FileHashCache {
 				e.mtime = file.lastModified();
 				e.size = file.length();
 				e.hash = hash;
-				System.err.println("Hash length: "+hash.length);
 				getSlf().put(file.getCanonicalPath(), e.toBytes());
 			}
 			return hash;
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public String getUrn( FileBlob file ) {
+		byte[] hash = getHash(file);
+		return dataScheme.hashToUrn(hash);
 	}
 	
 	public static void main(String[] args) {

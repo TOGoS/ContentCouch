@@ -29,6 +29,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.ContentAddressingScheme;
 import contentcouch.contentaddressing.Schemes;
 import contentcouch.directory.WritableDirectory;
+import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
 import contentcouch.framework.BaseRequestHandler;
 import contentcouch.framework.MfArgUtil;
@@ -112,14 +113,16 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 	}
 	
-	protected FileHashCache fileHashCacheCache;
-	protected FileHashCache getFileHashCache() {
-		if( fileHashCacheCache == null && config.defaultRepoConfig.uri.startsWith("file:") ) {
-			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.uri + "cache/file-"+config.defaultRepoConfig.identificationScheme.getSchemeShortName()+".slf").toString();
+	protected Map fileHashCaches = new HashMap();
+	protected FileHashCache getFileHashCache( ContentAddressingScheme cas ) {
+		FileHashCache fileHashCache = (FileHashCache)fileHashCaches.get(cas.getSchemeShortName());
+		if( fileHashCache == null && config.defaultRepoConfig.uri.startsWith("file:") ) {
+			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.uri + "cache/file-"+cas.getSchemeShortName()+".slf").toString();
 			File cacheFile = new File(hashCachePath);
-			fileHashCacheCache = new FileHashCache(cacheFile, config.defaultRepoConfig.storageScheme, "rw");
+			fileHashCache = new FileHashCache(cacheFile, cas, "rw");
+			fileHashCaches.put(cas.getSchemeShortName(), fileHashCache);
 		}
-		return fileHashCacheCache;
+		return fileHashCache;
 	}
 	
 	protected String urnToPostSectorPath( RepoConfig repoConfig, String urn ) {
@@ -220,8 +223,7 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Response putDataBlob( RepoConfig repoConfig, Request req ) {
 		String sector = getRequestedStoreSector(req, repoConfig);
 		
-		byte[] idHash = repoConfig.identificationScheme.getHash((Blob)req.getContent());
-		String idUrn = repoConfig.identificationScheme.hashToUrn(idHash);
+		String idUrn = identifyBlob((Blob)req.getContent(), repoConfig);
 		
 		byte[] storeHash;
 		if( repoConfig.storageScheme.couldTranslateUrn(idUrn) ) {
@@ -603,6 +605,11 @@ public class MetaRepository extends BaseRequestHandler {
 	//// Identify stuff ////
 	
 	protected String identifyBlob( Blob blob, RepoConfig repoConfig ) {
+		FileHashCache fac = getFileHashCache(repoConfig.identificationScheme);
+		if( fac != null && blob instanceof FileBlob ) {
+			return fac.getUrn((FileBlob)blob);
+		}
+		Log.log(Log.EVENT_PERFORMANCE_WARNING, "Unable to cache URN of "+blob.getClass().getName());
 		return repoConfig.identificationScheme.hashToUrn(repoConfig.identificationScheme.getHash(blob));
 	}
 	
