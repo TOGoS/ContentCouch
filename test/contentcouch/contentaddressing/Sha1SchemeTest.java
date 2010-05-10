@@ -17,9 +17,9 @@ public class Sha1SchemeTest extends TestCase {
 	String expectedRdfValue = "JMFVQGKCBX3GASAMGGUFPLIUVRWEFDBK";
 	
 	public void testHash() {
-		assertTrue( Sha1Scheme.getInstance().wouldHandleUrn("urn:sha1:JMFVQGKCBX3GASAMGGUFPLIUVRWEFDBK") );
-		assertTrue( Sha1Scheme.getInstance().wouldHandleUrn("urn:bitprint:JMFVQGKCBX3GASAMGGUFPLIUVRWEFDBK.QXGGY") );
-		assertFalse( Sha1Scheme.getInstance().wouldHandleUrn("http://zombo.com/") );
+		assertTrue( Sha1Scheme.getInstance().couldTranslateUrn("urn:sha1:JMFVQGKCBX3GASAMGGUFPLIUVRWEFDBK") );
+		assertTrue( Sha1Scheme.getInstance().couldTranslateUrn("urn:bitprint:JMFVQGKCBX3GASAMGGUFPLIUVRWEFDBK.QXGGY") );
+		assertFalse( Sha1Scheme.getInstance().couldTranslateUrn("http://zombo.com/") );
 		
 		byte[] hash = Sha1Scheme.getInstance().getHash( BlobUtil.getBlob(bytesToHash) );
 		assertEquals( expectedUrn, Sha1Scheme.getInstance().hashToUrn(hash) );

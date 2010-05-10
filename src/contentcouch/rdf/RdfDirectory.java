@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Set;
 
 import togos.mf.value.Blob;
-
 import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;
 import contentcouch.misc.Function1;
@@ -43,51 +42,70 @@ public class RdfDirectory extends RdfNode implements Directory {
 		public Entry() {
 			super(CcouchNamespace.DIRECTORYENTRY);
 		}
-
-		public Entry( Directory.Entry de, Function1 targetRdfifier ) {
+		
+		public Entry( Directory.Entry de, RdfNode targetNode ) {
 			this();
-			if( de.getTargetType() == null ) {
-			} else if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) ) {
-			} else if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(de.getTargetType()) ) {
-			} else {
-				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
+			
+			// New style target type:
+			if( targetNode.getSingle(RdfNamespace.RDF_TYPE) == null ) {
+				String rdfType;
+				if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) ) {
+					rdfType = CcouchNamespace.BLOB;
+				} else if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(de.getTargetType()) ) {
+					rdfType = CcouchNamespace.DIRECTORY;
+				} else {
+					rdfType = null;
+				}
+				if( rdfType != null ) {
+					targetNode.add(RdfNamespace.RDF_TYPE, new BaseRef(rdfType));
+				}
 			}
-
-			add(CcouchNamespace.NAME, de.getName());
-			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
-
+			
+			// Old style target type:
+			//add(CcouchNamespace.TARGETTYPE, de.getTargetType());
+			
+			// New style size:
+			if( targetNode.getSingle(BitziNamespace.BZ_FILELENGTH) == null ) {
+				long size = de.getTargetSize();
+				if( size != -1 ) targetNode.add(BitziNamespace.BZ_FILELENGTH, String.valueOf(size) );
+			}
+			
+			// old style size:
+			/*
+			long size = de.getTargetSize();
+			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
+			*/
+			
+			add( CcouchNamespace.TARGET, targetNode );
+			
 			long modified = de.getTargetLastModified();
 			if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) && modified != -1 ) {
 				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
 			}
 			
-			long size = de.getTargetSize();
-			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
-
-			add(CcouchNamespace.TARGET, targetRdfifier.apply(de.getTarget()));
+			add( CcouchNamespace.NAME, de.getName() );
+		}
+		
+		protected static RdfNode getTargetRdfNode( Object target ) {
+			if( target instanceof RdfNode ) {
+				return (RdfNode)target;
+			} else if( target instanceof Ref ) {
+				RdfNode targetNode = new RdfNode();
+				targetNode.subjectUri = ((Ref)target).getTargetUri();
+				return targetNode;
+			} else if( target == null ) {
+				throw new RuntimeException( "Cannot rdfify null target" );
+			} else {
+				throw new RuntimeException( "Cannot rdfify non-rdfnode, non-ref: "+target.getClass().getName() );
+			}
+		}
+		
+		public Entry( Directory.Entry de, Function1 targetRdfifier ) {
+			this( de, getTargetRdfNode(targetRdfifier.apply(de.getTarget())) );
 		}
 		
 		public Entry( Directory.Entry de, Ref target ) {
-			this();
-			if( de.getTargetType() == null ) {
-			} else if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) ) {
-			} else if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(de.getTargetType()) ) {
-			} else {
-				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
-			}
-
-			add(CcouchNamespace.NAME, de.getName());
-			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
-
-			long modified = de.getTargetLastModified();
-			if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) && modified != -1 ) {
-				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
-			}
-			
-			long size = de.getTargetSize();
-			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
-
-			add(CcouchNamespace.TARGET, target);
+			this( de, getTargetRdfNode(target) );
 		}
 
 		protected Object getTargetNode() {

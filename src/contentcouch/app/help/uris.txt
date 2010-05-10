@@ -20,7 +20,7 @@ URI schemes:
     Used by Bitzi.
     Compatible with urn:sha1, since the sha-1 sum is included.
     
-  x-parse-rdf:<uri>
+  x-rdf-subject:<uri> (x-parse-rdf:<uri> supported but deprecated)
     Indicates to take the result of resolving <uri>, parse it as an RDF
     document, and return the resulting object.  This gives us the ability
     to target the object that an RDF document represents and to differentiate

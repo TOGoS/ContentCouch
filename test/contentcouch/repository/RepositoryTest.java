@@ -1,5 +1,7 @@
 package contentcouch.repository;
 
+import java.util.Collections;
+
 import junit.framework.TestCase;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
@@ -25,14 +27,18 @@ public class RepositoryTest extends TestCase {
 	public void testStoreBlob() {
 		String testString = "Hello, world!";
 		Blob testBlob = BlobUtil.getBlob(testString);
-		byte[] hash = testRepoConfig.dataScheme.getHash(testBlob);
-		String fn = testRepoConfig.dataScheme.hashToFilename(hash);
-		String fp = fn.substring(0,2) + "/" + fn;
-		String urn = testRepoConfig.dataScheme.hashToUrn(hash);
+		byte[] storageHash = testRepoConfig.storageScheme.getHash(testBlob);
+		String storageFilename = testRepoConfig.storageScheme.hashToFilename(storageHash);
+		String storageFilePostfix = storageFilename.substring(0,2) + "/" + storageFilename;
+		String storageUrn = testRepoConfig.storageScheme.hashToUrn(storageHash);
 		
-		TheGetter.put("x-ccouch-repo://test-repo/data", testBlob);
-		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get("x-ccouch-repo://test-repo/files/data/user/" + fp), testBlob));
-		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get(urn), testBlob));
+		BaseRequest putReq = new BaseRequest("PUT", "x-ccouch-repo://test-repo/data", testBlob, Collections.EMPTY_MAP);
+		Response putRes = TheGetter.call( putReq );
+		String returnedUrn = (String)putRes.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER);
+		//System.err.println("Stored as "+storedUrn+", storage scheme called it "+urn);
+		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get("x-ccouch-repo://test-repo/files/data/user/" + storageFilePostfix), testBlob));
+		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get(storageUrn), testBlob));
+		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get(returnedUrn), testBlob));
 	}
 
 	/*
@@ -80,10 +86,10 @@ public class RepositoryTest extends TestCase {
 		String storedUri = storeDirectory(createTestSimpleDirectory());
 		
 		assertNotNull( storedUri );
-		assertTrue( storedUri.startsWith("x-parse-rdf:urn:sha1:") );
+		assertTrue( "'"+storedUri+"' does not start with 'x-rdf-subject:'", storedUri.startsWith("x-rdf-subject:"));
 
 		System.err.println(storedUri);
-		System.err.println(BlobUtil.getString((Blob)TheGetter.get(storedUri.substring("x-parse-rdf:".length()))));
+		System.err.println(BlobUtil.getString((Blob)TheGetter.get(storedUri.substring("x-rdf-subject:".length()))));
 		
 		Directory storedDir = (Directory)TheGetter.get(storedUri);
 		assertTrue( storedDir instanceof RdfDirectory );

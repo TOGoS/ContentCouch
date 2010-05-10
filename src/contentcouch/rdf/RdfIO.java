@@ -24,14 +24,31 @@ public class RdfIO {
 		if( value instanceof RdfNode ) {
 			RdfNode desc = (RdfNode)value;
 			String valueNodeName = XML.longToShort(desc.getRdfTypeUri(), CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations );
-			w.write(padding + "<" + valueNodeName + ">\n");
-			writeRdfProperties( w, desc, padding + "\t", usedNsAbbreviations);
-			w.write(padding + "</" + valueNodeName + ">\n");
+			int wpCount = 0;
+			for( Iterator propIter = desc.keySet().iterator(); propIter.hasNext(); ) {
+				String propName = (String)propIter.next();
+				if( !RdfNamespace.RDF_TYPE.equals(propName) ) ++wpCount;
+			}
+			String subUri = desc.getSubjectUri();
+			String subUriAttrStr;
+			if( subUri != null ) {
+				subUriAttrStr = " "+XML.longToShort(RdfNamespace.RDF_ABOUT, usedNsAbbreviations, usedNsAbbreviations)+"=\""+XML.xmlEscapeAttributeValue(subUri)+"\"";
+			} else {
+				subUriAttrStr = "";
+			}
+			if( wpCount > 0 ) {
+				w.write(padding + "<" + valueNodeName + subUriAttrStr + ">\n");
+				writeRdfProperties( w, desc, padding + "\t", usedNsAbbreviations);
+				w.write(padding + "</" + valueNodeName + ">");
+			} else {
+				w.write(padding + "<" + valueNodeName + subUriAttrStr + "/>");
+			}
 		} else {
 			throw new RuntimeException("Don't know how to rdf-ify " + value);
 		}
 	}
 	
+	/** write a single property, not including trailing newline */
 	public static void writeRdfProperty( Writer w, String propName, Object value, String padding, Map usedNsAbbreviations )
 		throws IOException
 	{
@@ -40,28 +57,36 @@ public class RdfIO {
 		if( value == null ) {
 			// Then we just skip it!
 		} else if( value instanceof Ref ) {
-			w.write(padding + "<" + propNodeName + " rdf:resource=\"" + XML.xmlEscapeAttributeValue(((Ref)value).getTargetUri()) + "\"/>\n");
+			w.write(padding + "<" + propNodeName + " rdf:resource=\"" + XML.xmlEscapeAttributeValue(((Ref)value).getTargetUri()) + "\"/>");
 		} else if( value instanceof String ) {
-			w.write(padding + "<" + propNodeName + ">" + XML.xmlEscapeText((String)value) + "</" + propNodeName + ">\n");
+			w.write(padding + "<" + propNodeName + ">" + XML.xmlEscapeText((String)value) + "</" + propNodeName + ">");
 		} else if( value instanceof Collection ) {
-			w.write(padding + "<" + propNodeName + " rdf:parseType=\"Collection\">\n");
+			w.write(padding + "<" + propNodeName + " rdf:parseType=\"Collection\"");
 			Collection c = (Collection)value;
-			for( Iterator i = c.iterator(); i.hasNext(); ) {
-				writeRdfValue( w, i.next(), padding + "\t", usedNsAbbreviations );
+			if( c.size() > 0 ) {
+				w.write(">\n");
+				for( Iterator i = c.iterator(); i.hasNext(); ) {
+					writeRdfValue( w, i.next(), padding + "\t", usedNsAbbreviations );
+					w.write("\n");
+				}
+				w.write(padding + "</" + propNodeName + ">");
+			} else {
+				w.write("/>");
 			}
-			w.write(padding + "</" + propNodeName + ">\n");
 		} else {
 			w.write(padding + "<" + propNodeName + ">\n");
 			writeRdfValue( w, value, padding + "\t", usedNsAbbreviations );
-			w.write(padding + "</" + propNodeName + ">\n");
+			w.write("\n" + padding + "</" + propNodeName + ">");
 		}
 	}
 	
+	/** write all properties.  trailing newline included */
 	public static void writeRdfProperties( Writer w, String propName, Collection values, String padding, Map usednsAbbreviations )
 		throws IOException
 	{
 		for( Iterator i = values.iterator(); i.hasNext(); ) {
 			writeRdfProperty( w, propName, i.next(), padding, usednsAbbreviations );
+			w.write("\n");
 		}
 	}
 	
@@ -99,17 +124,24 @@ public class RdfIO {
 					usedNsAbbreviations.put("", defaultNamespace);
 				}
 				writeRdfProperties( subWriter, desc, "\t", usedNsAbbreviations );
-	
-				String nodeName = XML.longToShort(desc.getRdfTypeUri(), CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
+				
+				String typeUri = desc.getRdfTypeUri();
+				if( typeUri == null ) typeUri = RdfNamespace.RDF_DESCRIPTION;
+				String nodeName = XML.longToShort(typeUri, CcouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
 				Writer outerWriter = new StringWriter();
 				outerWriter.write( "<" + nodeName );
 				XML.writeXmlns( outerWriter, usedNsAbbreviations );
 				if( desc.getSubjectUri() != null ) {
 					outerWriter.write(" rdf:about=\"" + XML.xmlEscapeAttributeValue(desc.getSubjectUri()) + "\"");
 				}
-				outerWriter.write( ">\n" );
-				outerWriter.write( subWriter.toString() );
-				outerWriter.write( "</" + nodeName + ">\n" );
+				String nodely = subWriter.toString();
+				if( nodely.length() > 0 ) {
+					outerWriter.write( ">\n" );
+					outerWriter.write( nodely );
+					outerWriter.write( "</" + nodeName + ">" );
+				} else {
+					outerWriter.write( "/>" );
+				}
 				return outerWriter.toString();
 			} else {
 				return XML.xmlEscapeText(value.toString());

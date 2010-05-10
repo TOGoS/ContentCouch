@@ -74,6 +74,6 @@ public class RdfCommit extends RdfNode implements Commit {
 	}
 	
 	public String getUri() {
-		return CcouchNamespace.URI_PARSE_PREFIX + this.sourceUri;
+		return CcouchNamespace.RDF_SUBJECT_URI_PREFIX + this.sourceUri;
 	}
 }

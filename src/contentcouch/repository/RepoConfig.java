@@ -1,8 +1,8 @@
-/**
- * 
- */
 package contentcouch.repository;
 
+import java.util.List;
+
+import contentcouch.contentaddressing.BitprintScheme;
 import contentcouch.contentaddressing.ContentAddressingScheme;
 import contentcouch.contentaddressing.Sha1Scheme;
 
@@ -19,7 +19,8 @@ public class RepoConfig {
 	public String userStoreSector   = "user";
 	public String remoteCacheSector = "remote";
 	public String activeCacheSector = "active";
-	public ContentAddressingScheme dataScheme = Sha1Scheme.getInstance();
+	public ContentAddressingScheme storageScheme = Sha1Scheme.getInstance();
+	public ContentAddressingScheme identificationScheme = BitprintScheme.getInstance();
 	
 	public RepoConfig() {
 	}

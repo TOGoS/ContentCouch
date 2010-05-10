@@ -7,7 +7,7 @@ import java.util.Map;
 public class CcouchNamespace {
 	//// Types //// 
 	
-	public static final String URI_PARSE_PREFIX = "x-parse-rdf:";
+	public static final String RDF_SUBJECT_URI_PREFIX = "x-rdf-subject:";
 	
 	public static final String CC_NS = "http://ns.nuke24.net/ContentCouch/";
 	public static final String CTX_NS = CC_NS + "Context/";

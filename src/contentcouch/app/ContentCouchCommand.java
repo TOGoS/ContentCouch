@@ -784,7 +784,7 @@ public class ContentCouchCommand {
 				break createCommit;
 			}
 
-			String commitUrn = "x-parse-rdf:" + commitBlobUrn;
+			String commitUrn = CcouchNamespace.RDF_SUBJECT_URI_PREFIX + commitBlobUrn;
 			
 			if( reportInputs ) {
 				System.out.println( "New Commit\t" + commitUrn );
