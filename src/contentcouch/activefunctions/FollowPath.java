@@ -26,12 +26,13 @@ import contentcouch.value.Ref;
 public class FollowPath extends BaseActiveFunction implements PathSimplifiableActiveFunction {
 	/** @todo: Fix this so it passes back response/content metadata
 	 * by using TheGetter.call instead of TheGetter.get */
-	public static Response followPath( Object source, String path ) {
+	public static Response followPath( Request req, Object source, String path ) {
 		String resolvedUri = null;
 		String[] pathParts = path.split("/+");
 		for( int i=0; i<pathParts.length; ++i ) {
 			if( source instanceof Ref ) {
-				source = TheGetter.get( resolvedUri = ((Ref)source).getTargetUri() );
+				BaseRequest subReq = new BaseRequest( req, resolvedUri = ((Ref)source).getTargetUri() );
+				source = TheGetter.getResponseValue( TheGetter.call( subReq ), subReq );
 			}
 			if( source instanceof Directory ) {
 				Directory.Entry e = ((Directory)source).getDirectoryEntry(pathParts[i]);
@@ -50,7 +51,8 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 			}
 		}
 		if( source instanceof Ref ) {
-			source = TheGetter.get( resolvedUri = ((Ref)source).getTargetUri() );
+			BaseRequest subReq = new BaseRequest( req, resolvedUri = ((Ref)source).getTargetUri() );
+			source = TheGetter.getResponseValue( TheGetter.call( subReq ), subReq );
 		}
 		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, source);
 		if( resolvedUri != null ) {
@@ -65,7 +67,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 		String path = ValueUtil.getString(getArgumentValue(req, argumentExpressions, "path", null));
 		if( path == null ) throw new RuntimeException("No path");
 		
-		return followPath( source, path );
+		return followPath( req, source, path );
 	}
 	
 	//// Path simplification ////
@@ -78,7 +80,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 		if( !pathExpression.isConstant() ) return null;
 		String firstPath = ValueUtil.getString(TheGetter.getResponseValue(pathExpression.eval(new BaseRequest()), pathExpression.toUri()));
 		if( firstPath == null ) throw new RuntimeException("No path");
-		String newPath = PathUtil.appendPath(firstPath, path);
+		String newPath = PathUtil.appendPath(firstPath, path, false);
 		TreeMap newArgumentExpressions = new TreeMap();
 		newArgumentExpressions.put("source", sourceExpression);
 		newArgumentExpressions.put("path", new ValueExpression(newPath));

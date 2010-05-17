@@ -323,7 +323,10 @@ public class MetaRepository extends BaseRequestHandler {
 			String targetSourceUri;
 			if( target instanceof Ref ) {
 				targetSourceUri = ((Ref)target).getTargetUri();
-				target = TheGetter.get( targetSourceUri );
+				BaseRequest targetGetReq = new BaseRequest( "GET", targetSourceUri );
+				targetGetReq.metadata = req.getMetadata();
+				targetGetReq.contextVars = req.getContextVars();
+				target = TheGetter.getResponseValue( TheGetter.call( targetGetReq ), targetGetReq );
 			} else {
 				if( sourceUri != null ) {
 					targetSourceUri = PathUtil.appendPath(sourceUri, e.getName(), false);
@@ -334,6 +337,7 @@ public class MetaRepository extends BaseRequestHandler {
 			BaseRequest targetPutReq = new BaseRequest();
 			targetPutReq.content = target;
 			targetPutReq.metadata = req.getMetadata();
+			targetPutReq.contextVars = req.getContextVars();
 			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
 			long entryMtime = e.getTargetLastModified();
 			if( entryMtime != -1 ) {
@@ -893,7 +897,7 @@ public class MetaRepository extends BaseRequestHandler {
 						if( subRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 							String headContent = ValueUtil.getString( subRes.getContent() );
 							Object head = RdfIO.parseRdf(headContent, resolvedHeadPath);
-							return FollowPath.followPath(head, inputHeadPath.substring(headPath.length()+1));
+							return FollowPath.followPath( req, head, inputHeadPath.substring(headPath.length()+1));
 						}
 					}
 					

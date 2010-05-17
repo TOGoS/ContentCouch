@@ -67,7 +67,13 @@ public class PathUtil {
 			}
 			
 			int lastSlash = p1.lastIndexOf('/');
-			if( lastSlash == -1 ) return p2;
+			if( lastSlash == -1 ) {
+				if( ignoreLastInHierarchical ) {
+					return p2;
+				} else {
+					return p1 + "/" + p2;
+				}
+			}
 	
 			if( ignoreLastInHierarchical ) {
 				p1 = p1.substring(0,lastSlash+1);

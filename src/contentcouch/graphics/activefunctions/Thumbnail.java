@@ -162,6 +162,11 @@ public class Thumbnail extends CachingActiveFunction {
 		int theight = ValueUtil.getNumber(getArgumentValue(req, canonArgExpressions, "height", "32")).intValue();
 		Blob input = (Blob)getArgumentValue(req, canonArgExpressions, "operand", null);
 		if( input == null ) throw new RuntimeException("No value for operand");
-		return thumbnailify(input, twidth, theight, req);
+		try {
+			return thumbnailify(input, twidth, theight, req);
+		} catch( RuntimeException e ) {
+			System.err.println("Error making thumbnail of "+canonArgExpressions.get("operand").toString());
+			throw e;
+		}
 	}
 }

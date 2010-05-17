@@ -21,6 +21,7 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import togos.swf2.SwfNamespace;
 import contentcouch.app.Linker.LinkException;
 import contentcouch.app.help.ContentCouchCommandHelp;
 import contentcouch.blob.BlobUtil;
@@ -170,6 +171,13 @@ public class ContentCouchCommand {
 				ps.print(args.get(j));
 			}
 			ps.println();
+		}
+		
+		ps.println();
+		ps.println(pfx+"Other parameters:");
+		for( Iterator i=mrc.config.entrySet().iterator(); i.hasNext(); ) {
+			Map.Entry e = (Map.Entry)i.next();
+			ps.println( pfx + "  " + e.getKey().toString() + " = " + e.getValue().toString() );
 		}
 		
 		return 0;
@@ -375,6 +383,7 @@ public class ContentCouchCommand {
 		BaseRequest putReq = new BaseRequest( RequestVerbs.VERB_PUT, destUri );
 		putReq.content = getRes.getContent();
 		putReq.contentMetadata = getRes.getContentMetadata();
+		putReq.putContextVar(SwfNamespace.CTX_CONFIG, metaRepoConfig.config);
 		putReq.putContentMetadata(CcouchNamespace.SOURCE_URI, sourceUri);
 		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 		putReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
