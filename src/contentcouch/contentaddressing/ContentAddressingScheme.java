@@ -30,11 +30,20 @@ public interface ContentAddressingScheme {
 	
 	
 	public String getSchemeDisplayName();
+	public String getSchemeShortName();
 	public String getRdfKey();
+	/** Number of bytes in a hash */
+	public int getHashLength();
 	
-	/** Return true if the given URN is in the domain of this addressing scheme */ 
-	public boolean wouldHandleUrn( String urn );
-
+	/** Return true if the given URN can be translated to this scheme */
+	public boolean couldTranslateUrn( String urn );
+	/** Return true if we can verify a blob given the given URN */
+	public boolean canVerifyUrn( String urn );
+	/** Return true if the given URN is in the output range of this addressing scheme */ 
+	public boolean couldGenerateUrn( String urn );
+	
+	public boolean verify( String urn, Blob blob );
+	
 	/** Return the canonical identifier of the given blob */
 	public byte[] getHash( Blob blob );
 

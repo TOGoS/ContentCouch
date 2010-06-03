@@ -1,5 +1,7 @@
 package contentcouch.contentaddressing;
 
+import java.util.Arrays;
+
 import org.bitpedia.util.Base32;
 import org.bitpedia.util.TigerTree;
 
@@ -11,21 +13,36 @@ public class TigerTreeScheme implements ContentAddressingScheme {
 	public static final TigerTreeScheme instance = new TigerTreeScheme();
 	public static final TigerTreeScheme getInstance() { return instance; }
 	
+	public static String TIGERTREEURNPREFIX = "urn:tree:tiger:";
+	public static int TIGERTREEHASHLENGTH = 24;
+	public static int TIGERTREEBASE32LENGTH = 39;	
 	
 	public String getSchemeDisplayName() {
 		return "Base32-encoded Tiger-Tree";
+	}
+	public String getSchemeShortName() {
+		return "tigertree";
 	}
 	public String getRdfKey() {
 		return BitziNamespace.BZ_BASE32TIGERTREE;
 	}
 	
-	public static String TIGERTREEURNPREFIX = "urn:tree:tiger:";
-	public static int TIGERTREEHASHLENGTH = 24;
-	public static int TIGERTREEBASE32LENGTH = 39;
+	public int getHashLength() {
+		return TIGERTREEHASHLENGTH;
+	}
 	
-	/** Return true if the given URN is in the domain of this addressing scheme */ 
-	public boolean wouldHandleUrn( String urn ) {
+	public boolean couldTranslateUrn( String urn ) {
 		return urn.startsWith(TIGERTREEURNPREFIX) || urn.startsWith(BitprintScheme.BITPRINTURNPREFIX);
+	}
+	public boolean canVerifyUrn( String urn ) {
+		return urn.startsWith(TIGERTREEURNPREFIX) || urn.startsWith(BitprintScheme.BITPRINTURNPREFIX);
+	}
+	public boolean couldGenerateUrn( String urn ) {
+		return urn.startsWith(TIGERTREEURNPREFIX);
+	}
+	
+	public boolean verify( String urn, Blob blob ) {
+		return Arrays.equals( urnToHash(urn), getHash(blob) );
 	}
 	
 	/** Return the canonical identifier of the given blob */

@@ -19,10 +19,10 @@ public class ParseRdfRequestHandler extends BaseRequestHandler {
 		}
 		
 		String parsedUri;
-		if( req.getResourceName().startsWith("x-parse-rdf:") ) {
-			parsedUri = req.getResourceName().substring("x-parse-rdf:".length());
-		} else if( req.getResourceName().startsWith("x-rdf-subject:") ) {
-			parsedUri = req.getResourceName().substring("x-rdf-subject:".length());
+		if( req.getResourceName().startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD) ) {
+			parsedUri = req.getResourceName().substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length());
+		} else if( req.getResourceName().startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX) ) {
+			parsedUri = req.getResourceName().substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX.length());
 		} else {
 			return BaseResponse.RESPONSE_UNHANDLED;
 		}

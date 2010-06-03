@@ -1,6 +1,3 @@
-/**
- * 
- */
 package contentcouch.repository;
 
 import contentcouch.contentaddressing.ContentAddressingScheme;
@@ -19,7 +16,7 @@ public class RepoConfig {
 	public String userStoreSector   = "user";
 	public String remoteCacheSector = "remote";
 	public String activeCacheSector = "active";
-	public ContentAddressingScheme dataScheme = Sha1Scheme.getInstance();
+	public ContentAddressingScheme storageScheme = Sha1Scheme.getInstance();
 	
 	public RepoConfig() {
 	}

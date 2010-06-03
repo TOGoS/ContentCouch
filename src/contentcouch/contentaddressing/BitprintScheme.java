@@ -1,5 +1,7 @@
 package contentcouch.contentaddressing;
 
+import java.util.Arrays;
+
 import org.bitpedia.util.Base32;
 
 import togos.mf.value.Blob;
@@ -123,20 +125,38 @@ public class BitprintScheme implements ContentAddressingScheme {
 		}
 	}
 	
-	public static final BitprintScheme instance = new BitprintScheme();
-	public static final BitprintScheme getInstance() { return instance; }
+	public static BitprintScheme instance = new BitprintScheme();
+	public static BitprintScheme getInstance() { return instance; }
+	
+	public static int BITPRINTHASHLENGTH = 44;
+	public static String BITPRINTURNPREFIX = "urn:bitprint:";
+
 	
 	public String getSchemeDisplayName() {
 		return "Bitprint";
 	}
+	public String getSchemeShortName() {
+		return "bitprint";
+	}
 	public String getRdfKey() {
 		return CcouchNamespace.BITPRINT;
 	}
+	public int getHashLength() {
+		return BITPRINTHASHLENGTH;
+	}
 	
-	public static String BITPRINTURNPREFIX = "urn:bitprint:";
+	/** Return true if the given URN is in the domain of this addressing scheme */
+	public boolean couldTranslateUrn( String urn ) {
+		return urn.startsWith(BITPRINTURNPREFIX);
+	}
 	
-	/** Return true if the given URN is in the domain of this addressing scheme */ 
-	public boolean wouldHandleUrn( String urn ) {
+	/** Return true if we can verify a blob given the given URN */
+	public boolean canVerifyUrn( String urn ) {
+		return urn.startsWith(BITPRINTURNPREFIX);
+	}
+	
+	/** Return true if the given URN is in the output range of this addressing scheme */ 
+	public boolean couldGenerateUrn( String urn ) {
 		return urn.startsWith(BITPRINTURNPREFIX);
 	}
 	
@@ -146,7 +166,11 @@ public class BitprintScheme implements ContentAddressingScheme {
 		System.arraycopy( tigerTreeHash, 0, hash, 20, 24);
 		return hash;
 	}
-
+	
+	public boolean verify( String urn, Blob blob ) {
+		return Arrays.equals( urnToHash(urn), getHash(blob) );
+	}
+	
 	/** Return the canonical identifier of the given blob */
 	public byte[] getHash( Blob blob ) {
 		return joinHashes( Sha1Scheme.getInstance().getHash(blob), TigerTreeScheme.getInstance().getHash(blob) );
@@ -154,20 +178,25 @@ public class BitprintScheme implements ContentAddressingScheme {
 	
 	// Convert to/from RDF value
 	public String hashToRdfValue( byte[] hash ) {
-		return hashToFilename(hash);
+		byte[] sha1Hash = new byte[20];
+		System.arraycopy( hash, 0, sha1Hash, 0, 20);
+		byte[] tigerTreeHash = new byte[24];
+		System.arraycopy( hash, 20, tigerTreeHash, 0, 24);
+		return Base32.encode(sha1Hash) + "." + Base32.encode(tigerTreeHash);
 	}
-	public byte[] rdfValueToHash( String value ) {
-		return filenameToHash(value);
-	}
-
-	// Convert to/from URN
-	public String hashToUrn( byte[] hash ) {
-		return BITPRINTURNPREFIX + hashToFilename(hash);
+	public byte[] rdfValueToHash( String filename ) {
+		String sha1Base32 = filename.substring(0, Sha1Scheme.SHA1BASE32LENGTH);
+		String tigerTreeBase32 = filename.substring(Sha1Scheme.SHA1BASE32LENGTH + 1, Sha1Scheme.SHA1BASE32LENGTH + 1 + TigerTreeScheme.TIGERTREEBASE32LENGTH);
+		return joinHashes( Base32.decode(sha1Base32), Base32.decode(tigerTreeBase32) );
 	}
 	
+	// Convert to/from URN
+	public String hashToUrn( byte[] hash ) {
+		return BITPRINTURNPREFIX + hashToRdfValue(hash);
+	}
 	public byte[] urnToHash( String urn ) {
 		if( urn.startsWith(BITPRINTURNPREFIX) ) {
-			return filenameToHash(urn.substring(BITPRINTURNPREFIX.length()));
+			return rdfValueToHash(urn.substring(BITPRINTURNPREFIX.length()));
 		} else {
 			throw new BadlyFormedUrnException(urn, "Doesn't start with '" + BITPRINTURNPREFIX + "'");
 		}
@@ -175,15 +204,9 @@ public class BitprintScheme implements ContentAddressingScheme {
 	
 	// Convert to/from filename
 	public String hashToFilename( byte[] hash ) {
-		byte[] sha1Hash = new byte[20];
-		System.arraycopy( hash, 0, sha1Hash, 0, 20);
-		byte[] tigerTreeHash = new byte[24];
-		System.arraycopy( hash, 20, tigerTreeHash, 0, 24);
-		return Base32.encode(sha1Hash) + "." + Base32.encode(tigerTreeHash);
+		return hashToRdfValue(hash);
 	}
-	public byte[] filenameToHash( String filename ) {
-		String sha1Base32 = filename.substring(0, Sha1Scheme.SHA1BASE32LENGTH);
-		String tigerTreeBase32 = filename.substring(Sha1Scheme.SHA1BASE32LENGTH + 1, Sha1Scheme.SHA1BASE32LENGTH + 1 + TigerTreeScheme.TIGERTREEBASE32LENGTH);
-		return joinHashes( Base32.decode(sha1Base32), Base32.decode(tigerTreeBase32) );
+	public byte[] filenameToHash( String value ) {
+		return rdfValueToHash(value);
 	}
 }

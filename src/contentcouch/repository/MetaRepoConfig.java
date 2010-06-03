@@ -23,6 +23,7 @@ import contentcouch.http.HttpRequestHandler;
 import contentcouch.misc.MemTempRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
 
@@ -99,6 +100,18 @@ public class MetaRepoConfig {
 		if( rp.name != null ) namedRepoConfigs.put(rp.name, rp);
 	}
 	
+	public static void initNewStyleConfig( Map config ) {
+		config.put(CcouchNamespace.CFG_RDF_DIRECTORY_STYLE, CcouchNamespace.RDF_DIRECTORY_STYLE_NEW);
+		config.put(CcouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX, CcouchNamespace.RDF_SUBJECT_URI_PREFIX);
+		config.put(CcouchNamespace.CFG_ID_SCHEME, "bitprint");
+	}
+
+	public static void initOldStyleConfig( Map config ) {
+		config.put(CcouchNamespace.CFG_RDF_DIRECTORY_STYLE, CcouchNamespace.RDF_DIRECTORY_STYLE_OLD);
+		config.put(CcouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX, CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD);
+		config.put(CcouchNamespace.CFG_ID_SCHEME, "sha1");
+	}
+	
 	public int handleArguments( String[] args, int offset, String baseUri ) {
 		if( offset >= args.length ) return offset;
 		String arg = args[offset];
@@ -137,6 +150,12 @@ public class MetaRepoConfig {
 			++offset;
 			String value = args[offset];
 			config.put(key, value);
+			++offset;
+		} else if( "-old-style".equals(arg) ) {
+			initOldStyleConfig(config);
+			++offset;
+		} else if( "-new-style".equals(arg) ) {
+			initNewStyleConfig(config);
 			++offset;
 		}
 		return offset;

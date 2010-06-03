@@ -3,7 +3,6 @@ package contentcouch.repository;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -28,6 +27,8 @@ import contentcouch.activefunctions.FollowPath;
 import contentcouch.app.Log;
 import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.ContentAddressingScheme;
+import contentcouch.contentaddressing.Schemes;
+import contentcouch.context.Config;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
@@ -105,6 +106,10 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 	}
 
+	protected String normalizeRdfString( String rdf ) {
+		return rdf.trim()+"\n";
+	}
+	
 	protected String filenameToPostSectorPath( RepoConfig repoConfig, String filename ) {
 		if( filename.length() >= 2 ) {
 			return filename.substring(0,2) + "/" + filename;
@@ -113,35 +118,23 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 	}
 	
-	protected FileHashCache fileHashCacheCache;
-	protected FileHashCache getFileHashCache() {
-		if( fileHashCacheCache == null && config.defaultRepoConfig.uri.startsWith("file:") ) {
-			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.uri + "cache/file-attrs.slf").toString();
+	protected Map fileHashCaches = new HashMap();
+	protected FileHashCache getFileHashCache( ContentAddressingScheme cas ) {
+		FileHashCache fileHashCache = (FileHashCache)fileHashCaches.get(cas.getSchemeShortName());
+		if( fileHashCache == null && config.defaultRepoConfig.uri.startsWith("file:") ) {
+			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.uri + "cache/file-"+cas.getSchemeShortName()+".slf").toString();
 			File cacheFile = new File(hashCachePath);
-			fileHashCacheCache = new FileHashCache(cacheFile);
+			fileHashCache = new FileHashCache(cacheFile, cas, "rw");
+			fileHashCaches.put(cas.getSchemeShortName(), fileHashCache);
 		}
-		return fileHashCacheCache;
-	}
-	
-	public byte[] getHash( RepoConfig repoConfig, Blob blob ) {
-		if( blob instanceof FileBlob ) {
-			FileHashCache fileHashCache = getFileHashCache();
-			return fileHashCache.getHash((FileBlob)blob, repoConfig.dataScheme);
-		}
-		
-		Log.log(Log.EVENT_PERFORMANCE_WARNING, "Cannot cache hash of " + blob.getClass().getName());
-		return repoConfig.dataScheme.getHash( blob );
-	}
-	
-	protected String hashToPostSectorPath( RepoConfig repoConfig, byte[] hash ) {
-		String filename = repoConfig.dataScheme.hashToFilename(hash);
-		return filenameToPostSectorPath(repoConfig, filename);
+		return fileHashCache;
 	}
 	
 	protected String urnToPostSectorPath( RepoConfig repoConfig, String urn ) {
-		if( !repoConfig.dataScheme.wouldHandleUrn(urn) ) return null;
-		byte[] hash = repoConfig.dataScheme.urnToHash(urn);
-		return hashToPostSectorPath( repoConfig, hash );
+		if( !repoConfig.storageScheme.couldTranslateUrn(urn) ) return null;
+		byte[] hash = repoConfig.storageScheme.urnToHash(urn);
+		String filename = repoConfig.storageScheme.hashToFilename(hash);
+		return filenameToPostSectorPath(repoConfig, filename);
 	}
 	
 	protected List getRepoDataSectorUrls( RepoConfig repoConfig ) {
@@ -235,15 +228,23 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Response putDataBlob( RepoConfig repoConfig, Request req ) {
 		String sector = getRequestedStoreSector(req, repoConfig);
 		
-		byte[] hash = getHash(repoConfig, (Blob)req.getContent());
+		String idUrn = identifyBlob((Blob)req.getContent());
 		
-		String psp = hashToPostSectorPath(repoConfig, hash);
+		byte[] storeHash;
+		if( repoConfig.storageScheme.couldTranslateUrn(idUrn) ) {
+			storeHash = repoConfig.storageScheme.urnToHash(idUrn);
+		} else {
+			storeHash = repoConfig.storageScheme.getHash((Blob)req.getContent());
+		}
+		
+		String filename = repoConfig.storageScheme.hashToFilename(storeHash);
+		String psp = filenameToPostSectorPath(repoConfig, filename);
 		String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
 		
 		BaseRequest subReq = new BaseRequest( req, uri );
 		subReq.verb = RequestVerbs.VERB_PUT;
 		BaseResponse res = new BaseResponse( TheGetter.call(subReq) );
-		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, repoConfig.dataScheme.hashToUrn(hash));
+		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, idUrn);
 		Date mtime = (Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
 		if( mtime != null ) {
 			res.putMetadata(CcouchNamespace.RES_HIGHEST_BLOB_MTIME, mtime);
@@ -256,14 +257,16 @@ public class MetaRepository extends BaseRequestHandler {
 		String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);
 		BaseRequest subReq = new BaseRequest();
 		subReq.metadata = req.getMetadata();
-		subReq.content = parsedFrom != null ? parsedFrom : BlobUtil.getBlob(((RdfNode)req.getContent()).toString());
+		String rdfString = ((RdfNode)req.getContent()).toString();
+		rdfString = normalizeRdfString( rdfString );
+		subReq.content = parsedFrom != null ? parsedFrom : BlobUtil.getBlob(rdfString);
 		if( sourceUri != null ) {
 			subReq.putContentMetadata(CcouchNamespace.SOURCE_URI, "x-rdfified:" + sourceUri);
 		}
 		Response blobPutRes = putDataBlob( repoConfig, subReq );
 		if( blobPutRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return blobPutRes;
 		BaseResponse res = new BaseResponse();
-		MetadataUtil.copyStoredIdentifier(blobPutRes, res, "x-parse-rdf:");
+		MetadataUtil.copyStoredIdentifier(blobPutRes, res, Config.getRdfSubjectPrefix());
 		return res;
 	}
 	
@@ -309,7 +312,7 @@ public class MetaRepository extends BaseRequestHandler {
 				Object target = uriDotFileEntry.getTarget();
 				if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
 				String uri = ValueUtil.getString(target);
-				// TODO: Some kind of validation on the URI (should be x-parse-rdf:<urn scheme>:...)
+				// TODO: Some kind of validation on the URI (should be x-rdf-subject:<urn scheme>:...)
 				BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "URI previously cached in .ccouch-uri file - skipping", "text/plain");
 				res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, uri);
 				return res;
@@ -325,7 +328,10 @@ public class MetaRepository extends BaseRequestHandler {
 			String targetSourceUri;
 			if( target instanceof Ref ) {
 				targetSourceUri = ((Ref)target).getTargetUri();
-				target = TheGetter.get( targetSourceUri );
+				BaseRequest targetGetReq = new BaseRequest( "GET", targetSourceUri );
+				targetGetReq.metadata = req.getMetadata();
+				targetGetReq.contextVars = req.getContextVars();
+				target = TheGetter.getResponseValue( TheGetter.call( targetGetReq ), targetGetReq );
 			} else {
 				if( sourceUri != null ) {
 					targetSourceUri = PathUtil.appendPath(sourceUri, e.getName(), false);
@@ -336,6 +342,7 @@ public class MetaRepository extends BaseRequestHandler {
 			BaseRequest targetPutReq = new BaseRequest();
 			targetPutReq.content = target;
 			targetPutReq.metadata = req.getMetadata();
+			targetPutReq.contextVars = req.getContextVars();
 			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
 			long entryMtime = e.getTargetLastModified();
 			if( entryMtime != -1 ) {
@@ -606,31 +613,37 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	//// Identify stuff ////
 	
-	protected String identifyBlob( Blob blob, RepoConfig repoConfig ) {
-		return repoConfig.dataScheme.hashToUrn(getHash(repoConfig, blob));
+	protected String identifyBlob( Blob blob ) {
+		FileHashCache fac = getFileHashCache(Config.getIdentificationScheme());
+		if( fac != null && blob instanceof FileBlob ) {
+			return fac.getUrn((FileBlob)blob);
+		}
+		Log.log(Log.EVENT_PERFORMANCE_WARNING, "Unable to cache URN of "+blob.getClass().getName());
+		return Config.getIdentificationScheme().hashToUrn(Config.getIdentificationScheme().getHash(blob));
 	}
 	
-	protected Response identify( RepoConfig repoConfig, Object content, Map contentMetadata ) {
+	protected Response identify( Object content, Map contentMetadata ) {
 		String id = null;
 		if( content instanceof RdfNode ) {
 			Object parsedFrom = contentMetadata.get(CcouchNamespace.PARSED_FROM);
 			if( parsedFrom == null ) {
 				Log.log(Log.EVENT_PERFORMANCE_WARNING, "Blobbifying RDF node just to get content URN");
-				parsedFrom = BlobUtil.getBlob( content.toString() );
+				String rdfString = normalizeRdfString( content.toString() );
+				parsedFrom = BlobUtil.getBlob( rdfString );
 			}
-			String parsedFromUri = ValueUtil.getString(identify( repoConfig, parsedFrom, Collections.EMPTY_MAP ).getContent());
+			String parsedFromUri = ValueUtil.getString(identify( parsedFrom, Collections.EMPTY_MAP ).getContent());
 			// TODO: Make sure repoConfig.dataScheme.wouldHandleUrn(parsedFromUri)?
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL,	"x-parse-rdf:" + parsedFromUri, "text/plain");
+			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, Config.getRdfSubjectPrefix() + parsedFromUri, "text/plain");
 		} else if( content instanceof Commit ) {
-			return identify( repoConfig, new RdfCommit( (Commit)content, getTargetRdfifier(false, false) ), contentMetadata );
+			return identify( new RdfCommit( (Commit)content, getTargetRdfifier(false, false) ), contentMetadata );
 		} else if( content instanceof Directory ) {
-			return identify( repoConfig, new RdfDirectory( (Directory)content, getTargetRdfifier(false, false) ), contentMetadata );
-		} else if( content instanceof Ref && repoConfig.dataScheme.wouldHandleUrn(((Ref)content).getTargetUri()) ) {
+			return identify( new RdfDirectory( (Directory)content, getTargetRdfifier(false, false) ), contentMetadata );
+		} else if( content instanceof Ref && Config.getIdentificationScheme().couldTranslateUrn(((Ref)content).getTargetUri()) ) {
 			id = ((Ref)content).getTargetUri();
 		} else {
 			content = TheGetter.dereference(content);
 			Blob blob = BlobUtil.getBlob(content, false);
-			if( blob != null ) id = identifyBlob( blob, repoConfig );
+			if( blob != null ) id = identifyBlob( blob );
 		}
 		
 		if( id != null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, id, "text/plain");
@@ -741,14 +754,24 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Response maybeCacheBlob( Response res, Request req ) throws HashMismatchException {
 		String urn = req.getResourceName();
 		String cs = (String)req.getMetadata().get(CcouchNamespace.REQ_CACHE_SECTOR);
-		if( cs != null && config.defaultRepoConfig.dataScheme.wouldHandleUrn(urn) ) {
+		if( cs != null ) {
+			if( !config.defaultRepoConfig.storageScheme.couldTranslateUrn(urn) ) {
+				throw new RuntimeException("Don't know how to translate "+urn+" for storage" );
+			}
+			
 			// Then fetch the blob, validate it, store it, fetch what you just stored back out of
 			// the store, and give *that* to the user.
 			Blob blob = BlobUtil.getBlob(res.getContent(), true);
-			byte[] expected = config.defaultRepoConfig.dataScheme.urnToHash(urn);
-			byte[] calculated = config.defaultRepoConfig.dataScheme.getHash(blob);
-			if( !Arrays.equals( calculated, expected ) ) {
-				throw new HashMismatchException( config.defaultRepoConfig.dataScheme, expected, calculated );
+			boolean verified = false;
+			for( Iterator i=Schemes.allSchemes.iterator(); !verified && i.hasNext(); ) {
+				ContentAddressingScheme cas = (ContentAddressingScheme)i.next();
+				if( !cas.verify(urn, blob) ) {
+					throw new HashMismatchException( cas, cas.urnToHash(urn), cas.getHash(blob) );
+				}
+				verified = true;
+			}
+			if( !verified ) {
+				throw new RuntimeException("No ContentAddressingScheme available to verify "+urn);
 			}
 			
 			// Otherwise it's all good...we'll store the blob
@@ -820,7 +843,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			
 			if( "identify".equals(repoRef.subPath) ) {
-				return identify( repoConfig, MfArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata() );
+				return identify( MfArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata() );
 			}
 			
 			if( RequestVerbs.VERB_PUT.equals(req.getVerb()) || RequestVerbs.VERB_POST.equals(req.getVerb()) ) {
@@ -880,7 +903,7 @@ public class MetaRepository extends BaseRequestHandler {
 						if( subRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 							String headContent = ValueUtil.getString( subRes.getContent() );
 							Object head = RdfIO.parseRdf(headContent, resolvedHeadPath);
-							return FollowPath.followPath(head, inputHeadPath.substring(headPath.length()+1));
+							return FollowPath.followPath( req, head, inputHeadPath.substring(headPath.length()+1));
 						}
 					}
 					
@@ -990,12 +1013,13 @@ public class MetaRepository extends BaseRequestHandler {
 					if( nested ) {
 						return rdfDir;
 					} else {
-						return new BaseRef("x-parse-rdf:" + identifyBlob(BlobUtil.getBlob(rdfDir.toString()), config.defaultRepoConfig));
+						Response res = identify(rdfDir, Collections.EMPTY_MAP);
+						return new BaseRef(ValueUtil.getString(res.getContent()));
 					}
 				} else if( input instanceof Ref ) {
 					return input;
 				} else if( input instanceof Blob ) {
-					return new BaseRef(identifyBlob((Blob)input, config.defaultRepoConfig));
+					return new BaseRef(identifyBlob((Blob)input));
 				} else {
 					throw new RuntimeException("Don't know how to rdf-ify " + input.getClass().getName() );
 				}

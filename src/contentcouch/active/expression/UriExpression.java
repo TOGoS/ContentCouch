@@ -36,6 +36,9 @@ public class UriExpression implements Ref, Expression, PathSimplifiableExpressio
 	public boolean isConstant() {
 		if( uri.startsWith("data:") ) return true;
 		if( uri.startsWith("urn:sha1:") ) return true;
+		if( uri.startsWith("urn:tiger:") ) return true;
+		if( uri.startsWith("urn:tree:") ) return true;
+		if( uri.startsWith("urn:bitprint:") ) return true;
 		return false;
 	}
 	

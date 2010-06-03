@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.Set;
 
+import contentcouch.context.Config;
 import contentcouch.date.DateUtil;
 import contentcouch.misc.Function1;
 import contentcouch.value.Commit;
@@ -74,6 +75,6 @@ public class RdfCommit extends RdfNode implements Commit {
 	}
 	
 	public String getUri() {
-		return CcouchNamespace.URI_PARSE_PREFIX + this.sourceUri;
+		return Config.getRdfSubjectPrefix() + this.sourceUri;
 	}
 }

@@ -9,7 +9,13 @@ public class RdfNode extends MultiMap {
 	
 	public RdfNode() {
 	}
-	
+
+	public RdfNode( RdfNode cloneFrom ) {
+		super( cloneFrom );
+		this.subjectUri = cloneFrom.subjectUri;
+		this.sourceUri = cloneFrom.sourceUri;
+	}
+
 	public RdfNode(String typeName) {
 		this.setRdfTypeUri( typeName );
 	}

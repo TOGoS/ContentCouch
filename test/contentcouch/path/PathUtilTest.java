@@ -34,6 +34,12 @@ public class PathUtilTest extends TestCase {
 		assertEquals("http://www.nuke24.net/",
 				PathUtil.appendPath("http://www.nuke24.net/music/whatever", "/"));
 	}
+	public void testAppendPath7() {
+		assertEquals("foo/bar", PathUtil.appendPath("foo", "bar", false));
+	}
+	public void testAppendPath8() {
+		assertEquals("foo/bar/", PathUtil.appendPath("foo", "bar/", false));
+	}
 	
 	public void testIdentifyAbsolutePaths() {
 		assertTrue( PathUtil.isAbsolute("file:/gopher") );
@@ -74,15 +80,6 @@ public class PathUtilTest extends TestCase {
 			"active:contentcouch.directoryize+operand@" + UriUtil.uriEncode( "http://www.nuke24.net/images/bunny.jpg"),
 			PathUtil.appendPath(
 				"active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(
-					"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/"),
-				"bunny.jpg"
-			)
-		);
-
-		assertEquals(
-			"active:contentcouch.explorify+operand@" + UriUtil.uriEncode( "http://www.nuke24.net/images/bunny.jpg"),
-			PathUtil.appendPath(
-				"active:contentcouch.explorify+operand@" + UriUtil.uriEncode(
 					"active:contentcouch.follow-path+source@http://www.nuke24.net/+path@data:,images/"),
 				"bunny.jpg"
 			)

@@ -21,7 +21,7 @@ public class RdfSourcePageGenerator extends CCouchExplorerPageGenerator {
 		this.blob = b;
 	}
 	
-	protected Pattern RDFRESPAT = Pattern.compile("rdf:resource=\"([^\\\"]+)\"|((?:http:|file:|x-parse-rdf:|data:|urn:|active:|x-ccouch-head:)[a-zA-Z0-9\\-\\._\\~:/\\?\\#\\[\\]\\@\\!\\$\\&\\'\\(\\)\\*\\+\\,\\;\\=\\%]+)");
+	protected Pattern RDFRESPAT = Pattern.compile("rdf:resource=\"([^\\\"]+)\"|((?:http:|file:|x-rdf-subject:|x-parse-rdf:|data:|urn:|active:|x-ccouch-head:)[a-zA-Z0-9\\-\\._\\~:/\\?\\#\\[\\]\\@\\!\\$\\&\\'\\(\\)\\*\\+\\,\\;\\=\\%]+)");
 	
 	protected String formatLink2(String href, String text) {
 		String link = "<a href=\"";
@@ -33,10 +33,15 @@ public class RdfSourcePageGenerator extends CCouchExplorerPageGenerator {
 	}
 	
 	protected String formatLink( String url ) {
-		if( url.startsWith(CcouchNamespace.URI_PARSE_PREFIX) ) {
+		if( url.startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX) ) {
 			// Then show 2 links
-			String noParsePart = url.substring(CcouchNamespace.URI_PARSE_PREFIX.length());
-			return formatLink2(getExternalUri(url), CcouchNamespace.URI_PARSE_PREFIX.substring(0,CcouchNamespace.URI_PARSE_PREFIX.length()-1)) + ":" +
+			String noParsePart = url.substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX.length());
+			return formatLink2(getExternalUri(url), CcouchNamespace.RDF_SUBJECT_URI_PREFIX.substring(0,CcouchNamespace.RDF_SUBJECT_URI_PREFIX.length()-1)) + ":" +
+				formatLink2(getExternalUri(noParsePart), noParsePart);
+		} else if( url.startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD) ) {
+			// Then show 2 links
+			String noParsePart = url.substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length());
+			return formatLink2(getExternalUri(url), CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.substring(0,CcouchNamespace.RDF_SUBJECT_URI_PREFIX.length()-1)) + ":" +
 				formatLink2(getExternalUri(noParsePart), noParsePart);
 		} else {
 			return formatLink2(getExternalUri(url), url);

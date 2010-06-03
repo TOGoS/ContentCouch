@@ -12,7 +12,10 @@ public class MultiMap extends HashMap {
 	}
 
 	public MultiMap(MultiMap n) {
-		super(n);
+		for( Iterator i=n.entrySet().iterator(); i.hasNext(); ) {
+			Map.Entry e = (Map.Entry)i.next();
+			put( e.getKey(), new HashSet((Set)e.getValue()) );
+		}
 	}
 	
 	public void add(Object key, Object value) {

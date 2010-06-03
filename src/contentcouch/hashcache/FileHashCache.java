@@ -42,16 +42,16 @@ public class FileHashCache {
 		}
 		
 		public byte[] toBytes() {
-			byte[] bytes = new byte[36];
+			byte[] bytes = new byte[16+hash.length];
 			longToBytes(this.size, bytes, 0);
 			longToBytes(this.mtime, bytes, 8);
 			for(int i=0; i<hash.length; ++i) bytes[16+i] = hash[i];
 			return bytes;
 		}
 		
-		public static Entry fromBytes( byte[] bytes ) {
-			if( bytes.length != 36 ) {
-				throw new RuntimeException("Wrong length for Entry.fromBytes input: " + bytes.length + " (should be 36 - 8 size, 8 mtime, 20 sha-1)");
+		public static Entry fromBytes( byte[] bytes, int hashLength ) {
+			if( bytes.length != 16+hashLength ) {
+				throw new RuntimeException("Wrong length for Entry.fromBytes input: " + bytes.length + " (should be 36 - 8 size, 8 mtime, "+hashLength+" hash)");
 			}
 			Entry e = new Entry();
 			e.size = bytesToLong( bytes, 0 );
@@ -65,6 +65,13 @@ public class FileHashCache {
 	protected File cacheFile;
 	protected SimpleListFile slf;
 	protected String mode;
+	protected ContentAddressingScheme dataScheme;
+	
+	public FileHashCache(File cacheFile, ContentAddressingScheme dataScheme, String mode) {
+		this.cacheFile = cacheFile;
+		this.dataScheme = dataScheme;
+		this.mode = mode;
+	}
 	
 	protected SimpleListFile getSlf() {
 		if( slf == null ) {
@@ -88,19 +95,10 @@ public class FileHashCache {
 		return slf;
 	}
 	
-	public FileHashCache(File cacheFile, String mode) {
-		this.cacheFile = cacheFile;
-		this.mode = mode;
-	}
-	
-	public FileHashCache(File cacheFile) {
-		this(cacheFile, "rw");
-	}
-
 	public Entry getCachedEntry( File file ) throws IOException {
 		byte[] eb = getSlf().get(file.getCanonicalPath());
 		if( eb == null ) return null;
-		return Entry.fromBytes(eb);
+		return Entry.fromBytes(eb, dataScheme.getHashLength());
 	}
 	
 	public Entry getCachedValidEntry( File file ) throws IOException {
@@ -108,13 +106,13 @@ public class FileHashCache {
 		return (e != null && file.lastModified() == e.mtime && file.length() == e.size) ? e : null;
 	}
 	
-	public byte[] getHash( FileBlob file, ContentAddressingScheme scheme ) {
+	public byte[] getHash( FileBlob file ) {
 		try {
 			Entry e = getCachedValidEntry(file);
 			if( e != null ) {
 				return e.hash;
 			}
-			byte[] hash = scheme.getHash(file);
+			byte[] hash = dataScheme.getHash(file);
 			if( getSlf().isWritable() ) {
 				e = new Entry();
 				e.mtime = file.lastModified();
@@ -128,12 +126,17 @@ public class FileHashCache {
 		}
 	}
 	
+	public String getUrn( FileBlob file ) {
+		byte[] hash = getHash(file);
+		return dataScheme.hashToUrn(hash);
+	}
+	
 	public static void main(String[] args) {
 		try {
 			File slff = new File("C:/stuff/proj/ContentCouch/junk-repo/cache/file-info.slf");
-			FileHashCache fhc = new FileHashCache(slff, "rw");
+			FileHashCache fhc = new FileHashCache(slff, Sha1Scheme.getInstance(), "rw");
 			//System.err.println(fhc.getSha1(new FileBlob(new File("F:/archives/apps/Reason/Reason-4.0-AiR/Reason 4.iso"))));
-			System.err.println(Base32.encode(fhc.getHash(new FileBlob(new File("C:/stuff/proj/ContentCouch/.classpath")), new Sha1Scheme())));
+			System.err.println(Base32.encode(fhc.getHash(new FileBlob(new File("C:/stuff/proj/ContentCouch/.classpath")) )));
 		} catch( Exception e ) {
 			throw new RuntimeException(e);
 		}

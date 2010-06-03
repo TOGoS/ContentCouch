@@ -69,7 +69,7 @@ public class LuceneTest extends TestCase {
 			ScoreDoc[] docs = topDocs.scoreDocs;
 			for( int i=0; i<docs.length; ++i ) {
 				Document doc = s.doc(docs[0].doc);
-				System.err.println(doc.get("tags"));
+				//System.err.println(doc.get("tags"));
 			}
 		} catch( Exception e ) {
 			throw new RuntimeException(e);

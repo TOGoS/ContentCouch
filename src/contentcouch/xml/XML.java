@@ -28,6 +28,9 @@ public class XML {
 	}
 
 	public static String longToShort( String name, Map availableNsAbbreviations, Map usedNsAbbreviations ) {
+		if( name == null ) {
+			throw new NullPointerException( "Name given is null" );
+		}
 		for( Iterator i=usedNsAbbreviations.keySet().iterator(); i.hasNext(); ) {
 			String nsShort = (String)i.next();
 			String nsLong = (String)usedNsAbbreviations.get(nsShort);

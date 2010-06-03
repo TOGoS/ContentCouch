@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 import togos.mf.value.Blob;
-
+import contentcouch.context.Config;
 import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;
 import contentcouch.misc.Function1;
@@ -43,51 +43,82 @@ public class RdfDirectory extends RdfNode implements Directory {
 		public Entry() {
 			super(CcouchNamespace.DIRECTORYENTRY);
 		}
-
-		public Entry( Directory.Entry de, Function1 targetRdfifier ) {
+		
+		public Entry( Directory.Entry de, RdfNode targetNode ) {
 			this();
-			if( de.getTargetType() == null ) {
-			} else if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) ) {
-			} else if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(de.getTargetType()) ) {
+			
+			int style = Config.getRdfDirectoryStyle();
+
+			Object target;
+			
+			if( style == 1 ) {
+				// Old style target type:
+				add(CcouchNamespace.TARGETTYPE, de.getTargetType());
+				// old style size:
+				long size = de.getTargetSize();
+				if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
+				
+				if( targetNode.getRdfTypeUri() != null ) {
+					target = targetNode;
+				} else if( targetNode.getSubjectUri() != null ) {
+					target = new BaseRef( targetNode.getSubjectUri() );
+				} else {
+					throw new RuntimeException("Old style[=1] RDF directory entry targets must have a type or a subject URI");
+				}
 			} else {
-				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
+				// New style target type:
+				if( targetNode.getSingle(RdfNamespace.RDF_TYPE) == null ) {
+					String rdfType;
+					if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) ) {
+						rdfType = CcouchNamespace.BLOB;
+					} else if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(de.getTargetType()) ) {
+						rdfType = CcouchNamespace.DIRECTORY;
+					} else {
+						rdfType = null;
+					}
+					if( rdfType != null ) {
+						targetNode = new RdfNode(targetNode); 
+						targetNode.add(RdfNamespace.RDF_TYPE, new BaseRef(rdfType));
+					}
+				}
+				// New style size:
+				if( targetNode.getSingle(BitziNamespace.BZ_FILELENGTH) == null ) {
+					long size = de.getTargetSize();
+					if( size != -1 ) targetNode.add(BitziNamespace.BZ_FILELENGTH, String.valueOf(size) );
+				}
+				target = targetNode;
 			}
-
-			add(CcouchNamespace.NAME, de.getName());
-			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
-
+			
+			add( CcouchNamespace.TARGET, target );
+			
 			long modified = de.getTargetLastModified();
 			if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) && modified != -1 ) {
 				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
 			}
 			
-			long size = de.getTargetSize();
-			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
-
-			add(CcouchNamespace.TARGET, targetRdfifier.apply(de.getTarget()));
+			add( CcouchNamespace.NAME, de.getName() );
+		}
+		
+		protected static RdfNode getTargetRdfNode( Object target ) {
+			if( target instanceof RdfNode ) {
+				return (RdfNode)target;
+			} else if( target instanceof Ref ) {
+				RdfNode targetNode = new RdfNode();
+				targetNode.subjectUri = ((Ref)target).getTargetUri();
+				return targetNode;
+			} else if( target == null ) {
+				throw new RuntimeException( "Cannot rdfify null target" );
+			} else {
+				throw new RuntimeException( "Cannot rdfify non-rdfnode, non-ref: "+target.getClass().getName() );
+			}
+		}
+		
+		public Entry( Directory.Entry de, Function1 targetRdfifier ) {
+			this( de, getTargetRdfNode(targetRdfifier.apply(de.getTarget())) );
 		}
 		
 		public Entry( Directory.Entry de, Ref target ) {
-			this();
-			if( de.getTargetType() == null ) {
-			} else if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) ) {
-			} else if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(de.getTargetType()) ) {
-			} else {
-				throw new RuntimeException("Don't know how to rdf-ify directory entry with target type = '" + de.getTargetType() + "'"); 
-			}
-
-			add(CcouchNamespace.NAME, de.getName());
-			add(CcouchNamespace.TARGETTYPE, de.getTargetType());
-
-			long modified = de.getTargetLastModified();
-			if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) && modified != -1 ) {
-				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
-			}
-			
-			long size = de.getTargetSize();
-			if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
-
-			add(CcouchNamespace.TARGET, target);
+			this( de, getTargetRdfNode(target) );
 		}
 
 		protected Object getTargetNode() {

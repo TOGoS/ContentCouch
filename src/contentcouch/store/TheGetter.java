@@ -18,6 +18,7 @@ import contentcouch.active.ActiveRequestHandler;
 import contentcouch.active.DataUriResolver;
 import contentcouch.active.expression.Expression;
 import contentcouch.app.Log;
+import contentcouch.context.Context;
 import contentcouch.framework.MultiRequestHandler;
 import contentcouch.misc.ContextVarRequestHandler;
 import contentcouch.misc.UriUtil;
@@ -31,6 +32,18 @@ public class TheGetter {
 		public AbnormalResponseException( String verb, String uri, int status, Object content ) {
 			super( verb + " " + uri + " resulted in " + status + (content == null ? "" : ": " + ValueUtil.getString(content)));
 		}
+	}
+	
+	public static BaseRequest createRequest( String verb, String uri ) {
+		BaseRequest req = new BaseRequest( verb, uri );
+		req.contextVars = Context.getInstance();
+		return req;
+	}
+	
+	public static BaseRequest createRequest( String verb, String uri, Object content, Map contentMetadata ) {
+		BaseRequest req = new BaseRequest( verb, uri, content, contentMetadata );
+		req.contextVars = Context.getInstance();
+		return req;
 	}
 	
 	public static final String CTXVAR = SwfNamespace.CTX_GETTER; 
@@ -74,7 +87,17 @@ public class TheGetter {
 	
 	public static Response call( Request req ) {
 		Log.log(Log.EVENT_REQUEST_SUBMITTED, req.getVerb(), req.getResourceName(), (req.getContent() == null ? "" : describeContent(req.getContent())) );
-		return getGenericGetter(req).call(req);
+		Map oldContext = Context.getInstance();
+		try {
+			// This should be done at the callee end, but since that's
+			// not as centralized as the caller end, I do it here for now,
+			// since the way this thing is currently architected it should
+			// work most of the time:
+			Context.setThreadLocalInstance( req.getContextVars() );
+			return getGenericGetter(req).call(req);
+		} finally {
+			Context.setThreadLocalInstance( oldContext );
+		}
 	}
 	
 	public static Response callAndThrowIfNonNormalResponse( Request req ) {
@@ -115,12 +138,12 @@ public class TheGetter {
 	}
 
 	public static Object get(String uri) {
-		Request req = new BaseRequest("GET",uri);
+		Request req = createRequest("GET",uri);
 		return getResponseValue(call(req), req);
 	}
 	
 	public static Object put(String uri, Object obj) {
-		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, uri, obj, Collections.EMPTY_MAP);
+		BaseRequest putReq = createRequest(RequestVerbs.VERB_PUT, uri, obj, Collections.EMPTY_MAP);
 		return getResponseValue(call(putReq), putReq);
 	}
 
@@ -129,7 +152,7 @@ public class TheGetter {
 	}
 	
 	public static String identify( Object content, Map contentMetadata ) {
-		BaseRequest idReq = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata );
+		BaseRequest idReq = createRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata );
 		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.call(idReq), idReq.uri));
 	}
 	
@@ -149,10 +172,10 @@ public class TheGetter {
 	
 	public static ContentAndMetadata dereferenceAsResponse( Object content, Map contentMetadata ) {
 		if( content instanceof Ref ) {
-			return callAndThrowIfNonNormalResponse(new BaseRequest( RequestVerbs.VERB_GET, ((Ref)content).getTargetUri()));
+			return callAndThrowIfNonNormalResponse(createRequest( RequestVerbs.VERB_GET, ((Ref)content).getTargetUri()));
 		}
 		if( content instanceof Expression ) {
-			BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, "(no URI passed to expression.eval)");
+			BaseRequest subReq = createRequest(RequestVerbs.VERB_GET, "(no URI passed to expression.eval)");
 			return throwIfNonNormalResponse(((Expression)content).eval(subReq), subReq);
 		}
 		BaseResponse res = new BaseResponse( ResponseCodes.RESPONSE_NORMAL, content );

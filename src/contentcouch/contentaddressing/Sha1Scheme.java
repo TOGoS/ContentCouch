@@ -1,5 +1,7 @@
 package contentcouch.contentaddressing;
 
+import java.util.Arrays;
+
 import org.bitpedia.util.Base32;
 
 import togos.mf.value.Blob;
@@ -11,21 +13,36 @@ public class Sha1Scheme implements ContentAddressingScheme {
 	public static final Sha1Scheme instance = new Sha1Scheme();
 	public static final Sha1Scheme getInstance() { return instance; }
 	
-	
-	public String getSchemeDisplayName() {
-		return "Base32-encoded SHA-1";
-	}
-	public String getRdfKey() {
-		return CcouchNamespace.SHA1BASE32;
-	}
-	
 	public static String SHA1URNPREFIX = "urn:sha1:";
 	public static int SHA1HASHLENGTH = 20;
 	public static int SHA1BASE32LENGTH = 32;
 	
+	public String getSchemeDisplayName() {
+		return "Base32-encoded SHA-1";
+	}
+	public String getSchemeShortName() {
+		return "sha1";
+	}
+	public String getRdfKey() {
+		return CcouchNamespace.SHA1BASE32;
+	}
+	public int getHashLength() {
+		return SHA1HASHLENGTH;
+	}
+	
 	/** Return true if the given URN is in the domain of this addressing scheme */ 
-	public boolean wouldHandleUrn( String urn ) {
+	public boolean couldTranslateUrn( String urn ) {
 		return urn.startsWith(SHA1URNPREFIX) || urn.startsWith(BitprintScheme.BITPRINTURNPREFIX);
+	}
+	public boolean canVerifyUrn( String urn ) {
+		return urn.startsWith(SHA1URNPREFIX) || urn.startsWith(BitprintScheme.BITPRINTURNPREFIX);
+	}
+	public boolean couldGenerateUrn( String urn ) {
+		return urn.startsWith(SHA1URNPREFIX);
+	}
+	
+	public boolean verify( String urn, Blob blob ) {
+		return Arrays.equals( urnToHash(urn), getHash(blob) );
 	}
 	
 	/** Return the canonical identifier of the given blob */

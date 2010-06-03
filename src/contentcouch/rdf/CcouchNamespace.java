@@ -7,7 +7,8 @@ import java.util.Map;
 public class CcouchNamespace {
 	//// Types //// 
 	
-	public static final String URI_PARSE_PREFIX = "x-parse-rdf:";
+	public static final String RDF_SUBJECT_URI_PREFIX = "x-rdf-subject:";
+	public static final String RDF_SUBJECT_URI_PREFIX_OLD = "x-parse-rdf:";
 	
 	public static final String CC_NS = "http://ns.nuke24.net/ContentCouch/";
 	public static final String CTX_NS = CC_NS + "Context/";
@@ -76,6 +77,10 @@ public class CcouchNamespace {
 	
 	//public static final String RR_DESIRED_STORE_SECTOR = CC_REQ_NS + "desiredStoreSector";
 	
+	public static final String CFG_RDF_SUBJECT_URI_PREFIX = CFG_NS + "rdfSubjectUriPrefix";
+	public static final String CFG_RDF_DIRECTORY_STYLE = CFG_NS + "directoryStyle";
+	public static final String CFG_ID_SCHEME = CFG_NS + "blobIdentificationScheme";
+	
 	//// Response metadata ////
 	
 	public static final String CC_RES_NS = CC_NS + "Response/";
@@ -106,6 +111,11 @@ public class CcouchNamespace {
 	public static final String TT_SHORTHAND_BLOB = "Blob";
 	public static final String TT_SHORTHAND_DIRECTORY = "Directory";
 	
+	public static final String RDF_DIRECTORY_STYLE_NEW = "2";
+	public static final String RDF_DIRECTORY_STYLE_OLD = "1";
+	
+	public static final String ID_SCHEME_DEFAULT = "sha1";
+
 	//// XML Namespaces ////
 	
 	static Map standardNsAbbreviations = new HashMap();

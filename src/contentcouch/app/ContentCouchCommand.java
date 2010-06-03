@@ -21,9 +21,12 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import togos.swf2.SwfNamespace;
 import contentcouch.app.Linker.LinkException;
 import contentcouch.app.help.ContentCouchCommandHelp;
 import contentcouch.blob.BlobUtil;
+import contentcouch.context.Config;
+import contentcouch.context.Context;
 import contentcouch.directory.DirectoryWalker;
 import contentcouch.directory.EntryFilters;
 import contentcouch.directory.FilterIterator;
@@ -68,6 +71,12 @@ public class ContentCouchCommand {
 	
 	protected String[] mergeConfiguredArgs( String commandName, String[] commandLineArgs ) {
 		return concat( metaRepoConfig.getCommandArgs(commandName), commandLineArgs );
+	}
+	
+	protected void initGlobalContext() {
+		if( metaRepoConfig != null ) {
+			Context.globalInstance.put(SwfNamespace.CTX_CONFIG, metaRepoConfig.config);
+		}
 	}
 	
 	Pattern DELTATIME_PATTERN = Pattern.compile("^(\\+|\\-)(\\d+)(\\w*)$");
@@ -172,6 +181,13 @@ public class ContentCouchCommand {
 			ps.println();
 		}
 		
+		ps.println();
+		ps.println(pfx+"Other parameters:");
+		for( Iterator i=mrc.config.entrySet().iterator(); i.hasNext(); ) {
+			Map.Entry e = (Map.Entry)i.next();
+			ps.println( pfx + "  " + e.getKey().toString() + " = " + e.getValue().toString() );
+		}
+		
 		return 0;
 	}
 	
@@ -193,7 +209,7 @@ public class ContentCouchCommand {
 			text += "\n";
 		}
 		
-		BaseRequest storeCommitUriReq = new BaseRequest(RequestVerbs.VERB_PUT, commitListUri);
+		BaseRequest storeCommitUriReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, commitListUri);
 		storeCommitUriReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_REPLACE);
 		storeCommitUriReq.content = text;
 		return TheGetter.call(storeCommitUriReq);
@@ -207,7 +223,7 @@ public class ContentCouchCommand {
 	
 	protected List getCommitUris( String commitListUri, GeneralOptions opts ) {
 		// Load parent commits
-		BaseRequest parentCommitListReq = new BaseRequest(RequestVerbs.VERB_GET, commitListUri);
+		BaseRequest parentCommitListReq = TheGetter.createRequest(RequestVerbs.VERB_GET, commitListUri);
 		if( opts.cacheSector != null ) parentCommitListReq.putMetadata( CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector );
 		Response parentCommitListRes = TheGetter.call(parentCommitListReq);
 		List commitUris = new ArrayList();
@@ -346,7 +362,7 @@ public class ContentCouchCommand {
 		Response getRes = null;
 		
 		findTarget: while( true ) {
-			BaseRequest getReq = new BaseRequest( RequestVerbs.VERB_GET, sourceTargetUri );
+			BaseRequest getReq = TheGetter.createRequest( RequestVerbs.VERB_GET, sourceTargetUri );
 			getReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 			getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
@@ -372,9 +388,10 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		BaseRequest putReq = new BaseRequest( RequestVerbs.VERB_PUT, destUri );
+		BaseRequest putReq = TheGetter.createRequest( RequestVerbs.VERB_PUT, destUri );
 		putReq.content = getRes.getContent();
 		putReq.contentMetadata = getRes.getContentMetadata();
+		//putReq.putContextVar(SwfNamespace.CTX_CONFIG, metaRepoConfig.config);
 		putReq.putContentMetadata(CcouchNamespace.SOURCE_URI, sourceUri);
 		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 		putReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
@@ -465,7 +482,7 @@ public class ContentCouchCommand {
 		int errorCount = 0;
 		for( Iterator i=inputUris.iterator(); i.hasNext(); ) {
 			String input = (String)i.next();
-			BaseRequest getReq = new BaseRequest(RequestVerbs.VERB_GET, input);
+			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.VERB_GET, input);
 			Response getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				System.err.println("Couldn't find " + getReq.getResourceName() + ": " + getRes.getStatus() + ": " + getRes.getContent() );
@@ -483,7 +500,7 @@ public class ContentCouchCommand {
 	}
 	
 	protected int relink( File f ) {
-		BaseRequest idReq = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify");
+		BaseRequest idReq = TheGetter.createRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify");
 		idReq.content = new FileBlob(f);
 		Response idRes = TheGetter.call(idReq);
 		String id = (String)TheGetter.getResponseValue(idRes, idReq);
@@ -492,7 +509,7 @@ public class ContentCouchCommand {
 			return 0;
 		}
 		
-		BaseRequest getStoreFileReq = new BaseRequest(RequestVerbs.VERB_GET, id);
+		BaseRequest getStoreFileReq = TheGetter.createRequest(RequestVerbs.VERB_GET, id);
 		getStoreFileReq.putMetadata(CcouchNamespace.REQ_LOCAL_REPOS_ONLY, Boolean.TRUE);
 		Response getStoreFileRes = TheGetter.call(getStoreFileReq);
 		int status = getStoreFileRes.getStatus();
@@ -652,7 +669,7 @@ public class ContentCouchCommand {
 		for( Iterator i=sourceUris.iterator(); i.hasNext(); ) {
 			String sourceUri = (String)i.next();
 			
-			BaseRequest getReq = new BaseRequest(RequestVerbs.VERB_GET, sourceUri);
+			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.VERB_GET, sourceUri);
 			if( opts.cacheSector != null ) getReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 			Response getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
@@ -680,7 +697,7 @@ public class ContentCouchCommand {
 				}
 			}
 			
-			BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, dataDestUri);
+			BaseRequest putReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, dataDestUri);
 			putReq.content = o;
 			putReq.contentMetadata = new HashMap(getRes.getContentMetadata());
 			putReq.contentMetadata.put(CcouchNamespace.SOURCE_URI, sourceUri);
@@ -725,7 +742,7 @@ public class ContentCouchCommand {
 				for( int i=0; i<parentCommitUris.size(); ++i ) {
 					String parentCommitUri = (String)parentCommitUris.get(i);
 					if( !forceCommit ) {
-						BaseRequest parentCommitRequest = new BaseRequest(RequestVerbs.VERB_GET, parentCommitUri);
+						BaseRequest parentCommitRequest = TheGetter.createRequest(RequestVerbs.VERB_GET, parentCommitUri);
 						if( opts.cacheSector != null ) parentCommitRequest.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 						Response parentCommitResponse = TheGetter.call(parentCommitRequest);
 						if( parentCommitResponse.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
@@ -764,7 +781,7 @@ public class ContentCouchCommand {
 			// Data already stored, so we don't really need to worry about rdfifying, here
 			RdfCommit rdfCommit = new RdfCommit(commit, metaRepoConfig.getMetaRepository().getTargetRdfifier(false,false));
 			
-			BaseRequest storeCommitReq = new BaseRequest(RequestVerbs.VERB_PUT, dataDestUri);
+			BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, dataDestUri);
 			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
 			if( opts.storeSector != null ) storeCommitReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 			if( opts.cacheSector != null ) storeCommitReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
@@ -784,7 +801,7 @@ public class ContentCouchCommand {
 				break createCommit;
 			}
 
-			String commitUrn = "x-parse-rdf:" + commitBlobUrn;
+			String commitUrn = Config.getRdfSubjectPrefix() + commitBlobUrn;
 			
 			if( reportInputs ) {
 				System.out.println( "New Commit\t" + commitUrn );
@@ -1145,6 +1162,8 @@ public class ContentCouchCommand {
 		for( int j=0; j<cmdArgs.length; ++i, ++j ) {
 			cmdArgs[j] = args[i];
 		}
+		
+		initGlobalContext();
 		
 		int errorCount = 0;
 		if( "help".equals(cmd) ) {
