@@ -5,6 +5,9 @@ General options:
   -repo[:<name>] <location>        ; specify the default repository
   -local-repo[:<name>] <location>  ; specify a secondary local repository
   -remote-repo[:<name>] <location> ; specify a remote repository
+  -config <key> <value>            ; set a config option (not documented)
+  -new-style                       ; generate new-style RDF and URNs
+  -old-style                       ; generate old-style RDF and URNs
 Sub-commands:
   help [<subcommand>]   ; show usage instructions
   help help             ; show a list of help topics
