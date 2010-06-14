@@ -108,4 +108,9 @@ public class ValueUtil {
 		}
 		return getBoolean( getString(o), defaultValue );
 	}
+	
+	public static String describe( Object value ) {
+		if( value == null ) return "null";
+		else return value.getClass().getName();
+	}
 }
