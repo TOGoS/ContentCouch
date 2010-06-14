@@ -41,7 +41,7 @@ public class RdfSourcePageGenerator extends CCouchExplorerPageGenerator {
 		} else if( url.startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD) ) {
 			// Then show 2 links
 			String noParsePart = url.substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length());
-			return formatLink2(getExternalUri(url), CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.substring(0,CcouchNamespace.RDF_SUBJECT_URI_PREFIX.length()-1)) + ":" +
+			return formatLink2(getExternalUri(url), CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.substring(0,CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length()-1)) + ":" +
 				formatLink2(getExternalUri(noParsePart), noParsePart);
 		} else {
 			return formatLink2(getExternalUri(url), url);
