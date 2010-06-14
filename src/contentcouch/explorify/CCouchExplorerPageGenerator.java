@@ -84,11 +84,11 @@ public class CCouchExplorerPageGenerator extends PageGenerator
 	}
 	
 	protected Component getSwfComponent() {
-		return (Component)req.getContextVars().get(SwfNamespace.COMPONENT);
+		return (Component)req.getMetadata().get(SwfNamespace.COMPONENT);
 	}
 	
 	protected SwfFrontRequestHandler getSwfFront() {
-		return (SwfFrontRequestHandler)req.getContextVars().get(SwfNamespace.FRONT);
+		return (SwfFrontRequestHandler)req.getMetadata().get(SwfNamespace.FRONT);
 	}
 	
 	protected String getExternalComponentUri( Request req, Component component, Arguments args ) {

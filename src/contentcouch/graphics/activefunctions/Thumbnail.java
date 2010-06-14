@@ -9,13 +9,13 @@ import java.util.Map;
 
 import togos.mf.api.Request;
 import togos.mf.value.Blob;
-import togos.swf2.ConfigUtil;
 import togos.swf2.SwfNamespace;
 import contentcouch.active.CachingActiveFunction;
 import contentcouch.active.expression.ValueExpression;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.blob.BlobUtil;
 import contentcouch.graphics.ImageUtil;
+import contentcouch.misc.MapUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
 
@@ -37,7 +37,7 @@ public class Thumbnail extends CachingActiveFunction {
 	public static final String METHOD_IMAGEMAGICK = "ImageMagick";
 	
 	public String getConvertExe( Request req ) {
-		String imConvertExe = (String)ConfigUtil.getConfigValueFromContext( req.getContextVars(), CFG_IMCONVERT_EXE, null);
+		String imConvertExe = (String)MapUtil.getKeyed( req.getMetadata(), CFG_IMCONVERT_EXE, null);
 		if( imConvertExe == null ) {
 			throw new RuntimeException("Required config var, "+CFG_IMCONVERT_EXE+", not found in config");
 		}
@@ -136,7 +136,7 @@ public class Thumbnail extends CachingActiveFunction {
 	}
 	
 	protected Blob thumbnailify( Blob input, int twidth, int theight, Request req ) {
-		if( METHOD_IMAGEMAGICK.equals(ConfigUtil.getConfigValueFromContext(req.getContextVars(), CFG_METHOD, "internal"))) {
+		if( METHOD_IMAGEMAGICK.equals(MapUtil.getKeyed(req.getMetadata(), CFG_METHOD, "internal"))) {
 			return thumbnailifyUsingConvert( input, twidth, theight, req );
 		} else {
 			return thumbnailifyInternally( input, twidth, theight, req );

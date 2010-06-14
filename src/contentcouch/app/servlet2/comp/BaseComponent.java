@@ -28,7 +28,7 @@ public abstract class BaseComponent implements Component {
 	public Response call( Request req ) {
 		if( !shouldHandle(req) ) return BaseResponse.RESPONSE_UNHANDLED;
 		BaseRequest subReq = new BaseRequest(req);
-		subReq.putContextVar(SwfNamespace.COMPONENT, this);
+		subReq.putMetadata(SwfNamespace.COMPONENT, this);
 		return _call( subReq );
 	}
 	

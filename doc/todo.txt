@@ -1,3 +1,8 @@
+- Implement 'merge' command
+  apply changes between specific trees: ccouch merge <from> <to> <dest>
+  apply changes from common ancestor: ccouch merge <to> <dest>
+    (dest must contain .ccouch-commit-uri file)
+
 - During caching or checkout, I got this error:
   Exception in thread "main" java.lang.RuntimeException: Can't merge blobs
   K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42 into K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42;
@@ -126,6 +131,8 @@
   - This is very low priority, since all RDF docs currently used only contain absolute URIs.
 
 == Done ==
+
+* Replace use of context and config vars with request metadata 
 
 * More friendly URL formats recognised by web interface:
   /<output-style>?uri=<uri>[&name=<nice-name>][&path=<uriencoded(root-uri)>/<path>/<path>/<nice-name>]

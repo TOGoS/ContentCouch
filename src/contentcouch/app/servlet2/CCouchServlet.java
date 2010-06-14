@@ -11,8 +11,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 
 import togos.mf.api.Request;
+import togos.mf.base.BaseRequest;
 import togos.swf2.NameTranslator;
-import togos.swf2.SwfBaseRequest;
 import togos.swf2.SwfFrontRequestHandler;
 import togos.swf2.SwfHttpServlet;
 import togos.swf2.SwfNamespace;
@@ -97,9 +97,9 @@ public class CCouchServlet extends SwfHttpServlet {
 	}
 	
 	protected void doGeneric( Request req, HttpServletResponse response ) throws ServletException, IOException {
-		SwfBaseRequest subReq = new SwfBaseRequest(req);
+		BaseRequest subReq = new BaseRequest(req);
+		subReq.metadata = metaRepoConfig.config;
 		subReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, "webcache");
-		subReq.putAllConfig(metaRepoConfig.config, true);
 		/*
 		for( Iterator i=metaRepoConfig.config.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();

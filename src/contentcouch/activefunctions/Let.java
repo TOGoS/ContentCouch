@@ -20,10 +20,9 @@ public class Let extends BaseActiveFunction {
 			if( keyParts.length == 2 && "vars".equals(keyParts[0]) ) {
 				Expression ex = (Expression)e.getValue();
 				Object value = TheGetter.getResponseValue(ex.eval(req), ex.toUri());
-				subReq.putContextVar( keyParts[1], value );
+				subReq.putMetadata( keyParts[1], value );
 			}
 		}
 		return getArgumentResponse( subReq, argumentExpressions, "operand");
 	}
-
 }

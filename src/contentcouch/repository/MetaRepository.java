@@ -330,7 +330,6 @@ public class MetaRepository extends BaseRequestHandler {
 				targetSourceUri = ((Ref)target).getTargetUri();
 				BaseRequest targetGetReq = new BaseRequest( "GET", targetSourceUri );
 				targetGetReq.metadata = req.getMetadata();
-				targetGetReq.contextVars = req.getContextVars();
 				target = TheGetter.getResponseValue( TheGetter.call( targetGetReq ), targetGetReq );
 			} else {
 				if( sourceUri != null ) {
@@ -342,7 +341,6 @@ public class MetaRepository extends BaseRequestHandler {
 			BaseRequest targetPutReq = new BaseRequest();
 			targetPutReq.content = target;
 			targetPutReq.metadata = req.getMetadata();
-			targetPutReq.contextVars = req.getContextVars();
 			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
 			long entryMtime = e.getTargetLastModified();
 			if( entryMtime != -1 ) {

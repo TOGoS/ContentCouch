@@ -36,13 +36,13 @@ public class TheGetter {
 	
 	public static BaseRequest createRequest( String verb, String uri ) {
 		BaseRequest req = new BaseRequest( verb, uri );
-		req.contextVars = Context.getInstance();
+		req.metadata = Context.getInstance();
 		return req;
 	}
 	
 	public static BaseRequest createRequest( String verb, String uri, Object content, Map contentMetadata ) {
 		BaseRequest req = new BaseRequest( verb, uri, content, contentMetadata );
-		req.contextVars = Context.getInstance();
+		req.metadata = Context.getInstance();
 		return req;
 	}
 	
@@ -51,7 +51,7 @@ public class TheGetter {
 	public static CallHandler globalInstance;
 	
 	public static CallHandler getGenericGetter(Request req) {
-		CallHandler theGetter = (CallHandler)req.getContextVars().get(CTXVAR);
+		CallHandler theGetter = (CallHandler)req.getMetadata().get(CTXVAR);
 		if( theGetter == null ) {
 			theGetter = globalInstance;
 		}
@@ -93,7 +93,7 @@ public class TheGetter {
 			// not as centralized as the caller end, I do it here for now,
 			// since the way this thing is currently architected it should
 			// work most of the time:
-			Context.setThreadLocalInstance( req.getContextVars() );
+			Context.setThreadLocalInstance( req.getMetadata() );
 			return getGenericGetter(req).call(req);
 		} finally {
 			Context.setThreadLocalInstance( oldContext );

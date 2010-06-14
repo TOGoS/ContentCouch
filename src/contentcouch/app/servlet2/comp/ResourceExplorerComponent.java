@@ -224,7 +224,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 		}
 
 		BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, uri);
-		subReq.contextVars = req.getContextVars();
+		subReq.metadata = req.getMetadata();
 		
 		Response subRes = TheGetter.call(subReq);
 		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;

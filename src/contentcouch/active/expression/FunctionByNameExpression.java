@@ -80,7 +80,7 @@ public class FunctionByNameExpression implements Expression {
 	}
 	
 	public Response eval(Request req) {
-		Map functions = (Map)req.getContextVars().get(FUNCTION_MAP_VARNAME);
+		Map functions = (Map)req.getMetadata().get(FUNCTION_MAP_VARNAME);
 
 		// Check function map
 		if( functions != null ) {

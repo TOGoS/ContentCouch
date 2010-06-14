@@ -64,8 +64,8 @@ public class SwfFrontRequestHandler extends BaseRequestHandler {
 	
 	public Response call( Request request ) {
 		BaseRequest subReq = new BaseRequest(request);
-		subReq.putContextVar(SwfNamespace.COMPONENTS, components);
-		subReq.putContextVar(SwfNamespace.FRONT, this);
+		subReq.putMetadata(SwfNamespace.COMPONENTS, components);
+		subReq.putMetadata(SwfNamespace.FRONT, this);
 		
 		Response res;
 		for( Iterator i=components.values().iterator(); i.hasNext(); ) {
