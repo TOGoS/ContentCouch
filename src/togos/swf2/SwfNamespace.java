@@ -9,7 +9,6 @@ public class SwfNamespace {
 	
 	public static final String CTX_NS = SWF2_NS + "Context/";
 	public static final String CTX_GETTER = CTX_NS + "getter";
-	public static final String CTX_CONFIG = CTX_NS + "config";
 	public static final String HTTP_SERVLET_REQUEST = CTX_NS + "httpServletRequest";
 	public static final String HTTP_SERVLET_RESPONSE = CTX_NS + "httpServletResponse";
 	/** All available components */

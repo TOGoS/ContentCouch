@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.TestCase;
-import togos.swf2.SwfNamespace;
 import contentcouch.context.Context;
 import contentcouch.date.DateUtil;
 import contentcouch.misc.SimpleDirectory;
@@ -21,10 +20,7 @@ public class OldStyleRdfDirectoryTest extends TestCase
 	}
 	
 	public void setUp() {
-		Context.globalInstance = new HashMap();
-		HashMap config = new HashMap();
-		initConfig( config );
-		Context.globalInstance.put(SwfNamespace.CTX_CONFIG, config);
+		initConfig( Context.globalInstance = new HashMap() );
 		Context.setThreadLocalInstance(null);
 	}
 	

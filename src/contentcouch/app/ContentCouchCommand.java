@@ -21,7 +21,6 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
-import togos.swf2.SwfNamespace;
 import contentcouch.app.Linker.LinkException;
 import contentcouch.app.help.ContentCouchCommandHelp;
 import contentcouch.blob.BlobUtil;
