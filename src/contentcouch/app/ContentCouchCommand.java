@@ -75,7 +75,7 @@ public class ContentCouchCommand {
 	
 	protected void initGlobalContext() {
 		if( metaRepoConfig != null ) {
-			Context.globalInstance.put(SwfNamespace.CTX_CONFIG, metaRepoConfig.config);
+			Context.globalInstance.putAll(metaRepoConfig.config);
 		}
 	}
 	
