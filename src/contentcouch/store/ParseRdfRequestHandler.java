@@ -8,6 +8,7 @@ import togos.mf.base.BaseResponse;
 import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.framework.BaseRequestHandler;
+import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.RdfIO;
@@ -18,12 +19,8 @@ public class ParseRdfRequestHandler extends BaseRequestHandler {
 			return BaseResponse.RESPONSE_UNHANDLED;
 		}
 		
-		String parsedUri;
-		if( req.getResourceName().startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD) ) {
-			parsedUri = req.getResourceName().substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length());
-		} else if( req.getResourceName().startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX) ) {
-			parsedUri = req.getResourceName().substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX.length());
-		} else {
+		String parsedUri = UriUtil.stripRdfSubjectPrefix(req.getResourceName());
+		if( parsedUri == null ) {
 			return BaseResponse.RESPONSE_UNHANDLED;
 		}
 		

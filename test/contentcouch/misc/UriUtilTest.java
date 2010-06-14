@@ -16,4 +16,10 @@ public class UriUtilTest extends TestCase {
 		assertEquals("http://www.nuke24.net/Biggs%20*(like%20a%20cemetary)%20++/foobar",
 			UriUtil.sanitizeUri("http://www.nuke24.net/Biggs *(like a cemetary) ++/foobar"));
 	}
+	
+	public void testStripRdfPrefix() {
+		assertEquals("urn:sha1:FOOBAR", UriUtil.stripRdfSubjectPrefix("x-parse-rdf:urn:sha1:FOOBAR"));
+		assertEquals("urn:sha1:FOOBAR", UriUtil.stripRdfSubjectPrefix("x-rdf-subject:urn:sha1:FOOBAR"));
+		assertNull(UriUtil.stripRdfSubjectPrefix("urn:sha1:FOOBAR"));
+	}
 }

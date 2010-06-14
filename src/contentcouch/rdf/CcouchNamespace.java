@@ -9,6 +9,9 @@ public class CcouchNamespace {
 	
 	public static final String RDF_SUBJECT_URI_PREFIX = "x-rdf-subject:";
 	public static final String RDF_SUBJECT_URI_PREFIX_OLD = "x-parse-rdf:";
+	public static final String[] RDF_SUBJECT_URI_PREFIXES = {
+		RDF_SUBJECT_URI_PREFIX, RDF_SUBJECT_URI_PREFIX_OLD
+	};
 	
 	public static final String CC_NS = "http://ns.nuke24.net/ContentCouch/";
 	public static final String CTX_NS = CC_NS + "Context/";
