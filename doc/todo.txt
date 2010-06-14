@@ -132,6 +132,10 @@
 
 == Done ==
 
+* Fix path decoding in HTTP servlet
+  (HttpServletRequest#getPathInfo decoded %XXes, which I do not want)
+  * Now only need to encode path components *once*
+
 * Replace use of context and config vars with request metadata 
 
 * More friendly URL formats recognised by web interface:

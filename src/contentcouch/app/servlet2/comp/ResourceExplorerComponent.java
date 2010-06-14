@@ -166,10 +166,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 			String objectType = (String)leftoverArgs.remove("objectType");
 
 			String path;
-			// Path components need to be escaped *twice*
-			// Once for the web server to decode (apparently)
-			// Again for us to decode
-			String uriEncoded = UriUtil.uriEncode(UriUtil.uriEncode(uri,UriUtil.PATH_SEGMENT_SAFE),UriUtil.PATH_SEGMENT_SAFE);
+			String uriEncoded = UriUtil.uriEncode(uri,UriUtil.PATH_SEGMENT_SAFE);
 			if( CcouchNamespace.DIRECTORY.equals(objectType) || CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(objectType) ) {
 				path = this.handlePath + "/" + uriEncoded + "/" + name + "/";
 			} else {

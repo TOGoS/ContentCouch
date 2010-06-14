@@ -98,10 +98,14 @@ public class SwfHttpServlet extends HttpServlet {
 		return new BaseArguments( null, namedArguments );
 	}
 	
+	protected String getEncodedPathInfo( HttpServletRequest req ) {
+		return req.getRequestURI().substring(req.getServletPath().length());
+	}
+	
 	protected void doGet( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
 		subReq.verb = RequestVerbs.VERB_GET;
-		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
+		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + getEncodedPathInfo(req);
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
@@ -111,7 +115,7 @@ public class SwfHttpServlet extends HttpServlet {
 	protected void doPost( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
 		subReq.verb = RequestVerbs.VERB_POST;
-		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
+		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + getEncodedPathInfo(req);
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
@@ -121,7 +125,7 @@ public class SwfHttpServlet extends HttpServlet {
 	protected void doPut( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
 		BaseRequest subReq = new BaseRequest();
 		subReq.verb = RequestVerbs.VERB_PUT;
-		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + req.getPathInfo();
+		subReq.uri = SwfNamespace.SERVLET_PATH_URI_PREFIX + getEncodedPathInfo(req);
 		subReq.content = parseContent(req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_REQUEST, req);
 		subReq.putMetadata(SwfNamespace.HTTP_SERVLET_RESPONSE, resp);
