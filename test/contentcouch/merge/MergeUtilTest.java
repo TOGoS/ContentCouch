@@ -7,6 +7,7 @@ import togos.mf.base.BaseRequest;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.SimpleCommit;
+import contentcouch.misc.SimpleDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
@@ -18,16 +19,16 @@ import contentcouch.value.Commit;
 import contentcouch.value.Ref;
 
 public class MergeUtilTest extends TestCase {	
-	protected String SHA1A = "urn:sha1:AAAAFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1B = "urn:sha1:BBBBFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1C = "urn:sha1:CCCCFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1D = "urn:sha1:DDDDFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1E = "urn:sha1:EEEEFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1F = "urn:sha1:FFFFFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1G = "urn:sha1:GGGGFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1H = "urn:sha1:HHHHFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1I = "urn:sha1:IIIIFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
-	protected String SHA1J = "urn:sha1:JJJJFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1A = "urn:sha1:AAAAFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1B = "urn:sha1:BBBBFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1C = "urn:sha1:CCCCFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1D = "urn:sha1:DDDDFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1E = "urn:sha1:EEEEFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1F = "urn:sha1:FFFFFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1G = "urn:sha1:GGGGFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1H = "urn:sha1:HHHHFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1I = "urn:sha1:IIIIFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	protected static String SHA1J = "urn:sha1:JJJJFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
 	
 	MetaRepoConfig mrc;
 	RepoConfig testRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_LOCAL, "x-memtemp:/test-repo/", "test-repo");
@@ -142,5 +143,63 @@ public class MergeUtilTest extends TestCase {
 		assertEquals( aRef.getTargetUri(), MergeUtil.findCommonAncestor(cRef.getTargetUri(), fRef.getTargetUri()) );
 		assertEquals( bRef.getTargetUri(), MergeUtil.findCommonAncestor(dRef.getTargetUri(), eRef.getTargetUri()) );
 		assertEquals( eRef.getTargetUri(), MergeUtil.findCommonAncestor(eRef.getTargetUri(), fRef.getTargetUri()) );
+	}
+	
+	////
+	
+	public void testChangesetDump() {
+		Changeset cs = new Changeset();
+		cs.addChange(new FileAdd("foo",new BaseRef(SHA1A),null));
+		cs.addChange(new FileAdd("bar",new BaseRef(SHA1B),new FileDelete("bar",null)));
+		assertEquals(
+			"D  bar\n"+
+			"A  bar\n"+
+			"A  foo\n",
+			cs.dump()
+		);
+	}
+	
+	static SimpleDirectory oldDir;
+	static SimpleDirectory newDir;
+	static {
+		SimpleDirectory oldSubDir1 = new SimpleDirectory();
+		oldSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1D), CcouchNamespace.TT_SHORTHAND_BLOB));
+		SimpleDirectory oldSubDir2 = new SimpleDirectory();
+		oldSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir = new SimpleDirectory();
+		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1B), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir1", oldSubDir1, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir2", oldSubDir2, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+		
+		SimpleDirectory newSubDir1 = new SimpleDirectory();
+		newSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
+		newSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
+		SimpleDirectory newSubDir2 = new SimpleDirectory();
+		newSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
+		newSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CcouchNamespace.TT_SHORTHAND_BLOB));
+		newDir = new SimpleDirectory();
+		newDir.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CcouchNamespace.TT_SHORTHAND_BLOB));
+		newDir.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
+		newDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir1", newSubDir1, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+		newDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir2a", newSubDir2, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+	}
+	
+	public void testChangeset() {
+		Changeset cs = MergeUtil.getChanges(oldDir, newDir);
+		assertEquals(
+			"D  blobb\n"+
+			"A  blobb\n"+
+			"D  subdir1/blobd\n"+
+			"A  subdir1/blobd\n"+
+			"DD subdir2\n"+
+			"D  subdir2/blobe\n"+
+			"D  subdir2/blobf\n"+
+			"A  subdir2a/blobe\n"+
+			"A  subdir2a/blobf\n",
+			cs.dump()
+		);
 	}
 }

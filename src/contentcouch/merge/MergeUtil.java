@@ -10,8 +10,10 @@ import java.util.Set;
 import contentcouch.contentaddressing.BitprintScheme;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
+import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Commit;
+import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class MergeUtil {
@@ -127,5 +129,90 @@ public class MergeUtil {
 	
 	public static String findCommonAncestor( String c1Urn, String c2Urn ) {
 		return new AncestorFinder().findCommonAncestor(c1Urn, c2Urn);
+	}
+	
+	//// Find changes between 2 trees ////
+	
+	protected static String appendPath( String oldPath, String entryName ) {
+		if( oldPath == null || oldPath.length() == 0 ) return entryName;
+		return oldPath+"/"+entryName;
+	}
+	
+	protected static void addChanges( Changeset cs, String path, Directory oldDir, Directory newDir ) {
+		Set visited = new HashSet();
+		if( oldDir != null ) for( Iterator oldEntries = oldDir.getDirectoryEntrySet().iterator(); oldEntries.hasNext(); ) {
+			Directory.Entry de = (Directory.Entry)oldEntries.next();
+			addChanges( cs, appendPath(path,de.getName()), de,
+				newDir == null ? null : newDir.getDirectoryEntry(de.getName()));
+			visited.add( de.getName() );
+		}
+		if( newDir != null ) for( Iterator newEntries = newDir.getDirectoryEntrySet().iterator(); newEntries.hasNext(); ) {
+			Directory.Entry de = (Directory.Entry)newEntries.next();
+			if( visited.contains(de.getName()) ) continue; // Don't process them twice!
+			addChanges( cs, appendPath(path,de.getName()),
+				oldDir == null ? null : oldDir.getDirectoryEntry(de.getName()), de);
+		}
+	}
+	
+	protected static void addChanges( Changeset cs, String path, Object oldObj, boolean oldObjIsDir, Object newObj, boolean newObjIsDir ) {
+		Boolean equiv;
+		
+		if( oldObj == newObj ) {
+			return;
+		}
+		
+		if( oldObj instanceof Ref && newObj instanceof Ref &&
+			(equiv = areUrisEquivalent(((Ref)oldObj).getTargetUri(), ((Ref)newObj).getTargetUri())) != null &&
+			equiv.booleanValue() )
+		{
+			return;
+		}
+		
+		FileChange c = null;
+		Directory oldDir = null;
+		if( oldObjIsDir ) {
+			oldDir = (Directory)TheGetter.dereference(oldObj);
+			if( !newObjIsDir || newObj == null ) {
+				cs.addChange(c = new DirDelete(path, c));
+				addChanges(cs, path, oldDir, null);
+			}
+		} else if( oldObj != null ) {
+			cs.addChange(c = new FileDelete(path,c));
+		}
+		
+		if( newObjIsDir ) {
+			Directory newDir = (Directory)TheGetter.dereference(newObj);
+			if( oldObjIsDir ) { 
+				oldDir = (Directory)TheGetter.dereference(oldObj);
+			}
+			addChanges( cs, path, oldDir, newDir );
+		} else if( newObj != null ) {
+			cs.addChange( new FileAdd(path, newObj, c) );
+		}
+	}
+	
+	protected static void addChanges( Changeset cs, String path, Directory.Entry oldEntry, Directory.Entry newEntry ) {
+		addChanges( cs, path,
+			oldEntry != null ? oldEntry.getTarget() : null,
+			oldEntry != null ? CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(oldEntry.getTargetType()) : false,
+			newEntry != null ? newEntry.getTarget() : null,
+			newEntry != null ? CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(newEntry.getTargetType()) : false
+		);
+	}
+	
+	protected static Object dereference( Object o ) {
+		o = TheGetter.dereference(o);
+		while( o instanceof Commit ) {
+			o = TheGetter.dereference(((Commit)o).getTarget());
+		}
+		return o;
+	}
+	
+	public static Changeset getChanges( Object oldObj, Object newObj ) {
+		Changeset cs = new Changeset();
+		oldObj = dereference(oldObj);
+		newObj = dereference(newObj);
+		addChanges( cs, "", oldObj, oldObj instanceof Directory, newObj, newObj instanceof Directory );
+		return cs;
 	}
 }
