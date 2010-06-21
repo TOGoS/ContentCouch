@@ -7,6 +7,7 @@ import junit.framework.TestCase;
 import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.rdf.CCouchNamespace;
+import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 
 public abstract class WritableDirectoryTest extends TestCase {
@@ -15,16 +16,18 @@ public abstract class WritableDirectoryTest extends TestCase {
 	static Blob hwblob = BlobUtil.getBlob("Hello, world!");
 	Map options = Collections.EMPTY_MAP;
 	
+	static SimpleDirectory.Entry subdirentry;
 	static SimpleDirectory subdir;
 	static {
+		subdirentry = new SimpleDirectory.Entry();
+		subdirentry.name = "lox";
+		subdirentry.lastModified = 12345;
+		subdirentry.targetSize = hwblob.getLength();
+		subdirentry.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
+		subdirentry.target = hwblob;
+
 		subdir = new SimpleDirectory();
-		SimpleDirectory.Entry e = new SimpleDirectory.Entry();
-		e.name = "rox";
-		e.lastModified = 12345;
-		e.targetSize = hwblob.getLength();
-		e.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
-		e.target = hwblob;
-		subdir.addDirectoryEntry(e);
+		subdir.addDirectoryEntry(subdirentry);
 	}
 	
 	public void testAddEntry() {
@@ -70,6 +73,17 @@ public abstract class WritableDirectoryTest extends TestCase {
 		assertNotNull(e2);
 		assertEquals("rox",e2.getName());
 		assertEquals(e.targetType, e2.getTargetType());
+		
+		Object target = TheGetter.dereference(e2.getTarget());
+		
+		assertTrue( target instanceof Directory );
+		Directory _subdir = (Directory)subdir;
+		assertEquals( 1, _subdir.getDirectoryEntrySet().size() );
+		Directory.Entry _subdirentry = _subdir.getDirectoryEntry("lox");
+		assertEquals("rox",e2.getName());
+		assertEquals(subdirentry.targetSize, _subdirentry.getTargetSize());
+		assertEquals(subdirentry.targetType, _subdirentry.getTargetType());
+		assertEquals(subdirentry.lastModified, _subdirentry.getLastModified());
 	}
 	
 	public void testDeleteSubdirEntry() {
