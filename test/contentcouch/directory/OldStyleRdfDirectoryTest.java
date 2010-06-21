@@ -7,7 +7,7 @@ import java.util.Map;
 import junit.framework.TestCase;
 import contentcouch.context.Context;
 import contentcouch.date.DateUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.value.BaseRef;
@@ -32,7 +32,7 @@ public class OldStyleRdfDirectoryTest extends TestCase
 	
 	public void testBlobEntry() {
 		BaseRef target = new BaseRef("urn:sha1:3CL2HWDOYOLPUXLWTKY6PAP63D7VOYZO");
-		SimpleDirectory.Entry e = new SimpleDirectory.Entry("foo", target, CcouchNamespace.TT_SHORTHAND_BLOB);
+		SimpleDirectory.Entry e = new SimpleDirectory.Entry("foo", target, CCouchNamespace.TT_SHORTHAND_BLOB);
 		RdfDirectory.Entry rdfDE = new RdfDirectory.Entry(e, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
 		assertEquals( blobEntryString, rdfDE.toString() );
 	}
@@ -47,7 +47,7 @@ public class OldStyleRdfDirectoryTest extends TestCase
 	
 	public void testBlobWithSizeEntry() {
 		BaseRef target = new BaseRef("urn:sha1:3CL2HWDOYOLPUXLWTKY6PAP63D7VOYZO");
-		SimpleDirectory.Entry e = new SimpleDirectory.Entry("foo", target, CcouchNamespace.TT_SHORTHAND_BLOB);
+		SimpleDirectory.Entry e = new SimpleDirectory.Entry("foo", target, CCouchNamespace.TT_SHORTHAND_BLOB);
 		e.targetSize = 1234;
 		RdfDirectory.Entry rdfDE = new RdfDirectory.Entry(e, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
 		assertEquals( blobWithSizeEntryString, rdfDE.toString() );
@@ -64,9 +64,9 @@ public class OldStyleRdfDirectoryTest extends TestCase
 	
 	public void testBlobWithSizeAndMtimeEntry() throws ParseException {
 		BaseRef target = new BaseRef("urn:sha1:3CL2HWDOYOLPUXLWTKY6PAP63D7VOYZO");
-		SimpleDirectory.Entry e = new SimpleDirectory.Entry("foo", target, CcouchNamespace.TT_SHORTHAND_BLOB);
+		SimpleDirectory.Entry e = new SimpleDirectory.Entry("foo", target, CCouchNamespace.TT_SHORTHAND_BLOB);
 		e.targetSize = 1234;
-		e.targetLastModified = DateUtil.parseDate("2010-01-01 06:00:32 GMT").getTime();
+		e.lastModified = DateUtil.parseDate("2010-01-01 06:00:32 GMT").getTime();
 		RdfDirectory.Entry rdfDE = new RdfDirectory.Entry(e, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
 		assertEquals( blobWithSizeAndMtimeEntryString, rdfDE.toString() );
 	}
@@ -80,7 +80,7 @@ public class OldStyleRdfDirectoryTest extends TestCase
 	
 	public void testDirectoryEntry() {
 		BaseRef target = new BaseRef("x-parse-rdf:urn:sha1:AO6BBOUDVIXOV6PEDR7GM536K3WLO6ES");
-		SimpleDirectory.Entry e = new SimpleDirectory.Entry("2010-01", target, CcouchNamespace.TT_SHORTHAND_DIRECTORY);
+		SimpleDirectory.Entry e = new SimpleDirectory.Entry("2010-01", target, CCouchNamespace.TT_SHORTHAND_DIRECTORY);
 		RdfDirectory.Entry rdfDE = new RdfDirectory.Entry(e, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
 		assertEquals( directoryEntryString, rdfDE.toString() );
 	}

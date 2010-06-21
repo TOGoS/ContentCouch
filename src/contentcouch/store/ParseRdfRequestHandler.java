@@ -10,7 +10,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.framework.BaseRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfIO;
 
 public class ParseRdfRequestHandler extends BaseRequestHandler {
@@ -32,7 +32,7 @@ public class ParseRdfRequestHandler extends BaseRequestHandler {
 		Blob blob = BlobUtil.getBlob(subRes.getContent());
 		Object value = RdfIO.parseRdf(ValueUtil.getString(blob), subReq.getResourceName());
 		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, value, subRes);
-		res.putContentMetadata(CcouchNamespace.PARSED_FROM, blob);
+		res.putContentMetadata(CCouchNamespace.PARSED_FROM, blob);
 		return res;
 	}
 }

@@ -22,7 +22,7 @@ import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
 
 public class SwfHttpServlet extends HttpServlet {
@@ -55,7 +55,7 @@ public class SwfHttpServlet extends HttpServlet {
 				response.getWriter().println("No content");
 			} else {
 				// Copy over cache-related headers
-				if( MetadataUtil.isEntryTrue(subRes.getMetadata(), CcouchNamespace.RES_CACHEABLE) ) {
+				if( MetadataUtil.isEntryTrue(subRes.getMetadata(), CCouchNamespace.RES_CACHEABLE) ) {
 					response.setHeader("Pragma", "cache");
 					response.setHeader("Cache-Control", "cache");
 				}

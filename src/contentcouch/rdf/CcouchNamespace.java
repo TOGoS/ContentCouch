@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class CcouchNamespace {
+public class CCouchNamespace {
 	//// Types //// 
 	
 	public static final String RDF_SUBJECT_URI_PREFIX = "x-rdf-subject:";

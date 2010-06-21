@@ -10,7 +10,7 @@ import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.misc.MetadataUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
@@ -34,7 +34,7 @@ public class RepositoryTest extends TestCase {
 		
 		BaseRequest putReq = new BaseRequest("PUT", "x-ccouch-repo://test-repo/data", testBlob, Collections.EMPTY_MAP);
 		Response putRes = TheGetter.call( putReq );
-		String returnedUrn = (String)putRes.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER);
+		String returnedUrn = (String)putRes.getMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER);
 		//System.err.println("Stored as "+storedUrn+", storage scheme called it "+urn);
 		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get("x-ccouch-repo://test-repo/files/data/user/" + storageFilePostfix), testBlob));
 		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get(storageUrn), testBlob));
@@ -60,8 +60,8 @@ public class RepositoryTest extends TestCase {
 		SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 		e.name = name;
 		e.target = BlobUtil.getBlob(content);
-		e.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
-		e.targetLastModified = 1000l;
+		e.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
+		e.lastModified = 1000l;
 		e.targetSize = ((Blob)e.target).getLength();
 		return e;
 	}
@@ -100,7 +100,7 @@ public class RepositoryTest extends TestCase {
 		
 		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		putReq.content = rdfDir;
-		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, "bilge");
+		putReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, "bilge");
 		Response putRes = TheGetter.call(putReq);
 		
 		TheGetter.getResponseValue(putRes, putReq);
@@ -119,7 +119,7 @@ public class RepositoryTest extends TestCase {
 		
 		BaseRequest storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
-		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
+		storeReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		Response storeRes = TheGetter.call(storeReq);
 		String originalStoredUri = MetadataUtil.getStoredIdentifier(storeRes);
 		
@@ -132,8 +132,8 @@ public class RepositoryTest extends TestCase {
 		// Using uri dot files, we should still get the old URI
 		storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
-		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
-		storeReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
+		storeReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
+		storeReq.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
 		storeRes = TheGetter.call(storeReq);
 		String incorrectStoredUri = MetadataUtil.getStoredIdentifier(storeRes);
 		
@@ -143,8 +143,8 @@ public class RepositoryTest extends TestCase {
 		simpleDir.addDirectoryEntry(createBlobDirectoryEntry("hello3", "A third hello!"));
 		storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
-		storeReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
-		storeReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.FALSE);
+		storeReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
+		storeReq.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.FALSE);
 		storeRes = TheGetter.call(storeReq);
 		String newStoredUri = MetadataUtil.getStoredIdentifier(storeRes);
 		

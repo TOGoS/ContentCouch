@@ -23,7 +23,7 @@ import contentcouch.http.HttpRequestHandler;
 import contentcouch.misc.MemTempRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
 
@@ -101,15 +101,15 @@ public class MetaRepoConfig {
 	}
 	
 	public static void initNewStyleConfig( Map config ) {
-		config.put(CcouchNamespace.CFG_RDF_DIRECTORY_STYLE, CcouchNamespace.RDF_DIRECTORY_STYLE_NEW);
-		config.put(CcouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX, CcouchNamespace.RDF_SUBJECT_URI_PREFIX);
-		config.put(CcouchNamespace.CFG_ID_SCHEME, "bitprint");
+		config.put(CCouchNamespace.CFG_RDF_DIRECTORY_STYLE, CCouchNamespace.RDF_DIRECTORY_STYLE_NEW);
+		config.put(CCouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX, CCouchNamespace.RDF_SUBJECT_URI_PREFIX);
+		config.put(CCouchNamespace.CFG_ID_SCHEME, "bitprint");
 	}
 
 	public static void initOldStyleConfig( Map config ) {
-		config.put(CcouchNamespace.CFG_RDF_DIRECTORY_STYLE, CcouchNamespace.RDF_DIRECTORY_STYLE_OLD);
-		config.put(CcouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX, CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD);
-		config.put(CcouchNamespace.CFG_ID_SCHEME, "sha1");
+		config.put(CCouchNamespace.CFG_RDF_DIRECTORY_STYLE, CCouchNamespace.RDF_DIRECTORY_STYLE_OLD);
+		config.put(CCouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX, CCouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD);
+		config.put(CCouchNamespace.CFG_ID_SCHEME, "sha1");
 	}
 	
 	public int handleArguments( String[] args, int offset, String baseUri ) {

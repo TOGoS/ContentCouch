@@ -12,7 +12,7 @@ import contentcouch.value.Ref;
 
 public class RdfCommit extends RdfNode implements Commit {	
 	public RdfCommit() {
-		super(CcouchNamespace.COMMIT);
+		super(CCouchNamespace.COMMIT);
 	}
 	
 	public RdfCommit( Commit c, Function1 targetRdfifier, Function1 parentRdfifier ) {
@@ -24,9 +24,9 @@ public class RdfCommit extends RdfNode implements Commit {
 		if( c.getMessage() != null ) this.add(DcNamespace.DC_DESCRIPTION, c.getMessage());
 		Object[] parents = c.getParents();
 		if( parents != null ) for( int i=0; i<parents.length; ++i ) {
-			this.add(CcouchNamespace.PARENT, parentRdfifier.apply(parents[i]));
+			this.add(CCouchNamespace.PARENT, parentRdfifier.apply(parents[i]));
 		}
-		this.add(CcouchNamespace.TARGET, targetRdfifier.apply(c.getTarget()));
+		this.add(CCouchNamespace.TARGET, targetRdfifier.apply(c.getTarget()));
 	}
 	
 	public RdfCommit( Commit c, Ref target ) {
@@ -36,9 +36,9 @@ public class RdfCommit extends RdfNode implements Commit {
 		if( c.getMessage() != null ) this.add(DcNamespace.DC_DESCRIPTION, c.getMessage());
 		Object[] parents = c.getParents();
 		if( parents != null ) for( int i=0; i<parents.length; ++i ) {
-			this.add(CcouchNamespace.PARENT, parents[i]);
+			this.add(CCouchNamespace.PARENT, parents[i]);
 		}
-		this.add(CcouchNamespace.TARGET, target);
+		this.add(CCouchNamespace.TARGET, target);
 	}
 
 	public RdfCommit( Commit c, Function1 targetRdfifier ) {
@@ -46,7 +46,7 @@ public class RdfCommit extends RdfNode implements Commit {
 	}
 	
 	public Object getTarget() {
-		return this.getSingle(CcouchNamespace.TARGET);
+		return this.getSingle(CCouchNamespace.TARGET);
 	}
 	
 	public Date getDate() {
@@ -69,7 +69,7 @@ public class RdfCommit extends RdfNode implements Commit {
 	}
 
 	public Object[] getParents() {
-		Set s = this.getSet(CcouchNamespace.PARENT);
+		Set s = this.getSet(CCouchNamespace.PARENT);
 		if( s == null ) return new Object[]{};
 		return s.toArray();
 	}

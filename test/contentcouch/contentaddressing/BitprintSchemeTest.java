@@ -18,10 +18,6 @@ public class BitprintSchemeTest extends TestCase {
 		
 		byte[] tigerTreeHash = TigerTreeScheme.getInstance().getHash(content);
 		String tigerTreeBase32 = TigerTreeScheme.getInstance().hashToRdfValue(tigerTreeHash);
-
-		System.err.println("Bitprint URN = " + bitprintUrn);
-		System.err.println("  SHA-1 base32 = " + sha1Base32 );
-		System.err.println("  TigerTree base32 = " + tigerTreeBase32 );
 		
 		assertEquals( sha1Base32, bitprintUrn.substring(13,13+32) );
 		assertEquals( tigerTreeBase32, bitprintUrn.substring(13+32+1,13+32+1+39) );

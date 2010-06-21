@@ -11,7 +11,7 @@ import java.util.Set;
 
 import contentcouch.misc.Function1;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -32,7 +32,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 	}
 	
 	public static class Entry implements Directory.Entry, Map.Entry {
-		public long targetLastModified = -1;
+		public long lastModified = -1;
 		public String name;
 		public long targetSize = -1;
 		public Object target;
@@ -45,7 +45,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			this.target = e.getTarget();
 			this.targetType = e.getTargetType();
 			this.targetSize = e.getTargetSize();
-			this.targetLastModified = e.getLastModified();
+			this.lastModified = e.getLastModified();
 		}
 		
 		public Entry( String name, Object target, String targetType ) {
@@ -55,7 +55,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		}
 
 		//// Directory.Entry implementation ////
-		public long getLastModified() { return targetLastModified; }
+		public long getLastModified() { return lastModified; }
 		public String getName() { return name; }
 		public long getTargetSize() { return targetSize; }
 		public Object getTarget() { return target; }
@@ -91,7 +91,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry entry = (Directory.Entry)i.next();
 			Object target;
-			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(entry.getTargetType()) ) {
+			if( CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(entry.getTargetType()) ) {
 				target = directoryTargetProcessor.apply(entry.getTarget());
 			} else {
 				target = blobTargetProcessor.apply(entry.getTarget());
@@ -102,7 +102,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			newEntry.target = target;
 			newEntry.targetType = entry.getTargetType();
 			newEntry.targetSize = entry.getTargetSize();
-			newEntry.targetLastModified = entry.getLastModified();
+			newEntry.lastModified = entry.getLastModified();
 			addDirectoryEntry(newEntry, Collections.EMPTY_MAP);
 		}
 	}
@@ -112,10 +112,10 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			final Map.Entry e = (Map.Entry)i.next();
 			SimpleDirectory.Entry sde = new SimpleDirectory.Entry();
 			sde.name = (String)e.getKey();
-			sde.targetLastModified = -1;
+			sde.lastModified = -1;
 			sde.target = e.getValue();
 			sde.targetSize = -1;
-			sde.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
+			sde.targetType = CCouchNamespace.TT_SHORTHAND_DIRECTORY;
 			addDirectoryEntry(sde, Collections.EMPTY_MAP);
 		}
 	}
@@ -149,9 +149,9 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		newEntry.target = value;
 		newEntry.name = name;
 		if( value instanceof Directory ) {
-			newEntry.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
+			newEntry.targetType = CCouchNamespace.TT_SHORTHAND_DIRECTORY;
 		} else {
-			newEntry.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
+			newEntry.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
 		}
 		return newEntry;
 	}

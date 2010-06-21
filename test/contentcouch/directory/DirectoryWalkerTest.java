@@ -5,7 +5,7 @@ import java.util.Iterator;
 import junit.framework.TestCase;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.Function1;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
@@ -50,8 +50,8 @@ public class DirectoryWalkerTest extends TestCase {
 		Function1 bf = EntryFilters.BLOBFILTER;
 		assertNull( bf.apply(new SimpleDirectory.Entry("x", new SimpleDirectory(), null)) );
 		assertNotNull( bf.apply(new SimpleDirectory.Entry("x", BlobUtil.getBlob("x"), null)) );
-		assertNotNull( bf.apply(new SimpleDirectory.Entry("x", new SimpleDirectory(), CcouchNamespace.TT_SHORTHAND_BLOB)) );
-		assertNull( bf.apply(new SimpleDirectory.Entry("x", BlobUtil.getBlob("x"), CcouchNamespace.TT_SHORTHAND_DIRECTORY)) );
+		assertNotNull( bf.apply(new SimpleDirectory.Entry("x", new SimpleDirectory(), CCouchNamespace.TT_SHORTHAND_BLOB)) );
+		assertNull( bf.apply(new SimpleDirectory.Entry("x", BlobUtil.getBlob("x"), CCouchNamespace.TT_SHORTHAND_DIRECTORY)) );
 	}
 	
 	public void testBlobOnlyDirectoryWalk() {

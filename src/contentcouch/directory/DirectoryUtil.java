@@ -13,7 +13,7 @@ import togos.mf.value.Blob;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfIO;
 import contentcouch.store.TheGetter;
@@ -45,13 +45,13 @@ public class DirectoryUtil {
 					if( !href.endsWith("/") ) {
 						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 						e.name = href;
-						e.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
+						e.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
 						e.target = new BaseRef(identifier, href);
 						dir.addDirectoryEntry(e, Collections.EMPTY_MAP);
 					} else {
 						SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 						e.name = href.substring(0, href.length()-1);
-						e.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
+						e.targetType = CCouchNamespace.TT_SHORTHAND_DIRECTORY;
 						e.target = new BaseRef(identifier, e.name + "/");
 						dir.addDirectoryEntry(e, Collections.EMPTY_MAP);
 					}

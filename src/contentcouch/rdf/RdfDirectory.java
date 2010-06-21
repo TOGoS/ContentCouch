@@ -41,7 +41,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	
 	public static class Entry extends RdfNode implements Directory.Entry {
 		public Entry() {
-			super(CcouchNamespace.DIRECTORYENTRY);
+			super(CCouchNamespace.DIRECTORYENTRY);
 		}
 		
 		public Entry( Directory.Entry de, RdfNode targetNode ) {
@@ -53,10 +53,10 @@ public class RdfDirectory extends RdfNode implements Directory {
 			
 			if( style == 1 ) {
 				// Old style target type:
-				add(CcouchNamespace.TARGETTYPE, de.getTargetType());
+				add(CCouchNamespace.TARGETTYPE, de.getTargetType());
 				// old style size:
 				long size = de.getTargetSize();
-				if( size != -1 ) add(CcouchNamespace.SIZE, String.valueOf(size) );
+				if( size != -1 ) add(CCouchNamespace.SIZE, String.valueOf(size) );
 				
 				if( targetNode.getRdfTypeUri() != null ) {
 					target = targetNode;
@@ -69,10 +69,10 @@ public class RdfDirectory extends RdfNode implements Directory {
 				// New style target type:
 				if( targetNode.getSingle(RdfNamespace.RDF_TYPE) == null ) {
 					String rdfType;
-					if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) ) {
-						rdfType = CcouchNamespace.BLOB;
-					} else if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(de.getTargetType()) ) {
-						rdfType = CcouchNamespace.DIRECTORY;
+					if( CCouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) ) {
+						rdfType = CCouchNamespace.BLOB;
+					} else if( CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(de.getTargetType()) ) {
+						rdfType = CCouchNamespace.DIRECTORY;
 					} else {
 						rdfType = null;
 					}
@@ -89,14 +89,14 @@ public class RdfDirectory extends RdfNode implements Directory {
 				target = targetNode;
 			}
 			
-			add( CcouchNamespace.TARGET, target );
+			add( CCouchNamespace.TARGET, target );
 			
 			long modified = de.getLastModified();
-			if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) && modified != -1 ) {
+			if( CCouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) && modified != -1 ) {
 				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
 			}
 			
-			add( CcouchNamespace.NAME, de.getName() );
+			add( CCouchNamespace.NAME, de.getName() );
 		}
 		
 		protected static RdfNode getTargetRdfNode( Object target ) {
@@ -122,7 +122,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 		}
 
 		protected Object getTargetNode() {
-			return getSingle(CcouchNamespace.TARGET);
+			return getSingle(CCouchNamespace.TARGET);
 		}
 		
 		public Object getTarget() {
@@ -139,7 +139,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 		}
 
 		public String getTargetType() {
-			String explicitTT = (String)getSingle(CcouchNamespace.TARGETTYPE);
+			String explicitTT = (String)getSingle(CCouchNamespace.TARGETTYPE);
 			if( explicitTT != null ) return explicitTT;
 			
 			Object targetNode = getTargetNode();
@@ -151,21 +151,21 @@ public class RdfDirectory extends RdfNode implements Directory {
 				// the shorter, old-style OBJECT_TYPE ones.  In future,
 				// fully namespaced ones will be canonical, and conversion
 				// will go the /other/ way.
-				if( CcouchNamespace.DIRECTORY.equals(typeUri) ) {
-					return CcouchNamespace.TT_SHORTHAND_DIRECTORY;
-				} else if( CcouchNamespace.BLOB.equals(typeUri) ) {
-					return CcouchNamespace.TT_SHORTHAND_BLOB;
+				if( CCouchNamespace.DIRECTORY.equals(typeUri) ) {
+					return CCouchNamespace.TT_SHORTHAND_DIRECTORY;
+				} else if( CCouchNamespace.BLOB.equals(typeUri) ) {
+					return CCouchNamespace.TT_SHORTHAND_BLOB;
 				}
 			}
 			return null;
 		}
 
 		public String getName() {
-			return (String)getSingle(CcouchNamespace.NAME);
+			return (String)getSingle(CCouchNamespace.NAME);
 		}
 
 		public long getTargetSize() {
-			String explicitSize = (String)getSingle(CcouchNamespace.SIZE);
+			String explicitSize = (String)getSingle(CCouchNamespace.SIZE);
 			if( explicitSize != null ) return Long.parseLong(explicitSize);;
 
 			Object targetNode = getTargetNode();
@@ -189,7 +189,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public RdfDirectory() {
-		super(CcouchNamespace.DIRECTORY);
+		super(CCouchNamespace.DIRECTORY);
 	}
 	
 	public RdfDirectory( Directory dir, Function1 targetRdfifier ) {
@@ -203,7 +203,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 
 	public Set getDirectoryEntrySet() {
-		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
+		List entryList = (List)this.getSingle(CCouchNamespace.ENTRIES);
 		HashSet entries = new HashSet();
 		if( entryList != null )	for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
@@ -215,7 +215,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 	public Directory.Entry getDirectoryEntry(String key) {
 		if( key == null ) return null;
 		
-		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
+		List entryList = (List)this.getSingle(CCouchNamespace.ENTRIES);
 		for( Iterator i=entryList.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry e = (RdfDirectory.Entry)i.next();
 			if( key.equals(e.getName()) ) {
@@ -247,8 +247,8 @@ public class RdfDirectory extends RdfNode implements Directory {
 			}
 		});
 		List rdfEntries = new ArrayList();
-		remove(CcouchNamespace.ENTRIES);
-		add(CcouchNamespace.ENTRIES, rdfEntries);
+		remove(CCouchNamespace.ENTRIES);
+		add(CCouchNamespace.ENTRIES, rdfEntries);
 		for( Iterator i = entries.iterator(); i.hasNext(); ) {
 			RdfDirectory.Entry entry = (RdfDirectory.Entry)i.next();
 			rdfEntries.add( entry );
@@ -256,10 +256,10 @@ public class RdfDirectory extends RdfNode implements Directory {
 	}
 	
 	public void addDirectoryEntry( Directory.Entry newEntry ) {
-		List entryList = (List)this.getSingle(CcouchNamespace.ENTRIES);
+		List entryList = (List)this.getSingle(CCouchNamespace.ENTRIES);
 		if( entryList == null ) {
 			entryList = new ArrayList();
-			this.add(CcouchNamespace.ENTRIES, entryList);
+			this.add(CCouchNamespace.ENTRIES, entryList);
 		}
 		if( !(newEntry instanceof RdfDirectory.Entry) ) {
 			throw new RuntimeException( "Can only add RdfDirectory.Entries to RdfDirectory");

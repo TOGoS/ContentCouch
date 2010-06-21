@@ -8,7 +8,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.commit.SimpleCommit;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.misc.MetadataUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
@@ -42,10 +42,10 @@ public class MergeUtilTest extends TestCase {
 		RdfCommit rdfCommit = new RdfCommit(c, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
 		BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
 		storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
-		storeCommitReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
+		storeCommitReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_STRICTIG);
 		Response storeCommitRes = TheGetter.callAndThrowIfNonNormalResponse(storeCommitReq);
 		String commitBlobUrn = MetadataUtil.getStoredIdentifier(storeCommitRes);
-		return new BaseRef( CcouchNamespace.RDF_SUBJECT_URI_PREFIX + commitBlobUrn );
+		return new BaseRef( CCouchNamespace.RDF_SUBJECT_URI_PREFIX + commitBlobUrn );
 	}
 	
 	protected Ref storeCommit( Object target, Object[] parents ) {
@@ -57,7 +57,7 @@ public class MergeUtilTest extends TestCase {
 	
 	public void testStoreCommit() {
 		SimpleCommit sc = new SimpleCommit();
-		assertTrue( storeCommit(sc).getTargetUri().startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX+"urn:") );
+		assertTrue( storeCommit(sc).getTargetUri().startsWith(CCouchNamespace.RDF_SUBJECT_URI_PREFIX+"urn:") );
 	}
 	
 	protected void assertTrue( Boolean value ) {
@@ -164,40 +164,40 @@ public class MergeUtilTest extends TestCase {
 	static SimpleDirectory newDir;
 	static {
 		SimpleDirectory oldSubDir1 = new SimpleDirectory();
-		oldSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1D), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1D), CCouchNamespace.TT_SHORTHAND_BLOB));
 		SimpleDirectory oldSubDir2 = new SimpleDirectory();
-		oldSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CCouchNamespace.TT_SHORTHAND_BLOB));
 		oldDir = new SimpleDirectory();
-		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1B), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir1", oldSubDir1, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
-		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir2", oldSubDir2, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1B), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir1", oldSubDir1, CCouchNamespace.TT_SHORTHAND_DIRECTORY));
+		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir2", oldSubDir2, CCouchNamespace.TT_SHORTHAND_DIRECTORY));
 
 		SimpleDirectory oldSubDir3 = new SimpleDirectory();
-		oldSubDir3.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldSubDir3.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1D), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir3.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir3.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1D), CCouchNamespace.TT_SHORTHAND_BLOB));
 		SimpleDirectory oldSubDir4 = new SimpleDirectory();
-		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("subdir3", oldSubDir3, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("subdir3", oldSubDir3, CCouchNamespace.TT_SHORTHAND_DIRECTORY));
 		oldDir2 = new SimpleDirectory();
-		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1B), CcouchNamespace.TT_SHORTHAND_BLOB));
-		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("subdir4", oldSubDir4, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1B), CCouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("subdir4", oldSubDir4, CCouchNamespace.TT_SHORTHAND_DIRECTORY));
 
 		SimpleDirectory newSubDir1 = new SimpleDirectory();
-		newSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
-		newSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
+		newSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CCouchNamespace.TT_SHORTHAND_BLOB));
+		newSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1E), CCouchNamespace.TT_SHORTHAND_BLOB));
 		SimpleDirectory newSubDir2 = new SimpleDirectory();
-		newSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
-		newSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CcouchNamespace.TT_SHORTHAND_BLOB));
+		newSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CCouchNamespace.TT_SHORTHAND_BLOB));
+		newSubDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CCouchNamespace.TT_SHORTHAND_BLOB));
 		newDir = new SimpleDirectory();
-		newDir.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CcouchNamespace.TT_SHORTHAND_BLOB));
-		newDir.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
-		newDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir1", newSubDir1, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
-		newDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir2a", newSubDir2, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+		newDir.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CCouchNamespace.TT_SHORTHAND_BLOB));
+		newDir.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1C), CCouchNamespace.TT_SHORTHAND_BLOB));
+		newDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir1", newSubDir1, CCouchNamespace.TT_SHORTHAND_DIRECTORY));
+		newDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir2a", newSubDir2, CCouchNamespace.TT_SHORTHAND_DIRECTORY));
 	}
 	
 	public void testChangeset() {

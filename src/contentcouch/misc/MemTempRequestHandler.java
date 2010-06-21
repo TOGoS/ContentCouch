@@ -5,7 +5,7 @@ import java.util.Map;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.framework.BaseRequestHandler;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
@@ -59,7 +59,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 			if( obj instanceof Directory ) {
 				Directory.Entry e = ((Directory)obj).getDirectoryEntry(part);
 				if( e == null ) {
-					((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, obj = new SimpleDirectory(), CcouchNamespace.TT_SHORTHAND_DIRECTORY), requestMetadata);
+					((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, obj = new SimpleDirectory(), CCouchNamespace.TT_SHORTHAND_DIRECTORY), requestMetadata);
 				} else {
 					obj = e.getTarget();
 				}
@@ -70,7 +70,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 
 		String part = parts[i];
 		if( obj instanceof Directory ) {
-			((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, newObj, newObj instanceof Directory ? CcouchNamespace.TT_SHORTHAND_DIRECTORY : CcouchNamespace.TT_SHORTHAND_BLOB), requestMetadata);
+			((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, newObj, newObj instanceof Directory ? CCouchNamespace.TT_SHORTHAND_DIRECTORY : CCouchNamespace.TT_SHORTHAND_BLOB), requestMetadata);
 		} else {
 			return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
 		}

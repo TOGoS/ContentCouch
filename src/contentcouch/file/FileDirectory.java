@@ -13,7 +13,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -57,9 +57,9 @@ public class FileDirectory extends File implements WritableDirectory {
 
 		public String getTargetType() {
 			if( isDirectory() ) {
-				return CcouchNamespace.TT_SHORTHAND_DIRECTORY;
+				return CCouchNamespace.TT_SHORTHAND_DIRECTORY;
 			} else {
-				return CcouchNamespace.TT_SHORTHAND_BLOB;
+				return CCouchNamespace.TT_SHORTHAND_BLOB;
 			}
 		}
 		
@@ -141,6 +141,6 @@ public class FileDirectory extends File implements WritableDirectory {
 	
 	public void deleteDirectoryEntry( String name, Map options ) {
 		File f = new File(this.getPath() + "/" + name);
-		if( f.exists() ) f.delete();
+		FileUtil.rmdir(f);
 	}
 }

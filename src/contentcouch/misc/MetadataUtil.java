@@ -19,7 +19,7 @@ import contentcouch.date.DateUtil;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Ref;
@@ -158,18 +158,18 @@ public class MetadataUtil {
 	////
 	
 	public static String getStoredIdentifier( Response res ) {
-		return ValueUtil.getString(res.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER));
+		return ValueUtil.getString(res.getMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER));
 	}
 	
 	public static void copyStoredIdentifier( Response source, BaseResponse dest, String prefix ) {
 		String storedUri = getStoredIdentifier(source);
 		if( storedUri != null ) {
-			dest.putMetadata( CcouchNamespace.RES_STORED_IDENTIFIER, prefix == null ? storedUri : prefix + storedUri );
+			dest.putMetadata( CCouchNamespace.RES_STORED_IDENTIFIER, prefix == null ? storedUri : prefix + storedUri );
 		}
 	}
 	
 	public static String getSourceUriOrUnknown( Map metadata ) {
-		String sourceUri = (String)metadata.get(CcouchNamespace.SOURCE_URI);
+		String sourceUri = (String)metadata.get(CCouchNamespace.SOURCE_URI);
 		if( sourceUri == null ) sourceUri = "x-undefined:source";
 		return sourceUri;
 	}
@@ -190,9 +190,9 @@ public class MetadataUtil {
 	public static void saveCcouchUri( WritableDirectory dir, String dirUri ) {
 		SimpleDirectory.Entry uriDotFileEntry = new SimpleDirectory.Entry();
 		uriDotFileEntry.target = BlobUtil.getBlob(dirUri);
-		uriDotFileEntry.targetLastModified = new Date().getTime();
+		uriDotFileEntry.lastModified = new Date().getTime();
 		uriDotFileEntry.name = ".ccouch-uri";
-		uriDotFileEntry.targetType = CcouchNamespace.TT_SHORTHAND_BLOB;
+		uriDotFileEntry.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
 		uriDotFileEntry.targetSize = ((Blob)uriDotFileEntry.target).getLength();
 		((WritableDirectory)dir).addDirectoryEntry(uriDotFileEntry, Collections.EMPTY_MAP);
 	}
@@ -204,7 +204,7 @@ public class MetadataUtil {
 			Response targetRes = TheGetter.call( targetReq );
 			req.content = TheGetter.getResponseValue( targetRes, targetReq );
 			req.contentMetadata = targetRes.getContentMetadata();
-			req.putContentMetadata( CcouchNamespace.SOURCE_URI, targetSourceUri );
+			req.putContentMetadata( CCouchNamespace.SOURCE_URI, targetSourceUri );
 		} else {
 			req.content = target;
 		}

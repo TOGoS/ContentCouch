@@ -17,7 +17,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.graphics.ImageUtil;
 import contentcouch.misc.MapUtil;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 
 public class Thumbnail extends CachingActiveFunction {
 	/*
@@ -32,7 +32,7 @@ public class Thumbnail extends CachingActiveFunction {
 	 */
 	
 	public static final String CFG_IMCONVERT_EXE = SwfNamespace.CFG_EXTAPPS + "ImageMagick/convert/exePath";
-	public static final String CFG_METHOD = CcouchNamespace.CFG_NS + "graphics/thumbnail/method";
+	public static final String CFG_METHOD = CCouchNamespace.CFG_NS + "graphics/thumbnail/method";
 	public static final String METHOD_INTERNAL = "Internal";
 	public static final String METHOD_IMAGEMAGICK = "ImageMagick";
 	

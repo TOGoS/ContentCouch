@@ -28,7 +28,7 @@ import contentcouch.explorify.SlfSourcePageGenerator;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
@@ -167,7 +167,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 
 			String path;
 			String uriEncoded = UriUtil.uriEncode(uri,UriUtil.PATH_SEGMENT_SAFE);
-			if( CcouchNamespace.DIRECTORY.equals(objectType) || CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(objectType) ) {
+			if( CCouchNamespace.DIRECTORY.equals(objectType) || CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(objectType) ) {
 				path = this.handlePath + "/" + uriEncoded + "/" + name + "/";
 			} else {
 				path = this.handlePath + "/" + uriEncoded + "/" + name;

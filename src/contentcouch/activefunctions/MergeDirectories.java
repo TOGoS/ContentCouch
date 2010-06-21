@@ -13,7 +13,7 @@ import contentcouch.active.expression.Expression;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 
@@ -27,7 +27,7 @@ public class MergeDirectories extends BaseActiveFunction {
 		if( fileMergeMethod != null ) conflictResolver.fileMergeMethod = fileMergeMethod;
 		//String dirMergeMethod = ValueUtil.getString(getArgumentValue(argumentExpressions, "dir-merge-method", null));
 		//if( dirMergeMethod != null ) conflictResolver.dirMergeMethod = dirMergeMethod;
-		conflictResolver.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
+		conflictResolver.dirMergeMethod = CCouchNamespace.REQ_DIRMERGE_MERGE;
 		
 		for( Iterator i=expressions.iterator(); i.hasNext(); ) {
 			Expression exp = (Expression)i.next();

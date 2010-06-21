@@ -36,7 +36,7 @@ import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.path.PathUtil.Path;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
@@ -209,7 +209,7 @@ public class ContentCouchCommand {
 		}
 		
 		BaseRequest storeCommitUriReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, commitListUri);
-		storeCommitUriReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_REPLACE);
+		storeCommitUriReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_REPLACE);
 		storeCommitUriReq.content = text;
 		return TheGetter.call(storeCommitUriReq);
 	}
@@ -223,7 +223,7 @@ public class ContentCouchCommand {
 	protected List getCommitUris( String commitListUri, GeneralOptions opts ) {
 		// Load parent commits
 		BaseRequest parentCommitListReq = TheGetter.createRequest(RequestVerbs.VERB_GET, commitListUri);
-		if( opts.cacheSector != null ) parentCommitListReq.putMetadata( CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector );
+		if( opts.cacheSector != null ) parentCommitListReq.putMetadata( CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector );
 		Response parentCommitListRes = TheGetter.call(parentCommitListReq);
 		List commitUris = new ArrayList();
 		if( parentCommitListRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
@@ -277,7 +277,7 @@ public class ContentCouchCommand {
 		public Date shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = null;
 		public String storeSector;
 		public String cacheSector;
-		public String fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_STRICTIG;
+		public String fileMergeMethod = CCouchNamespace.REQ_FILEMERGE_STRICTIG;
 		public String dirMergeMethod = null;
 		public int logLevel = Log.LEVEL_DOWNLOADS;
 		HashSet extraLogEvents = new HashSet();
@@ -308,11 +308,11 @@ public class ContentCouchCommand {
 			} else if( "-dir-merge-method".equals(arg) ) {
 				this.dirMergeMethod = (String)it.next();
 			} else if( "-replace-existing".equals(arg) ) {
-				this.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_REPLACE;
+				this.fileMergeMethod = CCouchNamespace.REQ_FILEMERGE_REPLACE;
 			} else if( "-keep-existing".equals(arg) ) {
-				this.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_IGNORE;
+				this.fileMergeMethod = CCouchNamespace.REQ_FILEMERGE_IGNORE;
 			} else if( "-merge".equals(arg) ) {
-				this.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
+				this.dirMergeMethod = CCouchNamespace.REQ_DIRMERGE_MERGE;
 			
 			} else if( "-use-commit-targets".equals(arg) ) {
 				this.shouldUseCommitTargets = true;
@@ -362,7 +362,7 @@ public class ContentCouchCommand {
 		
 		findTarget: while( true ) {
 			BaseRequest getReq = TheGetter.createRequest( RequestVerbs.VERB_GET, sourceTargetUri );
-			getReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
+			getReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 			getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
@@ -391,12 +391,12 @@ public class ContentCouchCommand {
 		putReq.content = getRes.getContent();
 		putReq.contentMetadata = getRes.getContentMetadata();
 		//putReq.putContextVar(SwfNamespace.CTX_CONFIG, metaRepoConfig.config);
-		putReq.putContentMetadata(CcouchNamespace.SOURCE_URI, sourceUri);
-		putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
-		putReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
-		if( opts.shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-		putReq.putMetadata(CcouchNamespace.REQ_DIRMERGE_METHOD, opts.dirMergeMethod);
-		putReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, opts.fileMergeMethod);
+		putReq.putContentMetadata(CCouchNamespace.SOURCE_URI, sourceUri);
+		putReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
+		putReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
+		if( opts.shouldLinkStored ) putReq.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
+		putReq.putMetadata(CCouchNamespace.REQ_DIRMERGE_METHOD, opts.dirMergeMethod);
+		putReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, opts.fileMergeMethod);
 		Response putRes = TheGetter.call(putReq);
 		if( putRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 			System.err.println("Couldn't PUT to " + destUri + ": " + putRes.getContent());
@@ -509,7 +509,7 @@ public class ContentCouchCommand {
 		}
 		
 		BaseRequest getStoreFileReq = TheGetter.createRequest(RequestVerbs.VERB_GET, id);
-		getStoreFileReq.putMetadata(CcouchNamespace.REQ_LOCAL_REPOS_ONLY, Boolean.TRUE);
+		getStoreFileReq.putMetadata(CCouchNamespace.REQ_LOCAL_REPOS_ONLY, Boolean.TRUE);
 		Response getStoreFileRes = TheGetter.call(getStoreFileReq);
 		int status = getStoreFileRes.getStatus();
 		if( status == ResponseCodes.RESPONSE_DOESNOTEXIST || status == ResponseCodes.RESPONSE_UNHANDLED ) {
@@ -669,7 +669,7 @@ public class ContentCouchCommand {
 			String sourceUri = (String)i.next();
 			
 			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.VERB_GET, sourceUri);
-			if( opts.cacheSector != null ) getReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
+			if( opts.cacheSector != null ) getReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 			Response getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
@@ -699,14 +699,14 @@ public class ContentCouchCommand {
 			BaseRequest putReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, dataDestUri);
 			putReq.content = o;
 			putReq.contentMetadata = new HashMap(getRes.getContentMetadata());
-			putReq.contentMetadata.put(CcouchNamespace.SOURCE_URI, sourceUri);
-			if( opts.storeSector != null ) putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
-			if( opts.cacheSector != null ) putReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
-			if( opts.shouldLinkStored ) putReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-			if( opts.shouldCreateUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
-			if( opts.shouldUseUriDotFiles ) putReq.putMetadata(CcouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
-			putReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_IGNORE);
-			putReq.putMetadata(CcouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN,
+			putReq.contentMetadata.put(CCouchNamespace.SOURCE_URI, sourceUri);
+			if( opts.storeSector != null ) putReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
+			if( opts.cacheSector != null ) putReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
+			if( opts.shouldLinkStored ) putReq.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
+			if( opts.shouldCreateUriDotFiles ) putReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
+			if( opts.shouldUseUriDotFiles ) putReq.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
+			putReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_IGNORE);
+			putReq.putMetadata(CCouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN,
 				opts.shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan
 			);
 			
@@ -742,7 +742,7 @@ public class ContentCouchCommand {
 					String parentCommitUri = (String)parentCommitUris.get(i);
 					if( !forceCommit ) {
 						BaseRequest parentCommitRequest = TheGetter.createRequest(RequestVerbs.VERB_GET, parentCommitUri);
-						if( opts.cacheSector != null ) parentCommitRequest.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
+						if( opts.cacheSector != null ) parentCommitRequest.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 						Response parentCommitResponse = TheGetter.call(parentCommitRequest);
 						if( parentCommitResponse.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 							if( parentCommitResponse.getContent() instanceof Commit ) {
@@ -782,10 +782,10 @@ public class ContentCouchCommand {
 			
 			BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, dataDestUri);
 			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
-			if( opts.storeSector != null ) storeCommitReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
-			if( opts.cacheSector != null ) storeCommitReq.putMetadata(CcouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
-			if( opts.shouldLinkStored ) storeCommitReq.putMetadata(CcouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-			storeCommitReq.putMetadata(CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_STRICTIG);
+			if( opts.storeSector != null ) storeCommitReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
+			if( opts.cacheSector != null ) storeCommitReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
+			if( opts.shouldLinkStored ) storeCommitReq.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
+			storeCommitReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_STRICTIG);
 			Response storeCommitRes = TheGetter.call(storeCommitReq);
 			if( storeCommitRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + dataDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
@@ -900,8 +900,8 @@ public class ContentCouchCommand {
 		args = mergeConfiguredArgs("cache-heads", args);
 		List cacheUris = new ArrayList();
 		GeneralOptions opts = new GeneralOptions();
-		opts.dirMergeMethod = CcouchNamespace.REQ_DIRMERGE_MERGE;
-		opts.fileMergeMethod = CcouchNamespace.REQ_FILEMERGE_IGNORE;
+		opts.dirMergeMethod = CCouchNamespace.REQ_DIRMERGE_MERGE;
+		opts.fileMergeMethod = CCouchNamespace.REQ_FILEMERGE_IGNORE;
 		
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];

@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 import com.eekboom.utils.Strings;
 
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
 import contentcouch.value.Directory.Entry;
 
@@ -23,8 +23,8 @@ public class EntryComparators {
 			if( tt1 == null ) return 1;
 			if( tt2 == null ) return -1;
 			if( tt1.equals(tt2) ) return 0;
-			if( tt1.equals(CcouchNamespace.TT_SHORTHAND_DIRECTORY) ) return -1;
-			if( tt2.equals(CcouchNamespace.TT_SHORTHAND_DIRECTORY) ) return 1;
+			if( tt1.equals(CCouchNamespace.TT_SHORTHAND_DIRECTORY) ) return -1;
+			if( tt2.equals(CCouchNamespace.TT_SHORTHAND_DIRECTORY) ) return 1;
 			return 0;
 		}
 		

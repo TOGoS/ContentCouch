@@ -13,7 +13,7 @@ import contentcouch.framework.BaseRequestHandler;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
 
 public class FileRequestHandler extends BaseRequestHandler {
@@ -40,20 +40,20 @@ public class FileRequestHandler extends BaseRequestHandler {
 			if( pf == null ) throw new RuntimeException("No parent of " + f);
 			FileUtil.mkdirs(pf);
 			FileDirectory destDir = new FileDirectory(pf);
-			destDir.shouldUseHardlinks = ValueUtil.getBoolean(req.getMetadata().get(CcouchNamespace.REQ_HARDLINK_DESIRED), false);
+			destDir.shouldUseHardlinks = ValueUtil.getBoolean(req.getMetadata().get(CCouchNamespace.REQ_HARDLINK_DESIRED), false);
 			SimpleDirectory.Entry newEntry = new SimpleDirectory.Entry();
 			newEntry.name = f.getName();
 			newEntry.target = req.getContent();
 			Date lastModified = MetadataUtil.getLastModified(req);
 			if( lastModified != null ) {
-				newEntry.targetLastModified = lastModified.getTime();
+				newEntry.lastModified = lastModified.getTime();
 			}
 			BaseResponse res = new BaseResponse();
 			
 			DirectoryMerger merger = new DirectoryMerger( new DirectoryMerger.RegularConflictResolver(req.getMetadata()), req.getMetadata() );
 			
 			if( merger.put(destDir, newEntry, MetadataUtil.getSourceUriOrUnknown(req.getContentMetadata()), req.getResourceName()) ) {
-				res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
+				res.putMetadata(CCouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
 			}
 			return res;
 		} else {

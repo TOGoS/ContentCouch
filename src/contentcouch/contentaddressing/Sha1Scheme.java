@@ -7,7 +7,7 @@ import org.bitpedia.util.Base32;
 import togos.mf.value.Blob;
 
 import contentcouch.digest.DigestUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 
 public class Sha1Scheme implements ContentAddressingScheme {
 	public static final Sha1Scheme instance = new Sha1Scheme();
@@ -24,7 +24,7 @@ public class Sha1Scheme implements ContentAddressingScheme {
 		return "sha1";
 	}
 	public String getRdfKey() {
-		return CcouchNamespace.SHA1BASE32;
+		return CCouchNamespace.SHA1BASE32;
 	}
 	public int getHashLength() {
 		return SHA1HASHLENGTH;

@@ -42,7 +42,7 @@ import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
@@ -150,7 +150,7 @@ public class MetaRepository extends BaseRequestHandler {
 		Directory d = (Directory)dirRes.getContent();
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
-			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
+			if( CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
 				l.add(PathUtil.appendPath(dataDirUri, e.getName() + "/"));
 			}
 		}
@@ -216,7 +216,7 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 
 	protected String getRequestedStoreSector( Request req, RepoConfig repoConfig ) {
-		String ss = ValueUtil.getString(req.getMetadata().get(CcouchNamespace.REQ_STORE_SECTOR));
+		String ss = ValueUtil.getString(req.getMetadata().get(CCouchNamespace.REQ_STORE_SECTOR));
 		if( ss == null ) ss = repoConfig.userStoreSector;
 		return ss;
 	}
@@ -244,24 +244,24 @@ public class MetaRepository extends BaseRequestHandler {
 		BaseRequest subReq = new BaseRequest( req, uri );
 		subReq.verb = RequestVerbs.VERB_PUT;
 		BaseResponse res = new BaseResponse( TheGetter.call(subReq) );
-		res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, idUrn);
+		res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, idUrn);
 		Date mtime = (Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
 		if( mtime != null ) {
-			res.putMetadata(CcouchNamespace.RES_HIGHEST_BLOB_MTIME, mtime);
+			res.putMetadata(CCouchNamespace.RES_HIGHEST_BLOB_MTIME, mtime);
 		}
 		return res;
 	}
 
 	protected Response putDataRdf( RepoConfig repoConfig, Request req ) {
-		Object parsedFrom = req.getContentMetadata().get(CcouchNamespace.PARSED_FROM);
-		String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);
+		Object parsedFrom = req.getContentMetadata().get(CCouchNamespace.PARSED_FROM);
+		String sourceUri = (String)req.getContentMetadata().get(CCouchNamespace.SOURCE_URI);
 		BaseRequest subReq = new BaseRequest();
 		subReq.metadata = req.getMetadata();
 		String rdfString = ((RdfNode)req.getContent()).toString();
 		rdfString = normalizeRdfString( rdfString );
 		subReq.content = parsedFrom != null ? parsedFrom : BlobUtil.getBlob(rdfString);
 		if( sourceUri != null ) {
-			subReq.putContentMetadata(CcouchNamespace.SOURCE_URI, "x-rdfified:" + sourceUri);
+			subReq.putContentMetadata(CCouchNamespace.SOURCE_URI, "x-rdfified:" + sourceUri);
 		}
 		Response blobPutRes = putDataBlob( repoConfig, subReq );
 		if( blobPutRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return blobPutRes;
@@ -278,10 +278,10 @@ public class MetaRepository extends BaseRequestHandler {
 		// TODO: Base 'has this been stored already' on something more definitive than that
 		// the blobbified RDF is in the datastore.  It may have gotten there other ways
 		// (during cache-on-GET, or by simply caching the blob and not its parsed RDF).
-		if( MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_SKIP_PREVIOUSLY_STORED_DIRS) &&
-		    MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
+		if( MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_SKIP_PREVIOUSLY_STORED_DIRS) &&
+		    MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
 			BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf directory already stored - skipping", "text/plain");
-			res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
+			res.putMetadata(CCouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
 			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 			return res;
 		}
@@ -306,7 +306,7 @@ public class MetaRepository extends BaseRequestHandler {
 		
 		Directory d = (Directory)req.getContent();
 		
-		if( MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_USE_URI_DOT_FILES) ) {
+		if( MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_USE_URI_DOT_FILES) ) {
 			Directory.Entry uriDotFileEntry = d.getDirectoryEntry(".ccouch-uri");
 			if( uriDotFileEntry != null ) {
 				Object target = uriDotFileEntry.getTarget();
@@ -314,11 +314,11 @@ public class MetaRepository extends BaseRequestHandler {
 				String uri = ValueUtil.getString(target);
 				// TODO: Some kind of validation on the URI (should be x-rdf-subject:<urn scheme>:...)
 				BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "URI previously cached in .ccouch-uri file - skipping", "text/plain");
-				res.putMetadata(CcouchNamespace.RES_STORED_IDENTIFIER, uri);
+				res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, uri);
 				return res;
 			}
 		}		
-		String sourceUri = (String)req.getContentMetadata().get(CcouchNamespace.SOURCE_URI);		
+		String sourceUri = (String)req.getContentMetadata().get(CCouchNamespace.SOURCE_URI);		
 		//(Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
 		Date highestMtime = null; // Don't pay attention to directory mtime
 		List rdfDirectoryEntries = new ArrayList();
@@ -341,14 +341,14 @@ public class MetaRepository extends BaseRequestHandler {
 			BaseRequest targetPutReq = new BaseRequest();
 			targetPutReq.content = target;
 			targetPutReq.metadata = req.getMetadata();
-			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
+			targetPutReq.putContentMetadata(CCouchNamespace.SOURCE_URI, targetSourceUri);
 			long entryMtime = e.getLastModified();
 			if( entryMtime != -1 ) {
 				targetPutReq.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(entryMtime));
 			}
 			Response targetPutRes = putData( repoConfig, targetPutReq );
 			TheGetter.getResponseValue(targetPutRes, targetPutReq);
-			Date subHighestMtime = (Date)targetPutRes.getMetadata().get(CcouchNamespace.RES_HIGHEST_BLOB_MTIME);
+			Date subHighestMtime = (Date)targetPutRes.getMetadata().get(CCouchNamespace.RES_HIGHEST_BLOB_MTIME);
 			if( subHighestMtime != null && (highestMtime == null || subHighestMtime.compareTo(highestMtime) > 0) ) {
 				highestMtime = subHighestMtime;
 			}
@@ -364,20 +364,20 @@ public class MetaRepository extends BaseRequestHandler {
 		dirPutReq.metadata = req.getMetadata();
 		BaseResponse dirPutRes = new BaseResponse(putDataRdf( repoConfig, dirPutReq ));
 		if( highestMtime != null ) {
-			dirPutRes.putMetadata(CcouchNamespace.RES_HIGHEST_BLOB_MTIME, highestMtime);
+			dirPutRes.putMetadata(CCouchNamespace.RES_HIGHEST_BLOB_MTIME, highestMtime);
 		}
 
 		boolean oldEnough;
 		if( highestMtime == null ) {
 			oldEnough = true; // Meh?
 		} else {
-			Date noNewerThan = (Date)req.getMetadata().get(CcouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN);
+			Date noNewerThan = (Date)req.getMetadata().get(CCouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN);
 			oldEnough = (noNewerThan == null) ? true : highestMtime.before(noNewerThan); 
 		}
 		
 		String storedDirUri = MetadataUtil.getStoredIdentifier(dirPutRes);
 		if( d instanceof WritableDirectory &&
-			MetadataUtil.isEntryTrue(req.getMetadata(),CcouchNamespace.REQ_CREATE_URI_DOT_FILES) &&
+			MetadataUtil.isEntryTrue(req.getMetadata(),CCouchNamespace.REQ_CREATE_URI_DOT_FILES) &&
 			oldEnough &&
 			storedDirUri != null
 		) {
@@ -394,10 +394,10 @@ public class MetaRepository extends BaseRequestHandler {
 		// TODO: Base 'has this been stored already' on something more definitive than that
 		// the blobbified RDF is in the datastore.  It may have gotten there other ways
 		// (during cache-on-GET, or by simply caching the blob and not its parsed RDF).
-		if( MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_SKIP_PREVIOUSLY_STORED_DIRS) &&
-		    MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
+		if( MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_SKIP_PREVIOUSLY_STORED_DIRS) &&
+		    MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.RES_DEST_ALREADY_EXISTED) ) {
 			BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf commit already stored - skipping", "text/plain");
-			res.putMetadata(CcouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
+			res.putMetadata(CCouchNamespace.RES_DEST_ALREADY_EXISTED, Boolean.TRUE);
 			MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 			return res;
 		}
@@ -422,7 +422,7 @@ public class MetaRepository extends BaseRequestHandler {
 		targetPutReq.metadata = req.getMetadata();
 		targetPutReq.content = target;
 		Response targetPutRes = putData( repoConfig, targetPutReq );
-		String targetUri = (String)targetPutRes.getContentMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER);
+		String targetUri = (String)targetPutRes.getContentMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER);
 		if( targetUri == null ) throw new RuntimeException("Inserting entry target returned null");
 
 		RdfCommit rdfDir = new RdfCommit(c, new BaseRef(targetUri));
@@ -623,7 +623,7 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Response identify( Object content, Map contentMetadata ) {
 		String id = null;
 		if( content instanceof RdfNode ) {
-			Object parsedFrom = contentMetadata.get(CcouchNamespace.PARSED_FROM);
+			Object parsedFrom = contentMetadata.get(CCouchNamespace.PARSED_FROM);
 			if( parsedFrom == null ) {
 				Log.log(Log.EVENT_PERFORMANCE_WARNING, "Blobbifying RDF node just to get content URN");
 				String rdfString = normalizeRdfString( content.toString() );
@@ -751,7 +751,7 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	protected Response maybeCacheBlob( Response res, Request req ) throws HashMismatchException {
 		String urn = req.getResourceName();
-		String cs = (String)req.getMetadata().get(CcouchNamespace.REQ_CACHE_SECTOR);
+		String cs = (String)req.getMetadata().get(CCouchNamespace.REQ_CACHE_SECTOR);
 		if( cs != null ) {
 			if( !config.defaultRepoConfig.storageScheme.couldTranslateUrn(urn) ) {
 				throw new RuntimeException("Don't know how to translate "+urn+" for storage" );
@@ -779,7 +779,7 @@ public class MetaRepository extends BaseRequestHandler {
 			putReq.content = res.getContent();
 			putReq.contentMetadata = res.getContentMetadata();
 			putReq.metadata = req.getMetadata();
-			putReq.putMetadata(CcouchNamespace.REQ_STORE_SECTOR, cs);
+			putReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, cs);
 			Response putRes = putData(config.defaultRepoConfig, putReq);
 			
 			String storedUrn = MetadataUtil.getStoredIdentifier( putRes );
@@ -815,7 +815,7 @@ public class MetaRepository extends BaseRequestHandler {
 				RepoConfig repoConfig = (RepoConfig)i.next();
 				SimpleDirectory.Entry entry = new SimpleDirectory.Entry();
 				entry.name = repoConfig.name;
-				entry.targetType = CcouchNamespace.TT_SHORTHAND_DIRECTORY;
+				entry.targetType = CCouchNamespace.TT_SHORTHAND_DIRECTORY;
 				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.uri);
 				sd.addDirectoryEntry(entry, Collections.EMPTY_MAP);
 			}
@@ -862,7 +862,7 @@ public class MetaRepository extends BaseRequestHandler {
 					String[] dataAndSector = repoRef.subPath.split("/");
 					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
 						BaseRequest sectorOverrideReq = new BaseRequest(req);
-						sectorOverrideReq.metadata.put(CcouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
+						sectorOverrideReq.metadata.put(CCouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
 						req = sectorOverrideReq;
 					}
 					
@@ -924,9 +924,9 @@ public class MetaRepository extends BaseRequestHandler {
 					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, getFunctionResult(repoConfig, subIndexName, key));
 				} else if( path.equals("") ) {
 					SimpleDirectory sd = new SimpleDirectory();
-					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CcouchNamespace.TT_SHORTHAND_DIRECTORY));
-					sd.addDirectoryEntry(new SimpleDirectory.Entry("heads",new BaseRef(req.getResourceName(),"heads"),CcouchNamespace.TT_SHORTHAND_DIRECTORY));
-					sd.addDirectoryEntry(new SimpleDirectory.Entry("parsed-heads",new BaseRef(req.getResourceName(),"parsed-heads"),CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CCouchNamespace.TT_SHORTHAND_DIRECTORY));
+					sd.addDirectoryEntry(new SimpleDirectory.Entry("heads",new BaseRef(req.getResourceName(),"heads"),CCouchNamespace.TT_SHORTHAND_DIRECTORY));
+					sd.addDirectoryEntry(new SimpleDirectory.Entry("parsed-heads",new BaseRef(req.getResourceName(),"parsed-heads"),CCouchNamespace.TT_SHORTHAND_DIRECTORY));
 					return new BaseResponse( 200, sd );
 				}
 				BaseRequest subReq = new BaseRequest(req, path);
@@ -972,7 +972,7 @@ public class MetaRepository extends BaseRequestHandler {
 				}
 				
 				// Check all remote repos (unless we are explicitly asked not to)
-				if( !MetadataUtil.isEntryTrue(req.getMetadata(), CcouchNamespace.REQ_LOCAL_REPOS_ONLY))
+				if( !MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_LOCAL_REPOS_ONLY))
 				for( Iterator i=config.remoteRepoConfigs.iterator(); i.hasNext(); ) {
 					RepoConfig repoConfig = (RepoConfig)i.next();
 					String psp = urnToPostSectorPath(repoConfig, urn);

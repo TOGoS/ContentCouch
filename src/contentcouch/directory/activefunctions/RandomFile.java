@@ -19,7 +19,7 @@ import contentcouch.directory.LongPathEntryWrapper;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.misc.Function1;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
 
 public class RandomFile extends BaseActiveFunction {
@@ -30,9 +30,9 @@ public class RandomFile extends BaseActiveFunction {
 		for( Iterator i=entries.iterator(); i.hasNext(); ) {
 			Directory.Entry de = (Directory.Entry)i.next();
 			String ttype = de.getTargetType();
-			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(ttype) ) {
+			if( CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(ttype) ) {
 				dirs.add(de);
-			} else if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(ttype) ) {
+			} else if( CCouchNamespace.TT_SHORTHAND_BLOB.equals(ttype) ) {
 				files.add(de);
 			}
 		}
@@ -48,7 +48,7 @@ public class RandomFile extends BaseActiveFunction {
 			for( Iterator i=files.iterator(); i.hasNext(); ) {
 				sd.addDirectoryEntry((Directory.Entry)i.next());
 			}
-			dirs.add(new SimpleDirectory.Entry("__files", sd, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+			dirs.add(new SimpleDirectory.Entry("__files", sd, CCouchNamespace.TT_SHORTHAND_DIRECTORY));
 			return dirs;
 		}
 	}

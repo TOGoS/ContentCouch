@@ -2,7 +2,7 @@ package contentcouch.misc;
 
 import java.io.UnsupportedEncodingException;
 
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 
 import togos.mf.value.Blob;
 
@@ -176,8 +176,8 @@ public class UriUtil {
 	 *   if the URI does not start with one of those prefixes. 
 	 */
 	public static final String stripRdfSubjectPrefix( String uri ) {
-		for( int i=CcouchNamespace.RDF_SUBJECT_URI_PREFIXES.length-1; i>=0; --i ) {
-			String pfx = CcouchNamespace.RDF_SUBJECT_URI_PREFIXES[i];
+		for( int i=CCouchNamespace.RDF_SUBJECT_URI_PREFIXES.length-1; i>=0; --i ) {
+			String pfx = CCouchNamespace.RDF_SUBJECT_URI_PREFIXES[i];
 			if( uri.startsWith(pfx) ) {
 				return uri.substring(pfx.length());
 			}

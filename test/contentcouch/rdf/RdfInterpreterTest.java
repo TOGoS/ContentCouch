@@ -58,7 +58,7 @@ public class RdfInterpreterTest extends TestCase {
 		assertEquals( 1, dir.getDirectoryEntrySet().size() );
 		Directory.Entry bob = dir.getDirectoryEntry("bob"); 
 		assertNotNull( bob );
-		assertEquals( CcouchNamespace.TT_SHORTHAND_BLOB, bob.getTargetType() );
+		assertEquals( CCouchNamespace.TT_SHORTHAND_BLOB, bob.getTargetType() );
 		assertTrue( bob.getTarget() instanceof Ref );
 		assertEquals( 13l, bob.getTargetSize() );
 		try {

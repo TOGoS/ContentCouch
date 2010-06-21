@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.TransformDirectory;
 import contentcouch.misc.UriUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -30,7 +30,7 @@ public class ThumbnailDirectory extends TransformDirectory
 	
 	protected void addEntry( Map entryMap, String name, Object target, boolean targetIsDirectory ) {
 		Entry newEntry = new SimpleDirectory.Entry( name, target,
-			targetIsDirectory ? CcouchNamespace.TT_SHORTHAND_DIRECTORY : CcouchNamespace.TT_SHORTHAND_BLOB );
+			targetIsDirectory ? CCouchNamespace.TT_SHORTHAND_DIRECTORY : CCouchNamespace.TT_SHORTHAND_BLOB );
 		entryMap.put( name, newEntry );
 	}
 	
@@ -44,7 +44,7 @@ public class ThumbnailDirectory extends TransformDirectory
 		HashMap entryMap = new HashMap();
 		for( Iterator i=getBackingDirectory().getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry be = (Directory.Entry)i.next();
-			if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(be.getTargetType()) ) {
+			if( CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(be.getTargetType()) ) {
 				addEntry( entryMap, be.getName(), new ThumbnailDirectory( be.getTarget(), getResourceUri(be) ), true );
 			} else {
 				if( IMGFNPAT.matcher(be.getName()).matches() ) {

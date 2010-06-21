@@ -14,7 +14,7 @@ import contentcouch.date.DateUtil;
 import contentcouch.directory.EntryComparators;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 import contentcouch.value.RelativeRef;
@@ -30,7 +30,7 @@ public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 	}
 	
 	protected boolean isDirectory( Directory.Entry e ) {
-		return CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType());
+		return CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType());
 	}
 	
 	/**
@@ -89,7 +89,7 @@ public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 	}
 
 	protected String getOperandResolvedUrn() {
-		String resolvedUri = (String)resourceResponse.getMetadata().get(CcouchNamespace.RES_RESOLVED_URI);
+		String resolvedUri = (String)resourceResponse.getMetadata().get(CCouchNamespace.RES_RESOLVED_URI);
 		return resolvedUri;
 	}
 
@@ -109,7 +109,7 @@ public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {
 	protected void writeDirectLink(PrintWriter w) {
 		String resolvedUrn = getOperandResolvedUrn();
 		if( resolvedUrn != null && !resolvedUrn.equals(getOperandUri()) ) {
-			String href = getExternalUriWithName(null, resolvedUrn, getShortName(), CcouchNamespace.DIRECTORY);
+			String href = getExternalUriWithName(null, resolvedUrn, getShortName(), CCouchNamespace.DIRECTORY);
 			w.println("<ul class=\"crumbtrail\"><li><a href=\""+XML.xmlEscapeAttributeValue(href)+"\" title=\"Short URL for this page\">"+XML.xmlEscapeText(resolvedUrn)+"</a></li></ul>");
 		}
 	}

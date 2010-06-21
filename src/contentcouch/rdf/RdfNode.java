@@ -34,6 +34,6 @@ public class RdfNode extends MultiMap {
 	}
 	
 	public String toString() {
-		return RdfIO.xmlEncodeRdf(this, CcouchNamespace.CC_NS);
+		return RdfIO.xmlEncodeRdf(this, CCouchNamespace.CC_NS);
 	}
 }

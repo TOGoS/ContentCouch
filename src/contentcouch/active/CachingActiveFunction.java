@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import contentcouch.active.expression.Expression;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Ref;
@@ -64,10 +64,10 @@ public abstract class CachingActiveFunction extends BaseActiveFunction {
 			
 			if( cacheable ) {
 				BaseRequest storeReq = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:data", output, Collections.EMPTY_MAP);
-				storeReq.putMetadata( CcouchNamespace.REQ_STORE_SECTOR, "function-results" );
-				storeReq.putMetadata( CcouchNamespace.REQ_FILEMERGE_METHOD, CcouchNamespace.REQ_FILEMERGE_IGNORE );
+				storeReq.putMetadata( CCouchNamespace.REQ_STORE_SECTOR, "function-results" );
+				storeReq.putMetadata( CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_IGNORE );
 				Response storeRes = TheGetter.call(storeReq);
-				thumbnailUri = (String)storeRes.getMetadata().get(CcouchNamespace.RES_STORED_IDENTIFIER);
+				thumbnailUri = (String)storeRes.getMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER);
 				
 				TheGetter.put(resultCacheUri, new BaseRef(thumbnailUri));
 			} else {
@@ -85,7 +85,7 @@ public abstract class CachingActiveFunction extends BaseActiveFunction {
 		}
 		
 		BaseResponse subRes = new BaseResponse( TheGetter.call( new BaseRequest( RequestVerbs.VERB_GET, thumbnailUri ) ) );
-		if( cacheable ) subRes.putMetadata( CcouchNamespace.RES_CACHEABLE, Boolean.TRUE );
+		if( cacheable ) subRes.putMetadata( CCouchNamespace.RES_CACHEABLE, Boolean.TRUE );
 		return subRes;
 		
 		//return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Thumbnail of "+id, "text/plain");

@@ -2,7 +2,7 @@ package contentcouch.directory;
 
 import togos.mf.value.Blob;
 import contentcouch.misc.Function1;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
 
 public class EntryFilters {
@@ -23,7 +23,7 @@ public class EntryFilters {
 		};
 	}
 	
-	public static Function1 BLOBFILTER = createTypeFilter( CcouchNamespace.TT_SHORTHAND_BLOB, false, Blob.class );
+	public static Function1 BLOBFILTER = createTypeFilter( CCouchNamespace.TT_SHORTHAND_BLOB, false, Blob.class );
 	
-	public static Function1 DIRECTORYFILTER = createTypeFilter( CcouchNamespace.TT_SHORTHAND_DIRECTORY, false, Directory.class );
+	public static Function1 DIRECTORYFILTER = createTypeFilter( CCouchNamespace.TT_SHORTHAND_DIRECTORY, false, Directory.class );
 }

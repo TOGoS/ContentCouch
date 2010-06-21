@@ -10,7 +10,7 @@ import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.value.Blob;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.xml.XML;
 
 public class RdfSourcePageGenerator extends CCouchExplorerPageGenerator {
@@ -33,15 +33,15 @@ public class RdfSourcePageGenerator extends CCouchExplorerPageGenerator {
 	}
 	
 	protected String formatLink( String url ) {
-		if( url.startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX) ) {
+		if( url.startsWith(CCouchNamespace.RDF_SUBJECT_URI_PREFIX) ) {
 			// Then show 2 links
-			String noParsePart = url.substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX.length());
-			return formatLink2(getExternalUri(url), CcouchNamespace.RDF_SUBJECT_URI_PREFIX.substring(0,CcouchNamespace.RDF_SUBJECT_URI_PREFIX.length()-1)) + ":" +
+			String noParsePart = url.substring(CCouchNamespace.RDF_SUBJECT_URI_PREFIX.length());
+			return formatLink2(getExternalUri(url), CCouchNamespace.RDF_SUBJECT_URI_PREFIX.substring(0,CCouchNamespace.RDF_SUBJECT_URI_PREFIX.length()-1)) + ":" +
 				formatLink2(getExternalUri(noParsePart), noParsePart);
-		} else if( url.startsWith(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD) ) {
+		} else if( url.startsWith(CCouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD) ) {
 			// Then show 2 links
-			String noParsePart = url.substring(CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length());
-			return formatLink2(getExternalUri(url), CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.substring(0,CcouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length()-1)) + ":" +
+			String noParsePart = url.substring(CCouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length());
+			return formatLink2(getExternalUri(url), CCouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.substring(0,CCouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD.length()-1)) + ":" +
 				formatLink2(getExternalUri(noParsePart), noParsePart);
 		} else {
 			return formatLink2(getExternalUri(url), url);

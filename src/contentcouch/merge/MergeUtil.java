@@ -11,7 +11,7 @@ import contentcouch.contentaddressing.BitprintScheme;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
@@ -195,9 +195,9 @@ public class MergeUtil {
 	protected static void collectChanges( Changeset cs, String path, Directory.Entry oldEntry, Directory.Entry newEntry ) {
 		collectChanges( cs, path,
 			oldEntry != null ? oldEntry.getTarget() : null,
-			oldEntry != null ? CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(oldEntry.getTargetType()) : false,
+			oldEntry != null ? CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(oldEntry.getTargetType()) : false,
 			newEntry != null ? newEntry.getTarget() : null,
-			newEntry != null ? CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(newEntry.getTargetType()) : false
+			newEntry != null ? CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(newEntry.getTargetType()) : false
 		);
 	}
 	

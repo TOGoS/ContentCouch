@@ -6,7 +6,7 @@ import org.bitpedia.util.Base32;
 
 import togos.mf.value.Blob;
 
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 
 public class BitprintScheme implements ContentAddressingScheme {
 	public static class Bitprint {
@@ -139,7 +139,7 @@ public class BitprintScheme implements ContentAddressingScheme {
 		return "bitprint";
 	}
 	public String getRdfKey() {
-		return CcouchNamespace.BITPRINT;
+		return CCouchNamespace.BITPRINT;
 	}
 	public int getHashLength() {
 		return BITPRINTHASHLENGTH;

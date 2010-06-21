@@ -14,7 +14,7 @@ import contentcouch.directory.EntryComparators;
 import contentcouch.directory.HasLongPath;
 import contentcouch.json.JSON;
 import contentcouch.misc.UriUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Directory.Entry;
@@ -55,7 +55,7 @@ public class AlbumPage {
 			for( Iterator i=entries.iterator(); i.hasNext(); ) {
 				Directory.Entry e = (Directory.Entry)i.next();
 				
-				if( CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
+				if( CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
 					dirEntryList.add(e);
 					continue;
 				}

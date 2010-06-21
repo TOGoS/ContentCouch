@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -64,7 +64,7 @@ public class DirectoryWalker implements Iterator {
 			if( ((Iterator)entryIteratorStack.peek()).hasNext() ) {
 				Directory.Entry e = (Directory.Entry)((Iterator)entryIteratorStack.peek()).next();
 				Object target = e.getTarget();
-				if( CcouchNamespace.DIRECTORY.equals(e.getTargetType()) && followRefs && target instanceof Ref ) {
+				if( CCouchNamespace.DIRECTORY.equals(e.getTargetType()) && followRefs && target instanceof Ref ) {
 					target = TheGetter.get( ((Ref)target).getTargetUri() );
 				}
 				if( e.getTarget() instanceof Directory ) {

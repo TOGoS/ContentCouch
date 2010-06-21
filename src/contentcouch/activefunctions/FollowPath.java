@@ -17,7 +17,7 @@ import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathSimplifiableActiveFunction;
 import contentcouch.path.PathSimplifiableExpression;
 import contentcouch.path.PathUtil;
-import contentcouch.rdf.CcouchNamespace;
+import contentcouch.rdf.CCouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
@@ -56,7 +56,7 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 		}
 		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, source);
 		if( resolvedUri != null ) {
-			res.putMetadata(CcouchNamespace.RES_RESOLVED_URI, resolvedUri);
+			res.putMetadata(CCouchNamespace.RES_RESOLVED_URI, resolvedUri);
 		}
 		return res;
 	}
