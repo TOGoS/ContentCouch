@@ -18,6 +18,12 @@ public class FileChange implements Comparable {
 	}
 	
 	public int compareTo( Object other ) {
-		return path.compareTo( ((FileChange)other).getPath() );
+		String otherPath = ((FileChange)other).getPath();
+		if( this instanceof DirDelete && otherPath.startsWith(path+"/")) {
+			return 1;
+		} else if( other instanceof DirDelete && path.startsWith(otherPath+"/")) {
+			return -1;
+		}
+		return path.compareTo( otherPath );
 	}
 }

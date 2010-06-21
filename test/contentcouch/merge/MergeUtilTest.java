@@ -160,6 +160,7 @@ public class MergeUtilTest extends TestCase {
 	}
 	
 	static SimpleDirectory oldDir;
+	static SimpleDirectory oldDir2;
 	static SimpleDirectory newDir;
 	static {
 		SimpleDirectory oldSubDir1 = new SimpleDirectory();
@@ -173,7 +174,19 @@ public class MergeUtilTest extends TestCase {
 		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1B), CcouchNamespace.TT_SHORTHAND_BLOB));
 		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir1", oldSubDir1, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
 		oldDir.addDirectoryEntry(new SimpleDirectory.Entry("subdir2", oldSubDir2, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
-		
+
+		SimpleDirectory oldSubDir3 = new SimpleDirectory();
+		oldSubDir3.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir3.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1D), CcouchNamespace.TT_SHORTHAND_BLOB));
+		SimpleDirectory oldSubDir4 = new SimpleDirectory();
+		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("blobe", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("blobf", new BaseRef(SHA1F), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldSubDir4.addDirectoryEntry(new SimpleDirectory.Entry("subdir3", oldSubDir3, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+		oldDir2 = new SimpleDirectory();
+		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("bloba", new BaseRef(SHA1A), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("blobb", new BaseRef(SHA1B), CcouchNamespace.TT_SHORTHAND_BLOB));
+		oldDir2.addDirectoryEntry(new SimpleDirectory.Entry("subdir4", oldSubDir4, CcouchNamespace.TT_SHORTHAND_DIRECTORY));
+
 		SimpleDirectory newSubDir1 = new SimpleDirectory();
 		newSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobc", new BaseRef(SHA1C), CcouchNamespace.TT_SHORTHAND_BLOB));
 		newSubDir1.addDirectoryEntry(new SimpleDirectory.Entry("blobd", new BaseRef(SHA1E), CcouchNamespace.TT_SHORTHAND_BLOB));
@@ -194,11 +207,30 @@ public class MergeUtilTest extends TestCase {
 			"A  blobb\n"+
 			"D  subdir1/blobd\n"+
 			"A  subdir1/blobd\n"+
-			"DD subdir2\n"+
 			"D  subdir2/blobe\n"+
 			"D  subdir2/blobf\n"+
+			"DD subdir2\n"+
 			"A  subdir2a/blobe\n"+
 			"A  subdir2a/blobf\n",
+			cs.dump()
+		);
+	}
+	
+	public void testChangeset2() {
+		Changeset cs = MergeUtil.getChanges(oldDir2, newDir);
+		assertEquals(
+			"D  blobb\n"+
+			"A  blobb\n"+
+			"A  subdir1/blobc\n"+
+			"A  subdir1/blobd\n"+
+			"A  subdir2a/blobe\n"+
+			"A  subdir2a/blobf\n"+
+			"D  subdir4/blobe\n"+
+			"D  subdir4/blobf\n"+
+			"D  subdir4/subdir3/blobc\n"+
+			"D  subdir4/subdir3/blobd\n"+
+			"DD subdir4/subdir3\n"+
+			"DD subdir4\n",
 			cs.dump()
 		);
 	}

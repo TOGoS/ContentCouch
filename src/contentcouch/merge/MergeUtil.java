@@ -138,23 +138,23 @@ public class MergeUtil {
 		return oldPath+"/"+entryName;
 	}
 	
-	protected static void addChanges( Changeset cs, String path, Directory oldDir, Directory newDir ) {
+	protected static void collectChanges( Changeset cs, String path, Directory oldDir, Directory newDir ) {
 		Set visited = new HashSet();
 		if( oldDir != null ) for( Iterator oldEntries = oldDir.getDirectoryEntrySet().iterator(); oldEntries.hasNext(); ) {
 			Directory.Entry de = (Directory.Entry)oldEntries.next();
-			addChanges( cs, appendPath(path,de.getName()), de,
+			collectChanges( cs, appendPath(path,de.getName()), de,
 				newDir == null ? null : newDir.getDirectoryEntry(de.getName()));
 			visited.add( de.getName() );
 		}
 		if( newDir != null ) for( Iterator newEntries = newDir.getDirectoryEntrySet().iterator(); newEntries.hasNext(); ) {
 			Directory.Entry de = (Directory.Entry)newEntries.next();
 			if( visited.contains(de.getName()) ) continue; // Don't process them twice!
-			addChanges( cs, appendPath(path,de.getName()),
+			collectChanges( cs, appendPath(path,de.getName()),
 				oldDir == null ? null : oldDir.getDirectoryEntry(de.getName()), de);
 		}
 	}
 	
-	protected static void addChanges( Changeset cs, String path, Object oldObj, boolean oldObjIsDir, Object newObj, boolean newObjIsDir ) {
+	protected static void collectChanges( Changeset cs, String path, Object oldObj, boolean oldObjIsDir, Object newObj, boolean newObjIsDir ) {
 		Boolean equiv;
 		
 		if( oldObj == newObj ) {
@@ -174,7 +174,7 @@ public class MergeUtil {
 			oldDir = (Directory)TheGetter.dereference(oldObj);
 			if( !newObjIsDir || newObj == null ) {
 				cs.addChange(c = new DirDelete(path, c));
-				addChanges(cs, path, oldDir, null);
+				collectChanges(cs, path, oldDir, null);
 			}
 		} else if( oldObj != null ) {
 			cs.addChange(c = new FileDelete(path,c));
@@ -185,14 +185,14 @@ public class MergeUtil {
 			if( oldObjIsDir ) { 
 				oldDir = (Directory)TheGetter.dereference(oldObj);
 			}
-			addChanges( cs, path, oldDir, newDir );
+			collectChanges( cs, path, oldDir, newDir );
 		} else if( newObj != null ) {
 			cs.addChange( new FileAdd(path, newObj, c) );
 		}
 	}
 	
-	protected static void addChanges( Changeset cs, String path, Directory.Entry oldEntry, Directory.Entry newEntry ) {
-		addChanges( cs, path,
+	protected static void collectChanges( Changeset cs, String path, Directory.Entry oldEntry, Directory.Entry newEntry ) {
+		collectChanges( cs, path,
 			oldEntry != null ? oldEntry.getTarget() : null,
 			oldEntry != null ? CcouchNamespace.TT_SHORTHAND_DIRECTORY.equals(oldEntry.getTargetType()) : false,
 			newEntry != null ? newEntry.getTarget() : null,
@@ -212,7 +212,7 @@ public class MergeUtil {
 		Changeset cs = new Changeset();
 		oldObj = dereference(oldObj);
 		newObj = dereference(newObj);
-		addChanges( cs, "", oldObj, oldObj instanceof Directory, newObj, newObj instanceof Directory );
+		collectChanges( cs, "", oldObj, oldObj instanceof Directory, newObj, newObj instanceof Directory );
 		return cs;
 	}
 }
