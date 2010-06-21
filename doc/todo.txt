@@ -3,6 +3,29 @@
   apply changes from common ancestor: ccouch merge <to> <dest>
     (dest must contain .ccouch-commit-uri file)
 
+- Get rid of RdfDirectory.TargetRdfifier
+  - Replace with explicit function in MetaRepository to create RdfDirectories
+    - Use from MetaRepository from id/store methods
+    - Needs to understand .ccouch-uri file
+    - Should have options to ignore dot files and hidden files
+      so that this functionality isn't only in FileDirectory.
+
+[De]fleshing:
+  - Support filexxx.ccouch-de files containing
+    <DirectoryEntry>...</DirectoryEntry>
+    in place of actual file.
+  
+  - Option to 'checkout' to create .ccouch-de files for blobs over a certain
+    size
+  
+  - 'reflesh <max-bytes>' command to change max-flesh on a checked-out
+    directory (convert between .ccouch-de files and actual blobs)
+
+  - Commands 'fleshtree' and 'defleshtree' to replace a directory tree
+    with a single directory with only a .ccouch-uri file.
+  
+  - '-max-flesh <bytes>' option to 'checkout', 'copy', and 'fleshtree'
+
 - During caching or checkout, I got this error:
   Exception in thread "main" java.lang.RuntimeException: Can't merge blobs
   K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42 into K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42;
