@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import contentcouch.contentaddressing.BitprintScheme;
+import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
@@ -155,7 +156,12 @@ public class MergeUtil {
 		}
 	}
 	
-	protected static void collectChanges( Changeset cs, String path, Object oldObj, boolean oldObjIsDir, Object newObj, boolean newObjIsDir ) {
+	protected static void collectChanges( Changeset cs, String path, Directory.Entry oldEntry, Directory.Entry newEntry ) {
+		Object oldObj = oldEntry != null ? oldEntry.getTarget() : null;
+		Object newObj = newEntry != null ? newEntry.getTarget() : null;
+		boolean oldObjIsDir = oldEntry != null ? CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(oldEntry.getTargetType()) : false;
+		boolean newObjIsDir = newEntry != null ? CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(newEntry.getTargetType()) : false;
+		
 		Boolean equiv;
 		
 		if( oldObj == newObj ) {
@@ -188,17 +194,8 @@ public class MergeUtil {
 			}
 			collectChanges( cs, path, oldDir, newDir );
 		} else if( newObj != null ) {
-			cs.addChange( new FileAdd(path, newObj, c) );
+			cs.addChange( new FileAdd(path, newObj, newEntry.getTargetType(), newEntry.getLastModified(), c) );
 		}
-	}
-	
-	protected static void collectChanges( Changeset cs, String path, Directory.Entry oldEntry, Directory.Entry newEntry ) {
-		collectChanges( cs, path,
-			oldEntry != null ? oldEntry.getTarget() : null,
-			oldEntry != null ? CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(oldEntry.getTargetType()) : false,
-			newEntry != null ? newEntry.getTarget() : null,
-			newEntry != null ? CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(newEntry.getTargetType()) : false
-		);
 	}
 	
 	protected static Object dereference( Object o ) {
@@ -209,17 +206,92 @@ public class MergeUtil {
 		return o;
 	}
 	
+	protected static Directory.Entry createDirectoryEntry(Object obj) {
+		if( obj instanceof Directory ) {
+			return new SimpleDirectory.Entry("(mergeroot)",obj,CCouchNamespace.TT_SHORTHAND_DIRECTORY);
+		} else {
+			throw new RuntimeException("Cannot directly merge blobs - can only merge directories");
+		}
+	}
+	
 	public static Changeset getChanges( Object oldObj, Object newObj ) {
 		Changeset cs = new Changeset();
 		oldObj = dereference(oldObj);
 		newObj = dereference(newObj);
-		collectChanges( cs, "", oldObj, oldObj instanceof Directory, newObj, newObj instanceof Directory );
+		collectChanges( cs, "", createDirectoryEntry(oldObj), createDirectoryEntry(newObj) );
 		return cs;
 	}
 	
 	//// Apply changes ////
 	
-	public static void applyChanges( WritableDirectory wd, Changeset cs ) {
-		
+	protected static void applyChange( WritableDirectory wd, FileChange c, String path, Map options ) {
+		int sidx = path.indexOf('/');
+		if( sidx != -1 ) {
+			String subdirName = path.substring(0,sidx);
+			String restOfPath = path.substring(sidx+1);
+			Directory.Entry e = wd.getDirectoryEntry(subdirName);
+			if( e == null ) {
+				if( c instanceof FileDelete || c instanceof DirDelete ) {
+					return; // Don't care!
+				} else {
+					WritableDirectory subdir = new SimpleDirectory();
+					Directory.Entry subdirEntry = new SimpleDirectory.Entry(subdirName, subdir, CCouchNamespace.TT_SHORTHAND_DIRECTORY);
+					wd.addDirectoryEntry(subdirEntry, options);
+					
+					subdirEntry = wd.getDirectoryEntry(subdirName);
+					subdir = (WritableDirectory)subdirEntry.getTarget();
+					applyChange(subdir, c, restOfPath, options );
+				}
+			} else if( !CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
+				throw new RuntimeException( "Can't merge '"+path+"' changes into '"+subdirName+"'; "+subdirName+" is not a directory");
+			} else if( !(e.getTarget() instanceof WritableDirectory) ) {
+				throw new RuntimeException( "Can't merge '"+c.getPath()+"' changes into '"+subdirName+"'; "+subdirName+" is not writable");
+			} else {
+				WritableDirectory subdir = (WritableDirectory)e.getTarget();
+				applyChange( subdir, c, restOfPath, options );
+			}
+		} else {
+			Directory.Entry e = wd.getDirectoryEntry(path);
+			if( e == null && (c instanceof FileDelete || c instanceof DirDelete) ) {
+				return; // Don't care!
+			} else if( c instanceof FileDelete ) {
+				if( !CCouchNamespace.TT_SHORTHAND_BLOB.equals(e.getTargetType()) ) {
+					throw new RuntimeException( "Can't delete file "+c.getPath()+" - target is not a regular file" );
+				}
+				wd.deleteDirectoryEntry(path, options);
+			} else if( c instanceof DirDelete ) {
+				if( !CCouchNamespace.TT_SHORTHAND_BLOB.equals(e.getTargetType()) ) {
+					throw new RuntimeException( "Can't delete directory "+c.getPath()+" - target is not a directory" );
+				}
+				Directory subdir = (Directory)e.getTarget();
+				if( subdir.getDirectoryEntrySet().size() > 0 ) {
+					// Skip deletion of empty directories
+					// TODO: make this optional
+					return; 
+				}
+				wd.deleteDirectoryEntry(path, options);
+			} else if( c instanceof FileAdd ) {
+				if( e != null ) {
+					throw new RuntimeException("Can't add "+c.getPath()+" - target already exists");
+				}
+				FileAdd fa = (FileAdd)c;
+				SimpleDirectory.Entry newEntry = new SimpleDirectory.Entry( path, fa.getTarget(), fa.getTargetType(), fa.getLastModified() );
+				wd.addDirectoryEntry(newEntry, options);
+			} else {
+				throw new RuntimeException("Don't know how to apply change of type "+c.getClass().getName());
+			}
+		}
+	}
+	
+	/**
+	 * @param wd writable directory to apply changes to
+	 * @param cs the changeset containing changes to be applied
+	 * @param options fully namespaced option values
+	 */
+	public static void applyChanges( WritableDirectory wd, Changeset cs, Map options ) {
+		for( Iterator i=cs.getOrderedChanges().iterator(); i.hasNext(); ) {
+			FileChange fc = (FileChange)i.next();
+			applyChange( wd, fc, fc.getPath(), options );
+		}
 	}
 }

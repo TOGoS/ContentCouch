@@ -37,9 +37,9 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		public long targetSize = -1;
 		public Object target;
 		public String targetType;
-
+		
 		public Entry() { }
-
+		
 		public Entry(Directory.Entry e) {
 			this.name = e.getName();
 			this.target = e.getTarget();
@@ -53,7 +53,14 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			this.target = target;
 			this.targetType = targetType;
 		}
-
+		
+		public Entry( String name, Object target, String targetType, long lastModified ) {
+			this.name = name;
+			this.target = target;
+			this.targetType = targetType;
+			this.lastModified = lastModified;
+		}
+		
 		//// Directory.Entry implementation ////
 		public long getLastModified() { return lastModified; }
 		public String getName() { return name; }

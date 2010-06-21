@@ -1,14 +1,33 @@
 package contentcouch.merge;
 
-public class FileAdd extends FileChange {
-	protected Object blob;
+import contentcouch.rdf.CCouchNamespace;
 
-	public FileAdd( String path, Object blob, FileChange prev ) {
+public class FileAdd extends FileChange
+{
+	protected Object target;
+	protected String targetType;
+	protected long lastModified;
+	
+	public FileAdd( String path, Object blob, String targetType, long lastModified, FileChange prev ) {
 		super( path, prev );
-		this.blob = blob;
+		this.target = blob;
+		this.targetType = targetType;
+		this.lastModified = lastModified;
+	}
+
+	public FileAdd( String path, Object blob, long lastModified, FileChange prev ) {
+		this( path, blob, CCouchNamespace.TT_SHORTHAND_BLOB, lastModified, prev );
 	}
 	
-	public Object getBlob() {
-		return blob;
+	public Object getTarget() {
+		return target;
+	}
+	
+	public String getTargetType() {
+		return targetType;
+	}
+	
+	public long getLastModified() {
+		return lastModified;
 	}
 }

@@ -26,6 +26,9 @@
   
   - '-max-flesh <bytes>' option to 'checkout', 'copy', and 'fleshtree'
 
+- Merge changed text files by patching: 
+  http://code.google.com/p/google-diff-match-patch/
+
 - During caching or checkout, I got this error:
   Exception in thread "main" java.lang.RuntimeException: Can't merge blobs
   K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42 into K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42;

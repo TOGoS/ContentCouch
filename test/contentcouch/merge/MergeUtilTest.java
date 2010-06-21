@@ -1,9 +1,12 @@
 package contentcouch.merge;
 
+import java.util.Collections;
+
 import junit.framework.TestCase;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
+import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.commit.SimpleCommit;
 import contentcouch.directory.SimpleDirectory;
@@ -18,7 +21,8 @@ import contentcouch.value.BaseRef;
 import contentcouch.value.Commit;
 import contentcouch.value.Ref;
 
-public class MergeUtilTest extends TestCase {	
+public class MergeUtilTest extends TestCase
+{
 	protected static String SHA1A = "urn:sha1:AAAAFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
 	protected static String SHA1B = "urn:sha1:BBBBFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
 	protected static String SHA1C = "urn:sha1:CCCCFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
@@ -29,6 +33,8 @@ public class MergeUtilTest extends TestCase {
 	protected static String SHA1H = "urn:sha1:HHHHFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
 	protected static String SHA1I = "urn:sha1:IIIIFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
 	protected static String SHA1J = "urn:sha1:JJJJFCQ6OUTZ2ETQPX2ZP3542WG4DY7V";
+	
+	protected static Blob someBlob = BlobUtil.getBlob("Hello, world!");
 	
 	MetaRepoConfig mrc;
 	RepoConfig testRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_LOCAL, "x-memtemp:/test-repo/", "test-repo");
@@ -149,8 +155,8 @@ public class MergeUtilTest extends TestCase {
 	
 	public void testChangesetDump() {
 		Changeset cs = new Changeset();
-		cs.addChange(new FileAdd("foo",new BaseRef(SHA1A),null));
-		cs.addChange(new FileAdd("bar",new BaseRef(SHA1B),new FileDelete("bar",null)));
+		cs.addChange(new FileAdd("foo",new BaseRef(SHA1A),2345,null));
+		cs.addChange(new FileAdd("bar",new BaseRef(SHA1B),2345,new FileDelete("bar",null)));
 		assertEquals(
 			"D  bar\n"+
 			"A  bar\n"+
@@ -233,5 +239,24 @@ public class MergeUtilTest extends TestCase {
 			"DD subdir4\n",
 			cs.dump()
 		);
+	}
+	
+	//// Test change applications ////
+	
+	public void testApplyChanges1() {
+		Changeset cs = new Changeset();
+		cs.addChange( new FileAdd("bar", someBlob, 1234, null) );
+		cs.addChange( new FileDelete("foo", null) );
+		
+		SimpleDirectory sd = new SimpleDirectory();
+		sd.addDirectoryEntry( new SimpleDirectory.Entry("foo", someBlob, CCouchNamespace.TT_SHORTHAND_BLOB, 3456) );
+		sd.addDirectoryEntry( new SimpleDirectory.Entry("baz", someBlob, CCouchNamespace.TT_SHORTHAND_BLOB, 3456) );
+		
+		MergeUtil.applyChanges(sd, cs, Collections.EMPTY_MAP);
+		
+		assertEquals( 2, sd.getDirectoryEntrySet().size() );
+		assertNull( sd.getDirectoryEntry("foo") );
+		assertNotNull( sd.getDirectoryEntry("bar") );
+		assertNotNull( sd.getDirectoryEntry("baz") );
 	}
 }
