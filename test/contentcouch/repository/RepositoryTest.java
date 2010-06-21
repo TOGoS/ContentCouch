@@ -88,9 +88,6 @@ public class RepositoryTest extends TestCase {
 		assertNotNull( storedUri );
 		assertTrue( "'"+storedUri+"' does not start with 'x-parse-rdf:'", storedUri.startsWith("x-parse-rdf:"));
 
-		System.err.println(storedUri);
-		System.err.println(BlobUtil.getString((Blob)TheGetter.get(storedUri.substring("x-parse-rdf:".length()))));
-		
 		Directory storedDir = (Directory)TheGetter.get(storedUri);
 		assertTrue( storedDir instanceof RdfDirectory );
 		assertEquals( 2, storedDir.getDirectoryEntrySet().size() );
