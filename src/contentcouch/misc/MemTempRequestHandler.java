@@ -2,6 +2,7 @@ package contentcouch.misc;
 
 import java.util.Map;
 
+import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.framework.BaseRequestHandler;
 import contentcouch.rdf.CcouchNamespace;

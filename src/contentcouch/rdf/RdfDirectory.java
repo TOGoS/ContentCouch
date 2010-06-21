@@ -91,7 +91,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 			
 			add( CcouchNamespace.TARGET, target );
 			
-			long modified = de.getTargetLastModified();
+			long modified = de.getLastModified();
 			if( CcouchNamespace.TT_SHORTHAND_BLOB.equals(de.getTargetType()) && modified != -1 ) {
 				add(DcNamespace.DC_MODIFIED, DateUtil.formatDate(new Date(modified)));
 			}
@@ -176,7 +176,7 @@ public class RdfDirectory extends RdfNode implements Directory {
 			return -1;
 		}
 
-		public long getTargetLastModified() {
+		public long getLastModified() {
 			try {
 				String lm = (String)this.getSingle(DcNamespace.DC_MODIFIED);
 				if( lm == null ) return -1;

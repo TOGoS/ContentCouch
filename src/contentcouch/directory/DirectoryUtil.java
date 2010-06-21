@@ -11,7 +11,6 @@ import java.util.regex.Pattern;
 import togos.mf.api.ContentAndMetadata;
 import togos.mf.value.Blob;
 import contentcouch.blob.BlobInputStream;
-import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;

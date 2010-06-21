@@ -29,6 +29,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.ContentAddressingScheme;
 import contentcouch.contentaddressing.Schemes;
 import contentcouch.context.Config;
+import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
@@ -38,7 +39,6 @@ import contentcouch.hashcache.FileHashCache;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.misc.Function1;
 import contentcouch.misc.MetadataUtil;
-import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
@@ -342,7 +342,7 @@ public class MetaRepository extends BaseRequestHandler {
 			targetPutReq.content = target;
 			targetPutReq.metadata = req.getMetadata();
 			targetPutReq.putContentMetadata(CcouchNamespace.SOURCE_URI, targetSourceUri);
-			long entryMtime = e.getTargetLastModified();
+			long entryMtime = e.getLastModified();
 			if( entryMtime != -1 ) {
 				targetPutReq.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(entryMtime));
 			}

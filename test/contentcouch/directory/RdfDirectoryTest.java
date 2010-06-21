@@ -7,7 +7,6 @@ import java.util.Map;
 import junit.framework.TestCase;
 import contentcouch.context.Context;
 import contentcouch.date.DateUtil;
-import contentcouch.misc.SimpleDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;

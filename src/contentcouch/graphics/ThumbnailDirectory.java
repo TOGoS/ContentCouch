@@ -5,8 +5,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.TransformDirectory;
-import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.UriUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.value.BaseRef;

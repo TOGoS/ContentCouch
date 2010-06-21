@@ -5,7 +5,6 @@ import java.util.Iterator;
 import junit.framework.TestCase;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.Function1;
-import contentcouch.misc.SimpleDirectory;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.store.TheGetter;

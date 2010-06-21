@@ -16,6 +16,7 @@ import togos.mf.base.BaseResponse;
 import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
+import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.rdf.CcouchNamespace;

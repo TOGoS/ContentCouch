@@ -1,4 +1,4 @@
-package contentcouch.misc;
+package contentcouch.commit;
 
 import java.util.Date;
 

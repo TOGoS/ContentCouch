@@ -11,7 +11,7 @@ import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;
 import contentcouch.directory.DirectoryMerger;
-import contentcouch.misc.SimpleDirectory;
+import contentcouch.directory.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;

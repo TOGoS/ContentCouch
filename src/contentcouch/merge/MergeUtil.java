@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import contentcouch.contentaddressing.BitprintScheme;
+import contentcouch.directory.WritableDirectory;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
@@ -214,5 +215,11 @@ public class MergeUtil {
 		newObj = dereference(newObj);
 		collectChanges( cs, "", oldObj, oldObj instanceof Directory, newObj, newObj instanceof Directory );
 		return cs;
+	}
+	
+	//// Apply changes ////
+	
+	public static void applyChanges( WritableDirectory wd, Changeset cs ) {
+		
 	}
 }

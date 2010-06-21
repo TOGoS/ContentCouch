@@ -62,7 +62,7 @@ public class RdfInterpreterTest extends TestCase {
 		assertTrue( bob.getTarget() instanceof Ref );
 		assertEquals( 13l, bob.getTargetSize() );
 		try {
-			assertEquals( DateUtil.parseDate("2010-01-22 15:20:35 GMT").getTime(), bob.getTargetLastModified() );
+			assertEquals( DateUtil.parseDate("2010-01-22 15:20:35 GMT").getTime(), bob.getLastModified() );
 		} catch( ParseException e ) {
 			throw new RuntimeException(e);
 		}

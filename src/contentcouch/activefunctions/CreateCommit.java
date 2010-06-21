@@ -11,8 +11,8 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
+import contentcouch.commit.SimpleCommit;
 import contentcouch.date.DateUtil;
-import contentcouch.misc.SimpleCommit;
 import contentcouch.misc.ValueUtil;
 
 public class CreateCommit extends BaseActiveFunction {

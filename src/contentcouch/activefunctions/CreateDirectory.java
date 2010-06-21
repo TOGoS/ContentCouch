@@ -9,7 +9,7 @@ import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;
-import contentcouch.misc.SimpleDirectory;
+import contentcouch.directory.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;

@@ -13,7 +13,7 @@ public class LongPathEntryWrapper implements Directory.Entry, HasLongPath {
 	
 	public String getName() { return backingEntry.getName(); }
 	public Object getTarget() { return backingEntry.getTarget(); }
-	public long getTargetLastModified() { return backingEntry.getTargetLastModified(); }
+	public long getLastModified() { return backingEntry.getLastModified(); }
 	public long getTargetSize() { return backingEntry.getTargetSize(); }
 	public String getTargetType() { return backingEntry.getTargetType(); }
 	

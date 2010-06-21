@@ -1,4 +1,4 @@
-package contentcouch.misc;
+package contentcouch.directory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,8 +9,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import contentcouch.directory.DirectoryUtil;
-import contentcouch.directory.WritableDirectory;
+import contentcouch.misc.Function1;
+import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CcouchNamespace;
 import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
@@ -45,7 +45,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			this.target = e.getTarget();
 			this.targetType = e.getTargetType();
 			this.targetSize = e.getTargetSize();
-			this.targetLastModified = e.getTargetLastModified();
+			this.targetLastModified = e.getLastModified();
 		}
 		
 		public Entry( String name, Object target, String targetType ) {
@@ -55,7 +55,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		}
 
 		//// Directory.Entry implementation ////
-		public long getTargetLastModified() { return targetLastModified; }
+		public long getLastModified() { return targetLastModified; }
 		public String getName() { return name; }
 		public long getTargetSize() { return targetSize; }
 		public Object getTarget() { return target; }
@@ -102,7 +102,7 @@ public class SimpleDirectory implements WritableDirectory, Map {
 			newEntry.target = target;
 			newEntry.targetType = entry.getTargetType();
 			newEntry.targetSize = entry.getTargetSize();
-			newEntry.targetLastModified = entry.getTargetLastModified();
+			newEntry.targetLastModified = entry.getLastModified();
 			addDirectoryEntry(newEntry, Collections.EMPTY_MAP);
 		}
 	}
@@ -130,12 +130,16 @@ public class SimpleDirectory implements WritableDirectory, Map {
 		return (Directory.Entry)entryMap.get(name);
 	}
 	
-	public void addDirectoryEntry(Directory.Entry e, Map requestMetadata) {
+	public void addDirectoryEntry(Directory.Entry e, Map options) {
 		entryMap.put(e.getName(), new Entry(e));
 	}
 	
 	public void addDirectoryEntry(Directory.Entry e) {
 		addDirectoryEntry(e, Collections.EMPTY_MAP);
+	}
+	
+	public void deleteDirectoryEntry(String name, Map options) {
+		this.entryMap.remove(name);
 	}
 	
 	////

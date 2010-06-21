@@ -15,7 +15,7 @@ public interface Directory {
 		public long getTargetSize();
 		/** Returns the timestamp at which the target was last created or modified.
 		 * If unknown of not applicable (if target is a directory), should return -1. */
-		public long getTargetLastModified();
+		public long getLastModified();
 	}
 	
 	//public Map getEntries();

@@ -11,7 +11,6 @@ import contentcouch.contentaddressing.BitprintScheme.Bitprint;
 import contentcouch.file.FileBlob;
 import contentcouch.misc.Function1;
 import contentcouch.misc.MetadataUtil;
-import contentcouch.misc.SimpleDirectory;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CcouchNamespace;

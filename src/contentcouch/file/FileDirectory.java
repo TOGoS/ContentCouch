@@ -33,7 +33,7 @@ public class FileDirectory extends File implements WritableDirectory {
 			return super.getName();
 		}
 		
-		public long getTargetLastModified() {
+		public long getLastModified() {
 			return lastModified();
 		}
 
@@ -131,11 +131,16 @@ public class FileDirectory extends File implements WritableDirectory {
 		return new Entry(f);
 	}
 	
-	public void addDirectoryEntry(Directory.Entry entry, Map requestMetadata) {
+	public void addDirectoryEntry( Directory.Entry entry, Map options ) {
 		File f = new File(this.getPath() + "/" + entry.getName());
 		//if( f.exists() ) throw new RuntimeException("Cannot add entry; file already exists at " + this + "/" + entry.getName());
 		Entry e = new Entry(f);
-		e.setTarget(entry.getTarget(), requestMetadata);
-		e.setTargetLastModified(entry.getTargetLastModified());
+		e.setTarget(entry.getTarget(), options);
+		e.setTargetLastModified(entry.getLastModified());
+	}
+	
+	public void deleteDirectoryEntry( String name, Map options ) {
+		File f = new File(this.getPath() + "/" + name);
+		if( f.exists() ) f.delete();
 	}
 }
