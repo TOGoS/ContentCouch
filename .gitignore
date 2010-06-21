@@ -4,3 +4,5 @@ junk*
 installer/ccouch-install.properties
 web/WEB-INF/classes
 web/repo-config
+src.unused
+test.unused
