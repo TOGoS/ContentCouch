@@ -1,7 +1,11 @@
+- FSIO: Better define FS import/export operations
+  - Unit tests before implementing, plz
+
 - Implement 'merge' command
   apply changes between specific trees: ccouch merge <from> <to> <dest>
   apply changes from common ancestor: ccouch merge <to> <dest>
     (dest must contain .ccouch-commit-uri file)
+  - dependent on FSIO
 
 - Get rid of RdfDirectory.TargetRdfifier
   - Replace with explicit function in MetaRepository to create RdfDirectories
@@ -9,6 +13,7 @@
     - Needs to understand .ccouch-uri file
     - Should have options to ignore dot files and hidden files
       so that this functionality isn't only in FileDirectory.
+  - dependent on FSIO
 
 [De]fleshing:
   - Support filexxx.ccouch-de files containing
@@ -25,9 +30,13 @@
     with a single directory with only a .ccouch-uri file.
   
   - '-max-flesh <bytes>' option to 'checkout', 'copy', and 'fleshtree'
+  
+  - dependent on FSIO
 
 - Merge changed text files by patching: 
   http://code.google.com/p/google-diff-match-patch/
+  
+  - dependent on FSIO
 
 - During caching or checkout, I got this error:
   Exception in thread "main" java.lang.RuntimeException: Can't merge blobs
@@ -37,6 +46,7 @@
   - Run 'ccouch check' to clean up corrupted blobs, then run cache again.
     Hopefully a non-corrupt version of the blob is available!
 
+- 'ccouch store', reports URIs of stored files with slashes escaped.
 - 'ccouch store' shows all mappings (directory entries), even without -v
 - 'ccouch store' should accept '-sector' as alias for '-store-sector'
 

@@ -1,0 +1,102 @@
+Attempt at better defining Filesystem I/O operations so I can design
+a relatively simple yet all-encompassing API.
+
+Gee whiz this is a pain to think about.
+
+I may decide that trying to sync directory structures with stateful
+filesystems isn't worth the effort and instead try to allow more work
+to be done entirely in purely functional content-addressed-object land.
+This would require development of some much better directory management
+tools. 
+
+== Import functions ==
+
+Importing is pretty straightforward in that FS objects can be thought of
+as being purely functional things - the only side-effect is copying
+stored RDF blobs by 'store'.
+
+  rdfifyFlat( FS object ) : Blob of nested RDF describing entire directory structure
+   + Can't really take any shortcuts
+   + Doesn't generate any URIs or store anything as a side-effect
+  
+  rdfify( FS object ) : Blob of RDF describing outermost object
+   + Intermediate generated RDF blobs are ignored
+   _ Shortcut when .ccouch-uri file is found in a directory
+
+  store( FS object, blob consumer ) : Content URI of outermost object
+   + Send generated RDF blobs to the blob consumer
+   + The only one of these functions that has side-effects!
+   _ Shortcut when .ccouch-uri file is found in a directory
+  
+  identify( FS object ) : Content URI of outermost object
+   + Intermediate generated RDF blobs are ignored
+   _ Shortcut when .ccouch-uri file is found in a directory
+  
+  filter( FS object ) : filtered FS object
+   + only job is to apply filters
+   + may be useful for browsing your checkout via some
+     web script or something
+  
+Filters must be taken into account when doing all of the above operations.
+It is probably better to do the filtering 'outside' the function.
+
+i.e., the actual 'store' function should never be passed an actual FSDirectory
+object or a 'file:///' or 'http://' URI, but only some kind of sanitizing
+FilterDirectory object or an active URI that indicates to create such an
+object around an icky 'file:' or 'http:' resource. 
+  
+  Filters:
+   + ALWAYS ignore '.' and '..'
+   _ Interpret *.ccouch-de files.
+   _ Ignore .* files
+   _ Ignore 'hidden' files
+   _ Ignore other files (user-specified list?)
+   _ Procedurally generate files a-la TOGoSFCP
+   _ Treat blobs at http://.*/ URIs as directories (a-la Directoryize)
+  
+   + Probably implemented as
+     directory2 = filter( directory1 )
+   + Most will probably filter sub-directories lazily.
+   + Directory entry targets may be content URI Refs -
+     if recursed into, no filtering will be done on their target.
+   + Non-content URIs should probably not be allowed as entry targets,
+     since there is no straightforward way to know how to apply filters
+     to, and thereby interpret, their targets
+     e.g. filter(http://foo/) should not contain entries with refs like
+     "http://foo/bar", but actual (likely lazy-loading) Blob or Directory objects.   
+
+== Export functions ==
+  Merging:
+    Can export a fresh copy
+    Can merge a directory into an existing directory
+      How to merge blobs?
+       o Replace existing files
+       o Keep existing file
+       o Error
+       o Error if different
+         How to compare?
+          o By URI only, assuming different if not comparable
+          o By comparing actual content
+      How to merged directories?
+       o Replace existing directories - not very useful in this context
+       o Error - not very useful in this context
+       o Recursively merge
+    Can merge changeset into an existing directory
+    
+    Must take partial checkout files into account when merging by either:
+     o Erroring when trying to merge partial checkout
+     o If applying changeset, error if partially checked out file or directory
+       is not the same as that replaced according to the changeset  
+    
+  Partial checkouts:
+    Create .ccouch-de files with RDFified directory entry (excluding name)
+     o For all blobs over a certain size (may be -1 for all blobs)
+  
+  Performance shortcuts:
+    Cache URIs of stored directories with no recent changes
+
+== Purely functional and therefore non-FSIO, but related functions ==
+
+Could be implemented in terms of Export functions:
+Merging 2 directories
+Merging changeset into directory
