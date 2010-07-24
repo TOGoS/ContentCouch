@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="ext-lib/httpcore-4.0-beta3.jar"/>
 	<classpathentry kind="lib" path="ext-lib/httpclient-4.0-beta2.jar"/>
 	<classpathentry kind="lib" path="ext-lib/winstone-0.9.10.jar"/>
@@ -10,5 +9,6 @@
 	<classpathentry kind="lib" path="ext-lib/lucene-core-2.9-20090811.022310-1.jar" sourcepath="ext-lib/lucene-core-2.9-20090811.022310-1-sources.jar"/>
 	<classpathentry kind="lib" path="ext-lib/togos.mf-latest.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.4"/>
 	<classpathentry kind="output" path="web/WEB-INF/classes"/>
 </classpath>
