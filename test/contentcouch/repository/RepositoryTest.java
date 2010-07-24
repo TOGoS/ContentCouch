@@ -9,6 +9,7 @@ import togos.mf.base.BaseRequest;
 import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.SimpleDirectory;
+import contentcouch.misc.MemTempRequestHandler;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfDirectory;
@@ -17,11 +18,14 @@ import contentcouch.value.Directory;
 
 public class RepositoryTest extends TestCase {
 	MetaRepoConfig mrc;
-	RepoConfig testRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_LOCAL, "x-memtemp:/test-repo/", "test-repo");
+	RepoConfig testRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_DEFAULT, "x-memtemp:/test-repo/", "test-repo");
+	RepoConfig testRemoteRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_REMOTE, "x-memtemp:/test-remote-repo/", "test-remote-repo");
 	public void setUp() {
 		mrc = new MetaRepoConfig();
+		MemTempRequestHandler.clear();
 		TheGetter.globalInstance = mrc.getRequestKernel();
-		mrc.addRepoConfig(testRepoConfig);
+		mrc.addRepoConfig( testRepoConfig );
+		mrc.addRepoConfig( testRemoteRepoConfig );
 	}
 
 	public void testStoreBlob() {
@@ -39,6 +43,36 @@ public class RepositoryTest extends TestCase {
 		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get("x-ccouch-repo://test-repo/files/data/user/" + storageFilePostfix), testBlob));
 		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get(storageUrn), testBlob));
 		assertEquals(0, BlobUtil.compareBlobs((Blob)TheGetter.get(returnedUrn), testBlob));
+	}
+	
+	public void testCacheNativeBlob() {
+		String testString = "Hello, world!";
+		Blob testBlob = BlobUtil.getBlob(testString);
+		byte[] storageHash = testRepoConfig.storageScheme.getHash(testBlob);
+		String storageFilename = testRepoConfig.storageScheme.hashToFilename(storageHash);
+		String storageFilePostfix = storageFilename.substring(0,2) + "/" + storageFilename;
+		String storageUrn = testRepoConfig.storageScheme.hashToUrn(storageHash);
+		
+		TheGetter.put( "x-memtemp:/test-remote-repo/data/user/"+storageFilePostfix, testBlob);
+		
+		BaseRequest getReq;
+
+		getReq = new BaseRequest(RequestVerbs.VERB_GET, storageUrn );
+		Response res = TheGetter.call( getReq );
+		assertNotNull( TheGetter.getResponseValue(res,getReq) );
+		
+		assertNull( TheGetter.get("x-memtemp:/test-repo/data/user/"+storageFilePostfix) );
+		assertNull( TheGetter.get("x-memtemp:/test-repo/data/remote/"+storageFilePostfix) );
+		assertNull( TheGetter.get("x-memtemp:/test-repo/data/kash/"+storageFilePostfix) );
+
+		getReq = new BaseRequest(RequestVerbs.VERB_GET, storageUrn );
+		getReq.putMetadata( CCouchNamespace.REQ_CACHE_SECTOR, "kash" );
+		res = TheGetter.call( getReq );
+		assertNotNull( TheGetter.getResponseValue(res,getReq) );
+
+		assertNull( TheGetter.get("x-memtemp:/test-repo/data/user/"+storageFilePostfix) );
+		assertNull( TheGetter.get("x-memtemp:/test-repo/data/remote/"+storageFilePostfix) );
+		assertNotNull( TheGetter.get("x-memtemp:/test-repo/data/kash/"+storageFilePostfix) );
 	}
 
 	/*
