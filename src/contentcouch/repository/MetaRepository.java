@@ -763,10 +763,12 @@ public class MetaRepository extends BaseRequestHandler {
 			boolean verified = false;
 			for( Iterator i=Schemes.allSchemes.iterator(); !verified && i.hasNext(); ) {
 				ContentAddressingScheme cas = (ContentAddressingScheme)i.next();
-				if( !cas.verify(urn, blob) ) {
-					throw new HashMismatchException( cas, cas.urnToHash(urn), cas.getHash(blob) );
+				if( cas.canVerifyUrn(urn) ) {
+					if( !cas.verify(urn, blob) ) {
+						throw new HashMismatchException( cas, cas.urnToHash(urn), cas.getHash(blob) );
+					}
+					verified = true;
 				}
-				verified = true;
 			}
 			if( !verified ) {
 				throw new RuntimeException("No ContentAddressingScheme available to verify "+urn);
