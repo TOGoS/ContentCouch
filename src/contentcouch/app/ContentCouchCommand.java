@@ -887,12 +887,14 @@ public class ContentCouchCommand {
 		if( errorCount != 0 ) return errorCount;
 		
 		opts.setUpLogging();
-
+		// @todo: maybe need to do this?
+		//opts.fileMergeMethod = CCouchNamespace.REQ_FILEMERGE_STRICTIG;
+		
 		for( Iterator i=paths.iterator(); i.hasNext(); ) {
 			String uri = normalizeUri((String)i.next(), false, false);
 			copy( uri, "x-ccouch-repo:data", opts );
 		}
-
+		
 		return 0;
 	}
 	
