@@ -20,6 +20,15 @@ import contentcouch.value.Ref;
 import contentcouch.value.Directory.Entry;
 
 public class DirectoryMerger {
+	protected static class EqualityCheckResult {
+		public boolean equals;
+		public String reason;
+		public EqualityCheckResult( boolean equals, String reason ) {
+			this.equals = equals;
+			this.reason = reason;
+		}
+	}
+	
 	public static interface ConflictResolver {
 		public void resolve( WritableDirectory dir, Directory.Entry e1, Directory.Entry e2, String srcUri, String destUri );
 	};
@@ -63,29 +72,30 @@ public class DirectoryMerger {
 			return b.getClass().getName();
 		}
 		
-		protected boolean blobsAreEqual( Blob srcBlob, Blob destBlob, String srcUri, String destUri ) {
+		protected EqualityCheckResult blobsAreEqual( Blob srcBlob, Blob destBlob, String srcUri, String destUri ) {
 			// First, try to compare URNs, which might have been passed in or cached somewhere
 			srcUri = getComparableUrn( srcBlob, srcUri );
 			destUri = getComparableUrn( destBlob, destUri );
 			if( srcUri != null && destUri != null ) {
-				if( srcUri.equals(destUri) ) return true; // save a little bit of parsing time...
+				if( srcUri.equals(destUri) ) return new EqualityCheckResult(true,"URI equality"); // save a little bit of parsing time...
+				
 				Boolean equivalence = Bitprint.getUriEquivalence(srcUri, destUri);
-				if( equivalence != null ) return equivalence.booleanValue();
+				if( equivalence != null ) return new EqualityCheckResult(equivalence.booleanValue(),"URI equivalence ("+srcUri+", "+destUri+")");
 			}
 			
 			// This can be really expensive, which is why we tried to avoid it...
 			Log.log( Log.EVENT_PERFORMANCE_WARNING, "Comparing blobs byte-by-byte: " + getBlobDescription(srcBlob) + ", " + getBlobDescription(destBlob) );
-			return BlobUtil.blobsEqual(srcBlob, destBlob);
+			return new EqualityCheckResult(BlobUtil.blobsEqual(srcBlob, destBlob), "byte-wise check");
 		}
 		
-		protected void mergeBlob(WritableDirectory dir, Entry e1, Entry e2, String mergeMethod) {
+		protected void mergeBlob(WritableDirectory dir, Entry e1, Entry e2, String mergeMethod, String context) {
 			if( CCouchNamespace.REQ_FILEMERGE_IGNORE.equals(mergeMethod) ) {
 				Log.log(Log.EVENT_KEPT, e1.getName());
 			} else if( CCouchNamespace.REQ_FILEMERGE_REPLACE.equals(mergeMethod) ) {
 				Log.log(Log.EVENT_REPLACED, e1.getName(), e2.getName());
 				dir.addDirectoryEntry(e2, options);
 			} else if( CCouchNamespace.REQ_FILEMERGE_FAIL.equals(mergeMethod) ) {
-				throw new RuntimeException( "Can't merge blobs " + e2.getName() + " into " + e1.getName() + "; file merge method = Fail" );
+				throw new RuntimeException( "Can't merge blobs " + e2.getName() + " into " + e1.getName() + "; "+context );
 			} else {
 				throw new RuntimeException( "Can't merge blobs " + e2.getName() + " into " + e1.getName() + "; no merge method given" );
 			}
@@ -99,13 +109,14 @@ public class DirectoryMerger {
 					Blob b1 = BlobUtil.getBlob(DirectoryUtil.resolveTarget(e1));
 					Blob b2 = BlobUtil.getBlob(DirectoryUtil.resolveTarget(e2));
 					String[] options = fileMergeMethod.substring(5).split(":");
-					if( blobsAreEqual(b1, b2, srcUri, destUri) ) {
-						mergeBlob( dir, e1, e2, options[0] );
+					EqualityCheckResult blobEquality = blobsAreEqual(b1, b2, srcUri, destUri);
+					if( blobEquality.equals ) {
+						mergeBlob( dir, e1, e2, options[0], "merge method = " + fileMergeMethod );
 					} else {
-						mergeBlob( dir, e1, e2, options[1] );
+						mergeBlob( dir, e1, e2, options[1], "merge method = " + fileMergeMethod + ", checked by " + blobEquality.reason );
 					}
 				} else {
-					mergeBlob( dir, e1, e2, fileMergeMethod );
+					mergeBlob( dir, e1, e2, fileMergeMethod, "merge method = " + fileMergeMethod );
 				}
 			} else if( e1tt == e2tt && e1tt == CloneUtil.CLONE_TARGETTYPE_DIR ) {
 				if( CCouchNamespace.REQ_DIRMERGE_MERGE.equals(dirMergeMethod) ) {
