@@ -864,7 +864,7 @@ public class MetaRepository extends BaseRequestHandler {
 					String[] dataAndSector = repoRef.subPath.split("/");
 					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
 						BaseRequest sectorOverrideReq = new BaseRequest(req);
-						sectorOverrideReq.metadata.put(CCouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
+						sectorOverrideReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
 						req = sectorOverrideReq;
 					}
 					
