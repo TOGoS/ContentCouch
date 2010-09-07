@@ -53,6 +53,7 @@ public class CCouchNamespace {
 	public static final String REQ_LOCAL_REPOS_ONLY   = CC_REQ_NS + "searchLocalReposOnly";
 	public static final String REQ_STORE_SECTOR       = CC_REQ_NS + "storeSector";
 	public static final String REQ_CACHE_SECTOR       = CC_REQ_NS + "cacheSector";
+	public static final String REQ_DONT_CACHE_FILE_HASHES = CC_REQ_NS + "dontCacheFileHashes";
 	public static final String REQ_HARDLINK_DESIRED   = CC_REQ_NS + "hardlinkDesired";
 	public static final String REQ_SKIP_PREVIOUSLY_STORED_DIRS = CC_REQ_NS + "skipPreviouslyStoredDirectories";
 	public static final String REQ_USE_URI_DOT_FILES  = CC_REQ_NS + "useUriDotFiles";

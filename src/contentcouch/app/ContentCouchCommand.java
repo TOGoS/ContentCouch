@@ -274,6 +274,7 @@ public class ContentCouchCommand {
 		public boolean shouldUseCommitTargets = false;
 		public boolean shouldCreateUriDotFiles = false;
 		public boolean shouldUseUriDotFiles = false;
+		public boolean dontCacheFileHashes = false;
 		public Date shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = null;
 		public String storeSector;
 		public String cacheSector;
@@ -287,6 +288,15 @@ public class ContentCouchCommand {
 			for( Iterator i=extraLogEvents.iterator(); i.hasNext(); ) {
 				Log.addLogger( (String)i.next(), Log.getStderrLogger() );
 			}
+		}
+		
+		public void initrmd( BaseRequest req ) {
+			req.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, storeSector);
+			req.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, cacheSector);
+			if( shouldLinkStored ) req.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
+			req.putMetadata(CCouchNamespace.REQ_DIRMERGE_METHOD, dirMergeMethod);
+			req.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, fileMergeMethod);
+			if( dontCacheFileHashes ) req.putMetadata(CCouchNamespace.REQ_DONT_CACHE_FILE_HASHES, Boolean.TRUE);
 		}
 		
 		public boolean handleArguments( String arg, Iterator it ) {
@@ -321,6 +331,8 @@ public class ContentCouchCommand {
 				this.shouldCreateUriDotFiles = true;
 			} else if( "-use-uri-dot-files".equals(arg) ) {
 				this.shouldUseUriDotFiles = true;
+			} else if( "-dont-cache-file-hashes".equals(arg) ) {
+				this.dontCacheFileHashes = true;
 			
 			} else if( "-dump-config".equals(arg) ) {
 				this.shouldDumpConfig = true;
@@ -405,7 +417,7 @@ public class ContentCouchCommand {
 		if( commit != null && opts.shouldSaveCommitUri ) {
 			String commitListUri = getCommitListUri(destUri);
 			if( commitListUri != null ) {
-				addCommitUri(commitListUri, TheGetter.identify( commit, commitRes.getContentMetadata() ), opts );
+				addCommitUri(commitListUri, TheGetter.identify( commit, commitRes.getContentMetadata(), putReq.getMetadata() ), opts );
 			}
 		}
 		return 0;
@@ -453,6 +465,7 @@ public class ContentCouchCommand {
 		List inputUris = new ArrayList();
 		boolean reportInputs = true;
 		boolean dumpConfig = false;
+		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
 			if( "-hide-inputs".equals(arg) ) {
@@ -460,6 +473,8 @@ public class ContentCouchCommand {
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(getHelpText("id"));
 				return 0;
+			} else if( "-dont-cache-file-hashes".equals(arg) ) {
+				opts.dontCacheFileHashes = true;
 			} else if( "-dump-config".equals(arg) ) {
 				dumpConfig = true;
 			} else if( !arg.startsWith("-") || "-".equals(arg) ) {
@@ -482,12 +497,13 @@ public class ContentCouchCommand {
 		for( Iterator i=inputUris.iterator(); i.hasNext(); ) {
 			String input = (String)i.next();
 			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.VERB_GET, input);
+			opts.initrmd(getReq);
 			Response getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				System.err.println("Couldn't find " + getReq.getResourceName() + ": " + getRes.getStatus() + ": " + getRes.getContent() );
 				++errorCount;
 			} else {
-				String id = TheGetter.identify( getRes.getContent(), getRes.getContentMetadata() );
+				String id = TheGetter.identify( getRes.getContent(), getRes.getContentMetadata(), getReq.getMetadata() );
 				if( reportInputs ) {
 					System.out.println( input + "\t" + id );
 				} else {
@@ -777,15 +793,16 @@ public class ContentCouchCommand {
 			commit.target = new BaseRef(storedUri);
 			commit.parents = parents;
 			
-			// Data already stored, so we don't really need to worry about rdfifying, here
-			RdfCommit rdfCommit = new RdfCommit(commit, metaRepoConfig.getMetaRepository().getTargetRdfifier(false,false));
-			
 			BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, dataDestUri);
-			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
 			if( opts.storeSector != null ) storeCommitReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 			if( opts.cacheSector != null ) storeCommitReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 			if( opts.shouldLinkStored ) storeCommitReq.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
 			storeCommitReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_STRICTIG);
+
+			// Data already stored, so we don't really need to worry about rdfifying, here
+			RdfCommit rdfCommit = new RdfCommit(commit, metaRepoConfig.getMetaRepository().getTargetRdfifier(false,false,storeCommitReq.getMetadata()));
+			
+			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
 			Response storeCommitRes = TheGetter.call(storeCommitReq);
 			if( storeCommitRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
 				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + dataDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
@@ -1028,13 +1045,15 @@ public class ContentCouchCommand {
 			return 1;
 		}
 
-		Object o = TheGetter.get(dir);
+		BaseRequest req = new BaseRequest(RequestVerbs.VERB_GET, dir);
+		opts.initrmd(req);
+		Object o = TheGetter.getResponseValue(TheGetter.call(req),req);
 		if( !(o instanceof Directory) ) {
 			System.err.println( dir + " does not point to a Directory (found " + (o == null ? "null" : "a " + o.getClass().getName()) + ")");
 			return 1;
 		}
 		Directory d = (Directory)o;
-		RdfDirectory rdf = new RdfDirectory(d, metaRepoConfig.getMetaRepository().getTargetRdfifier(nested, followRefs));
+		RdfDirectory rdf = new RdfDirectory(d, metaRepoConfig.getMetaRepository().getTargetRdfifier(nested, followRefs, req.getMetadata()));
 		System.out.println(rdf.toString());
 		return 0;
 	}

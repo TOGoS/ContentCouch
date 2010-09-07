@@ -61,7 +61,7 @@ public class DirectoryMerger {
 			if( Bitprint.isBitprintCompatibleUri(givenUrn) ) return givenUrn;
 			if( b instanceof FileBlob ) {
 				// Then we can ask the repository for the cached identifier...
-				String urn = TheGetter.identify(b, Collections.EMPTY_MAP);
+				String urn = TheGetter.identify(b, Collections.EMPTY_MAP, options);
 				if( Bitprint.isBitprintCompatibleUri(urn) ) return urn;
 			}
 			return null;

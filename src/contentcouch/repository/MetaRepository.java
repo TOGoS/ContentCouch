@@ -228,7 +228,7 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Response putDataBlob( RepoConfig repoConfig, Request req ) {
 		String sector = getRequestedStoreSector(req, repoConfig);
 		
-		String idUrn = identifyBlob((Blob)req.getContent());
+		String idUrn = identifyBlob((Blob)req.getContent(), req.getMetadata());
 		
 		byte[] storeHash;
 		if( repoConfig.storageScheme.couldTranslateUrn(idUrn) ) {
@@ -611,16 +611,17 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	//// Identify stuff ////
 	
-	protected String identifyBlob( Blob blob ) {
+	protected String identifyBlob( Blob blob, Map options ) {
 		FileHashCache fac = getFileHashCache(Config.getIdentificationScheme());
-		if( fac != null && blob instanceof FileBlob ) {
+		if( !MetadataUtil.isEntryTrue(options, CCouchNamespace.REQ_DONT_CACHE_FILE_HASHES) &&
+				fac != null && blob instanceof FileBlob ) {
 			return fac.getUrn((FileBlob)blob);
 		}
 		Log.log(Log.EVENT_PERFORMANCE_WARNING, "Unable to cache URN of "+blob.getClass().getName());
 		return Config.getIdentificationScheme().hashToUrn(Config.getIdentificationScheme().getHash(blob));
 	}
 	
-	protected Response identify( Object content, Map contentMetadata ) {
+	protected Response identify( Object content, Map contentMetadata, Map options ) {
 		String id = null;
 		if( content instanceof RdfNode ) {
 			Object parsedFrom = contentMetadata.get(CCouchNamespace.PARSED_FROM);
@@ -629,19 +630,19 @@ public class MetaRepository extends BaseRequestHandler {
 				String rdfString = normalizeRdfString( content.toString() );
 				parsedFrom = BlobUtil.getBlob( rdfString );
 			}
-			String parsedFromUri = ValueUtil.getString(identify( parsedFrom, Collections.EMPTY_MAP ).getContent());
+			String parsedFromUri = ValueUtil.getString(identify( parsedFrom, Collections.EMPTY_MAP, options ).getContent());
 			// TODO: Make sure repoConfig.dataScheme.wouldHandleUrn(parsedFromUri)?
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, Config.getRdfSubjectPrefix() + parsedFromUri, "text/plain");
 		} else if( content instanceof Commit ) {
-			return identify( new RdfCommit( (Commit)content, getTargetRdfifier(false, false) ), contentMetadata );
+			return identify( new RdfCommit( (Commit)content, getTargetRdfifier(false, false, options) ), contentMetadata, options );
 		} else if( content instanceof Directory ) {
-			return identify( new RdfDirectory( (Directory)content, getTargetRdfifier(false, false) ), contentMetadata );
+			return identify( new RdfDirectory( (Directory)content, getTargetRdfifier(false, false, options) ), contentMetadata, options );
 		} else if( content instanceof Ref && Config.getIdentificationScheme().couldTranslateUrn(((Ref)content).getTargetUri()) ) {
 			id = ((Ref)content).getTargetUri();
 		} else {
 			content = TheGetter.dereference(content);
 			Blob blob = BlobUtil.getBlob(content, false);
-			if( blob != null ) id = identifyBlob( blob );
+			if( blob != null ) id = identifyBlob( blob, options );
 		}
 		
 		if( id != null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, id, "text/plain");
@@ -843,7 +844,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			
 			if( "identify".equals(repoRef.subPath) ) {
-				return identify( MfArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata() );
+				return identify( MfArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata(), req.getMetadata() );
 			}
 			
 			if( RequestVerbs.VERB_PUT.equals(req.getVerb()) || RequestVerbs.VERB_POST.equals(req.getVerb()) ) {
@@ -1001,7 +1002,7 @@ public class MetaRepository extends BaseRequestHandler {
 		return BaseResponse.RESPONSE_UNHANDLED;
 	}
 	
-	public Function1 getTargetRdfifier(final boolean nested, final boolean followRefs) {
+	public Function1 getTargetRdfifier(final boolean nested, final boolean followRefs, final Map options ) {
 		return new Function1() {
 			public Object apply(Object input) {
 				if( followRefs && input instanceof Ref ) {
@@ -1013,13 +1014,13 @@ public class MetaRepository extends BaseRequestHandler {
 					if( nested ) {
 						return rdfDir;
 					} else {
-						Response res = identify(rdfDir, Collections.EMPTY_MAP);
+						Response res = identify(rdfDir, Collections.EMPTY_MAP, options);
 						return new BaseRef(ValueUtil.getString(res.getContent()));
 					}
 				} else if( input instanceof Ref ) {
 					return input;
 				} else if( input instanceof Blob ) {
-					return new BaseRef(identifyBlob((Blob)input));
+					return new BaseRef(identifyBlob((Blob)input, options));
 				} else {
 					throw new RuntimeException("Don't know how to rdf-ify " + input.getClass().getName() );
 				}

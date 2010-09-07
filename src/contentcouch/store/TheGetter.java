@@ -2,6 +2,7 @@ package contentcouch.store;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import togos.mf.api.CallHandler;
@@ -43,6 +44,14 @@ public class TheGetter {
 	public static BaseRequest createRequest( String verb, String uri, Object content, Map contentMetadata ) {
 		BaseRequest req = new BaseRequest( verb, uri, content, contentMetadata );
 		req.metadata = Context.getInstance();
+		return req;
+	}
+	
+	public static BaseRequest createRequest( String verb, String uri, Object content, Map contentMetadata, Map options ) {
+		BaseRequest req = new BaseRequest( verb, uri, content, contentMetadata );
+		req.metadata = new HashMap(Context.getInstance());
+		req.metadata.putAll(options);
+		// Should set metadata to not clean at this point, but would require MF update...
 		return req;
 	}
 	
@@ -151,8 +160,8 @@ public class TheGetter {
 		return (Directory)get("active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(uri));
 	}
 	
-	public static String identify( Object content, Map contentMetadata ) {
-		BaseRequest idReq = createRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata );
+	public static String identify( Object content, Map contentMetadata, Map options ) {
+		BaseRequest idReq = createRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata, options );
 		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.call(idReq), idReq.uri));
 	}
 	
@@ -165,7 +174,7 @@ public class TheGetter {
 			return PathUtil.maybeNormalizeFileUri(f.isDirectory() ? f.getAbsolutePath() + "/" : f.getAbsolutePath());
 		}
 		if( allowGenerateContentUris ) {
-			identify(o, Collections.EMPTY_MAP);
+			identify(o, Collections.EMPTY_MAP, Collections.EMPTY_MAP);
 		}
 		throw new RuntimeException("Don't know how to reference " + (o == null ? "null" : "a " + o.getClass().getName()));
 	}
