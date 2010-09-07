@@ -7,7 +7,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import contentcouch.app.Log;
 import contentcouch.contentaddressing.BitprintScheme;
+import contentcouch.context.Context;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.misc.UriUtil;
@@ -131,6 +133,57 @@ public class MergeUtil {
 	
 	public static String findCommonAncestor( String c1Urn, String c2Urn ) {
 		return new AncestorFinder().findCommonAncestor(c1Urn, c2Urn);
+	}
+	
+	//// Filter out ancestor commit URIs ////
+	
+	static class AncestorCleaner {
+		public AncestorCleaner( Map options ) {
+			// :/  ?
+		}
+		
+		protected Commit getCommit( String commitUri ) {
+			Commit c = MergeUtil.getCommit(commitUri);
+			if( c == null ) {
+				Log.log("missing-commit", "Couldn't find commit "+commitUri);
+			}
+			return c;
+		}
+		
+		protected void collectAncestors( String commitUri, int height, Map alreadyHit ) {
+			Integer alreadyHitHeight = (Integer)alreadyHit.get(commitUri);
+			if( alreadyHitHeight == null || alreadyHitHeight.intValue() > height ) {
+				alreadyHit.put(commitUri,new Integer(height));
+			}
+
+			if( height > 0 ) {
+				Commit c = getCommit(commitUri);
+				if( c == null ) return;
+				Object[] p = c.getParents();
+				for( int i=0; i<p.length; ++i ) {
+					collectAncestors( ((Ref)p[i]).getTargetUri(), height-1, alreadyHit );
+				}
+			}
+		}
+		
+		public Set filterAncestorCommitUris( Set commitUris, int depth ) {
+			Map ahDepth = new HashMap();
+			for( Iterator i=commitUris.iterator(); i.hasNext(); ) {
+				collectAncestors( (String)i.next(), depth, ahDepth );
+			}
+			HashSet naCommitUris = new HashSet();
+			for( Iterator i = ahDepth.entrySet().iterator(); i.hasNext(); ) {
+				Map.Entry e = (Map.Entry)i.next();
+				if( ((Integer)e.getValue()).intValue() == depth ) {
+					naCommitUris.add( e.getKey() );
+				}
+			}
+			return naCommitUris;
+		}
+	}
+	
+	public static Set filterAncestorCommitUris( Set commitUris, int depth ) {
+		return new AncestorCleaner( Context.getInstance() ).filterAncestorCommitUris( commitUris, depth );
 	}
 	
 	//// Find changes between 2 trees ////

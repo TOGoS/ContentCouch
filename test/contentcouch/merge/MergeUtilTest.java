@@ -1,6 +1,10 @@
 package contentcouch.merge;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import junit.framework.TestCase;
 import togos.mf.api.RequestVerbs;
@@ -107,6 +111,8 @@ public class MergeUtilTest extends TestCase
 			"urn:tree:tiger:TFUAXNIEPBE53C4KFYZVZNK3OU3E5MAVHSQPAEI" ) );
 	}
 	
+	//// Common ancestor
+	
 	public void testFindCommonParent() {
 		Ref parentRef = storeCommit(new BaseRef(SHA1A),null);
 		Ref c1Ref = storeCommit(new BaseRef(SHA1B),new Object[]{parentRef});
@@ -149,6 +155,58 @@ public class MergeUtilTest extends TestCase
 		assertEquals( aRef.getTargetUri(), MergeUtil.findCommonAncestor(cRef.getTargetUri(), fRef.getTargetUri()) );
 		assertEquals( bRef.getTargetUri(), MergeUtil.findCommonAncestor(dRef.getTargetUri(), eRef.getTargetUri()) );
 		assertEquals( eRef.getTargetUri(), MergeUtil.findCommonAncestor(eRef.getTargetUri(), fRef.getTargetUri()) );
+	}
+	
+	//// Removing redundant commit URIs ////
+	
+	protected void spitSet( Set s ) {
+		ArrayList l = new ArrayList(s);
+		Collections.sort(l);
+		for( Iterator i=l.iterator(); i.hasNext(); ) {
+			System.err.println( i.next() );
+		}
+	}
+	
+	public void testFilterAncestorCommitUris() {
+		HashSet allUris = new HashSet(); 
+		
+		Ref c0Ref = storeCommit(new BaseRef(SHA1A),null);
+		Ref c1Ref = storeCommit(new BaseRef(SHA1B),new Object[]{c0Ref});
+		Ref c2Ref = storeCommit(new BaseRef(SHA1C),new Object[]{c0Ref});
+		Ref c3Ref = storeCommit(new BaseRef(SHA1D),new Object[]{c1Ref});
+		Ref c4Ref = storeCommit(new BaseRef(SHA1E),new Object[]{c2Ref});
+		Ref c5Ref = storeCommit(new BaseRef(SHA1F),new Object[]{c1Ref,c2Ref});
+		Ref c6Ref = storeCommit(new BaseRef(SHA1G),new Object[]{c3Ref,c4Ref});
+		
+		allUris.add(c0Ref.getTargetUri());
+		allUris.add(c1Ref.getTargetUri());
+		allUris.add(c2Ref.getTargetUri());
+		allUris.add(c3Ref.getTargetUri());
+		allUris.add(c4Ref.getTargetUri());
+		allUris.add(c5Ref.getTargetUri());
+		allUris.add(c6Ref.getTargetUri());
+		
+		Set cleanedUp0 = MergeUtil.filterAncestorCommitUris(allUris, 0);
+		assertEquals( 7, cleanedUp0.size() );
+		assertEquals( allUris, cleanedUp0 );
+		
+		// Should only need to look one deep since the things we pass in
+		// point to eachother...
+		Set cleanedUp1 = MergeUtil.filterAncestorCommitUris(allUris, 1);
+		assertEquals( 2, cleanedUp1.size() );
+		assertTrue( cleanedUp1.contains(c5Ref.getTargetUri()) );
+		assertTrue( cleanedUp1.contains(c6Ref.getTargetUri()) );
+
+		Set cleanedUp10 = MergeUtil.filterAncestorCommitUris(allUris, 10);
+		assertEquals( 2, cleanedUp10.size() );
+		/*
+		System.err.println("All URIs:");
+		spitSet( allUris );
+		System.err.println("Cleaned up 10:");
+		spitSet( cleanedUp10 );
+		*/
+		assertTrue( cleanedUp10.contains(c5Ref.getTargetUri()) );
+		assertTrue( cleanedUp10.contains(c6Ref.getTargetUri()) );
 	}
 	
 	////
