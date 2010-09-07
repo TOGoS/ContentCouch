@@ -197,6 +197,15 @@ public class MergeUtilTest extends TestCase
 		assertTrue( cleanedUp1.contains(c5Ref.getTargetUri()) );
 		assertTrue( cleanedUp1.contains(c6Ref.getTargetUri()) );
 
+		// OTOH, if we remove one...
+		HashSet someUris = new HashSet(allUris);
+		someUris.remove(c3Ref.getTargetUri());
+		someUris.remove(c5Ref.getTargetUri());
+		Set cleanedUp1x = MergeUtil.filterAncestorCommitUris(someUris, 1);
+		assertEquals( 2, cleanedUp1.size() );
+		assertTrue( cleanedUp1x.contains(c1Ref.getTargetUri()) );
+		assertTrue( cleanedUp1x.contains(c6Ref.getTargetUri()) );
+
 		Set cleanedUp10 = MergeUtil.filterAncestorCommitUris(allUris, 10);
 		assertEquals( 2, cleanedUp10.size() );
 		/*
