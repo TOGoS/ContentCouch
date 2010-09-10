@@ -1,11 +1,17 @@
 package contentcouch.merge;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
+import togos.mf.base.BaseRequest;
 
 import contentcouch.app.Log;
 import contentcouch.contentaddressing.BitprintScheme;
@@ -22,7 +28,19 @@ import contentcouch.value.Ref;
 
 public class MergeUtil {
 	public static Commit getCommit( String cUrn ) {
-		return (Commit)TheGetter.get(cUrn);
+		BaseRequest req = new BaseRequest(RequestVerbs.VERB_GET, cUrn);
+		req.metadata = new HashMap(Context.getInstance());
+		if( !req.metadata.containsKey(CCouchNamespace.REQ_CACHE_SECTOR) ) {
+			req.metadata.put(CCouchNamespace.REQ_CACHE_SECTOR, "remote");
+		}
+		Response res = TheGetter.call(req);
+		switch( res.getStatus() ) {
+		case( ResponseCodes.RESPONSE_UNHANDLED ):
+		case( ResponseCodes.RESPONSE_DOESNOTEXIST ):
+			return null;
+		default:
+			return (Commit)TheGetter.getResponseValue( res, req );
+		}
 	}
 	
 	public static Commit getCommit( Object c ) {
@@ -145,7 +163,7 @@ public class MergeUtil {
 		protected Commit getCommit( String commitUri ) {
 			Commit c = MergeUtil.getCommit(commitUri);
 			if( c == null ) {
-				Log.log("missing-commit", "Couldn't find commit "+commitUri);
+				Log.log(Log.EVENT_WARNING, "Couldn't find commit "+commitUri);
 			}
 			return c;
 		}
@@ -166,7 +184,7 @@ public class MergeUtil {
 			}
 		}
 		
-		public Set filterAncestorCommitUris( Set commitUris, int depth ) {
+		public Set filterAncestorCommitUris( Collection commitUris, int depth ) {
 			Map ahDepth = new HashMap();
 			for( Iterator i=commitUris.iterator(); i.hasNext(); ) {
 				collectAncestors( (String)i.next(), depth, ahDepth );
@@ -182,7 +200,7 @@ public class MergeUtil {
 		}
 	}
 	
-	public static Set filterAncestorCommitUris( Set commitUris, int depth ) {
+	public static Set filterAncestorCommitUris( Collection commitUris, int depth ) {
 		return new AncestorCleaner( Context.getInstance() ).filterAncestorCommitUris( commitUris, depth );
 	}
 	

@@ -6,13 +6,13 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,6 +31,7 @@ import contentcouch.directory.DirectoryWalker;
 import contentcouch.directory.EntryFilters;
 import contentcouch.directory.FilterIterator;
 import contentcouch.file.FileBlob;
+import contentcouch.merge.MergeUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
@@ -215,7 +216,7 @@ public class ContentCouchCommand {
 	}
 	
 	protected Response writeCommitUri( String commitListUri, String commitUri ) {
-		TreeSet commitUris = new TreeSet();
+		ArrayList commitUris = new ArrayList();
 		commitUris.add(commitUri);
 		return writeCommitUris( commitListUri, commitUris );
 	}
@@ -238,10 +239,33 @@ public class ContentCouchCommand {
 		return commitUris;
 	}
 	
+	protected List cleanCommitUriList( Collection commitUris ) {
+		/*
+		 * Cool debug info to compensate for lack of unit tests
+		System.err.println("Unfiltered parent commits:");
+		for( Iterator i=commitUris.iterator(); i.hasNext(); ) {
+			System.err.println("    " + i.next() );
+		}
+		System.err.println("");
+		*/
+		ArrayList cleanedCommitUris = new ArrayList(MergeUtil.filterAncestorCommitUris(commitUris, 20));
+		Collections.sort(cleanedCommitUris);
+		/*
+		 * Cool debug info to compensate for lack of unit tests
+		System.err.println("Filtered parent commits:");
+		for( Iterator i=cleanedCommitUris.iterator(); i.hasNext(); ) {
+			System.err.println("    " + i.next() );
+		}
+		System.err.println("");
+		System.exit(1);
+		*/
+		return cleanedCommitUris;
+	}
+	
 	protected Response addCommitUri( String commitListUri, String commitUri, GeneralOptions opts ) {
-		TreeSet commitUris = new TreeSet(getCommitUris( commitListUri, opts ));
+		ArrayList commitUris = new ArrayList(getCommitUris( commitListUri, opts ));
 		commitUris.add(commitUri);
-		return writeCommitUris( commitListUri, commitUris );
+		return writeCommitUris( commitListUri, cleanCommitUriList(commitUris) );
 	}
 	
 	protected String normalizeUri( String uriOrPathOrSomething, boolean output, boolean directoryize ) {
@@ -777,7 +801,9 @@ public class ContentCouchCommand {
 						}
 					}
 				}
-
+				
+				parentCommitUris = cleanCommitUriList(parentCommitUris);
+				
 				parents = new BaseRef[parentCommitUris.size()];
 				for( int i=0; i<parents.length; ++i ) {
 					parents[i] = new BaseRef((String)parentCommitUris.get(i));
