@@ -617,8 +617,11 @@ public class MetaRepository extends BaseRequestHandler {
 				fac != null && blob instanceof FileBlob ) {
 			return fac.getUrn((FileBlob)blob);
 		}
-		Log.log(Log.EVENT_PERFORMANCE_WARNING, "Unable to cache URN of "+blob.getClass().getName());
-		return Config.getIdentificationScheme().hashToUrn(Config.getIdentificationScheme().getHash(blob));
+		String hash = Config.getIdentificationScheme().hashToUrn(Config.getIdentificationScheme().getHash(blob));
+		if( blob.getLength() == -1 || blob.getLength() > 4096 ) {
+			Log.log(Log.EVENT_PERFORMANCE_WARNING, "Unable to cache URN of "+blob.getClass().getName()+" ("+hash+", size="+blob.getLength()+")");
+		}
+		return hash;
 	}
 	
 	protected Response identify( Object content, Map contentMetadata, Map options ) {
