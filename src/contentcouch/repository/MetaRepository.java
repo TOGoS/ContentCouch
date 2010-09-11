@@ -38,6 +38,7 @@ import contentcouch.framework.MfArgUtil;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.misc.Function1;
+import contentcouch.misc.MapUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
@@ -386,6 +387,48 @@ public class MetaRepository extends BaseRequestHandler {
 
 		return dirPutRes;
 	}
+	
+	protected void cacheCommitAncestors( RepoConfig repoConfig, Commit c, Request req ) {
+		String sourceUri = MetadataUtil.getSourceUriOrUnknown(req.getMetadata());
+		int depth = ValueUtil.getNumber( MapUtil.getKeyed( req.getMetadata(), CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS ), 0 ); 
+		if( depth > 0 ) {
+			Object[] parentz = c.getParents();
+			for( int i=0; i<parentz.length; ++i ) {
+				if( parentz[i] instanceof Ref ) {
+					String parentUri = ((Ref)parentz[i]).getTargetUri();
+					BaseRequest parentGetReq = new BaseRequest( RequestVerbs.VERB_GET, parentUri );
+					Response parentRes = TheGetter.call(parentGetReq);
+					switch( parentRes.getStatus() ) { 
+					case( ResponseCodes.RESPONSE_NORMAL ):
+						BaseRequest parentPutReq = new BaseRequest();
+						parentPutReq.content = parentRes.getContent();
+						parentPutReq.contentMetadata = parentRes.getContentMetadata();
+						parentPutReq.putContentMetadata(CCouchNamespace.SOURCE_URI, parentUri);
+						parentPutReq.metadata = req.getMetadata();
+						parentPutReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(depth-1));
+						// TODO: go ahead and cache targets, but to do this at all efficiently
+						// will require remembering fully stored trees so we don't have to
+						// store the same ones over and over
+						parentPutReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_TARGETS, Boolean.FALSE);
+						putData( repoConfig, parentPutReq );
+						break;
+					case( ResponseCodes.RESPONSE_DOESNOTEXIST ):
+					case( ResponseCodes.RESPONSE_UNHANDLED ):
+						Log.log(Log.EVENT_WARNING, "Unable to find "+parentUri+" while caching ancestor commits");
+						break;
+					default:
+						Log.log(Log.EVENT_WARNING, "Got response "+parentRes.getStatus()+" when trying to cache commit "+parentUri);
+					}
+				} else {
+					Log.log(Log.EVENT_WARNING, "Commit "+sourceUri+" parent is not a Ref");
+				}
+			}
+		}
+	}
+	
+	protected boolean shouldStoreCommitTarget( Request req ) {
+		return ValueUtil.getBoolean(MapUtil.getKeyed(req.getMetadata(), CCouchNamespace.REQ_CACHE_COMMIT_TARGETS), true);
+	}
 
 	protected Response putDataRdfCommit( RepoConfig repoConfig, Request req ) {
 		Response putRdfBlobRes = putDataRdf( repoConfig, req );
@@ -403,34 +446,48 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 
 		Commit c = (Commit)req.getContent();
-		Object target = c.getTarget();
-		BaseRequest targetPutReq = new BaseRequest();
-		targetPutReq.metadata = req.getMetadata();
-		MetadataUtil.dereferenceTargetToRequest( target, targetPutReq );
-		putData( repoConfig, targetPutReq );
+		if( shouldStoreCommitTarget(req) ) {
+			Object target = c.getTarget();
+			BaseRequest targetPutReq = new BaseRequest();
+			targetPutReq.metadata = req.getMetadata();
+			MetadataUtil.dereferenceTargetToRequest( target, targetPutReq );
+			putData( repoConfig, targetPutReq );
+		}
 		
 		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf commit and target stored", "text/plain");
 		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
+		
+		cacheCommitAncestors( repoConfig, c, req );
+		
 		return res;
 	}
 	
 	protected Response putDataNonRdfCommit( RepoConfig repoConfig, Request req ) {
 		Commit c = (Commit)req.getContent();
 		Object target = c.getTarget();
-		if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
-		BaseRequest targetPutReq = new BaseRequest();
-		targetPutReq.metadata = req.getMetadata();
-		targetPutReq.content = target;
-		Response targetPutRes = putData( repoConfig, targetPutReq );
-		String targetUri = (String)targetPutRes.getContentMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER);
-		if( targetUri == null ) throw new RuntimeException("Inserting entry target returned null");
+		String targetUri = null;
+		// TODO: Could check if target is Ref with acceptable scheme
+		// also, we could just *identify* without storing...
+		if( targetUri == null || shouldStoreCommitTarget(req) ) {
+			if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+			BaseRequest targetPutReq = new BaseRequest();
+			targetPutReq.metadata = req.getMetadata();
+			targetPutReq.content = target;
+			Response targetPutRes = putData( repoConfig, targetPutReq );
+			targetUri = (String)targetPutRes.getContentMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER);
+			if( targetUri == null ) throw new RuntimeException("Inserting entry target returned null");
+		}
 
 		RdfCommit rdfDir = new RdfCommit(c, new BaseRef(targetUri));
 		
 		BaseRequest putRdfCommitReq = new BaseRequest();
 		putRdfCommitReq.content = rdfDir;
 		putRdfCommitReq.metadata = req.getMetadata();
-		return putDataRdf( repoConfig, putRdfCommitReq );
+		Response res = putDataRdf( repoConfig, putRdfCommitReq );
+		
+		cacheCommitAncestors( repoConfig, c, req );
+		
+		return res;
 	}
 
 	protected Response putData( RepoConfig repoConfig, Request req ) {
@@ -868,7 +925,7 @@ public class MetaRepository extends BaseRequestHandler {
 					String[] dataAndSector = repoRef.subPath.split("/");
 					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
 						BaseRequest sectorOverrideReq = new BaseRequest(req);
-						sectorOverrideReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, dataAndSector[2]);
+						sectorOverrideReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, dataAndSector[1]);
 						req = sectorOverrideReq;
 					}
 					

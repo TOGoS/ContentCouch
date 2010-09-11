@@ -73,6 +73,10 @@ public class ValueUtil {
 		return getNumber( o, null );
 	}
 	
+	public static int getNumber( Object o, int defaultValue ) {
+		return getNumber( o, new Integer(defaultValue) ).intValue();
+	}
+
 	//// Get booleans ////
 	
 	static Map boolStringValues = new HashMap();

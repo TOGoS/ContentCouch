@@ -85,6 +85,12 @@ public class CCouchNamespace {
 	public static final String CFG_RDF_DIRECTORY_STYLE = CFG_NS + "directoryStyle";
 	public static final String CFG_ID_SCHEME = CFG_NS + "blobIdentificationScheme";
 	
+	/* Defaults to true */
+	public static final String REQ_CACHE_COMMIT_TARGETS = CC_REQ_NS + "cacheCommitTargets";
+	/* Should be an integer specifying how many levels of commit ancestors to cache
+	 * when a commit object is pushed into the repository. */
+	public static final String REQ_CACHE_COMMIT_ANCESTORS = CC_REQ_NS + "cacheCommitAncestors";
+	
 	//// Response metadata ////
 	
 	public static final String CC_RES_NS = CC_NS + "Response/";
