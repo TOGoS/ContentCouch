@@ -14,12 +14,8 @@ import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 
 public class MemTempRequestHandler extends BaseRequestHandler {
-	protected static Object root = new SimpleDirectory();
+	protected Object root = new SimpleDirectory();
 	
-	public static void clear() {
-		root = new SimpleDirectory();
-	}
-
 	public Response call(Request req) {
 		String path = req.getResourceName();
 		if( !path.startsWith("x-memtemp:") ) return BaseResponse.RESPONSE_UNHANDLED;

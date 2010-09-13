@@ -299,6 +299,7 @@ public class ContentCouchCommand {
 		public boolean shouldCreateUriDotFiles = false;
 		public boolean shouldUseUriDotFiles = false;
 		public boolean dontCacheFileHashes = false;
+		public int cacheCommitAncestors = 0;
 		public Date shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = null;
 		public String storeSector;
 		public String cacheSector;
@@ -430,6 +431,7 @@ public class ContentCouchCommand {
 		putReq.putContentMetadata(CCouchNamespace.SOURCE_URI, sourceUri);
 		putReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 		putReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
+		putReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(opts.cacheCommitAncestors));
 		if( opts.shouldLinkStored ) putReq.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
 		putReq.putMetadata(CCouchNamespace.REQ_DIRMERGE_METHOD, opts.dirMergeMethod);
 		putReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, opts.fileMergeMethod);
@@ -912,14 +914,17 @@ public class ContentCouchCommand {
 	public int runCacheCmd( String[] args ) {
 		args = mergeConfiguredArgs("cache", args);
 		
-		GeneralOptions opts = new GeneralOptions();
+		final GeneralOptions opts = new GeneralOptions();
 		opts.storeSector = "remote";
 		BaseArgumentHandler bah = createArgumentHandler("cache");
 		bah.addArgumentHandler(opts);
 		final ArrayList paths = new ArrayList();		
 		bah.addArgumentHandler( new ArgumentHandler() {
 			public boolean handleArguments(String current, Iterator rest) {
-				if( current.equals("-") || !current.startsWith("-") ) {
+				if( "-ancestors".equals(current) ) {
+					opts.cacheCommitAncestors = Integer.parseInt((String)rest.next());
+					return true;
+				} else if( current.equals("-") || !current.startsWith("-") ) {
 					paths.add(current);
 					return true;
 				}
