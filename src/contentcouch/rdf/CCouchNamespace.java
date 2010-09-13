@@ -55,6 +55,8 @@ public class CCouchNamespace {
 	public static final String REQ_CACHE_SECTOR       = CC_REQ_NS + "cacheSector";
 	public static final String REQ_DONT_CACHE_FILE_HASHES = CC_REQ_NS + "dontCacheFileHashes";
 	public static final String REQ_HARDLINK_DESIRED   = CC_REQ_NS + "hardlinkDesired";
+	/** When caching, skip directories that are marked as already fully stored.
+	 * Defaults to true */
 	public static final String REQ_SKIP_PREVIOUSLY_STORED_DIRS = CC_REQ_NS + "skipPreviouslyStoredDirectories";
 	public static final String REQ_USE_URI_DOT_FILES  = CC_REQ_NS + "useUriDotFiles";
 	public static final String REQ_CREATE_URI_DOT_FILES = CC_REQ_NS + "createUriDotFiles";
@@ -95,6 +97,7 @@ public class CCouchNamespace {
 	
 	public static final String CC_RES_NS = CC_NS + "Response/";
 	public static final String RES_STORED_IDENTIFIER = CC_RES_NS + "storedIdentifier";
+	public static final String RES_TREE_FULLY_STORED = CC_RES_NS + "treeFullyStored";
 	public static final String RES_STORED_OBJECT = CC_RES_NS + "storedObject";
 	public static final String RES_CACHEABLE = CC_RES_NS + "cacheable";
 	public static final String RES_DEST_ALREADY_EXISTED = CC_RES_NS + "destinationAlreadyExisted";
