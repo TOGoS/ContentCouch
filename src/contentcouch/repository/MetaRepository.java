@@ -137,6 +137,17 @@ public class MetaRepository extends BaseRequestHandler {
 		return filenameToPostSectorPath(repoConfig, filename);
 	}
 	
+	protected ShortTermCache repoDataSectorUrlCache = new ShortTermCache(60000);
+	
+	protected List getRepoDataSectorUrlsWithCaching( RepoConfig repoConfig ) {
+		List l = (List)repoDataSectorUrlCache.get(repoConfig.uri);
+		if( l == null ) {
+			l = getRepoDataSectorUrls( repoConfig );
+			repoDataSectorUrlCache.put( repoConfig.uri, l );
+		}
+		return l;
+	}
+	
 	protected List getRepoDataSectorUrls( RepoConfig repoConfig ) {
 		ArrayList l = new ArrayList();
 		String dataDirUri = PathUtil.appendPath(repoConfig.uri,"data/");
@@ -812,6 +823,8 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	//// Handle requests ////
+	
+	ShortTermCache nonExistentObjects = new ShortTermCache(60000);
 		
 	public Response call( Request req ) {
 		if( "x-ccouch-repo://".equals(req.getResourceName()) ) {
@@ -978,27 +991,31 @@ public class MetaRepository extends BaseRequestHandler {
 				}
 				
 				// Check all remote repos (unless we are explicitly asked not to)
-				if( !MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_LOCAL_REPOS_ONLY))
-				for( Iterator i=config.remoteRepoConfigs.iterator(); i.hasNext(); ) {
-					RepoConfig repoConfig = (RepoConfig)i.next();
-					String psp = urnToPostSectorPath(repoConfig, urn);
-					if( psp == null ) continue;
-	
-					List dataSectorUris = getRepoDataSectorUrls(repoConfig);
-					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
-						String dataSectorUri = (String)si.next();
-						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
-						Response res = TheGetter.call(subReq);
-						if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
-							lastHitDataSectorUri = dataSectorUri;
-							lastHitRepoConfig = repoConfig;
-							try {
-								return maybeCacheBlob(res, req);
-							} catch( HashMismatchException hme ) {
-								logHashMismatch( subReq, hme.dataScheme, hme.expected, hme.calculated );
+				checkRemote: if( !MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_LOCAL_REPOS_ONLY)) {
+					if( nonExistentObjects.get(urn) != null ) break checkRemote;
+					
+					for( Iterator i=config.remoteRepoConfigs.iterator(); i.hasNext(); ) {
+						RepoConfig repoConfig = (RepoConfig)i.next();
+						String psp = urnToPostSectorPath(repoConfig, urn);
+						if( psp == null ) continue;
+		
+						List dataSectorUris = getRepoDataSectorUrlsWithCaching(repoConfig);
+						for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
+							String dataSectorUri = (String)si.next();
+							BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
+							Response res = TheGetter.call(subReq);
+							if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+								lastHitDataSectorUri = dataSectorUri;
+								lastHitRepoConfig = repoConfig;
+								try {
+									return maybeCacheBlob(res, req);
+								} catch( HashMismatchException hme ) {
+									logHashMismatch( subReq, hme.dataScheme, hme.expected, hme.calculated );
+								}
 							}
 						}
 					}
+					nonExistentObjects.put(urn, urn);
 				}
 			}
 		}
