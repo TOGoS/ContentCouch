@@ -399,7 +399,15 @@ public class MetaRepository extends BaseRequestHandler {
 		return dirPutRes;
 	}
 	
+	static String REQ_ANCESTOR_DEPTH_MAP = CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS+"/cachedDepthMap";
 	protected void cacheCommitAncestors( RepoConfig repoConfig, Commit c, Request req ) {
+		Map cachingCommitDepths = (Map)req.getMetadata().get(REQ_ANCESTOR_DEPTH_MAP);
+		if( cachingCommitDepths == null ) {
+			req = new BaseRequest(req);
+			cachingCommitDepths = new HashMap();
+			((BaseRequest)req).putMetadata(REQ_ANCESTOR_DEPTH_MAP, cachingCommitDepths );
+		}
+		
 		String sourceUri = MetadataUtil.getSourceUriOrUnknown(req.getMetadata());
 		int depth = ValueUtil.getNumber( MapUtil.getKeyed( req.getMetadata(), CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS ), 0 ); 
 		if( depth > 0 ) {
@@ -407,6 +415,14 @@ public class MetaRepository extends BaseRequestHandler {
 			for( int i=0; i<parentz.length; ++i ) {
 				if( parentz[i] instanceof Ref ) {
 					String parentUri = ((Ref)parentz[i]).getTargetUri();
+					int pDepth = depth-1;
+					
+					Integer alreadyCachingAtDepth = (Integer)cachingCommitDepths.get(parentUri);
+					// If we've already [started] caching this commit at
+					// this depth or greater, then skip it.
+					if( alreadyCachingAtDepth != null && alreadyCachingAtDepth.intValue() >= pDepth ) continue;
+					cachingCommitDepths.put( parentUri, new Integer(pDepth) );
+					
 					BaseRequest parentGetReq = new BaseRequest( RequestVerbs.VERB_GET, parentUri );
 					Response parentRes = TheGetter.call(parentGetReq);
 					switch( parentRes.getStatus() ) { 
@@ -416,7 +432,7 @@ public class MetaRepository extends BaseRequestHandler {
 						parentPutReq.contentMetadata = parentRes.getContentMetadata();
 						parentPutReq.putContentMetadata(CCouchNamespace.SOURCE_URI, parentUri);
 						parentPutReq.metadata = req.getMetadata();
-						parentPutReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(depth-1));
+						parentPutReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(pDepth));
 						// TODO: go ahead and cache targets, but to do this at all efficiently
 						// will require remembering fully stored trees so we don't have to
 						// store the same ones over and over
