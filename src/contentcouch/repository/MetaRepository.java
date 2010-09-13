@@ -441,7 +441,7 @@ public class MetaRepository extends BaseRequestHandler {
 						break;
 					case( ResponseCodes.RESPONSE_DOESNOTEXIST ):
 					case( ResponseCodes.RESPONSE_UNHANDLED ):
-						Log.log(Log.EVENT_WARNING, "Unable to find "+parentUri+" while caching ancestor commits");
+						Log.log(Log.EVENT_WARNING, "Unable to find "+parentUri+" while caching ancestor commits (depth="+pDepth+")");
 						break;
 					default:
 						Log.log(Log.EVENT_WARNING, "Got response "+parentRes.getStatus()+" when trying to cache commit "+parentUri);
