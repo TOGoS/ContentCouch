@@ -4,10 +4,10 @@ import java.util.Iterator;
 
 import junit.framework.TestCase;
 import contentcouch.blob.BlobUtil;
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.Function1;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 
 public class DirectoryWalkerTest extends TestCase {

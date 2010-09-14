@@ -11,7 +11,7 @@ import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
 import togos.mf.value.Arguments;
 
-public class MfArgUtil {
+public class MFArgUtil {
 	
 	public static Arguments addArguments( Object content, Map newArgumentValues ) {
 		BaseArguments newArguments;

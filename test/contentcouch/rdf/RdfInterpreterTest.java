@@ -3,8 +3,8 @@ package contentcouch.rdf;
 import java.text.ParseException;
 
 import contentcouch.date.DateUtil;
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 import junit.framework.TestCase;

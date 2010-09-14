@@ -21,10 +21,10 @@ import contentcouch.app.servlet2.comp.ResourceExplorerComponent;
 import contentcouch.app.servlet2.comp.JunkComponent;
 import contentcouch.app.servlet2.comp.PhotoAlbumComponent;
 import contentcouch.file.FileRequestHandler;
+import contentcouch.framework.TheGetter;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
-import contentcouch.store.TheGetter;
 
 public class CCouchServlet extends SwfHttpServlet {
 	public CCouchServlet() {}

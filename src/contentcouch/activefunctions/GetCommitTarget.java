@@ -7,7 +7,7 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
-import contentcouch.store.TheGetter;
+import contentcouch.framework.TheGetter;
 import contentcouch.value.Commit;
 
 public class GetCommitTarget extends BaseActiveFunction {

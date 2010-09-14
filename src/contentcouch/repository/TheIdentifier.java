@@ -1,7 +1,7 @@
 package contentcouch.repository;
 
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
-import contentcouch.store.TheGetter;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;

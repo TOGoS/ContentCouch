@@ -1,4 +1,4 @@
-package contentcouch.store;
+package contentcouch.framework;
 
 import java.io.File;
 import java.util.Collections;
@@ -20,21 +20,16 @@ import contentcouch.active.DataUriResolver;
 import contentcouch.active.expression.Expression;
 import contentcouch.app.Log;
 import contentcouch.context.Context;
-import contentcouch.framework.MultiRequestHandler;
+import contentcouch.framework.err.AbnormalResponseException;
 import contentcouch.misc.ContextVarRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
+import contentcouch.rdf.ParseRDFRequestHandler;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
 public class TheGetter {
-	public static class AbnormalResponseException extends RuntimeException {
-		public AbnormalResponseException( String verb, String uri, int status, Object content ) {
-			super( verb + " " + uri + " resulted in " + status + (content == null ? "" : ": " + ValueUtil.getString(content)));
-		}
-	}
-	
 	public static BaseRequest createRequest( String verb, String uri ) {
 		BaseRequest req = new BaseRequest( verb, uri );
 		req.metadata = Context.getInstance();
@@ -79,11 +74,11 @@ public class TheGetter {
 	}
 	
 	public static void initializeBasicCallHandlers( MultiRequestHandler mrh ) {
-		mrh.addRequestHandler(new ParseRdfRequestHandler());
+		mrh.addRequestHandler(new ParseRDFRequestHandler());
 		mrh.addRequestHandler(new ContextVarRequestHandler());
 		mrh.addRequestHandler(new ActiveRequestHandler());
 		mrh.addRequestHandler(new DataUriResolver());
-		mrh.addRequestHandler(new ParseRdfRequestHandler());
+		mrh.addRequestHandler(new ParseRDFRequestHandler());
 		mrh.addRequestHandler(new ContextVarRequestHandler());
 
 	}
@@ -113,33 +108,39 @@ public class TheGetter {
 		return throwIfNonNormalResponse( call(req), req );
 	}
 	
-	public static Response throwIfNonNormalResponse( Response res, String verb, String resourceName ) {
-		switch( res.getStatus() ) {
-		case( ResponseCodes.RESPONSE_NORMAL ): return res;
-		default:
-			throw new AbnormalResponseException( verb, resourceName, res.getStatus(), res.getContent() );
-		}
+	public static Response throwIfNonNormalResponse( Response res, Request req ) {
+		AbnormalResponseException.throwIfNonNormal(res, req);
+		return res;
+	}
+
+	public static Response throwIfNonNormalResponse( Response res, String verb, String uri ) {
+		return throwIfNonNormalResponse( res, new BaseRequest(verb,uri) );
 	}
 	
-	public static Response throwIfNonNormalResponse( Response res, Request req ) {
-		return throwIfNonNormalResponse( res, req.getVerb(), req.getResourceName() );
+	////
+	
+	public static Object getResponseValueNN( Response res, Request req ) {
+		return throwIfNonNormalResponse( res, req ).getContent();
+	}
+	
+	public static Object getResponseValue( Response res, Request req ) {
+		switch( res.getStatus() ) {
+		case( ResponseCodes.RESPONSE_NORMAL ):
+			return res.getContent();
+		case( ResponseCodes.RESPONSE_DOESNOTEXIST ):
+		case( ResponseCodes.RESPONSE_NOTFOUND ):
+			return null;
+		default:
+			throw AbnormalResponseException.createFor(res, req);
+		}
 	}
 	
 	public static Object getResponseValue( Response res, String verb, String uri ) {
-		switch( res.getStatus() ) {
-		case( ResponseCodes.RESPONSE_NORMAL ): return res.getContent();
-		case( ResponseCodes.RESPONSE_DOESNOTEXIST ): return null;
-		default:
-			throw new AbnormalResponseException( verb, uri, res.getStatus(), res.getContent() );
-		}
+		return throwIfNonNormalResponse( res, new BaseRequest(verb,uri) ).getContent();
 	}
 	
 	public static Object getResponseValue( Response res, String uri ) {
 		return getResponseValue(res, "GET", uri );
-	}
-
-	public static Object getResponseValue( Response res, Request req ) {
-		return getResponseValue(res, req.getVerb(), req.getResourceName() );
 	}
 	
 	public static final String getResponseErrorSummary( Response res ) {

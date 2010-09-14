@@ -3,10 +3,10 @@ package contentcouch.active.expression;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathSimplifiableExpression;
 import contentcouch.path.PathUtil;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Ref;
 
 public class UriExpression implements Ref, Expression, PathSimplifiableExpression {

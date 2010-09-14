@@ -10,8 +10,8 @@ import togos.mf.base.BaseResponse;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;
 import contentcouch.directory.SimpleDirectory;
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
-import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;
 
 public class CreateDirectory extends BaseActiveFunction {

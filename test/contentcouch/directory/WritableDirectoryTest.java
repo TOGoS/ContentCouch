@@ -6,8 +6,8 @@ import java.util.Map;
 import junit.framework.TestCase;
 import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
+import contentcouch.framework.TheGetter;
 import contentcouch.rdf.CCouchNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 
 public abstract class WritableDirectoryTest extends TestCase {

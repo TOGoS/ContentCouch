@@ -5,8 +5,8 @@ import java.awt.image.BufferedImage;
 import togos.mf.value.Blob;
 
 import junit.framework.TestCase;
+import contentcouch.framework.TheGetter;
 import contentcouch.repository.MetaRepoConfig;
-import contentcouch.store.TheGetter;
 
 public class ImagingTest extends TestCase {
 	MetaRepoConfig repo; 

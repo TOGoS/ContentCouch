@@ -12,9 +12,9 @@ import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.WritableDirectory;
+import contentcouch.framework.TheGetter;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 

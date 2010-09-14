@@ -2,8 +2,8 @@ package contentcouch.app.help;
 
 import java.net.URL;
 
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
-import contentcouch.store.TheGetter;
 
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;

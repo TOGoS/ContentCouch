@@ -9,10 +9,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.Function1;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CCouchNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 

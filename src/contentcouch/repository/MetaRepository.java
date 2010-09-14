@@ -34,7 +34,10 @@ import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.file.FileUtil;
 import contentcouch.framework.BaseRequestHandler;
-import contentcouch.framework.MfArgUtil;
+import contentcouch.framework.MFArgUtil;
+import contentcouch.framework.TheGetter;
+import contentcouch.framework.err.AbnormalResponseException;
+import contentcouch.framework.err.NotFoundException;
 import contentcouch.hashcache.FileHashCache;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.merge.MergeUtil;
@@ -50,7 +53,6 @@ import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.rdf.RdfIO;
 import contentcouch.rdf.RdfNode;
-import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
@@ -326,6 +328,7 @@ public class MetaRepository extends BaseRequestHandler {
 		    } else {
 				String s = getCachedString("fully-cached-trees/"+sector, treeUri);
 				if( s != null ) {
+					Log.log(Log.EVENT_SKIPPED_CACHED, treeUri);
 					BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf directory and entries already stored", "text/plain");
 					res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, treeUri);
 					res.putMetadata(CCouchNamespace.RES_TREE_FULLY_STORED, Boolean.TRUE);
@@ -484,26 +487,24 @@ public class MetaRepository extends BaseRequestHandler {
 					
 					BaseRequest parentGetReq = new BaseRequest( RequestVerbs.VERB_GET, parentUri );
 					Response parentRes = TheGetter.call(parentGetReq);
-					switch( parentRes.getStatus() ) { 
-					case( ResponseCodes.RESPONSE_NORMAL ):
+					try {
+						AbnormalResponseException.throwIfNonNormal(parentRes,parentGetReq);
 						BaseRequest parentPutReq = new BaseRequest();
 						parentPutReq.content = parentRes.getContent();
 						parentPutReq.contentMetadata = parentRes.getContentMetadata();
 						parentPutReq.putContentMetadata(CCouchNamespace.SOURCE_URI, parentUri);
 						parentPutReq.metadata = req.getMetadata();
 						parentPutReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(pDepth));
-						// TODO: go ahead and cache targets, but to do this at all efficiently
-						// will require remembering fully stored trees so we don't have to
-						// store the same ones over and over
-						//parentPutReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_TARGETS, Boolean.FALSE);
-						putData( repoConfig, parentPutReq );
+						try {
+							AbnormalResponseException.throwIfNonNormal( putData( repoConfig, parentPutReq ), parentPutReq );
+						} catch( NotFoundException nfe ) {
+							Log.log(Log.EVENT_NOT_FOUND, nfe.getRequest().getResourceName() );
+						}
+					} catch( NotFoundException nfe ) {
+						Log.log(Log.EVENT_NOT_FOUND, "Unable to find "+parentUri+" while caching ancestor commits (depth="+pDepth+")");
 						break;
-					case( ResponseCodes.RESPONSE_DOESNOTEXIST ):
-					case( ResponseCodes.RESPONSE_UNHANDLED ):
-						Log.log(Log.EVENT_WARNING, "Unable to find "+parentUri+" while caching ancestor commits (depth="+pDepth+")");
-						break;
-					default:
-						Log.log(Log.EVENT_WARNING, "Got response "+parentRes.getStatus()+" when trying to cache commit "+parentUri);
+					} catch( AbnormalResponseException e ) {
+						Log.log(Log.EVENT_WARNING, "Error while caching commit "+parentUri+": "+e.getMessage());
 					}
 				} else {
 					Log.log(Log.EVENT_WARNING, "Commit "+sourceUri+" parent is not a Ref");
@@ -855,7 +856,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, sd);
 		} else if( req.getResourceName().startsWith("x-ccouch-head:") || req.getResourceName().startsWith("x-ccouch-repo:") ) {
-			req = MfArgUtil.argumentizeQueryString(req);
+			req = MFArgUtil.argumentizeQueryString(req);
 			RepoRef repoRef = RepoRef.parse(req.getResourceName(), false);
 			RepoConfig repoConfig;
 			if( repoRef.repoName == null ) {
@@ -875,7 +876,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			
 			if( "identify".equals(repoRef.subPath) ) {
-				return identify( MfArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata(), req.getMetadata() );
+				return identify( MFArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata(), req.getMetadata() );
 			}
 			
 			if( RequestVerbs.VERB_PUT.equals(req.getVerb()) || RequestVerbs.VERB_POST.equals(req.getVerb()) ) {
@@ -973,6 +974,7 @@ public class MetaRepository extends BaseRequestHandler {
 				// URN request? Check each repo to see if it has a data scheme that would handle it
 
 				String urn = req.getResourceName();
+				if( !urn.startsWith("urn:") ) return BaseResponse.RESPONSE_UNHANDLED;
 			
 				// Check local repos
 				for( Iterator i=config.getDefaultAndLocalRepoConfigs().iterator(); i.hasNext(); ) {
@@ -1032,6 +1034,8 @@ public class MetaRepository extends BaseRequestHandler {
 					}
 					nonExistentObjects.put(urn, urn);
 				}
+				
+				return BaseResponse.RESPONSE_NOTFOUND;
 			}
 		}
 		return BaseResponse.RESPONSE_UNHANDLED;

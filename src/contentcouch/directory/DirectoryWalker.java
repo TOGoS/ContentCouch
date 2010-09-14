@@ -8,8 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
+import contentcouch.framework.TheGetter;
 import contentcouch.rdf.CCouchNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 

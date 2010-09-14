@@ -19,12 +19,12 @@ import contentcouch.app.Log;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.file.FileRequestHandler;
 import contentcouch.framework.MultiRequestHandler;
+import contentcouch.framework.TheGetter;
 import contentcouch.http.HttpRequestHandler;
 import contentcouch.misc.MemTempRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
 
 public class MetaRepoConfig {

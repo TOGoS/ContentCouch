@@ -5,8 +5,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import contentcouch.active.expression.Expression;
+import contentcouch.framework.TheGetter;
 import contentcouch.rdf.CCouchNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Ref;
 

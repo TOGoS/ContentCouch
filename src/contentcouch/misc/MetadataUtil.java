@@ -19,9 +19,9 @@ import contentcouch.date.DateUtil;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
+import contentcouch.framework.TheGetter;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Ref;
 
 public class MetadataUtil {
@@ -202,7 +202,7 @@ public class MetadataUtil {
 			String targetSourceUri = ((Ref)target).getTargetUri();
 			BaseRequest targetReq = new BaseRequest(RequestVerbs.VERB_GET, targetSourceUri );
 			Response targetRes = TheGetter.call( targetReq );
-			req.content = TheGetter.getResponseValue( targetRes, targetReq );
+			req.content = TheGetter.getResponseValueNN( targetRes, targetReq );
 			req.contentMetadata = targetRes.getContentMetadata();
 			req.putContentMetadata( CCouchNamespace.SOURCE_URI, targetSourceUri );
 		} else {

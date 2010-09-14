@@ -31,6 +31,7 @@ import contentcouch.directory.DirectoryWalker;
 import contentcouch.directory.EntryFilters;
 import contentcouch.directory.FilterIterator;
 import contentcouch.file.FileBlob;
+import contentcouch.framework.TheGetter;
 import contentcouch.merge.MergeUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
@@ -43,7 +44,6 @@ import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.repository.RepoConfig;
 import contentcouch.repository.MetaRepository.RepoRef;
-import contentcouch.store.TheGetter;
 import contentcouch.stream.InternalStreamRequestHandler;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Commit;
@@ -309,6 +309,7 @@ public class ContentCouchCommand {
 		HashSet extraLogEvents = new HashSet();
 		
 		public void setUpLogging() {
+			Log.initErrorLogger();
 			Log.setStandardLogLevel(logLevel);
 			for( Iterator i=extraLogEvents.iterator(); i.hasNext(); ) {
 				Log.addLogger( (String)i.next(), Log.getStderrLogger() );
@@ -1066,7 +1067,7 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		Log.setStandardLogLevel(opts.logLevel);
+		opts.setUpLogging();
 		
 		if( dir == null ) {
 			System.err.println("No directory specified");
@@ -1140,7 +1141,9 @@ public class ContentCouchCommand {
 				return 1;
 			}
 		}
-		Log.setStandardLogLevel(opts.logLevel);
+		
+		opts.setUpLogging();
+
 		int errorCount = 0;
 		for( Iterator pi=uris.iterator(); pi.hasNext(); ) {
 			String uri = (String)pi.next();
@@ -1259,6 +1262,7 @@ public class ContentCouchCommand {
 			System.err.println();
 			return 1;
 		}
+		errorCount += Log.errorCount;
 		return errorCount;
 	}
 	

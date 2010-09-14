@@ -1,4 +1,4 @@
-package contentcouch.store;
+package contentcouch.rdf;
 
 import togos.mf.api.Request;
 import togos.mf.api.Response;
@@ -8,12 +8,11 @@ import togos.mf.base.BaseResponse;
 import togos.mf.value.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.framework.BaseRequestHandler;
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
-import contentcouch.rdf.CCouchNamespace;
-import contentcouch.rdf.RdfIO;
 
-public class ParseRdfRequestHandler extends BaseRequestHandler {
+public class ParseRDFRequestHandler extends BaseRequestHandler {
 	public Response call( Request req ) {
 		if( !"GET".equals(req.getVerb()) ) {
 			return BaseResponse.RESPONSE_UNHANDLED;

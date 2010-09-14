@@ -8,7 +8,7 @@ import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
 import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;
-import contentcouch.store.TheGetter;
+import contentcouch.framework.TheGetter;
 
 public class Let extends BaseActiveFunction {
 

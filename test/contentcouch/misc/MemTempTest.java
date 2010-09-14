@@ -1,8 +1,8 @@
 package contentcouch.misc;
 
 import junit.framework.TestCase;
+import contentcouch.framework.TheGetter;
 import contentcouch.repository.MetaRepoConfig;
-import contentcouch.store.TheGetter;
 
 public class MemTempTest extends TestCase {
 	public void setUp() {

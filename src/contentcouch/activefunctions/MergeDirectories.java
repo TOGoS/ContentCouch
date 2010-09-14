@@ -12,9 +12,9 @@ import contentcouch.active.BaseActiveFunction;
 import contentcouch.active.expression.Expression;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.SimpleDirectory;
+import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CCouchNamespace;
-import contentcouch.store.TheGetter;
 import contentcouch.value.Directory;
 
 public class MergeDirectories extends BaseActiveFunction {
