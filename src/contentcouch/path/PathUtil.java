@@ -108,7 +108,7 @@ public class PathUtil {
 		// Warning: ignoreLastInHierarchical will have no effect in this case
 		String unoptimized = "active:contentcouch.follow-path+" +
 			"source@" + UriUtil.uriEncode(p1) + "+" +
-			"path@" + UriUtil.uriEncode(UriUtil.makeDataUri(p2));
+			"path@" + UriUtil.uriEncode(UriUtil.makeDataUri(UriUtil.uriDecode(p2)));
 		return ActiveUtil.simplify(unoptimized);
 	}
 	

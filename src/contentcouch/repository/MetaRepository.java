@@ -936,7 +936,7 @@ public class MetaRepository extends BaseRequestHandler {
 						if( subRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
 							String headContent = ValueUtil.getString( subRes.getContent() );
 							Object head = RdfIO.parseRdf(headContent, resolvedHeadPath);
-							return FollowPath.followPath( req, head, inputHeadPath.substring(headPath.length()+1));
+							return FollowPath.followPath( req, head, UriUtil.uriDecode(inputHeadPath.substring(headPath.length()+1)));
 						}
 					}
 					

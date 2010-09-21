@@ -167,10 +167,11 @@ public class ResourceExplorerComponent extends BaseComponent {
 
 			String path;
 			String uriEncoded = UriUtil.uriEncode(uri,UriUtil.PATH_SEGMENT_SAFE);
+			String nameEncoded = UriUtil.uriEncode(name,UriUtil.PATH_SEGMENT_SAFE);
 			if( CCouchNamespace.DIRECTORY.equals(objectType) || CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(objectType) ) {
-				path = this.handlePath + "/" + uriEncoded + "/" + name + "/";
+				path = this.handlePath + "/" + uriEncoded + "/" + nameEncoded + "/";
 			} else {
-				path = this.handlePath + "/" + uriEncoded + "/" + name;
+				path = this.handlePath + "/" + uriEncoded + "/" + nameEncoded;
 			}
 			return encodePathAndArguments(path, leftoverArgs);
 		}
