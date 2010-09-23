@@ -1178,6 +1178,8 @@ public class ContentCouchCommand {
 	}
 	
 	public int run( String[] args ) {
+		initializeGetter();
+		
 		if( args.length == 0 ) {
 			System.err.println(getHelpText());
 			System.err.println();
@@ -1191,7 +1193,7 @@ public class ContentCouchCommand {
 			if( "-h".equals(args[i]) || "-?".equals(args[i]) ) {
 				System.out.println(getHelpText());
 				return 0;
-			} else if( initializeGetter() && (ni = metaRepoConfig.handleArguments(args, i, "./")) > i ) {
+			} else if( (ni = metaRepoConfig.handleArguments(args, i, "./")) > i ) {
 				i = ni;
 			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
 				cmd = args[i++];
@@ -1211,7 +1213,7 @@ public class ContentCouchCommand {
 			System.err.println();
 			return 1;
 		}
-		initializeGetter();
+		
 		String[] cmdArgs = new String[args.length-i];
 		for( int j=0; j<cmdArgs.length; ++i, ++j ) {
 			cmdArgs[j] = args[i];
