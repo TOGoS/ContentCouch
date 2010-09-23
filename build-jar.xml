@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project ContentCouch">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+    	<mkdir dir="export"/>
+        <jar destfile="export/ccouch-latest.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Main-Class" value="contentcouch.app.ContentCouchCommand"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="web/WEB-INF/classes"/>
+            <zipfileset excludes="META-INF/*.SF" src="ext-lib/winstone-0.9.10.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="ext-lib/togos.mf-latest.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="C:/apps/eclipse/plugins/org.junit_3.8.2.v20080602-1318/junit.jar"/>
+        </jar>
+    </target>
+</project>
