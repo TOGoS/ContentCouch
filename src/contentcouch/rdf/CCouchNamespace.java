@@ -127,7 +127,7 @@ public class CCouchNamespace {
 	public static final String RDF_DIRECTORY_STYLE_NEW = "2";
 	public static final String RDF_DIRECTORY_STYLE_OLD = "1";
 	
-	public static final String ID_SCHEME_DEFAULT = "sha1";
+	public static final String ID_SCHEME_DEFAULT = "bitprint";
 
 	//// XML Namespaces ////
 	

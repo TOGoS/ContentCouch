@@ -10,13 +10,13 @@ public class Config
 	public static int getRdfDirectoryStyle() {
 		return Integer.parseInt( (String)MapUtil.getKeyed( Context.getInstance(),
 			CCouchNamespace.CFG_RDF_DIRECTORY_STYLE,
-			CCouchNamespace.RDF_DIRECTORY_STYLE_OLD ) );
+			CCouchNamespace.RDF_DIRECTORY_STYLE_NEW ) );
 	}
 	
 	public static String getRdfSubjectPrefix() {
 		return (String)MapUtil.getKeyed( Context.getInstance(),
 			CCouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX,
-			CCouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD );
+			CCouchNamespace.RDF_SUBJECT_URI_PREFIX );
 	}
 
 	public static ContentAddressingScheme getIdentificationScheme() {
