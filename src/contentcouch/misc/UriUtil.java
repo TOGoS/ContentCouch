@@ -2,9 +2,9 @@ package contentcouch.misc;
 
 import java.io.UnsupportedEncodingException;
 
+import contentcouch.blob.Blob;
 import contentcouch.rdf.CCouchNamespace;
 
-import togos.mf.value.Blob;
 
 
 

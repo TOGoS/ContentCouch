@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 import org.bitpedia.util.Base32;
 
-import togos.mf.value.Blob;
 
+import contentcouch.blob.Blob;
 import contentcouch.digest.DigestUtil;
 import contentcouch.rdf.CCouchNamespace;
 

@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 import togos.mf.api.Request;
 import togos.mf.api.Response;
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.xml.XML;

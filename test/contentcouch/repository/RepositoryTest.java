@@ -10,7 +10,7 @@ import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.commit.SimpleCommit;
 import contentcouch.directory.SimpleDirectory;

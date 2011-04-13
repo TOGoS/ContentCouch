@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import junit.framework.TestCase;
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.framework.TheGetter;
 import contentcouch.rdf.CCouchNamespace;

@@ -11,7 +11,7 @@ import java.nio.charset.CharacterCodingException;
 
 import togos.mf.api.Request;
 import togos.mf.api.Response;
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.hashcache.SimpleListFile;
 import contentcouch.hashcache.SimpleListFile.Chunk;
 import contentcouch.misc.ValueUtil;

@@ -18,7 +18,7 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.ValueUtil;

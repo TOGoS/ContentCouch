@@ -5,7 +5,7 @@ import java.util.Arrays;
 import org.bitpedia.util.Base32;
 import org.bitpedia.util.TigerTree;
 
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.digest.DigestUtil;
 import contentcouch.rdf.BitziNamespace;
 

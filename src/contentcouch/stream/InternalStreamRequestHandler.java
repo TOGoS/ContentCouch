@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.framework.BaseRequestHandler;
@@ -15,7 +16,6 @@ import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
-import togos.mf.value.Blob;
 
 public class InternalStreamRequestHandler extends BaseRequestHandler {
 	static final InternalStreamRequestHandler instance = new InternalStreamRequestHandler();

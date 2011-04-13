@@ -6,7 +6,7 @@ import java.util.Map;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.base.BaseResponse;
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.rdf.DcNamespace;
 

@@ -4,8 +4,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-import togos.mf.value.Blob;
 import contentcouch.app.Log;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.BitprintScheme.Bitprint;
 import contentcouch.file.FileBlob;

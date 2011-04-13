@@ -7,8 +7,8 @@ import java.util.Set;
 
 import togos.mf.api.RequestVerbs;
 import togos.mf.base.BaseRequest;
-import togos.mf.value.Blob;
 
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.WritableDirectory;

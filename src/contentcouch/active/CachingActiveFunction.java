@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import contentcouch.active.expression.Expression;
+import contentcouch.blob.Blob;
 import contentcouch.framework.TheGetter;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.BaseRef;
@@ -16,7 +17,6 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
-import togos.mf.value.Blob;
 
 public abstract class CachingActiveFunction extends BaseActiveFunction {
 	/**

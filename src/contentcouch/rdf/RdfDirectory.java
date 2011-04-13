@@ -11,7 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.context.Config;
 import contentcouch.date.DateUtil;
 import contentcouch.digest.DigestUtil;

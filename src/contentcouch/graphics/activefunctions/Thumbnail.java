@@ -8,10 +8,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import togos.mf.api.Request;
-import togos.mf.value.Blob;
 import togos.swf2.SwfNamespace;
 import contentcouch.active.CachingActiveFunction;
 import contentcouch.active.expression.ValueExpression;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.blob.BlobUtil;
 import contentcouch.graphics.ImageUtil;

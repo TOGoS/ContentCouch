@@ -7,7 +7,8 @@ import java.io.UnsupportedEncodingException;
 import java.nio.channels.FileLock;
 import java.util.Arrays;
 
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
+
 
 
 /** Format of this kind of file:

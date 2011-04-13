@@ -6,7 +6,6 @@ import java.io.OutputStream;
 
 import contentcouch.stream.StreamUtil;
 
-import togos.mf.value.Blob;
 
 
 public class InputStreamBlob implements Blob {

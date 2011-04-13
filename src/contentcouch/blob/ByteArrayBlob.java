@@ -1,6 +1,5 @@
 package contentcouch.blob;
 
-import togos.mf.value.Blob;
 
 public class ByteArrayBlob implements Blob {
 	byte[] bytes;

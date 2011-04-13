@@ -1,6 +1,6 @@
 package contentcouch.contentaddressing;
 
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 
 public interface ContentAddressingScheme {
 	public static class SomethingIsBadlyFormedException extends RuntimeException {

@@ -1,6 +1,6 @@
 package contentcouch.directory;
 
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.misc.Function1;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;

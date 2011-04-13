@@ -3,7 +3,6 @@ package contentcouch.blob;
 import java.io.IOException;
 import java.io.InputStream;
 
-import togos.mf.value.Blob;
 
 
 public class BlobInputStream extends InputStream {

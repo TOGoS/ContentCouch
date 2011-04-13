@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import togos.mf.value.Blob;
 
 import contentcouch.app.Linker;
 import contentcouch.file.FileBlob;

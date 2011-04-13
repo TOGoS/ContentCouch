@@ -1,6 +1,6 @@
 package contentcouch.activefunctions;
 
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.framework.TheGetter;

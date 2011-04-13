@@ -8,8 +8,8 @@ import java.security.NoSuchAlgorithmException;
 
 import org.bitpedia.util.Base32;
 
-import togos.mf.value.Blob;
 
+import contentcouch.blob.Blob;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.file.FileBlob;
 

@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import togos.mf.api.ContentAndMetadata;
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobInputStream;
 import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;

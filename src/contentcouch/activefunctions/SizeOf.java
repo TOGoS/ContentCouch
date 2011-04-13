@@ -6,8 +6,8 @@ import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
-import togos.mf.value.Blob;
 import contentcouch.active.BaseActiveFunction;
+import contentcouch.blob.Blob;
 import contentcouch.misc.ValueUtil;
 
 public class SizeOf extends BaseActiveFunction {

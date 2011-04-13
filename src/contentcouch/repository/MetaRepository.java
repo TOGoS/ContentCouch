@@ -19,12 +19,12 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
-import togos.mf.value.Blob;
 
 import com.eekboom.utils.Strings;
 
 import contentcouch.activefunctions.FollowPath;
 import contentcouch.app.Log;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.ContentAddressingScheme;
 import contentcouch.contentaddressing.Schemes;

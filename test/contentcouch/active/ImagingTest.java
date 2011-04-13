@@ -2,9 +2,9 @@ package contentcouch.active;
 
 import java.awt.image.BufferedImage;
 
-import togos.mf.value.Blob;
 
 import junit.framework.TestCase;
+import contentcouch.blob.Blob;
 import contentcouch.framework.TheGetter;
 import contentcouch.repository.MetaRepoConfig;
 

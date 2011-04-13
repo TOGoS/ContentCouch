@@ -6,8 +6,8 @@ import java.nio.charset.CharsetDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
-import togos.mf.value.Blob;
 
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 
 public class ValueUtil {

@@ -17,7 +17,7 @@ import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import togos.mf.value.Arguments;
-import togos.mf.value.Blob;
+import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.InputStreamBlob;
 import contentcouch.explorify.CCouchExplorerPageGenerator;
