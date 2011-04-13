@@ -16,10 +16,10 @@ public class BuiltInData {
 	public static Response getResponse(String name) {
 		URL resourceUrl = BuiltInData.class.getResource(name);
 		if( resourceUrl == null ) {
-		    return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST,
+		    return new BaseResponse(ResponseCodes.DOES_NOT_EXIST,
 		       "No such resource: " + name, "text/plain");
 		}
-		Request req = new BaseRequest(RequestVerbs.VERB_GET, resourceUrl.toString());
+		Request req = new BaseRequest(RequestVerbs.GET, resourceUrl.toString());
 		return TheGetter.call(req);
 	}
 	

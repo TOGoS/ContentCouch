@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import togos.mf.api.CallHandler;
+import togos.mf.api.Callable;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
@@ -69,7 +69,7 @@ public class SwfFrontRequestHandler extends BaseRequestHandler {
 		
 		Response res;
 		for( Iterator i=components.values().iterator(); i.hasNext(); ) {
-			CallHandler rh = (CallHandler)i.next();
+			Callable rh = (Callable)i.next();
 			res = rh.call(subReq);
 			if( res.getStatus() > 0 ) return res;
 		}

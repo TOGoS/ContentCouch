@@ -69,16 +69,16 @@ public class InternalStreamRequestHandler extends BaseRequestHandler {
 	public Response call(Request req) {
 		if( !req.getResourceName().startsWith(URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
 		String streamName = req.getResourceName().substring(URI_PREFIX.length());
-		if( RequestVerbs.VERB_POST.equals(req.getVerb()) || RequestVerbs.VERB_PUT.equals(req.getVerb()) ) {
+		if( RequestVerbs.POST.equals(req.getVerb()) || RequestVerbs.PUT.equals(req.getVerb()) ) {
 			Object content = req.getContent();
 			if( content == null ) {
 				throw new RuntimeException("Can't PUT or POST to " + req.getResourceName() + " without content");
 			}
 			Blob blob = BlobUtil.getBlob(content);
 			putBlob(blob, streamName);
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Written");
-		} else if( RequestVerbs.VERB_GET.equals(req.getVerb()) ) {
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, getBlob(streamName));
+			return new BaseResponse(ResponseCodes.NORMAL, "Written");
+		} else if( RequestVerbs.GET.equals(req.getVerb()) ) {
+			return new BaseResponse(ResponseCodes.NORMAL, getBlob(streamName));
 		} else {
 			throw new RuntimeException("Don't know how to handle " + req.getVerb() );
 		}

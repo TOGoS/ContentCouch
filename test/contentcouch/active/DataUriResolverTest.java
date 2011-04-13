@@ -20,7 +20,7 @@ public class DataUriResolverTest extends TestCase {
 	protected DataUriResolver resolver = new DataUriResolver();
 
 	protected void assertDecodesTo( String expectedValue, String dataUri ) {
-		Response res = resolver.call(new BaseRequest(RequestVerbs.VERB_GET,dataUri));
+		Response res = resolver.call(new BaseRequest(RequestVerbs.GET,dataUri));
 		assertEquals( expectedValue, ValueUtil.getString(res.getContent()) );
 	}
 	

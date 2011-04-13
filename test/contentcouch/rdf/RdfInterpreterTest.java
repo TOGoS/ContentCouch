@@ -44,7 +44,7 @@ public class RdfInterpreterTest extends TestCase {
 		"</Directory>";
 
 	public void setUp() {
-		TheGetter.globalInstance = TheGetter.getBasicCallHandler();
+		TheGetter.globalInstance = TheGetter.getBasicCallable();
 	}
 	
 	protected void testParse( String parseThis ) {

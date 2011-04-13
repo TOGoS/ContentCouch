@@ -19,7 +19,7 @@ public class Delay extends BaseActiveFunction {
 		} catch( InterruptedException e ) {
 			throw new RuntimeException(e);
 		}
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Delayed " + millis + " milliseconds", "text/plain");
+		return new BaseResponse(ResponseCodes.NORMAL, "Delayed " + millis + " milliseconds", "text/plain");
 	}
 
 }

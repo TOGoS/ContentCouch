@@ -63,7 +63,7 @@ public abstract class CachingActiveFunction extends BaseActiveFunction {
 			Blob output = (Blob)_getResult(req, canonArgExpressions);
 			
 			if( cacheable ) {
-				BaseRequest storeReq = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:data", output, Collections.EMPTY_MAP);
+				BaseRequest storeReq = new BaseRequest(RequestVerbs.POST, "x-ccouch-repo:data", output, Collections.EMPTY_MAP);
 				storeReq.putMetadata( CCouchNamespace.REQ_STORE_SECTOR, "function-results" );
 				storeReq.putMetadata( CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_IGNORE );
 				Response storeRes = TheGetter.call(storeReq);
@@ -71,7 +71,7 @@ public abstract class CachingActiveFunction extends BaseActiveFunction {
 				
 				TheGetter.put(resultCacheUri, new BaseRef(thumbnailUri));
 			} else {
-				return new BaseResponse( ResponseCodes.RESPONSE_NORMAL, output );
+				return new BaseResponse( ResponseCodes.NORMAL, output );
 			}
 		} else {
 			if( cached instanceof Ref ) { // oughta be
@@ -84,10 +84,10 @@ public abstract class CachingActiveFunction extends BaseActiveFunction {
 			throw new RuntimeException( "No thumbnailUri" );
 		}
 		
-		BaseResponse subRes = new BaseResponse( TheGetter.call( new BaseRequest( RequestVerbs.VERB_GET, thumbnailUri ) ) );
+		BaseResponse subRes = new BaseResponse( TheGetter.call( new BaseRequest( RequestVerbs.GET, thumbnailUri ) ) );
 		if( cacheable ) subRes.putMetadata( CCouchNamespace.RES_CACHEABLE, Boolean.TRUE );
 		return subRes;
 		
-		//return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Thumbnail of "+id, "text/plain");
+		//return new BaseResponse(ResponseCodes.NORMAL, "Thumbnail of "+id, "text/plain");
 	}
 }

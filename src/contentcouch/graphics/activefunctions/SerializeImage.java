@@ -19,6 +19,6 @@ public class SerializeImage extends BaseActiveFunction {
 		final String longFormatName = ImageUtil.getLongFormatName(formatName);
 		final Number quality = ValueUtil.getNumber(getArgumentValue(req, argumentExpressions, "quality", null));
 		
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, ImageUtil.serializeImage(img, formatName, quality), longFormatName);
+		return new BaseResponse(ResponseCodes.NORMAL, ImageUtil.serializeImage(img, formatName, quality), longFormatName);
 	}
 }

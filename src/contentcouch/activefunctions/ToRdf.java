@@ -11,7 +11,7 @@ import contentcouch.rdf.RdfUtil;
 
 public class ToRdf extends BaseActiveFunction {
 	public Response call( Request req, Map argumentExpressions ) {
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL,
+		return new BaseResponse(ResponseCodes.NORMAL,
 			RdfUtil.toRdfNode(getArgumentValue(req, argumentExpressions, "operand", null), null)
 		);
 	}

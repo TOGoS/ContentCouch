@@ -156,9 +156,9 @@ public class MetaRepository extends BaseRequestHandler {
 		ArrayList l = new ArrayList();
 		String dataDirUri = PathUtil.appendPath(repoConfig.uri,"data/");
 		
-		BaseRequest dirReq = new BaseRequest( RequestVerbs.VERB_GET, dataDirUri );
+		BaseRequest dirReq = new BaseRequest( RequestVerbs.GET, dataDirUri );
 		Response dirRes = TheGetter.call(dirReq);
-		if( dirRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return l;
+		if( dirRes.getStatus() != ResponseCodes.NORMAL ) return l;
 		if( !(dirRes.getContent() instanceof Directory) ) {
 			Log.log(Log.EVENT_WARNING, dataDirUri + " exists but is not a directory");
 		}
@@ -257,7 +257,7 @@ public class MetaRepository extends BaseRequestHandler {
 		String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
 		
 		BaseRequest subReq = new BaseRequest( req, uri );
-		subReq.verb = RequestVerbs.VERB_PUT;
+		subReq.verb = RequestVerbs.PUT;
 		BaseResponse res = new BaseResponse( TheGetter.call(subReq) );
 		res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, idUrn);
 		res.putMetadata(CCouchNamespace.RES_TREE_FULLY_STORED, Boolean.TRUE);
@@ -287,7 +287,7 @@ public class MetaRepository extends BaseRequestHandler {
 			subReq.putContentMetadata(CCouchNamespace.SOURCE_URI, "x-rdfified:" + sourceUri);
 		}
 		Response blobPutRes = putDataBlob( repoConfig, subReq );
-		if( blobPutRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return blobPutRes;
+		if( blobPutRes.getStatus() != ResponseCodes.NORMAL ) return blobPutRes;
 
 		String storedUri = (String)blobPutRes.getMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER);
 		String storedRdfUri = storedUri != null ? Config.getRdfSubjectPrefix()+storedUri : null;
@@ -329,7 +329,7 @@ public class MetaRepository extends BaseRequestHandler {
 				String s = getCachedString("fully-cached-trees/"+sector, treeUri);
 				if( s != null ) {
 					Log.log(Log.EVENT_SKIPPED_CACHED, treeUri);
-					BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf directory and entries already stored", "text/plain");
+					BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, "Rdf directory and entries already stored", "text/plain");
 					res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, treeUri);
 					res.putMetadata(CCouchNamespace.RES_TREE_FULLY_STORED, Boolean.TRUE);
 					return res;
@@ -356,7 +356,7 @@ public class MetaRepository extends BaseRequestHandler {
 			fullyStored &= ValueUtil.getBoolean( targetPutRes.getMetadata().get(CCouchNamespace.RES_TREE_FULLY_STORED), false );
 		}
 		
-		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf directory and entries stored", "text/plain");
+		BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, "Rdf directory and entries stored", "text/plain");
 		if( storedTreeUri != null && treeUri != null ) {
 			if( ValueUtil.getBoolean(MergeUtil.areUrisEquivalent(treeUri,storedTreeUri),false) ) {
 				if( fullyStored ) {
@@ -387,7 +387,7 @@ public class MetaRepository extends BaseRequestHandler {
 				if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
 				String uri = ValueUtil.getString(target);
 				// TODO: Some kind of validation on the URI (should be x-rdf-subject:<urn scheme>:...)
-				BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "URI previously cached in .ccouch-uri file - skipping", "text/plain");
+				BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, "URI previously cached in .ccouch-uri file - skipping", "text/plain");
 				res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, uri);
 				return res;
 			}
@@ -485,7 +485,7 @@ public class MetaRepository extends BaseRequestHandler {
 					if( alreadyCachingAtDepth != null && alreadyCachingAtDepth.intValue() >= pDepth ) continue;
 					cachingCommitDepths.put( parentUri, new Integer(pDepth) );
 					
-					BaseRequest parentGetReq = new BaseRequest( RequestVerbs.VERB_GET, parentUri );
+					BaseRequest parentGetReq = new BaseRequest( RequestVerbs.GET, parentUri );
 					Response parentRes = TheGetter.call(parentGetReq);
 					try {
 						AbnormalResponseException.throwIfNonNormal(parentRes,parentGetReq);
@@ -530,7 +530,7 @@ public class MetaRepository extends BaseRequestHandler {
 			putData( repoConfig, targetPutReq );
 		}
 		
-		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Rdf commit and target stored", "text/plain");
+		BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, "Rdf commit and target stored", "text/plain");
 		MetadataUtil.copyStoredIdentifier(putRdfBlobRes, res, null);
 		
 		cacheCommitAncestors( repoConfig, c, req );
@@ -598,7 +598,7 @@ public class MetaRepository extends BaseRequestHandler {
 				putData( repoConfig, subReq );
 				++count;
 			}
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, count + " items inserted", "text/plain");
+			return new BaseResponse(ResponseCodes.NORMAL, count + " items inserted", "text/plain");
 		} else if( content instanceof Directory.Entry ) {
 			BaseRequest subReq = new BaseRequest();
 			subReq.metadata = req.getMetadata();
@@ -635,7 +635,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			String parsedFromUri = ValueUtil.getString(identify( parsedFrom, Collections.EMPTY_MAP, options ).getContent());
 			// TODO: Make sure repoConfig.dataScheme.wouldHandleUrn(parsedFromUri)?
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, Config.getRdfSubjectPrefix() + parsedFromUri, "text/plain");
+			return new BaseResponse(ResponseCodes.NORMAL, Config.getRdfSubjectPrefix() + parsedFromUri, "text/plain");
 		} else if( content instanceof Commit ) {
 			return identify( new RdfCommit( (Commit)content, getTargetRdfifier(false, false, options) ), contentMetadata, options );
 		} else if( content instanceof Directory ) {
@@ -648,7 +648,7 @@ public class MetaRepository extends BaseRequestHandler {
 			if( blob != null ) id = identifyBlob( blob, options );
 		}
 		
-		if( id != null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, id, "text/plain");
+		if( id != null ) return new BaseResponse(ResponseCodes.NORMAL, id, "text/plain");
 		
 		throw new RuntimeException("I don't know how to identify " + (content == null ? "null" : content.getClass().getName()));
 	}
@@ -807,7 +807,7 @@ public class MetaRepository extends BaseRequestHandler {
 			
 			// Otherwise it's all good...we'll store the blob
 			BaseRequest putReq = new BaseRequest(req);
-			putReq.verb = RequestVerbs.VERB_PUT;
+			putReq.verb = RequestVerbs.PUT;
 			putReq.uri = "data"; // Will not be used...
 			putReq.content = res.getContent();
 			putReq.contentMetadata = res.getContentMetadata();
@@ -854,7 +854,7 @@ public class MetaRepository extends BaseRequestHandler {
 				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.uri);
 				sd.addDirectoryEntry(entry, Collections.EMPTY_MAP);
 			}
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, sd);
+			return new BaseResponse(ResponseCodes.NORMAL, sd);
 		} else if( req.getResourceName().startsWith("x-ccouch-head:") || req.getResourceName().startsWith("x-ccouch-repo:") ) {
 			req = MFArgUtil.argumentizeQueryString(req);
 			RepoRef repoRef = RepoRef.parse(req.getResourceName(), false);
@@ -862,14 +862,14 @@ public class MetaRepository extends BaseRequestHandler {
 			if( repoRef.repoName == null ) {
 				repoConfig = config.defaultRepoConfig;
 				if( repoConfig == null ) {
-					BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "No default repository to handle " + req.getResourceName());
+					BaseResponse res = new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "No default repository to handle " + req.getResourceName());
 					res.putContentMetadata(DcNamespace.DC_FORMAT, "text/plain");
 					return res;
 				}
 			} else {
 				repoConfig = (RepoConfig)config.namedRepoConfigs.get(repoRef.repoName);
 				if( repoConfig == null ) {
-					BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "No such repository: " + repoRef.repoName);
+					BaseResponse res = new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "No such repository: " + repoRef.repoName);
 					res.putContentMetadata(DcNamespace.DC_FORMAT, "text/plain");
 					return res;
 				}
@@ -879,7 +879,7 @@ public class MetaRepository extends BaseRequestHandler {
 				return identify( MFArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata(), req.getMetadata() );
 			}
 			
-			if( RequestVerbs.VERB_PUT.equals(req.getVerb()) || RequestVerbs.VERB_POST.equals(req.getVerb()) ) {
+			if( RequestVerbs.PUT.equals(req.getVerb()) || RequestVerbs.POST.equals(req.getVerb()) ) {
 				if( repoRef.subPath.startsWith(FUNCTION_RESULT_CACHE_PREFIX) ) {
 					String[] pathParts = repoRef.subPath.substring(FUNCTION_RESULT_CACHE_PREFIX.length()).split("/");
 					String subIndexName, key;
@@ -892,7 +892,7 @@ public class MetaRepository extends BaseRequestHandler {
 					}
 					
 					putFunctionResult( repoConfig, subIndexName, key, req.getContent() );
-					return new BaseResponse( ResponseCodes.RESPONSE_NORMAL, "OK" );
+					return new BaseResponse( ResponseCodes.NORMAL, "OK" );
 				} else if( repoRef.subPath.equals("data") || repoRef.subPath.startsWith("data/") ) {
 					String[] dataAndSector = repoRef.subPath.split("/");
 					if( dataAndSector.length > 1 && dataAndSector[1].length() > 0 ) {
@@ -922,7 +922,7 @@ public class MetaRepository extends BaseRequestHandler {
 					// Try just getting it
 					BaseRequest subReq = new BaseRequest(req, resolvedHeadPath);
 					Response subRes = TheGetter.call(subReq);
-					if( subRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+					if( subRes.getStatus() == ResponseCodes.NORMAL ) {
 						return subRes;
 					}
 					
@@ -933,7 +933,7 @@ public class MetaRepository extends BaseRequestHandler {
 						resolvedHeadPath = resolveHeadPath(repoConfig, headPath, "");
 						subReq = new BaseRequest(req, resolvedHeadPath);
 						subRes = TheGetter.call(subReq);
-						if( subRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+						if( subRes.getStatus() == ResponseCodes.NORMAL ) {
 							String headContent = ValueUtil.getString( subRes.getContent() );
 							Object head = RdfIO.parseRdf(headContent, resolvedHeadPath);
 							return FollowPath.followPath( req, head, UriUtil.uriDecode(inputHeadPath.substring(headPath.length()+1)));
@@ -956,7 +956,7 @@ public class MetaRepository extends BaseRequestHandler {
 						key = UriUtil.uriDecode(pathParts[0]);
 					}
 					
-					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, getFunctionResult(repoConfig, subIndexName, key));
+					return new BaseResponse(ResponseCodes.NORMAL, getFunctionResult(repoConfig, subIndexName, key));
 				} else if( path.equals("") ) {
 					SimpleDirectory sd = new SimpleDirectory();
 					sd.addDirectoryEntry(new SimpleDirectory.Entry("files",new BaseRef(req.getResourceName(),"files"),CCouchNamespace.TT_SHORTHAND_DIRECTORY));
@@ -970,7 +970,7 @@ public class MetaRepository extends BaseRequestHandler {
 			
 			//String sector = MetadataUtil.getKeyed(request.getMetadata(), RdfNamespace.STORE_SECTOR, rc.userStoreSector);
 		} else {
-			if( RequestVerbs.VERB_GET.equals(req.getVerb()) || RequestVerbs.VERB_HEAD.equals(req.getVerb()) ) {
+			if( RequestVerbs.GET.equals(req.getVerb()) || RequestVerbs.HEAD.equals(req.getVerb()) ) {
 				// URN request? Check each repo to see if it has a data scheme that would handle it
 
 				String urn = req.getResourceName();
@@ -987,7 +987,7 @@ public class MetaRepository extends BaseRequestHandler {
 						String dataSectorUri = (String)si.next();
 						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
 						Response res = TheGetter.call(subReq);
-						if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) return res;
+						if( res.getStatus() == ResponseCodes.NORMAL ) return res;
 					}
 				}
 				
@@ -998,7 +998,7 @@ public class MetaRepository extends BaseRequestHandler {
 					
 					BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(lastHitDataSectorUri, psp));
 					Response res = TheGetter.call(subReq);
-					if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+					if( res.getStatus() == ResponseCodes.NORMAL ) {
 						try {
 							return maybeCacheBlob(res, req);
 						} catch( HashMismatchException hme ) {
@@ -1021,7 +1021,7 @@ public class MetaRepository extends BaseRequestHandler {
 							String dataSectorUri = (String)si.next();
 							BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
 							Response res = TheGetter.call(subReq);
-							if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+							if( res.getStatus() == ResponseCodes.NORMAL ) {
 								lastHitDataSectorUri = dataSectorUri;
 								lastHitRepoConfig = repoConfig;
 								try {

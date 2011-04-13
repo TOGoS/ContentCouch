@@ -29,13 +29,13 @@ public class AbnormalResponseException extends RuntimeException {
 	
 	public static AbnormalResponseException createFor( Response res, Request req ) {
 		switch( res.getStatus() ) {
-		case( ResponseCodes.RESPONSE_UNHANDLED ):
+		case( ResponseCodes.UNHANDLED ):
 			throw new UnhandledException(res,req);
-		case( ResponseCodes.RESPONSE_NOTFOUND ):
+		case( ResponseCodes.NOT_FOUND ):
 			throw new NotFoundException(res,req);
-		case( ResponseCodes.RESPONSE_DOESNOTEXIST ):
+		case( ResponseCodes.DOES_NOT_EXIST ):
 			throw new DoesNotExistException(res,req);
-		case( ResponseCodes.RESPONSE_CALLER_ERROR ):
+		case( ResponseCodes.CALLER_ERROR ):
 			return new CallerErrorException(res,req);
 		default:
 			// expand if need more specific ones
@@ -44,7 +44,7 @@ public class AbnormalResponseException extends RuntimeException {
 	}
 	
 	public static void throwIfNonNormal( Response res, Request req ) {
-		if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) return;
+		if( res.getStatus() == ResponseCodes.NORMAL ) return;
 		throw createFor(res,req);
 	}
 }

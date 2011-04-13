@@ -26,11 +26,11 @@ public class ParseRDFRequestHandler extends BaseRequestHandler {
 		BaseRequest subReq = new BaseRequest(req, parsedUri);
 		Response subRes = TheGetter.call(subReq);
 		
-		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
+		if( subRes.getStatus() != ResponseCodes.NORMAL ) return subRes;
 		
 		Blob blob = BlobUtil.getBlob(subRes.getContent());
 		Object value = RdfIO.parseRdf(ValueUtil.getString(blob), subReq.getResourceName());
-		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, value, subRes);
+		BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, value, subRes);
 		res.putContentMetadata(CCouchNamespace.PARSED_FROM, blob);
 		return res;
 	}

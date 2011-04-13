@@ -14,7 +14,7 @@ public class ToUri extends BaseActiveFunction {
 		Object o = getArgumentValue(req, argumentExpressions, "operand", null);
 		if( o == null ) return null;
 		if( o instanceof Expression ) {
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, ((Expression)o).toUri(), "text/plain");
+			return new BaseResponse(ResponseCodes.NORMAL, ((Expression)o).toUri(), "text/plain");
 		}
 		throw new RuntimeException("Can't to-uri " + o.getClass().getName());
 	}

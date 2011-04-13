@@ -76,7 +76,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 				}
 			}).start();
 			Blob blob = new InputStreamBlob(pis, -1);
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, blob, pg.getContentType() );
+			return new BaseResponse(ResponseCodes.NORMAL, blob, pg.getContentType() );
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -88,7 +88,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 	
 	protected Response explorifyDirectoryEntry(Request req, Directory.Entry de ) {
 		return explorifyNonDirectory( req,
-			new BaseResponse( ResponseCodes.RESPONSE_NORMAL, BlobUtil.getBlob(de)) );
+			new BaseResponse( ResponseCodes.NORMAL, BlobUtil.getBlob(de)) );
 	}
 
 	protected Response explorifyXmlBlob(Request req, Response subRes, Blob b) {
@@ -221,11 +221,11 @@ public class ResourceExplorerComponent extends BaseComponent {
 			name = path;
 		}
 
-		BaseRequest subReq = new BaseRequest(RequestVerbs.VERB_GET, uri);
+		BaseRequest subReq = new BaseRequest(RequestVerbs.GET, uri);
 		subReq.metadata = req.getMetadata();
 		
 		Response subRes = TheGetter.call(subReq);
-		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
+		if( subRes.getStatus() != ResponseCodes.NORMAL ) return subRes;
 
 		BaseArguments subArgs = new BaseArguments(args);
 		subArgs.putNamedArgument("uri", uri);

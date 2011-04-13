@@ -83,7 +83,7 @@ public class FileDirectory extends File implements WritableDirectory {
 			String sourceUri;
 			if( value instanceof Ref ) {
 				sourceUri = ((Ref)value).getTargetUri();
-				BaseRequest getReq = new BaseRequest( RequestVerbs.VERB_GET, sourceUri );
+				BaseRequest getReq = new BaseRequest( RequestVerbs.GET, sourceUri );
 				getReq.metadata = requestMetadata;
 				value = TheGetter.getResponseValue(TheGetter.call(getReq), getReq);
 			} else {

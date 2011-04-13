@@ -209,7 +209,7 @@ public class ContentCouchCommand {
 			text += "\n";
 		}
 		
-		BaseRequest storeCommitUriReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, commitListUri);
+		BaseRequest storeCommitUriReq = TheGetter.createRequest(RequestVerbs.PUT, commitListUri);
 		storeCommitUriReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_REPLACE);
 		storeCommitUriReq.content = text;
 		return TheGetter.call(storeCommitUriReq);
@@ -223,11 +223,11 @@ public class ContentCouchCommand {
 	
 	protected List getCommitUris( String commitListUri, GeneralOptions opts ) {
 		// Load parent commits
-		BaseRequest parentCommitListReq = TheGetter.createRequest(RequestVerbs.VERB_GET, commitListUri);
+		BaseRequest parentCommitListReq = TheGetter.createRequest(RequestVerbs.GET, commitListUri);
 		if( opts.cacheSector != null ) parentCommitListReq.putMetadata( CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector );
 		Response parentCommitListRes = TheGetter.call(parentCommitListReq);
 		List commitUris = new ArrayList();
-		if( parentCommitListRes.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+		if( parentCommitListRes.getStatus() == ResponseCodes.NORMAL ) {
 			String parentCommitStr = ValueUtil.getString( parentCommitListRes.getContent() );
 			String[] lines = parentCommitStr.split("\\s+");
 			for( int lineNum=0; lineNum<lines.length; ++lineNum ) {
@@ -399,10 +399,10 @@ public class ContentCouchCommand {
 		Response getRes = null;
 		
 		findTarget: while( true ) {
-			BaseRequest getReq = TheGetter.createRequest( RequestVerbs.VERB_GET, sourceTargetUri );
+			BaseRequest getReq = TheGetter.createRequest( RequestVerbs.GET, sourceTargetUri );
 			getReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 			getRes = TheGetter.call(getReq);
-			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+			if( getRes.getStatus() != ResponseCodes.NORMAL ) {
 				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
 				return 1;
 			}
@@ -425,7 +425,7 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		BaseRequest putReq = TheGetter.createRequest( RequestVerbs.VERB_PUT, destUri );
+		BaseRequest putReq = TheGetter.createRequest( RequestVerbs.PUT, destUri );
 		putReq.content = getRes.getContent();
 		putReq.contentMetadata = getRes.getContentMetadata();
 		//putReq.putContextVar(SwfNamespace.CTX_CONFIG, metaRepoConfig.config);
@@ -437,7 +437,7 @@ public class ContentCouchCommand {
 		putReq.putMetadata(CCouchNamespace.REQ_DIRMERGE_METHOD, opts.dirMergeMethod);
 		putReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, opts.fileMergeMethod);
 		Response putRes = TheGetter.call(putReq);
-		if( putRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+		if( putRes.getStatus() != ResponseCodes.NORMAL ) {
 			System.err.println("Couldn't PUT to " + destUri + ": " + putRes.getContent());
 			return 1;
 		}
@@ -523,10 +523,10 @@ public class ContentCouchCommand {
 		int errorCount = 0;
 		for( Iterator i=inputUris.iterator(); i.hasNext(); ) {
 			String input = (String)i.next();
-			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.VERB_GET, input);
+			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.GET, input);
 			opts.initrmd(getReq);
 			Response getRes = TheGetter.call(getReq);
-			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+			if( getRes.getStatus() != ResponseCodes.NORMAL ) {
 				System.err.println("Couldn't find " + getReq.getResourceName() + ": " + getRes.getStatus() + ": " + getRes.getContent() );
 				++errorCount;
 			} else {
@@ -542,7 +542,7 @@ public class ContentCouchCommand {
 	}
 	
 	protected int relink( File f ) {
-		BaseRequest idReq = TheGetter.createRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify");
+		BaseRequest idReq = TheGetter.createRequest(RequestVerbs.POST, "x-ccouch-repo:identify");
 		idReq.content = new FileBlob(f);
 		Response idRes = TheGetter.call(idReq);
 		String id = (String)TheGetter.getResponseValue(idRes, idReq);
@@ -551,13 +551,13 @@ public class ContentCouchCommand {
 			return 0;
 		}
 		
-		BaseRequest getStoreFileReq = TheGetter.createRequest(RequestVerbs.VERB_GET, id);
+		BaseRequest getStoreFileReq = TheGetter.createRequest(RequestVerbs.GET, id);
 		getStoreFileReq.putMetadata(CCouchNamespace.REQ_LOCAL_REPOS_ONLY, Boolean.TRUE);
 		Response getStoreFileRes = TheGetter.call(getStoreFileReq);
 		int status = getStoreFileRes.getStatus();
-		if( status == ResponseCodes.RESPONSE_DOESNOTEXIST || status == ResponseCodes.RESPONSE_UNHANDLED ) {
+		if( status == ResponseCodes.DOES_NOT_EXIST || status == ResponseCodes.UNHANDLED ) {
 			// skip it.
-		} else if( status == ResponseCodes.RESPONSE_NORMAL ) {
+		} else if( status == ResponseCodes.NORMAL ) {
 			Object hopefullyFile = TheGetter.getResponseValue(getStoreFileRes, getStoreFileReq);
 			if( hopefullyFile instanceof File ) {
 				File target = (File)hopefullyFile;
@@ -711,10 +711,10 @@ public class ContentCouchCommand {
 		for( Iterator i=sourceUris.iterator(); i.hasNext(); ) {
 			String sourceUri = (String)i.next();
 			
-			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.VERB_GET, sourceUri);
+			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.GET, sourceUri);
 			if( opts.cacheSector != null ) getReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 			Response getRes = TheGetter.call(getReq);
-			if( getRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+			if( getRes.getStatus() != ResponseCodes.NORMAL ) {
 				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
 				++errorCount;
 				continue;
@@ -730,7 +730,7 @@ public class ContentCouchCommand {
 			if( o instanceof Directory ) {
 				if( !storeDirs ) {
 					o = new FilterIterator( new DirectoryWalker((Directory)o, followRefs), EntryFilters.BLOBFILTER );
-					getRes = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, o);
+					getRes = new BaseResponse(ResponseCodes.NORMAL, o);
 					expectIdentifier = false;
 					if( createCommit ) {
 						System.err.println("Cannot create commit when source is a collection");
@@ -739,7 +739,7 @@ public class ContentCouchCommand {
 				}
 			}
 			
-			BaseRequest putReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, dataDestUri);
+			BaseRequest putReq = TheGetter.createRequest(RequestVerbs.PUT, dataDestUri);
 			putReq.content = o;
 			putReq.contentMetadata = new HashMap(getRes.getContentMetadata());
 			putReq.contentMetadata.put(CCouchNamespace.SOURCE_URI, sourceUri);
@@ -754,7 +754,7 @@ public class ContentCouchCommand {
 			);
 			
 			Response putRes = TheGetter.call(putReq);
-			if( putRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+			if( putRes.getStatus() != ResponseCodes.NORMAL ) {
 				System.err.println("Couldn't PUT to " + dataDestUri + ": " + putRes.getContent());
 				++errorCount;
 			}
@@ -784,10 +784,10 @@ public class ContentCouchCommand {
 				for( int i=0; i<parentCommitUris.size(); ++i ) {
 					String parentCommitUri = (String)parentCommitUris.get(i);
 					if( !forceCommit ) {
-						BaseRequest parentCommitRequest = TheGetter.createRequest(RequestVerbs.VERB_GET, parentCommitUri);
+						BaseRequest parentCommitRequest = TheGetter.createRequest(RequestVerbs.GET, parentCommitUri);
 						if( opts.cacheSector != null ) parentCommitRequest.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 						Response parentCommitResponse = TheGetter.call(parentCommitRequest);
-						if( parentCommitResponse.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+						if( parentCommitResponse.getStatus() == ResponseCodes.NORMAL ) {
 							if( parentCommitResponse.getContent() instanceof Commit ) {
 								Commit parentCommit = (Commit)parentCommitResponse.getContent();
 								if( parentCommit.getTarget() instanceof Ref && storedUri.equals(((Ref)parentCommit.getTarget()).getTargetUri()) ) {
@@ -822,7 +822,7 @@ public class ContentCouchCommand {
 			commit.target = new BaseRef(storedUri);
 			commit.parents = parents;
 			
-			BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, dataDestUri);
+			BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.PUT, dataDestUri);
 			if( opts.storeSector != null ) storeCommitReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
 			if( opts.cacheSector != null ) storeCommitReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
 			if( opts.shouldLinkStored ) storeCommitReq.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
@@ -833,7 +833,7 @@ public class ContentCouchCommand {
 			
 			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
 			Response storeCommitRes = TheGetter.call(storeCommitReq);
-			if( storeCommitRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+			if( storeCommitRes.getStatus() != ResponseCodes.NORMAL ) {
 				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + dataDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
 				++errorCount;
 				break createCommit;
@@ -856,7 +856,7 @@ public class ContentCouchCommand {
 
 			if( parentCommitListUri != null ) {
 				Response storeCommitUriRes = writeCommitUri(parentCommitListUri, commitUrn);
-				if( storeCommitUriRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+				if( storeCommitUriRes.getStatus() != ResponseCodes.NORMAL ) {
 					Log.log(Log.EVENT_WARNING, "Could not PUT new commit URI list to " + parentCommitListUri + ": " + TheGetter.getResponseErrorSummary(storeCommitUriRes));
 					break createCommit;
 				}
@@ -866,7 +866,7 @@ public class ContentCouchCommand {
 				BaseRequest storeCommitHeadReq = new BaseRequest(storeCommitReq, commitDestUri);
 				storeCommitHeadReq.content = TheGetter.get(commitBlobUrn);
 				Response storeCommitHeadRes = TheGetter.call(storeCommitHeadReq);
-				if( storeCommitHeadRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+				if( storeCommitHeadRes.getStatus() != ResponseCodes.NORMAL ) {
 					Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + commitDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
 					++errorCount;
 					break createCommit;
@@ -1077,7 +1077,7 @@ public class ContentCouchCommand {
 			return 1;
 		}
 
-		BaseRequest req = new BaseRequest(RequestVerbs.VERB_GET, dir);
+		BaseRequest req = new BaseRequest(RequestVerbs.GET, dir);
 		opts.initrmd(req);
 		Object o = TheGetter.getResponseValue(TheGetter.call(req),req);
 		if( !(o instanceof Directory) ) {

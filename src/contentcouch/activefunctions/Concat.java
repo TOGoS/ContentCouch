@@ -53,6 +53,6 @@ public class Concat extends BaseActiveFunction {
 			for( int j=0; j<len; ++j, ++offset ) resultBytes[offset] = blobBytes[j];
 		}
 
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, new ByteArrayBlob(resultBytes));
+		return new BaseResponse(ResponseCodes.NORMAL, new ByteArrayBlob(resultBytes));
 	}
 }

@@ -39,7 +39,7 @@ public class CreateDirectory extends BaseActiveFunction {
 			}
 		}
 		
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, result);
+		return new BaseResponse(ResponseCodes.NORMAL, result);
 	}
 
 }

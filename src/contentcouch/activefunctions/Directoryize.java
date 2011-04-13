@@ -17,12 +17,12 @@ public class Directoryize extends BaseActiveFunction {
 	public Response call(Request req, Map argumentExpressions) {
 		Expression e = (Expression)argumentExpressions.get("operand");
 		Response subRes = getArgumentResponse(req, argumentExpressions, "operand");
-		if( subRes.getStatus() != ResponseCodes.RESPONSE_NORMAL ) return subRes;
+		if( subRes.getStatus() != ResponseCodes.NORMAL ) return subRes;
 		if( e instanceof UriExpression ) {
 			String uri = ((UriExpression)e).getTargetUri();
 			if( uri.matches("^https?://.*/$") ) {
 				Directory d = DirectoryUtil.getDirectory(subRes, "active:contentcouch.directoryize+operand@"+UriUtil.uriEncode(uri) );
-				return new BaseResponse( ResponseCodes.RESPONSE_NORMAL, d );
+				return new BaseResponse( ResponseCodes.NORMAL, d );
 			}
 		}
 		return subRes;

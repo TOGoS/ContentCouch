@@ -30,7 +30,7 @@ public class ValueExpression implements Expression {
 	}
 
 	public Response eval( Request req ) {
-		BaseResponse bre = new BaseResponse( ResponseCodes.RESPONSE_NORMAL, value );
+		BaseResponse bre = new BaseResponse( ResponseCodes.NORMAL, value );
 		bre.metadata = metadata;
 		return bre;
 	}

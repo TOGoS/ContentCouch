@@ -16,10 +16,10 @@ public class ContentCouchCommandHelp {
 	public static Response getResponse(String name) {
 		URL resourceUrl = ContentCouchCommandHelp.class.getResource(name+".txt");
 		if( resourceUrl == null ) {
-		    return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST,
+		    return new BaseResponse(ResponseCodes.DOES_NOT_EXIST,
 		       "No such resource: " + name, "text/plain");
 		}
-		Request req = new BaseRequest(RequestVerbs.VERB_GET, resourceUrl.toString());
+		Request req = new BaseRequest(RequestVerbs.GET, resourceUrl.toString());
 		return TheGetter.call(req);
 	}
 	

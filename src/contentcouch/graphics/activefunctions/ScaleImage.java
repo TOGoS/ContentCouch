@@ -66,7 +66,7 @@ public class ScaleImage extends BaseActiveFunction {
 			newHeight = maxHeight.intValue();
 		}
 		
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, ImageUtil.scaleImage( img, newWidth, newHeight ));
+		return new BaseResponse(ResponseCodes.NORMAL, ImageUtil.scaleImage( img, newWidth, newHeight ));
 	}
 
 }

@@ -50,7 +50,7 @@ public class MergeUtilTest extends TestCase
 	
 	protected Ref storeCommit(Commit c) {
 		RdfCommit rdfCommit = new RdfCommit(c, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
-		BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.PUT, "x-ccouch-repo://test-repo/data");
 		storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
 		storeCommitReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_STRICTIG);
 		Response storeCommitRes = TheGetter.callAndThrowIfNonNormalResponse(storeCommitReq);

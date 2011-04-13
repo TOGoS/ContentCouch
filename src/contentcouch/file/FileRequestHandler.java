@@ -30,7 +30,7 @@ public class FileRequestHandler extends BaseRequestHandler {
 				res.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(f.lastModified()));
 				return res;
 			} else {
-				return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "File not found: " + path);
+				return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "File not found: " + path);
 			}
 		} else if( "PUT".equals(req.getVerb()) ) {
 			File f = new File(path);

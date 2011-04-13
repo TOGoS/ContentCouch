@@ -64,7 +64,7 @@ public class RepositoryTest extends TestCase {
 		
 		BaseRequest getReq;
 
-		getReq = new BaseRequest(RequestVerbs.VERB_GET, storageUrn );
+		getReq = new BaseRequest(RequestVerbs.GET, storageUrn );
 		Response res = TheGetter.call( getReq );
 		assertNotNull( TheGetter.getResponseValue(res,getReq) );
 		
@@ -72,7 +72,7 @@ public class RepositoryTest extends TestCase {
 		assertNull( TheGetter.get("x-memtemp:/test-repo/data/remote/"+storageFilePostfix) );
 		assertNull( TheGetter.get("x-memtemp:/test-repo/data/kash/"+storageFilePostfix) );
 
-		getReq = new BaseRequest(RequestVerbs.VERB_GET, storageUrn );
+		getReq = new BaseRequest(RequestVerbs.GET, storageUrn );
 		getReq.putMetadata( CCouchNamespace.REQ_CACHE_SECTOR, "kash" );
 		res = TheGetter.call( getReq );
 		assertNotNull( TheGetter.getResponseValue(res,getReq) );
@@ -115,7 +115,7 @@ public class RepositoryTest extends TestCase {
 	}
 	
 	protected String storeDirectory(Directory dir) {
-		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		BaseRequest putReq = new BaseRequest(RequestVerbs.PUT, "x-ccouch-repo://test-repo/data");
 		putReq.content = dir;
 		
 		Response putRes = TheGetter.call(putReq);
@@ -139,7 +139,7 @@ public class RepositoryTest extends TestCase {
 		RdfDirectory rdfDir = (RdfDirectory)TheGetter.get(originalStoredUri);
 		assertTrue( rdfDir instanceof RdfDirectory );
 		
-		BaseRequest putReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		BaseRequest putReq = new BaseRequest(RequestVerbs.PUT, "x-ccouch-repo://test-repo/data");
 		putReq.content = rdfDir;
 		putReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, "bilge");
 		Response putRes = TheGetter.call(putReq);
@@ -158,7 +158,7 @@ public class RepositoryTest extends TestCase {
 	public void testUriDotFilesStored() {
 		SimpleDirectory simpleDir = createTestSimpleDirectory();
 		
-		BaseRequest storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		BaseRequest storeReq = new BaseRequest(RequestVerbs.PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		Response storeRes = TheGetter.call(storeReq);
@@ -171,7 +171,7 @@ public class RepositoryTest extends TestCase {
 		simpleDir.addDirectoryEntry(createBlobDirectoryEntry("hello3", "A third hello!"));
 		
 		// Using uri dot files, we should still get the old URI
-		storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		storeReq = new BaseRequest(RequestVerbs.PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		storeReq.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
@@ -182,7 +182,7 @@ public class RepositoryTest extends TestCase {
 
 		// Without using uri dot files, we should get a new URI
 		simpleDir.addDirectoryEntry(createBlobDirectoryEntry("hello3", "A third hello!"));
-		storeReq = new BaseRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		storeReq = new BaseRequest(RequestVerbs.PUT, "x-ccouch-repo://test-repo/data");
 		storeReq.content = simpleDir;
 		storeReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		storeReq.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.FALSE);
@@ -194,7 +194,7 @@ public class RepositoryTest extends TestCase {
 	
 	protected Ref storeCommit(Commit c) {
 		RdfCommit rdfCommit = new RdfCommit(c, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
-		BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data");
+		BaseRequest storeCommitReq = TheGetter.createRequest(RequestVerbs.PUT, "x-ccouch-repo://test-repo/data");
 		storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
 		storeCommitReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_STRICTIG);
 		Response storeCommitRes = TheGetter.callAndThrowIfNonNormalResponse(storeCommitReq);
@@ -203,10 +203,10 @@ public class RepositoryTest extends TestCase {
 	}
 
 	protected boolean exists( String uri ) {
-		Response res = TheGetter.call( new BaseRequest(RequestVerbs.VERB_GET,uri) );
+		Response res = TheGetter.call( new BaseRequest(RequestVerbs.GET,uri) );
 		switch( res.getStatus() ) { 
-		case( ResponseCodes.RESPONSE_NORMAL ): return true;
-		case( ResponseCodes.RESPONSE_DOESNOTEXIST ): return false;
+		case( ResponseCodes.NORMAL ): return true;
+		case( ResponseCodes.DOES_NOT_EXIST ): return false;
 		default: throw new RuntimeException("Expected 200 or 400, got "+res.getStatus() );
 		}
 	}
@@ -257,13 +257,13 @@ public class RepositoryTest extends TestCase {
 		for( int i=0; i<followCounts.length; ++i ) {
 			int followCount = followCounts[i];
 			
-			BaseRequest getReq = TheGetter.createRequest( RequestVerbs.VERB_GET, commitRef.getTargetUri() );
+			BaseRequest getReq = TheGetter.createRequest( RequestVerbs.GET, commitRef.getTargetUri() );
 			Response getRes = TheGetter.call(getReq);
 			Commit mostRecentCommit = (Commit)TheGetter.getResponseValue(getRes, getReq);
 			
 			String sector = "last"+followCount; 
 			
-			BaseRequest putReq = TheGetter.createRequest( RequestVerbs.VERB_PUT, "x-ccouch-repo://test-repo/data/"+sector );
+			BaseRequest putReq = TheGetter.createRequest( RequestVerbs.PUT, "x-ccouch-repo://test-repo/data/"+sector );
 			putReq.content = mostRecentCommit;
 			putReq.contentMetadata = getRes.getContentMetadata();
 			putReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(followCount));

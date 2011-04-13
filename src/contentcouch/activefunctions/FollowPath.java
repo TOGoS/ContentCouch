@@ -37,24 +37,24 @@ public class FollowPath extends BaseActiveFunction implements PathSimplifiableAc
 			if( source instanceof Directory ) {
 				Directory.Entry e = ((Directory)source).getDirectoryEntry(pathParts[i]);
 				if( e == null ) {
-					return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "'" + pathParts[i] + "' not found in "+source.getClass().getName());
+					return new BaseResponse(ResponseCodes.NORMAL, "'" + pathParts[i] + "' not found in "+source.getClass().getName());
 				}
 				source = e.getTarget();
 			} else if( source instanceof Commit ) {
 				if( "target".equals(pathParts[i]) ) {
 					source = ((Commit)source).getTarget();
 				} else { 
-					return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Cannot follow path " + path + " ('"+pathParts[i]+"' cannot be applied to a commit)");
+					return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "Cannot follow path " + path + " ('"+pathParts[i]+"' cannot be applied to a commit)");
 				}
 			} else {
-				return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Cannot follow path " + path);
+				return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "Cannot follow path " + path);
 			}
 		}
 		if( source instanceof Ref ) {
 			BaseRequest subReq = new BaseRequest( req, resolvedUri = ((Ref)source).getTargetUri() );
 			source = TheGetter.getResponseValue( TheGetter.call( subReq ), subReq );
 		}
-		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, source);
+		BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, source);
 		if( resolvedUri != null ) {
 			res.putMetadata(CCouchNamespace.RES_RESOLVED_URI, resolvedUri);
 		}

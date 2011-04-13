@@ -24,7 +24,7 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 
 	protected static Response getArgumentResponse( Request req, Map argumentExpressions, String name ) {
 		Expression e = (Expression)argumentExpressions.get(name);
-		if( e == null ) return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Missing argument " + name, "text/plain");
+		if( e == null ) return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "Missing argument " + name, "text/plain");
 		return e.eval(req);
 	}
 	
@@ -32,7 +32,7 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 		Expression e = (Expression)argumentExpressions.get(name);
 		if( e == null ) return defaultValue;
 		Response res = e.eval(req);
-		if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+		if( res.getStatus() == ResponseCodes.NORMAL ) {
 			if( res.getContent() == null ) return defaultValue;
 			return res.getContent();
 		}
@@ -70,7 +70,7 @@ public abstract class BaseActiveFunction implements ActiveFunction, PathSimplifi
 			Expression exp = (Expression)i.next();
 			Response res = exp != null ? exp.eval(req) : null;
 			if( res != null ) {
-				if( res != null && res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) {
+				if( res != null && res.getStatus() == ResponseCodes.NORMAL ) {
 					values.add( res.getContent() );
 				} else {
 					throw new RuntimeException( "Couldn't load " + exp.toString() + ": " + res.getStatus() + ": " + res.getContent());

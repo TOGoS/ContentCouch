@@ -19,6 +19,6 @@ public class ThumbnailDirectory extends BaseActiveFunction {
 		} else {
 			td = new contentcouch.graphics.ThumbnailDirectory( o.eval(req), o.toUri() );
 		}
-		return new BaseResponse( ResponseCodes.RESPONSE_NORMAL, td );
+		return new BaseResponse( ResponseCodes.NORMAL, td );
 	}
 }

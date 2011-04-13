@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import togos.mf.api.CallHandler;
+import togos.mf.api.Callable;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
@@ -14,15 +14,15 @@ import togos.mf.base.BaseResponse;
 import contentcouch.framework.BaseRequestHandler;
 
 public class NameTranslator extends BaseRequestHandler {
-	CallHandler backingCallHandler;
+	Callable backingCallable;
 
 	String frontPath;
 	String backPath;
 	String directoryIndex;
 	ArrayList autoAppendPaths = new ArrayList();
 	
-	public NameTranslator(CallHandler backingCallHandler, Map config) {
-		this.backingCallHandler = backingCallHandler;
+	public NameTranslator(Callable backingCallable, Map config) {
+		this.backingCallable = backingCallable;
 		
 		this.frontPath = (String)config.get("path");
 		this.backPath = (String)config.get("translatedPath");
@@ -51,8 +51,8 @@ public class NameTranslator extends BaseRequestHandler {
 		
 		for( Iterator i=autoAppendPaths.iterator(); i.hasNext(); ) {
 			String app = (String)i.next();
-			Response bres = backingCallHandler.call( new BaseRequest(req,mappedPath+app) );
-			if( bres.getStatus() != ResponseCodes.RESPONSE_UNHANDLED && bres.getStatus() != ResponseCodes.RESPONSE_DOESNOTEXIST ) return bres;
+			Response bres = backingCallable.call( new BaseRequest(req,mappedPath+app) );
+			if( bres.getStatus() != ResponseCodes.UNHANDLED && bres.getStatus() != ResponseCodes.DOES_NOT_EXIST ) return bres;
 		}
 		return BaseResponse.RESPONSE_UNHANDLED;
 	}

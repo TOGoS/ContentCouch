@@ -52,7 +52,7 @@ public class HttpRequestHandler extends BaseRequestHandler {
 			File tempFile = File.createTempFile("httpdownload", null);
 			FileCacheBlob fcb = new FileCacheBlob(tempFile, new InputStreamBlob(urlConn.getInputStream(), length));			
 			Log.log(Log.EVENT_DOWNLOAD_STARTED, req.getResourceName(), String.valueOf(length) );
-			BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, fcb);
+			BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, fcb);
 			if( urlConn.getLastModified() > 0 ) {
 				res.putContentMetadata(DcNamespace.DC_MODIFIED, new Date(urlConn.getLastModified()));
 			}
@@ -63,18 +63,18 @@ public class HttpRequestHandler extends BaseRequestHandler {
 		} catch( NoRouteToHostException e ) {
 			String mess = "No route to host " + url.getHost();
 			Log.log(Log.EVENT_WARNING, mess);
-			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, mess, "text/plain");
+			return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, mess, "text/plain");
 		} catch( ConnectException e ) {
 			String mess = "Could not connect to " + url.getHost() + ":" + url.getPort();
 			Log.log(Log.EVENT_WARNING, mess);
-			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, mess, "text/plain");
+			return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, mess, "text/plain");
 		} catch( FileNotFoundException e ) {
-			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "File not found: " + req.getResourceName(), "text/plain");
+			return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "File not found: " + req.getResourceName(), "text/plain");
 		} catch( IOException e ) {
 			e.printStackTrace();  // eh
 			String mess = "I/O error reading " + req.getResourceName();
 			Log.log(Log.EVENT_WARNING, mess);
-			return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, mess, "text/plain");
+			return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, mess, "text/plain");
 		}
 	}
 

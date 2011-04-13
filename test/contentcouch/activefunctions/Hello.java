@@ -11,7 +11,7 @@ import contentcouch.active.ActiveFunction;
 
 public class Hello implements ActiveFunction {
 	public Response call( Request req, Map argumentExpressions ) {
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Hello, world", "text/plain");
+		return new BaseResponse(ResponseCodes.NORMAL, "Hello, world", "text/plain");
 	}
 	public boolean isConstant( Map argumentExpressions ) {
 		return true;

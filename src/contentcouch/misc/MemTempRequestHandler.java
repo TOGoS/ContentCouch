@@ -24,11 +24,11 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 		path = "memtemproot/" + path;
 		String[] parts = path.split("/+");
 		
-		if( RequestVerbs.VERB_GET.equals(req.getVerb()) ) {
+		if( RequestVerbs.GET.equals(req.getVerb()) ) {
 			return get( parts );
-		} else if( RequestVerbs.VERB_PUT.equals(req.getVerb()) ) {
+		} else if( RequestVerbs.PUT.equals(req.getVerb()) ) {
 			if( path.length() == 0 ) {
-				return new BaseResponse( ResponseCodes.RESPONSE_CALLER_ERROR, "Cannot PUT at " + req.getResourceName(), "text/plain");
+				return new BaseResponse( ResponseCodes.CALLER_ERROR, "Cannot PUT at " + req.getResourceName(), "text/plain");
 			}
 			return put( parts, req.getContent(), req.getMetadata() );
 		} else {
@@ -42,13 +42,13 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 			String part = parts[i];
 			if( obj instanceof Directory ) {
 				Directory.Entry e = ((Directory)obj).getDirectoryEntry(part);
-				if( e == null ) return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, part + " not found in " + parts[i-1], "text/plain");
+				if( e == null ) return new BaseResponse( ResponseCodes.DOES_NOT_EXIST, part + " not found in " + parts[i-1], "text/plain");
 				obj = e.getTarget();
 			} else {
-				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
+				return new BaseResponse( ResponseCodes.DOES_NOT_EXIST, parts[i-1] + " not a directory", "text/plain");
 			}
 		}
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, obj);
+		return new BaseResponse(ResponseCodes.NORMAL, obj);
 	}
 
 	protected Response put( String[] parts, Object newObj, Map requestMetadata ) {
@@ -64,7 +64,7 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 					obj = e.getTarget();
 				}
 			} else {
-				return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
+				return new BaseResponse( ResponseCodes.DOES_NOT_EXIST, parts[i-1] + " not a directory", "text/plain");
 			}
 		}
 
@@ -72,9 +72,9 @@ public class MemTempRequestHandler extends BaseRequestHandler {
 		if( obj instanceof Directory ) {
 			((WritableDirectory)obj).addDirectoryEntry(new SimpleDirectory.Entry(part, newObj, newObj instanceof Directory ? CCouchNamespace.TT_SHORTHAND_DIRECTORY : CCouchNamespace.TT_SHORTHAND_BLOB), requestMetadata);
 		} else {
-			return new BaseResponse( ResponseCodes.RESPONSE_DOESNOTEXIST, parts[i-1] + " not a directory", "text/plain");
+			return new BaseResponse( ResponseCodes.DOES_NOT_EXIST, parts[i-1] + " not a directory", "text/plain");
 		}
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, "Put object at .../" + part);
+		return new BaseResponse(ResponseCodes.NORMAL, "Put object at .../" + part);
 	}
 
 }

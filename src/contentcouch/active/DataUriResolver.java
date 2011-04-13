@@ -44,7 +44,7 @@ public class DataUriResolver extends BaseRequestHandler {
 		if( !uri.startsWith(DATA_URI_PREFIX) ) return BaseResponse.RESPONSE_UNHANDLED;
 		HashMap metadata = new HashMap();
 		byte[] data = parse(uri, metadata);
-		BaseResponse res = new BaseResponse(ResponseCodes.RESPONSE_NORMAL, data);
+		BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, data);
 		res.metadata = metadata;
 		return res;
 	}

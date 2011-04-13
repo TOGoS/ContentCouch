@@ -13,10 +13,10 @@ public class ContextVarRequestHandler extends BaseRequestHandler {
 		
 		String varName = UriUtil.uriDecode(req.getResourceName().substring("x-context-var:".length()));
 		
-		if( RequestVerbs.VERB_GET.equals(req.getVerb()) ) {
-			return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, req.getMetadata().get(varName));
+		if( RequestVerbs.GET.equals(req.getVerb()) ) {
+			return new BaseResponse(ResponseCodes.NORMAL, req.getMetadata().get(varName));
 			/*
-		} else if( RequestVerbs.VERB_PUT.equals(req.getVerb()) ) {
+		} else if( RequestVerbs.PUT.equals(req.getVerb()) ) {
 			req.getMetadata().put(varName, req.getContent());
 			return new BaseResponse();
 			*/

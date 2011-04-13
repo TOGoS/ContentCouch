@@ -35,6 +35,6 @@ public class MergeDirectories extends BaseActiveFunction {
 			Directory indir = (Directory)TheGetter.getResponseValue(exp.eval(req), uri);
 			new DirectoryMerger( conflictResolver, req.getMetadata() ).putAll( result, indir, uri, "x-undefined:new-directory" );
 		}
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, result);
+		return new BaseResponse(ResponseCodes.NORMAL, result);
 	}
 }

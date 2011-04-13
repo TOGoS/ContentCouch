@@ -200,7 +200,7 @@ public class MetadataUtil {
 	public static void dereferenceTargetToRequest( Object target, BaseRequest req ) {
 		if( target instanceof Ref ) {
 			String targetSourceUri = ((Ref)target).getTargetUri();
-			BaseRequest targetReq = new BaseRequest(RequestVerbs.VERB_GET, targetSourceUri );
+			BaseRequest targetReq = new BaseRequest(RequestVerbs.GET, targetSourceUri );
 			Response targetRes = TheGetter.call( targetReq );
 			req.content = TheGetter.getResponseValueNN( targetRes, targetReq );
 			req.contentMetadata = targetRes.getContentMetadata();

@@ -28,15 +28,15 @@ import contentcouch.value.Ref;
 
 public class MergeUtil {
 	public static Commit getCommit( String cUrn ) {
-		BaseRequest req = new BaseRequest(RequestVerbs.VERB_GET, cUrn);
+		BaseRequest req = new BaseRequest(RequestVerbs.GET, cUrn);
 		req.metadata = new HashMap(Context.getInstance());
 		if( !req.metadata.containsKey(CCouchNamespace.REQ_CACHE_SECTOR) ) {
 			req.metadata.put(CCouchNamespace.REQ_CACHE_SECTOR, "remote");
 		}
 		Response res = TheGetter.call(req);
 		switch( res.getStatus() ) {
-		case( ResponseCodes.RESPONSE_UNHANDLED ):
-		case( ResponseCodes.RESPONSE_DOESNOTEXIST ):
+		case( ResponseCodes.UNHANDLED ):
+		case( ResponseCodes.DOES_NOT_EXIST ):
 			return null;
 		default:
 			return (Commit)TheGetter.getResponseValue( res, req );

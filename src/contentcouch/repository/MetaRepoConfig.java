@@ -76,10 +76,10 @@ public class MetaRepoConfig {
 			if( rp.uri != null ) defaultRepoConfig.uri = rp.uri;
 			String cfgUri = rp.uri + "ccouch-config";
 
-			BaseRequest cfgRequest = new BaseRequest(RequestVerbs.VERB_GET, cfgUri);
+			BaseRequest cfgRequest = new BaseRequest(RequestVerbs.GET, cfgUri);
 			Response cfgResponse = TheGetter.call(cfgRequest);
 			Blob cfgBlob;
-			if( cfgResponse.getStatus() == ResponseCodes.RESPONSE_NORMAL && (cfgBlob = (Blob)cfgResponse.getContent()) != null ) {
+			if( cfgResponse.getStatus() == ResponseCodes.NORMAL && (cfgBlob = (Blob)cfgResponse.getContent()) != null ) {
 				BufferedReader brd = new BufferedReader(new InputStreamReader(new BlobInputStream(cfgBlob)));
 				try {
 					_loadConfig(brd, cfgUri);
@@ -237,7 +237,7 @@ public class MetaRepoConfig {
 			requestKernelCache.addRequestHandler(new FileRequestHandler());
 			requestKernelCache.addRequestHandler(InternalStreamRequestHandler.getInstance());
 			requestKernelCache.addRequestHandler(getMetaRepository());
-			TheGetter.initializeBasicCallHandlers(requestKernelCache);
+			TheGetter.initializeBasicCallables(requestKernelCache);
 		}
 		return requestKernelCache;
 	}

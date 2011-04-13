@@ -83,7 +83,7 @@ public class RandomFile extends BaseActiveFunction {
 	public Response call(Request req, Map argumentExpressions) {
 		Directory d = (Directory)getArgumentValue(req, argumentExpressions, "directory", null);
 		if( d == null ) {
-			return new BaseResponse( ResponseCodes.RESPONSE_CALLER_ERROR, "directory not specified" );
+			return new BaseResponse( ResponseCodes.CALLER_ERROR, "directory not specified" );
 		}
 		boolean returnEntries = ValueUtil.getBoolean( getArgumentValue(req, argumentExpressions, "return-entries", null), false);
 		boolean returnRefs = ValueUtil.getBoolean( getArgumentValue(req, argumentExpressions, "return-refs", null), false);
@@ -104,7 +104,7 @@ public class RandomFile extends BaseActiveFunction {
 		
 		Directory.Entry e = getRandomEntry( d, r, EntryFilters.BLOBFILTER, EntryFilters.DIRECTORYFILTER, null );
 		
-		return new BaseResponse( ResponseCodes.RESPONSE_NORMAL,
+		return new BaseResponse( ResponseCodes.NORMAL,
 			returnEntries ? e : returnRefs ? e.getTarget() : DirectoryUtil.resolveTarget(e) );
 	}
 }

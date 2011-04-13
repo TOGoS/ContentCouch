@@ -1,17 +1,17 @@
 package contentcouch.framework;
 
 import togos.mf.api.Request;
-import togos.mf.api.CallHandler;
+import togos.mf.api.Callable;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 
-public abstract class BaseRequestHandler implements CallHandler {
+public abstract class BaseRequestHandler implements Callable {
 	
 	public abstract Response call( Request req );
 	
 	protected final static Object getResponseValue( Response res ) {
-		if( res.getStatus() == ResponseCodes.RESPONSE_NORMAL ) return res.getContent();
+		if( res.getStatus() == ResponseCodes.NORMAL ) return res.getContent();
 		return null;
 	}
 	

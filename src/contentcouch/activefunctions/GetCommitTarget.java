@@ -13,6 +13,6 @@ import contentcouch.value.Commit;
 public class GetCommitTarget extends BaseActiveFunction {
 	public Response call(Request req, Map argumentExpressions) {
 		Commit c = (Commit)getArgumentValue(req, argumentExpressions, "operand", null);
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, TheGetter.dereference(c.getTarget()));
+		return new BaseResponse(ResponseCodes.NORMAL, TheGetter.dereference(c.getTarget()));
 	}
 }

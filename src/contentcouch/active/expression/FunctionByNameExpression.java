@@ -85,13 +85,13 @@ public class FunctionByNameExpression implements Expression {
 		// Check function map
 		if( functions != null ) {
 			Object f = functions.get(funcName);
-			if( f != null ) return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, f);
+			if( f != null ) return new BaseResponse(ResponseCodes.NORMAL, f);
 		}
 		
 		Class c = getClassForFunction( funcName );
 		if( c != null ) {
 			try {
-				return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, c.newInstance());
+				return new BaseResponse(ResponseCodes.NORMAL, c.newInstance());
 			} catch( InstantiationException e ) {
 				throw new RuntimeException(e);
 			} catch( IllegalAccessException e ) {
@@ -99,7 +99,7 @@ public class FunctionByNameExpression implements Expression {
 			}
 		}
 		
-		return new BaseResponse(ResponseCodes.RESPONSE_DOESNOTEXIST, "Couldn't find function " + funcName, "text/plain");
+		return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "Couldn't find function " + funcName, "text/plain");
 	}
 
 	public boolean isConstant() {

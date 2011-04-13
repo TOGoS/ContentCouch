@@ -10,10 +10,10 @@ import togos.mf.value.Blob;
 
 public class TheIdentifier {
 	public static String identify( Blob b ) {
-		BaseRequest req = new BaseRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify");
+		BaseRequest req = new BaseRequest(RequestVerbs.POST, "x-ccouch-repo:identify");
 		req.content = b;
 		Response res = TheGetter.call(req);
-		if( res.getStatus() != ResponseCodes.RESPONSE_NORMAL ) {
+		if( res.getStatus() != ResponseCodes.NORMAL ) {
 			throw new RuntimeException( "Could not identify blob; " + ValueUtil.getString(res.getContent()));
 		}
 		return ValueUtil.getString(res.getContent());

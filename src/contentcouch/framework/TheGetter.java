@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import togos.mf.api.CallHandler;
+import togos.mf.api.Callable;
 import togos.mf.api.ContentAndMetadata;
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
@@ -52,10 +52,10 @@ public class TheGetter {
 	
 	public static final String CTXVAR = SwfNamespace.CTX_GETTER; 
 	
-	public static CallHandler globalInstance;
+	public static Callable globalInstance;
 	
-	public static CallHandler getGenericGetter(Request req) {
-		CallHandler theGetter = (CallHandler)req.getMetadata().get(CTXVAR);
+	public static Callable getGenericGetter(Request req) {
+		Callable theGetter = (Callable)req.getMetadata().get(CTXVAR);
 		if( theGetter == null ) {
 			theGetter = globalInstance;
 		}
@@ -73,7 +73,7 @@ public class TheGetter {
 		return desc;
 	}
 	
-	public static void initializeBasicCallHandlers( MultiRequestHandler mrh ) {
+	public static void initializeBasicCallables( MultiRequestHandler mrh ) {
 		mrh.addRequestHandler(new ParseRDFRequestHandler());
 		mrh.addRequestHandler(new ContextVarRequestHandler());
 		mrh.addRequestHandler(new ActiveRequestHandler());
@@ -83,9 +83,9 @@ public class TheGetter {
 
 	}
 	
-	public static CallHandler getBasicCallHandler() {
+	public static Callable getBasicCallable() {
 		MultiRequestHandler mrh = new MultiRequestHandler();
-		initializeBasicCallHandlers(mrh);
+		initializeBasicCallables(mrh);
 		return mrh;
 	}
 	
@@ -125,10 +125,10 @@ public class TheGetter {
 	
 	public static Object getResponseValue( Response res, Request req ) {
 		switch( res.getStatus() ) {
-		case( ResponseCodes.RESPONSE_NORMAL ):
+		case( ResponseCodes.NORMAL ):
 			return res.getContent();
-		case( ResponseCodes.RESPONSE_DOESNOTEXIST ):
-		case( ResponseCodes.RESPONSE_NOTFOUND ):
+		case( ResponseCodes.DOES_NOT_EXIST ):
+		case( ResponseCodes.NOT_FOUND ):
 			return null;
 		default:
 			throw AbnormalResponseException.createFor(res, req);
@@ -153,7 +153,7 @@ public class TheGetter {
 	}
 	
 	public static Object put(String uri, Object obj) {
-		BaseRequest putReq = createRequest(RequestVerbs.VERB_PUT, uri, obj, Collections.EMPTY_MAP);
+		BaseRequest putReq = createRequest(RequestVerbs.PUT, uri, obj, Collections.EMPTY_MAP);
 		return getResponseValue(call(putReq), putReq);
 	}
 
@@ -162,7 +162,7 @@ public class TheGetter {
 	}
 	
 	public static String identify( Object content, Map contentMetadata, Map options ) {
-		BaseRequest idReq = createRequest(RequestVerbs.VERB_POST, "x-ccouch-repo:identify", content, contentMetadata, options );
+		BaseRequest idReq = createRequest(RequestVerbs.POST, "x-ccouch-repo:identify", content, contentMetadata, options );
 		return ValueUtil.getString(TheGetter.getResponseValue(TheGetter.call(idReq), idReq.uri));
 	}
 	
@@ -182,13 +182,13 @@ public class TheGetter {
 	
 	public static ContentAndMetadata dereferenceAsResponse( Object content, Map contentMetadata ) {
 		if( content instanceof Ref ) {
-			return callAndThrowIfNonNormalResponse(createRequest( RequestVerbs.VERB_GET, ((Ref)content).getTargetUri()));
+			return callAndThrowIfNonNormalResponse(createRequest( RequestVerbs.GET, ((Ref)content).getTargetUri()));
 		}
 		if( content instanceof Expression ) {
-			BaseRequest subReq = createRequest(RequestVerbs.VERB_GET, "(no URI passed to expression.eval)");
+			BaseRequest subReq = createRequest(RequestVerbs.GET, "(no URI passed to expression.eval)");
 			return throwIfNonNormalResponse(((Expression)content).eval(subReq), subReq);
 		}
-		BaseResponse res = new BaseResponse( ResponseCodes.RESPONSE_NORMAL, content );
+		BaseResponse res = new BaseResponse( ResponseCodes.NORMAL, content );
 		res.contentMetadata = contentMetadata;
 		return res;
 	}

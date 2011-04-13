@@ -13,6 +13,6 @@ import contentcouch.xml.XML;
 public class Escape extends BaseActiveFunction {
 	public Response call(Request req, Map argumentExpressions) {
 		String text = ValueUtil.getString(getArgumentValue(req, argumentExpressions, "operand", ""));
-		return new BaseResponse(ResponseCodes.RESPONSE_NORMAL, XML.xmlEscapeText(text), "text/plain");
+		return new BaseResponse(ResponseCodes.NORMAL, XML.xmlEscapeText(text), "text/plain");
 	}
 }
