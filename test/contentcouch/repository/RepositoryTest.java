@@ -127,7 +127,7 @@ public class RepositoryTest extends TestCase {
 		String storedUri = storeDirectory(createTestSimpleDirectory());
 		
 		assertNotNull( storedUri );
-		assertTrue( "'"+storedUri+"' does not start with 'x-parse-rdf:'", storedUri.startsWith("x-parse-rdf:"));
+		assertTrue( "'"+storedUri+"' does not start with '"+CCouchNamespace.RDF_SUBJECT_URI_PREFIX+"'", storedUri.startsWith(CCouchNamespace.RDF_SUBJECT_URI_PREFIX));
 
 		Directory storedDir = (Directory)TheGetter.get(storedUri);
 		assertTrue( storedDir instanceof RdfDirectory );

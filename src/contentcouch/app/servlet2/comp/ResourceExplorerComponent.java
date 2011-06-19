@@ -100,7 +100,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 	}
 	
 	protected Response explorifyBlob( Request req, Response subRes, Blob blob ) {
-		String type = MetadataUtil.getContentType(subRes);
+		String type = MetadataUtil.getContentType(subRes, req.getResourceName());
 		if( (type != null && type.matches("application/(.*\\+)?xml")) ||
 		    (blob != null && MetadataUtil.looksLikeRdfBlob(blob)) )
 		{

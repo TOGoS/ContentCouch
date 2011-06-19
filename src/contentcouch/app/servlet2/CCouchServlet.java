@@ -22,6 +22,7 @@ import contentcouch.app.servlet2.comp.JunkComponent;
 import contentcouch.app.servlet2.comp.PhotoAlbumComponent;
 import contentcouch.file.FileRequestHandler;
 import contentcouch.framework.TheGetter;
+import contentcouch.misc.FormatGuesser;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
@@ -87,7 +88,7 @@ public class CCouchServlet extends SwfHttpServlet {
 		ntConfig.put("directoryIndex", "index.html");
 		ntConfig.put("path", SwfNamespace.SERVLET_PATH_URI_PREFIX+"/");
 		ntConfig.put("translatedPath", PathUtil.maybeNormalizeFileUri(getServletContext().getRealPath("resources"))+"/");
-		frh.putComponent("resources", new NameTranslator(new FileRequestHandler(),ntConfig));
+		frh.putComponent("resources", new NameTranslator(new FormatGuesser(new FileRequestHandler()),ntConfig));
 
 		File configFile = getConfigFile();
 		String configFileUri = PathUtil.maybeNormalizeFileUri(configFile.getAbsolutePath());

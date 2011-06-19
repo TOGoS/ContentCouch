@@ -130,11 +130,34 @@ public class MetadataUtil {
 		return null;
 	}
 	
+	public static String guessContentTypeByName( String path ) {
+		path = path.toLowerCase();
+		if( path.endsWith(".txt") ) {
+			return "text/plain";
+		} else if( path.endsWith(".html") ) {
+			return "text/html";
+		} else if( path.endsWith(".mp3") ) {
+			return "audio/mpeg";
+		} else if( path.endsWith(".flac") ) {
+			return "audio/flac";
+		} else if( path.endsWith(".ogg") ) {
+			return "audio/ogg";
+		} else {
+			return null;
+		}
+	}
+	
 	public static String getContentType( ContentAndMetadata res ) {
 		String type = (String)res.getContentMetadata().get(DcNamespace.DC_FORMAT);
-		if( type != null ) return type.split(";")[0];
+		if( type != null ) return type;
 		if( res.getContent() instanceof Blob ) return guessContentType((Blob)res.getContent());
 		return null;
+	}
+	
+	public static String getContentType( ContentAndMetadata res, String path ) {
+		String type = getContentType(res);
+		if( type != null ) return type;
+		return guessContentTypeByName( path );
 	}
 	
 	//// Last-modified stuff ////

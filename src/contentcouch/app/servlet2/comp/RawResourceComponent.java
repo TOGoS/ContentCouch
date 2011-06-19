@@ -27,7 +27,7 @@ public class RawResourceComponent extends ResourceExplorerComponent {
 	}
 	
 	protected Response explorifyBlob( Request req, Response subRes, Blob blob ) {
-		String type = MetadataUtil.getContentType(subRes);
+		String type = MetadataUtil.getContentType(subRes, req.getResourceName());
 		if( type != null ) {
 			BaseResponse res = new BaseResponse(subRes);
 			res.putContentMetadata(DcNamespace.DC_FORMAT, type);

@@ -39,7 +39,7 @@ public class SwfHttpServlet extends HttpServlet {
 			String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
 			switch( subRes.getStatus() ) {
 			case( ResponseCodes.NORMAL ): break;
-			case( ResponseCodes.DOES_NOT_EXIST ): case( ResponseCodes.UNHANDLED ):
+			case( ResponseCodes.DOES_NOT_EXIST ): case( ResponseCodes.UNHANDLED ): case( ResponseCodes.NOT_FOUND ):
 				response.sendError(404, "Resource Not Found");
 				response.addHeader("Content-Type", "text/plain");
 				response.getWriter().println("Could not find resource: " + subReq.getResourceName() );
