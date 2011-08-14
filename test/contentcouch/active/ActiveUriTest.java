@@ -2,12 +2,11 @@ package contentcouch.active;
 
 import java.util.TreeMap;
 
-import togos.mf.base.BaseRequest;
-
 import junit.framework.TestCase;
-import contentcouch.active.expression.FunctionCallExpression;
+import togos.mf.base.BaseRequest;
 import contentcouch.active.expression.Expression;
 import contentcouch.active.expression.FunctionByNameExpression;
+import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.UriExpression;
 import contentcouch.activefunctions.Hello;
 import contentcouch.misc.UriUtil;

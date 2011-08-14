@@ -8,7 +8,6 @@ import java.security.NoSuchAlgorithmException;
 
 import org.bitpedia.util.Base32;
 
-
 import contentcouch.blob.Blob;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.file.FileBlob;

@@ -6,7 +6,6 @@ import java.nio.charset.CharsetDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 

@@ -2,7 +2,6 @@ package contentcouch.active;
 
 import java.awt.image.BufferedImage;
 
-
 import junit.framework.TestCase;
 import contentcouch.blob.Blob;
 import contentcouch.framework.TheGetter;

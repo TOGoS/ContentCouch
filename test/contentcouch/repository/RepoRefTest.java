@@ -1,7 +1,7 @@
 package contentcouch.repository;
 
-import contentcouch.repository.MetaRepository.RepoRef;
 import junit.framework.TestCase;
+import contentcouch.repository.MetaRepository.RepoRef;
 
 public class RepoRefTest extends TestCase {
 	public void testParseCompleteRepoRef() {

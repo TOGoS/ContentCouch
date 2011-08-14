@@ -18,8 +18,6 @@ package org.bitpedia.util;
 
 import java.security.DigestException;
 import java.security.MessageDigest;
-//--+---+1--+---+--2+---+---+3--+---+--4+---+---+5--+---+--6+---+---+7--+---+--
-//34567890123456789012345678901234567890123456789012345678901234567890123456789
 
 /**
  * Tiger is a fast new hash function, by Ross Anderson and Eli Biham.

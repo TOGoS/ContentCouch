@@ -13,7 +13,6 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 
-
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;

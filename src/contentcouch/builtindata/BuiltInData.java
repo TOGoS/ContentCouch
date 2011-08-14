@@ -2,15 +2,14 @@ package contentcouch.builtindata;
 
 import java.net.URL;
 
-import contentcouch.framework.TheGetter;
-import contentcouch.misc.ValueUtil;
-
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import contentcouch.framework.TheGetter;
+import contentcouch.misc.ValueUtil;
 
 public class BuiltInData {
 	public static Response getResponse(String name) {

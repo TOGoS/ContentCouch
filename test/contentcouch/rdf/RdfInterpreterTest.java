@@ -2,12 +2,12 @@ package contentcouch.rdf;
 
 import java.text.ParseException;
 
+import junit.framework.TestCase;
 import contentcouch.date.DateUtil;
 import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
-import junit.framework.TestCase;
 
 public class RdfInterpreterTest extends TestCase {
 	static String OLDSTYLE_DIR_RDF_STRING =

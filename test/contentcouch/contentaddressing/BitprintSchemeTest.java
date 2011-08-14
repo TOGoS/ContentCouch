@@ -1,9 +1,9 @@
 package contentcouch.contentaddressing;
 
+import junit.framework.TestCase;
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.contentaddressing.BitprintScheme.Bitprint;
-import junit.framework.TestCase;
 
 public class BitprintSchemeTest extends TestCase {
 	public void testBitprintScheme() {

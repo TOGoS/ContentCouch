@@ -1,12 +1,12 @@
 package contentcouch.active;
 
+import junit.framework.TestCase;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
 import contentcouch.encoding.Base64;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
-import junit.framework.TestCase;
 
 public class DataUriResolverTest extends TestCase {
 	protected String[] testStrings = new String[] {

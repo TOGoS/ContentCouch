@@ -1,7 +1,7 @@
 package contentcouch.framework;
 
-import togos.mf.api.Request;
 import togos.mf.api.Callable;
+import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;

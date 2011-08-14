@@ -1,9 +1,8 @@
 package contentcouch.contentaddressing;
 
-import contentcouch.blob.BlobUtil;
-import contentcouch.contentaddressing.Sha1Scheme;
-import contentcouch.misc.ValueUtil;
 import junit.framework.TestCase;
+import contentcouch.blob.BlobUtil;
+import contentcouch.misc.ValueUtil;
 
 public class Sha1SchemeTest extends TestCase {
 	byte[] bytesToHash = ValueUtil.getBytes("Hallo, werlde!");

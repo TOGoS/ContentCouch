@@ -4,19 +4,18 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-import contentcouch.active.expression.Expression;
-import contentcouch.blob.Blob;
-import contentcouch.framework.TheGetter;
-import contentcouch.rdf.CCouchNamespace;
-import contentcouch.value.BaseRef;
-import contentcouch.value.Ref;
-
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
+import contentcouch.active.expression.Expression;
+import contentcouch.blob.Blob;
+import contentcouch.framework.TheGetter;
+import contentcouch.rdf.CCouchNamespace;
+import contentcouch.value.BaseRef;
+import contentcouch.value.Ref;
 
 public abstract class CachingActiveFunction extends BaseActiveFunction {
 	/**

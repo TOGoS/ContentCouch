@@ -12,7 +12,6 @@ import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
-
 import contentcouch.app.Log;
 import contentcouch.contentaddressing.BitprintScheme;
 import contentcouch.context.Context;

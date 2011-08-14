@@ -2,16 +2,16 @@ package contentcouch.misc;
 
 import java.util.Map;
 
-import contentcouch.directory.SimpleDirectory;
-import contentcouch.directory.WritableDirectory;
-import contentcouch.framework.BaseRequestHandler;
-import contentcouch.rdf.CCouchNamespace;
-import contentcouch.value.Directory;
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
+import contentcouch.directory.SimpleDirectory;
+import contentcouch.directory.WritableDirectory;
+import contentcouch.framework.BaseRequestHandler;
+import contentcouch.rdf.CCouchNamespace;
+import contentcouch.value.Directory;
 
 public class MemTempRequestHandler extends BaseRequestHandler {
 	protected Object root = new SimpleDirectory();

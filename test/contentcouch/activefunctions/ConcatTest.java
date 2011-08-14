@@ -1,12 +1,12 @@
 package contentcouch.activefunctions;
 
+import junit.framework.TestCase;
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.blob.ByteArrayBlob;
 import contentcouch.framework.TheGetter;
 import contentcouch.misc.UriUtil;
 import contentcouch.repository.MetaRepoConfig;
-import junit.framework.TestCase;
 
 public class ConcatTest extends TestCase {
 	public void setUp() {

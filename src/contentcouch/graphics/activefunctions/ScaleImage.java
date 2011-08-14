@@ -3,14 +3,13 @@ package contentcouch.graphics.activefunctions;
 import java.awt.image.BufferedImage;
 import java.util.Map;
 
-import contentcouch.active.BaseActiveFunction;
-import contentcouch.graphics.ImageUtil;
-import contentcouch.misc.ValueUtil;
-
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
+import contentcouch.active.BaseActiveFunction;
+import contentcouch.graphics.ImageUtil;
+import contentcouch.misc.ValueUtil;
 
 public class ScaleImage extends BaseActiveFunction {
 

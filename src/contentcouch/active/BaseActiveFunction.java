@@ -10,9 +10,9 @@ import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
-import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.active.expression.Expression;
 import contentcouch.active.expression.FunctionByNameExpression;
+import contentcouch.active.expression.FunctionCallExpression;
 import contentcouch.path.PathSimplifiableActiveFunction;
 import contentcouch.path.PathSimplifiableExpression;
 

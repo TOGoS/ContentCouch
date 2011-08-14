@@ -1,12 +1,12 @@
 package contentcouch.repository;
 
-import contentcouch.blob.Blob;
-import contentcouch.framework.TheGetter;
-import contentcouch.misc.ValueUtil;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
+import contentcouch.blob.Blob;
+import contentcouch.framework.TheGetter;
+import contentcouch.misc.ValueUtil;
 
 public class TheIdentifier {
 	public static String identify( Blob b ) {

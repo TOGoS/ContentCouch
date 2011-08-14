@@ -3,13 +3,13 @@ package contentcouch.framework;
 import java.util.HashMap;
 import java.util.Map;
 
-import contentcouch.misc.UriUtil;
-import contentcouch.misc.ValueUtil;
-import contentcouch.value.BaseRef;
 import togos.mf.api.Request;
 import togos.mf.base.BaseArguments;
 import togos.mf.base.BaseRequest;
 import togos.mf.value.Arguments;
+import contentcouch.misc.UriUtil;
+import contentcouch.misc.ValueUtil;
+import contentcouch.value.BaseRef;
 
 public class MFArgUtil {
 	

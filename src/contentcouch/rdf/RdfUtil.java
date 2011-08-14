@@ -1,8 +1,8 @@
 package contentcouch.rdf;
 
+import contentcouch.misc.Function1;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
-import contentcouch.misc.Function1;
 
 public class RdfUtil {
 	public static RdfNode toRdfNode( Object o, Function1 targetRdfifier ) {

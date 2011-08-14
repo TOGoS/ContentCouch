@@ -1,11 +1,11 @@
 package contentcouch.misc;
 
-import contentcouch.framework.BaseRequestHandler;
-import contentcouch.rdf.DcNamespace;
 import togos.mf.api.Callable;
 import togos.mf.api.Request;
 import togos.mf.api.Response;
 import togos.mf.base.BaseResponse;
+import contentcouch.framework.BaseRequestHandler;
+import contentcouch.rdf.DcNamespace;
 
 public class FormatGuesser extends BaseRequestHandler
 {

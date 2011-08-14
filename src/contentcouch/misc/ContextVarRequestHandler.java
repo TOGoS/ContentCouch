@@ -1,11 +1,11 @@
 package contentcouch.misc;
 
-import contentcouch.framework.BaseRequestHandler;
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseResponse;
+import contentcouch.framework.BaseRequestHandler;
 
 public class ContextVarRequestHandler extends BaseRequestHandler {
 	public Response call(Request req) {

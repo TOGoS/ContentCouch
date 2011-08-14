@@ -1,10 +1,10 @@
 package contentcouch.path;
 
+import junit.framework.TestCase;
 import contentcouch.active.ActiveUtil;
 import contentcouch.framework.TheGetter;
 import contentcouch.misc.UriUtil;
 import contentcouch.repository.MetaRepoConfig;
-import junit.framework.TestCase;
 
 public class PathUtilTest extends TestCase {
 	public void setUp() {

@@ -7,7 +7,6 @@ import java.util.Set;
 
 import togos.mf.api.RequestVerbs;
 import togos.mf.base.BaseRequest;
-
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryMerger;
