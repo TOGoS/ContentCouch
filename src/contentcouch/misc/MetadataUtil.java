@@ -28,30 +28,35 @@ public class MetadataUtil {
 	
 	//// Content-Type stuff ////
 	
+	// Assuming all text or HTML served is UTF-8 for now:
+	public static String CT_TEXT = "text/plain; charset=utf-8";
+	public static String CT_HTML = "text/html; charset=utf-8";
+	public static String CT_JS   = "application/javascript";
 	public static String CT_RDF  = "application/rdf+xml";
 	public static String CT_SLF  = "application/x-simple-list-file";
-	public static String CT_TEXT = "text/plain";
-	public static String CT_HTML = "text/html";
 	public static String CT_BMP  = "image/bmp";
 	public static String CT_PNG  = "image/png";
 	public static String CT_GIF  = "image/gif";
 	public static String CT_JPEG = "image/jpeg";
+	public static String CT_ICO  = "image/vnd.microsoft.icon";
 	public static String CT_OGG  = "audio/ogg";
 	public static String CT_MP3  = "audio/mpeg";
-	public static String CT_JS   = "application/javascript";
+	public static String CT_FLAC = "audio/flac";
 	
 	public static HashMap commonTypesByExtension = new HashMap();
 	static {
-		commonTypesByExtension.put("rdf", CT_RDF);
-		commonTypesByExtension.put("slf", CT_SLF);
 		commonTypesByExtension.put("txt", CT_TEXT);
 		commonTypesByExtension.put("html", CT_HTML);
+		commonTypesByExtension.put("js", CT_JS);
+		commonTypesByExtension.put("rdf", CT_RDF);
+		commonTypesByExtension.put("slf", CT_SLF);
 		commonTypesByExtension.put("bmp", CT_BMP);
 		commonTypesByExtension.put("gif", CT_GIF);
 		commonTypesByExtension.put("png", CT_PNG);
+		commonTypesByExtension.put("ico", CT_ICO);
 		commonTypesByExtension.put("ogg", CT_OGG);
 		commonTypesByExtension.put("mp3", CT_MP3);
-		commonTypesByExtension.put("js", CT_JS);
+		commonTypesByExtension.put("flac", CT_FLAC);
 	}
 	
 	public static boolean looksLikeRdfBlob( Blob b ) {
@@ -72,29 +77,31 @@ public class MetadataUtil {
 	
 
 	public static boolean looksLikePlainText( Blob b ) {
-		if( b.getLength() >= 20 ) {
-			byte[] data = b.getData(0, 20);
-			try {
-				ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
-				return true;
-			} catch( CharacterCodingException e ) {
-			}
+		long checkLength = b.getLength();
+		if( checkLength == -1 || checkLength > 1024 ) checkLength = 1024;
+		
+		byte[] data = b.getData(0, (int)checkLength);
+		try {
+			ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
+			return true;
+		} catch( CharacterCodingException e ) {
+			return false;
 		}
-		return false;
 	}
 	
 	static final Pattern HTMLPATTERN = Pattern.compile(".*<html.*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
 	public static boolean looksLikeHtml( Blob b ) {
-		if( b.getLength() >= 20 ) {
-			byte[] data = b.getData(0, 20);
-			try {
-				String text = ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
-				return HTMLPATTERN.matcher(text).matches();
-			} catch( CharacterCodingException e ) {
-			}
+		long checkLength = b.getLength();
+		if( checkLength == -1 || checkLength > 1024 ) checkLength = 1024;
+		
+		byte[] data = b.getData(0, (int)checkLength);
+		try {
+			String text = ValueUtil.UTF_8_DECODER.decode(ByteBuffer.wrap(data)).toString();
+			return HTMLPATTERN.matcher(text).matches();
+		} catch( CharacterCodingException e ) {
+			return false;
 		}
-		return false;
 	}
 	
 	public static String guessContentType( Blob b ) {
@@ -132,32 +139,40 @@ public class MetadataUtil {
 	
 	public static String guessContentTypeByName( String path ) {
 		path = path.toLowerCase();
-		if( path.endsWith(".txt") ) {
-			return "text/plain";
-		} else if( path.endsWith(".html") ) {
-			return "text/html";
-		} else if( path.endsWith(".mp3") ) {
-			return "audio/mpeg";
-		} else if( path.endsWith(".flac") ) {
-			return "audio/flac";
-		} else if( path.endsWith(".ogg") ) {
-			return "audio/ogg";
-		} else {
-			return null;
+		int ldot = path.lastIndexOf('.');
+		// Longest known extensions are 4 chars, so...
+		if( ldot != -1 && ldot >= path.length()-5 ) {
+			String ext = path.substring(ldot+1);
+			return (String)commonTypesByExtension.get(ext);
 		}
+		return null;
 	}
 	
 	public static String getContentType( ContentAndMetadata res ) {
 		String type = (String)res.getContentMetadata().get(DcNamespace.DC_FORMAT);
-		if( type != null ) return type;
+		if( type != null ) {
+			return type;
+		}
 		if( res.getContent() instanceof Blob ) return guessContentType((Blob)res.getContent());
 		return null;
 	}
 	
 	public static String getContentType( ContentAndMetadata res, String path ) {
-		String type = getContentType(res);
-		if( type != null ) return type;
-		return guessContentTypeByName( path );
+		String type = (String)res.getContentMetadata().get(DcNamespace.DC_FORMAT);
+		if( type != null ) {
+			return type;
+		}
+		type = guessContentTypeByName( path );
+		if( type != null ) {
+			return type;
+		}
+		if( res.getContent() instanceof Blob ) {
+			type = guessContentType((Blob)res.getContent());
+			if( type != null ) {
+				return type;
+			}
+		}
+		return null; 
 	}
 	
 	//// Last-modified stuff ////

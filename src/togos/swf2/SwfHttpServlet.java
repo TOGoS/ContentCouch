@@ -37,6 +37,9 @@ public class SwfHttpServlet extends HttpServlet {
 		try {
 			Response subRes = requestHandler.call(subReq);
 			String type = ValueUtil.getString(subRes.getContentMetadata().get(DcNamespace.DC_FORMAT));
+			
+			if( type == null ) type = "application/octet-stream";
+			
 			switch( subRes.getStatus() ) {
 			case( ResponseCodes.NORMAL ): break;
 			case( ResponseCodes.DOES_NOT_EXIST ): case( ResponseCodes.UNHANDLED ): case( ResponseCodes.NOT_FOUND ):
@@ -72,7 +75,7 @@ public class SwfHttpServlet extends HttpServlet {
 				Object lastModifiedo = subRes.getContentMetadata().get(DcNamespace.DC_MODIFIED);
 				Date lastModified = (lastModifiedo instanceof Date) ? (Date)lastModifiedo : null;
 				
-				if( type != null ) response.setHeader("Content-Type", type);
+				response.setHeader("Content-Type", type);
 				if( lastModified != null ) response.setDateHeader("Last-Modified", lastModified.getTime());
 				
 				long len = b.getLength();
