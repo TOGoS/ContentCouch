@@ -14,6 +14,7 @@ import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import togos.mf.base.BaseRequest;
+import contentcouch.app.Linker;
 import contentcouch.app.Log;
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobInputStream;
@@ -127,6 +128,17 @@ public class MetaRepoConfig {
 			++offset;
 
 			addRepoConfig(rp);
+		} else if( "-linker".equals(arg) ) {
+			++offset;
+			String linkerName = args[offset];
+			if( "ln".equals(linkerName) ) {
+				Linker.instance = new Linker.UnixLinker();
+			} else if( "fsutil".equals(linkerName) ) {
+				Linker.instance = new Linker.WinLinker();
+			} else {
+				throw new RuntimeException("Unrecognised linker: '"+linkerName+"'");
+			}
+			++offset;
 		} else if( "-file".equals(arg) ) {
 			++offset;
 			String configFile = args[offset];

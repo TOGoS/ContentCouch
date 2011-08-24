@@ -54,7 +54,7 @@ public abstract class Linker {
 		}
 	}
 	
-	protected static Linker instance;
+	public static Linker instance;
 	public static Linker getInstance() {
 		if( instance == null ) {
 			String whichOS = System.getProperty("os.name");
