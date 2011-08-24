@@ -22,6 +22,7 @@ import contentcouch.blob.BlobUtil;
 import contentcouch.blob.InputStreamBlob;
 import contentcouch.explorify.CCouchExplorerPageGenerator;
 import contentcouch.explorify.DirectoryPageGenerator;
+import contentcouch.explorify.NFOPageGenerator;
 import contentcouch.explorify.PageGenerator;
 import contentcouch.explorify.RdfSourcePageGenerator;
 import contentcouch.explorify.SlfSourcePageGenerator;
@@ -55,7 +56,7 @@ public class ResourceExplorerComponent extends BaseComponent {
 		try {
 			PipedInputStream pis = new PipedInputStream();
 			final PipedOutputStream pos = new PipedOutputStream(pis);
-			final PrintWriter pw = new PrintWriter(new OutputStreamWriter(pos));
+			final PrintWriter pw = new PrintWriter(new OutputStreamWriter(pos, "UTF-8"));
 			new Thread(new Runnable() {
 				public void run() {
 					try {
@@ -99,12 +100,18 @@ public class ResourceExplorerComponent extends BaseComponent {
 		return getPageGeneratorResult(new SlfSourcePageGenerator(req, subRes, b));
 	}
 	
+	protected Response explorifyNfoBlob(Request req, Response subRes, Blob b) {
+		return getPageGeneratorResult(new NFOPageGenerator(req, subRes, b));
+	}
+	
 	protected Response explorifyBlob( Request req, Response subRes, Blob blob ) {
 		String type = MetadataUtil.getContentType(subRes, req.getResourceName());
 		if( (type != null && type.matches("application/(.*\\+)?xml")) ||
 		    (blob != null && MetadataUtil.looksLikeRdfBlob(blob)) )
 		{
 			return explorifyXmlBlob( req, subRes, blob );
+		} else if( MetadataUtil.CT_NFO.equals(type) ) {
+			return explorifyNfoBlob( req, subRes, blob );
 		} else if( MetadataUtil.CT_SLF.equals(type) ) {
 			return explorifySlfBlob( req, subRes, blob );
 		} else if( type != null ) {

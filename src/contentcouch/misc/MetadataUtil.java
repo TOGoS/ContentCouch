@@ -31,6 +31,7 @@ public class MetadataUtil {
 	// Assuming all text or HTML served is UTF-8 for now:
 	public static String CT_TEXT = "text/plain; charset=utf-8";
 	public static String CT_HTML = "text/html; charset=utf-8";
+	public static String CT_NFO  = "text/x-nfo";
 	public static String CT_JS   = "application/javascript";
 	public static String CT_RDF  = "application/rdf+xml";
 	public static String CT_SLF  = "application/x-simple-list-file";
@@ -47,6 +48,7 @@ public class MetadataUtil {
 	static {
 		commonTypesByExtension.put("txt", CT_TEXT);
 		commonTypesByExtension.put("html", CT_HTML);
+		commonTypesByExtension.put("nfo", CT_NFO);
 		commonTypesByExtension.put("js", CT_JS);
 		commonTypesByExtension.put("rdf", CT_RDF);
 		commonTypesByExtension.put("slf", CT_SLF);
