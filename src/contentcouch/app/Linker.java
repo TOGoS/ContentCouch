@@ -6,6 +6,7 @@ import java.io.IOException;
 
 public abstract class Linker {
 	public static class LinkException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
 		public LinkException( String from, String to, String problem ) {
 			super( "Failed to create link from " + from + " to " + to + ": " + problem );
 		}

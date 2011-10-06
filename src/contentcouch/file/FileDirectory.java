@@ -17,11 +17,16 @@ import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
-public class FileDirectory extends File implements WritableDirectory {
+public class FileDirectory extends File implements WritableDirectory
+{
+	private static final long serialVersionUID = 1L;
+	
 	/** Should it try to use hardlinks when writing files? */
 	public boolean shouldUseHardlinks;
 	
 	public class Entry extends File implements Directory.Entry {
+		private static final long serialVersionUID = 1L;
+		
 		public Entry(File file) {
 			super(file.getPath());
 		}

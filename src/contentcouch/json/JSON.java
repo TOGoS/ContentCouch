@@ -19,6 +19,8 @@ public class JSON {
 	public static class UnexpectedCharacterException
 		extends IOException
 	{
+		private static final long serialVersionUID = 1L;
+		
 		int got;
 		String expected;
 		

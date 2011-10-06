@@ -771,6 +771,8 @@ public class MetaRepository extends BaseRequestHandler {
 	//// Validate and cache blobs fetched from remote repos ////
 	
 	protected static class HashMismatchException extends Exception {
+		private static final long serialVersionUID = 1L;
+		
 		public ContentAddressingScheme dataScheme;
 		public byte[] expected, calculated;
 		public HashMismatchException( ContentAddressingScheme dataScheme, byte[] expected, byte[] calculated ) {

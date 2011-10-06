@@ -25,7 +25,10 @@ import contentcouch.misc.ValueUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
 
-public class SwfHttpServlet extends HttpServlet {
+public class SwfHttpServlet extends HttpServlet
+{
+	private static final long serialVersionUID = 1L;
+	
 	protected Callable requestHandler;
 	public SwfHttpServlet() { }
 	

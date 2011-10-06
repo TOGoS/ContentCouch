@@ -3,7 +3,10 @@ package contentcouch.rdf;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Ref;
 
-public class RdfNode extends MultiMap {
+public class RdfNode extends MultiMap
+{
+	private static final long serialVersionUID = 1L;
+	
 	public String subjectUri;
 	public String sourceUri;
 	

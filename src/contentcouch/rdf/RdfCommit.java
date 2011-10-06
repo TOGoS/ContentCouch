@@ -10,7 +10,10 @@ import contentcouch.misc.Function1;
 import contentcouch.value.Commit;
 import contentcouch.value.Ref;
 
-public class RdfCommit extends RdfNode implements Commit {	
+public class RdfCommit extends RdfNode implements Commit
+{
+	private static final long serialVersionUID = 1L;
+	
 	public RdfCommit() {
 		super(CCouchNamespace.COMMIT);
 	}

@@ -6,7 +6,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-public class MultiMap extends HashMap {
+public class MultiMap extends HashMap
+{
+	private static final long serialVersionUID = 1L;
+
 	public MultiMap() {
 		super();
 	}

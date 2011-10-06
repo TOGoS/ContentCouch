@@ -27,7 +27,10 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.repository.MetaRepoConfig;
 
-public class CCouchServlet extends SwfHttpServlet {
+public class CCouchServlet extends SwfHttpServlet
+{
+	private static final long serialVersionUID = 1L;
+	
 	public CCouchServlet() {}
 
 	protected void copyFile( File src, File dest ) throws IOException {

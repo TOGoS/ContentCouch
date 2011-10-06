@@ -21,7 +21,10 @@ import contentcouch.value.BaseRef;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
 
-public class RdfDirectory extends RdfNode implements Directory {
+public class RdfDirectory extends RdfNode implements Directory
+{
+	private static final long serialVersionUID = 1L;
+	
 	/** Turns Blobs into Refs, keeps Refs and RdfNodes as they are, and turns Directories into nested Rdf */
 	public static Function1 DEFAULT_TARGET_RDFIFIER = new Function1() {
 		public Object apply(Object input) {
@@ -40,6 +43,8 @@ public class RdfDirectory extends RdfNode implements Directory {
 	};
 	
 	public static class Entry extends RdfNode implements Directory.Entry {
+		private static final long serialVersionUID = 1L;
+		
 		public Entry() {
 			super(CCouchNamespace.DIRECTORYENTRY);
 		}

@@ -6,9 +6,10 @@ import java.io.IOException;
 
 import contentcouch.blob.Blob;
 
-
-
-public class FileBlob extends File implements Blob {
+public class FileBlob extends File implements Blob
+{
+	private static final long serialVersionUID = 1L;
+	
 	public FileBlob( String path ) {
 		super(path);
 	}

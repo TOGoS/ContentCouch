@@ -8,7 +8,10 @@ import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
 import contentcouch.misc.ValueUtil;
 
-public class AbnormalResponseException extends RuntimeException {
+public class AbnormalResponseException extends RuntimeException
+{
+	private static final long serialVersionUID = 1L;
+	
 	Request request;
 	Response response;
 	
