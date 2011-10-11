@@ -13,6 +13,8 @@ import togos.mf.base.BaseResponse;
 import contentcouch.active.expression.Expression;
 import contentcouch.blob.Blob;
 import contentcouch.framework.TheGetter;
+import contentcouch.job.AbstractResourceJob;
+import contentcouch.job.ResourceJobScheduler;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Ref;
@@ -50,16 +52,39 @@ public abstract class CachingActiveFunction extends BaseActiveFunction {
 		return true;
 	}
 	
-	public Response call(Request req, Map argumentExpressions) {
-		Map canonArgExpressions = getCanonicalArgumentExpressions(argumentExpressions);
-		boolean cacheable = this.isConstant( canonArgExpressions ); 
-		String resultCacheUri = "x-ccouch-repo:function-result-cache/"+getCacheIndexName(req,canonArgExpressions)+"/"+_getCacheKey(req,canonArgExpressions);
+	protected boolean shouldUseJobScheduler() {
+		return true;
+	}
+	
+	public Response call(final Request req, Map argumentExpressions) {
+		final Map canonArgExpressions = getCanonicalArgumentExpressions(argumentExpressions);
+		boolean cacheable = this.isConstant( canonArgExpressions );
+		String canonUri = _getCacheKey(req,canonArgExpressions);
+		String resultCacheUri = "x-ccouch-repo:function-result-cache/"+getCacheIndexName(req,canonArgExpressions)+"/"+canonUri;
 		Object cached = cacheable ? TheGetter.get(resultCacheUri) : null;
 		String thumbnailUri;
 		if( cached == null ) {
-			// Should never default to 32x32, as canonical arguments should
-			// default to 64x64
-			Blob output = (Blob)_getResult(req, canonArgExpressions);
+			Blob output;
+			if( shouldUseJobScheduler() ) {
+				try {
+					/* Not quite foolproof (the Handle could get collected
+					 * and the request could be submitted again between the
+					 * time this finishes and when we store the result in
+					 * the cache), but it should reduce the amount of duplicated
+					 * effort when multiple people are browsing a page of
+					 * thumbnails at once. */
+					output = (Blob)ResourceJobScheduler.getInstance().getJobResult(new AbstractResourceJob(canonUri) {
+						public Object getResult() {
+							return _getResult(req, canonArgExpressions);
+						}
+					});
+				} catch( InterruptedException e ) {
+					Thread.currentThread().interrupt();
+					throw new RuntimeException(e);
+				}
+			} else {
+				output = (Blob)_getResult(req, canonArgExpressions);
+			}
 			
 			if( cacheable ) {
 				BaseRequest storeReq = new BaseRequest(RequestVerbs.POST, "x-ccouch-repo:data", output, Collections.EMPTY_MAP);
