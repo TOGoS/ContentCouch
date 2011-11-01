@@ -22,4 +22,16 @@ public class UriUtilTest extends TestCase {
 		assertEquals("urn:sha1:FOOBAR", UriUtil.stripRdfSubjectPrefix("x-rdf-subject:urn:sha1:FOOBAR"));
 		assertNull(UriUtil.stripRdfSubjectPrefix("urn:sha1:FOOBAR"));
 	}
+	
+	public void testIsPureContentUri() {
+		assertTrue( UriUtil.isPureContentUri("x-rdf-subject:urn:bitprint:LOYEC6PAEGZWELTEDM6IVARRAZVKVF53.4Q5BHWSIYAAY6DQ2JBKZ5QNGKYPNGVAWHJLIA5I") );
+		assertTrue( UriUtil.isPureContentUri("x-parse-rdf:urn:bitprint:LOYEC6PAEGZWELTEDM6IVARRAZVKVF53.4Q5BHWSIYAAY6DQ2JBKZ5QNGKYPNGVAWHJLIA5I") );
+		assertTrue( UriUtil.isPureContentUri("urn:bitprint:LOYEC6PAEGZWELTEDM6IVARRAZVKVF53.4Q5BHWSIYAAY6DQ2JBKZ5QNGKYPNGVAWHJLIA5I") );
+		assertTrue( UriUtil.isPureContentUri("x-parse-rdf:urn:sha1:LOYEC6PAEGZWELTEDM6IVARRAZVKVF53") );
+		assertTrue( UriUtil.isPureContentUri("urn:tree:tiger:4Q5BHWSIYAAY6DQ2JBKZ5QNGKYPNGVAWHJLIA5I") );
+		assertFalse( UriUtil.isPureContentUri("http://www.nuke24.net/") );
+		assertFalse( UriUtil.isPureContentUri("x-rdf-subject:x-ccouch-head:togos-win/archives/images/TOGoS/latest") );
+		assertFalse( UriUtil.isPureContentUri("x-ccouch-head:togos-win/archives/images/TOGoS/latest") );
+		assertFalse( UriUtil.isPureContentUri("3r34nfiu34nf3$R@#E!@3e") );
+	}
 }

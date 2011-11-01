@@ -1,12 +1,10 @@
 package contentcouch.misc;
 
 import java.io.UnsupportedEncodingException;
+import java.util.regex.Pattern;
 
 import contentcouch.blob.Blob;
 import contentcouch.rdf.CCouchNamespace;
-
-
-
 
 public class UriUtil {
 	public static final char[] HEXCHARS = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
@@ -183,5 +181,17 @@ public class UriUtil {
 			}
 		}
 		return null;
+	}
+	
+	static Pattern CONTENT_URI_PATTERN = Pattern.compile("^(?:x-rdf-subject:|x-parse-rdf:)?urn:(?:tree:)?(?:sha1:|tiger:|bitprint:)(.+)$");
+	
+	/**
+	 * @return true iff the URI is of a supported scheme that:
+	 *   * identifies an object based on its inherent content
+	 *   * can be used to verify an object once fetched
+	 *   * does NOT encode location information
+	 */
+	public static boolean isPureContentUri( String uri ) {
+		return CONTENT_URI_PATTERN.matcher(uri).matches();
 	}
 }

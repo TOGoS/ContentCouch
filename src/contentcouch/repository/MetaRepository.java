@@ -474,9 +474,14 @@ public class MetaRepository extends BaseRequestHandler {
 		int depth = ValueUtil.getNumber( MapUtil.getKeyed( req.getMetadata(), CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS ), 0 ); 
 		if( depth > 0 ) {
 			Object[] parentz = c.getParents();
-			for( int i=0; i<parentz.length; ++i ) {
+			parentLoop: for( int i=0; i<parentz.length; ++i ) {
 				if( parentz[i] instanceof Ref ) {
 					String parentUri = ((Ref)parentz[i]).getTargetUri();
+					if( !UriUtil.isPureContentUri(parentUri)) {
+						Log.log(Log.EVENT_WARNING, "Refusing to follow non-content link to parent commit "+parentUri+" from "+sourceUri);
+						continue parentLoop;
+					}
+					
 					int pDepth = depth-1;
 					
 					Integer alreadyCachingAtDepth = (Integer)cachingCommitDepths.get(parentUri);
@@ -526,6 +531,14 @@ public class MetaRepository extends BaseRequestHandler {
 			Object target = c.getTarget();
 			BaseRequest targetPutReq = new BaseRequest();
 			targetPutReq.metadata = req.getMetadata();
+			if( target instanceof Ref ) {
+				String targetGetUri = ((Ref)target).getTargetUri();
+				if( !UriUtil.isPureContentUri(targetGetUri)) {
+					String sourceUri = MetadataUtil.getSourceUriOrUnknown(req.getMetadata());
+					Log.log( Log.EVENT_WARNING, "Refusing to follow non-content link to target "+targetGetUri+" from "+sourceUri );
+					return BaseResponse.RESPONSE_NOTFOUND;
+				}
+			}
 			MetadataUtil.dereferenceTargetToRequest( target, targetPutReq );
 			putData( repoConfig, targetPutReq );
 		}
@@ -542,10 +555,16 @@ public class MetaRepository extends BaseRequestHandler {
 		Commit c = (Commit)req.getContent();
 		Object target = c.getTarget();
 		String targetUri = null;
-		// TODO: Could check if target is Ref with acceptable scheme
-		// also, we could just *identify* without storing...
-		if( targetUri == null || shouldStoreCommitTarget(req) ) {
-			if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+		if( shouldStoreCommitTarget(req) ) {
+			if( target instanceof Ref ) {
+				String targetGetUri = ((Ref)target).getTargetUri();
+				if( !UriUtil.isPureContentUri(targetGetUri)) {
+					String sourceUri = MetadataUtil.getSourceUriOrUnknown(req.getMetadata());
+					Log.log( Log.EVENT_WARNING, "Refusing to follow non-content link to target "+targetGetUri+" from "+sourceUri );
+					return BaseResponse.RESPONSE_NOTFOUND;
+				}
+				target = TheGetter.get( targetGetUri );
+			}
 			BaseRequest targetPutReq = new BaseRequest();
 			targetPutReq.metadata = req.getMetadata();
 			targetPutReq.content = target;
@@ -553,6 +572,7 @@ public class MetaRepository extends BaseRequestHandler {
 			targetUri = (String)targetPutRes.getContentMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER);
 			if( targetUri == null ) throw new RuntimeException("Inserting entry target returned null");
 		}
+		// And what if not?  Then targetUri is null, and this is a problem for the following code...
 
 		RdfCommit rdfDir = new RdfCommit(c, new BaseRef(targetUri));
 		
