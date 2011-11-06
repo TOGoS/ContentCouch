@@ -1,0 +1,14 @@
+Usage: ccouch convert [options] -<source-format>-to-<dest-format> <string> [<string> ...]
+Example: ccouch convert -hex-to-base32 48899d2ece6eed6df4cde3ca03116c676c47ae46
+
+Options:
+  -show-inputs   ; display each input string together with its output
+
+Formats:
+  base16    ; hexadecimal
+  hex       ; alias for hexadecimal
+  upper-hex ; hex, but with uppercase letters (useful only as output format)
+  base32    ; RFC3548-base32, as used in URNs such as sha1: and bitprint:
+
+Behavior for decoding invalid characters (such as a "Q" in a hex string)
+is undefined.

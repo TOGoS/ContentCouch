@@ -22,6 +22,7 @@ Sub-commands:
   check                 ; check repo integrity and delete bad files
   touch                 ; remove directory content URI cache files
   config                ; display the current configuration
+  convert               ; a handy base converion utility
 
 Locations can generally be given as URIs, absolute or remote filesystem paths,
 pseudo-active URIs (see the documentation), or "-" (meaning stdin/out,

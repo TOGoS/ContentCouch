@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bitpedia.util.Base32;
+
 import togos.mf.api.RequestVerbs;
 import togos.mf.api.Response;
 import togos.mf.api.ResponseCodes;
@@ -33,6 +35,7 @@ import contentcouch.directory.FilterIterator;
 import contentcouch.file.FileBlob;
 import contentcouch.framework.TheGetter;
 import contentcouch.merge.MergeUtil;
+import contentcouch.misc.Base16;
 import contentcouch.misc.MetadataUtil;
 import contentcouch.misc.UriUtil;
 import contentcouch.misc.ValueUtil;
@@ -1167,6 +1170,98 @@ public class ContentCouchCommand {
 		return 0;
 	}
 	
+	interface Converter {
+		public byte[] convert( byte[] input );
+	}
+	class Base32Decoder implements Converter {
+		public byte[] convert( byte[] input ) {
+			return Base32.decode( ValueUtil.getString(input) );
+		}
+	}
+	class Base32Encoder implements Converter {
+		public byte[] convert( byte[] input ) {
+			return ValueUtil.getBytes( Base32.encode( input ) );
+		}
+	}
+	class Base16Decoder implements Converter {
+		public byte[] convert( byte[] input ) {
+			return Base16.decode( ValueUtil.getString(input) );
+		}
+	}
+	class Base16Encoder implements Converter {
+		char[] hexTable;
+		public Base16Encoder( char[] hexTable ) {
+			this.hexTable = hexTable;
+		}
+		public Base16Encoder() {
+			this( Base16.LOWER );
+		}
+		public byte[] convert( byte[] input ) {
+			return ValueUtil.getBytes( Base16.encode( input, hexTable ) );
+		}
+	}
+	
+	Pattern formatsPattern = Pattern.compile("^-(.+?)-to-(.+)$");	
+	protected int runConvertCmd( String[] args ) {
+		boolean showInputs = false;
+		String fromFormat = null;
+		String toFormat = null;
+		List inputs = new ArrayList();
+		Matcher m;
+		for( int i=0; i<args.length; ++i ) {
+			if( "-show-inputs".equals(args[i]) ) {
+				showInputs = true;
+			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
+				inputs.add( args[i] );
+			} else if( "--".equals(args[i]) ) {
+				for( ++i; i<args.length; ++i ) {
+					inputs.add(args[i]);
+				}
+			} else if( (m = formatsPattern.matcher(args[i])).matches() ) {
+				fromFormat = m.group(1);
+				toFormat = m.group(2);
+			}
+		}
+		
+		Converter decoder;
+		if( "hex".equals(fromFormat) || "base16".equals(fromFormat) ) {
+			decoder = new Base16Decoder();
+		} else if( "base32".equals(fromFormat) ) {
+			decoder = new Base32Decoder();
+		} else {
+			System.err.println("Unrecognised input format: "+fromFormat);
+			return 1;
+		}
+		
+		Converter encoder;
+		if( "hex".equals(toFormat) || "base16".equals(toFormat) ) {
+			encoder = new Base16Encoder();
+		} else if( "upper-hex".equals(toFormat) || "upper-base16".equals(toFormat) ) {
+			encoder = new Base16Encoder( Base16.UPPER );
+		} else if( "base32".equals(toFormat) ) {
+			encoder = new Base32Encoder();
+		} else {
+			System.err.println("Unrecognised output format: "+toFormat);
+			return 1;
+		}
+		
+		
+		for( Iterator i=inputs.iterator(); i.hasNext(); ) {
+			String in = (String)i.next();
+			byte[] inBytes = ValueUtil.getBytes(in);
+			byte[] midBytes = decoder.convert( inBytes );
+			byte[] outBytes = encoder.convert( midBytes );
+			String out = ValueUtil.getString(outBytes);
+			if( showInputs ) {
+				System.out.println( in + " -> " + out );
+			} else {
+				System.out.println( out );
+			}
+		}
+		
+		return 0;
+	}
+	
 	protected boolean getterInitialized = false;
 	protected boolean initializeGetter() {
 		if( !getterInitialized ) {
@@ -1257,6 +1352,8 @@ public class ContentCouchCommand {
 			errorCount += runRdfifyCmd( cmdArgs );
 		} else if( "touch".equals(cmd) ) {
 			errorCount += runTouchCmd( cmdArgs );
+		} else if( "convert".equals(cmd) ) {
+			errorCount += runConvertCmd( cmdArgs );
 		} else {
 			System.err.println("ccouch: Unrecognised sub-command: " + cmd);
 			System.err.println();
