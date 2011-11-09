@@ -89,7 +89,7 @@ public class Log {
 		if( level < LEVEL_NORMAL    ) return;
 		addLogger( EVENT_WARNING, stderrLogger );
 		addLogger( EVENT_DELETED, stderrLogger );
-
+		
 		if( level < LEVEL_DOWNLOADS ) return;
 		addLogger( EVENT_DOWNLOAD_STARTED, new Logger() {
 			public void log(String eventName, String[] arguments) {

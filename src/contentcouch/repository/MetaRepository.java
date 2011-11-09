@@ -122,6 +122,8 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 	}
 	
+	//// Hash cache stuff ////
+	
 	protected Map fileHashCaches = new HashMap();
 	protected FileHashCache getFileHashCache( ContentAddressingScheme cas ) {
 		FileHashCache fileHashCache = (FileHashCache)fileHashCaches.get(cas.getSchemeShortName());
@@ -133,6 +135,52 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 		return fileHashCache;
 	}
+	
+	protected void maybeCacheDirectoryUrn( Directory dir, String urn, Map options ) {
+		if( dir instanceof WritableDirectory &&
+			MetadataUtil.isEntryTrue(options,CCouchNamespace.REQ_CREATE_URI_DOT_FILES) &&
+			urn != null
+		) {
+			cacheDirectoryUrnInDotFile( (WritableDirectory)dir, urn );
+		}
+		
+		if( dir instanceof File && MetadataUtil.isEntryTrue(options,CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES) ) {
+			cacheDirectoryUrnInDatabase( (File)dir, urn );
+		}
+	}
+	
+	protected void cacheDirectoryUrnInDotFile( WritableDirectory dir, String urn ) {
+		SimpleDirectory.Entry uriDotFileEntry = new SimpleDirectory.Entry();
+		uriDotFileEntry.target = BlobUtil.getBlob(urn);
+		uriDotFileEntry.lastModified = new Date().getTime();
+		uriDotFileEntry.name = ".ccouch-uri";
+		uriDotFileEntry.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
+		uriDotFileEntry.targetSize = ((Blob)uriDotFileEntry.target).getLength();
+		((WritableDirectory)dir).addDirectoryEntry(uriDotFileEntry, Collections.EMPTY_MAP);
+	}
+	
+	protected String getCachedDirectoryUrnFromDatabase( File dir ) {
+		FileHashCache fac = getFileHashCache(Config.getIdentificationScheme());
+		if( fac != null ) {
+			String urn = fac.getCachedUrn( (File)dir );
+			if( urn != null ) return Config.getRdfSubjectPrefix() + urn;
+		}
+		return null;
+	}
+	
+	protected void cacheDirectoryUrnInDatabase( File dir, String urn ) {
+		FileHashCache fac = getFileHashCache(Config.getIdentificationScheme());
+		if( fac != null && fac.isWritable() ) {
+			String dataUri = UriUtil.stripRdfSubjectPrefix(urn);
+			if( dataUri == null ) {
+				Log.log(Log.EVENT_WARNING, "Expected to strip off an RDF subject URI prefix from "+urn+" to cache dir hash, but there apparently wasn't one");
+			} else {
+				fac.putHashUrn( (File)dir, dataUri );
+			}
+		}
+	}
+	
+	//// Repository path stuff ////
 	
 	protected String urnToPostSectorPath( RepoConfig repoConfig, String urn ) {
 		if( !repoConfig.storageScheme.couldTranslateUrn(urn) ) return null;
@@ -293,18 +341,26 @@ public class MetaRepository extends BaseRequestHandler {
 		String storedRdfUri = storedUri != null ? Config.getRdfSubjectPrefix()+storedUri : null;
 		boolean blobFullyStored = ValueUtil.getBoolean(blobPutRes.getMetadata().get(CCouchNamespace.RES_TREE_FULLY_STORED),false);
 		
-		boolean fullyStored = false;
+		boolean fullyStored;
 		if( storedRdfUri != null && sourceUri != null ) {
 			if( ValueUtil.getBoolean(MergeUtil.areUrisEquivalent(sourceUri,storedRdfUri),false) ) {
 				fullyStored = blobFullyStored;
 				if( !fullyStored ) {
 					Log.log(Log.EVENT_WARNING, "blobPutRes (called from putDataRdf) did not return fully stored = true");
 				}
-			} else if( sourceUri.indexOf(":urn:") != -1 ){
+			} else if( sourceUri.indexOf(":urn:") != -1 ) {
+				// When both are URNs but do not match is the only time we leave
+				// fullyStored as false, since something could be amiss, I guess
+				fullyStored = false;
 				Log.log(Log.EVENT_WARNING, "Expected RDF object to be stored as "+sourceUri+", but stored identifier returned is "+storedRdfUri);
+			} else {
+				fullyStored = blobFullyStored;
 			}
+		} else if( sourceUri == null ) {
+			fullyStored = blobFullyStored;
 		} else {
-			Log.log(Log.EVENT_WARNING, "No parsedFrom passed to putDataRdf.");
+			fullyStored = false; // We can't really know since there's no URI!
+			Log.log(Log.EVENT_WARNING, "No URI returned for stored RDF blob.");
 		}
 		
 		BaseResponse res = new BaseResponse();
@@ -313,7 +369,6 @@ public class MetaRepository extends BaseRequestHandler {
 		return res;
 	}
 	
-	// TODO: finish implementing this stuff and do away with old 'put' methods
 	protected Response putDataRdfDirectory( RepoConfig repoConfig, Request req ) {
 		String treeUri = (String)req.getContentMetadata().get(CCouchNamespace.SOURCE_URI);
 		String sector = getRequestedStoreSector(req, repoConfig);
@@ -326,8 +381,7 @@ public class MetaRepository extends BaseRequestHandler {
 		    } else if( sector == null ) {
 		    	Log.log(Log.EVENT_PERFORMANCE_WARNING, "Can't check for already-fully-stored because no sector was given :<");
 		    } else {
-				String s = getCachedString("fully-cached-trees/"+sector, treeUri);
-				if( s != null ) {
+				if( isTreeFullyStored(treeUri, sector) ) {
 					Log.log(Log.EVENT_SKIPPED_CACHED, treeUri);
 					BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, "Rdf directory and entries already stored", "text/plain");
 					res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, treeUri);
@@ -362,7 +416,7 @@ public class MetaRepository extends BaseRequestHandler {
 				if( fullyStored ) {
 					res.putMetadata(CCouchNamespace.RES_TREE_FULLY_STORED, Boolean.TRUE);
 					if( sector != null ) {
-						cacheString("fully-cached-trees/"+sector, treeUri, String.valueOf(new Date().getTime()) );
+				    	markTreeFullyStored( treeUri, sector );
 					}
 				} else {
 					Log.log(Log.EVENT_PERFORMANCE_WARNING, treeUri+" was not 'fully stored' S:-/");
@@ -380,22 +434,31 @@ public class MetaRepository extends BaseRequestHandler {
 		
 		Directory d = (Directory)req.getContent();
 		
+		String sector = getRequestedStoreSector(req, repoConfig);
+		
+		String cachedUri = null;
 		if( MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_USE_URI_DOT_FILES) ) {
 			Directory.Entry uriDotFileEntry = d.getDirectoryEntry(".ccouch-uri");
 			if( uriDotFileEntry != null ) {
 				Object target = uriDotFileEntry.getTarget();
 				if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
-				String uri = ValueUtil.getString(target);
-				// TODO: Some kind of validation on the URI (should be x-rdf-subject:<urn scheme>:...)
-				BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, "URI previously cached in .ccouch-uri file - skipping", "text/plain");
-				res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, uri);
-				return res;
+				cachedUri = ValueUtil.getString(target);
 			}
-		}		
+		} else if( d instanceof File && MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES) ) {
+			cachedUri = getCachedDirectoryUrnFromDatabase( (File)d );
+		}
+		
+		if( sector != null && cachedUri != null && isTreeFullyStored( cachedUri, sector ) ) {
+			BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, cachedUri + "already fully stored - skipping", "text/plain");
+			res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, cachedUri);
+			return res;
+		}
+		
 		String sourceUri = (String)req.getContentMetadata().get(CCouchNamespace.SOURCE_URI);		
 		//(Date)req.getContentMetadata().get(DcNamespace.DC_MODIFIED);
 		Date highestMtime = null; // Don't pay attention to directory mtime
 		List rdfDirectoryEntries = new ArrayList();
+		boolean fullyStored = true;
 		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			Object target = e.getTarget();
@@ -422,6 +485,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			Response targetPutRes = putData( repoConfig, targetPutReq );
 			TheGetter.getResponseValue(targetPutRes, targetPutReq);
+			fullyStored &= MetadataUtil.isEntryTrue( targetPutRes.getMetadata(), CCouchNamespace.RES_TREE_FULLY_STORED, false );
 			Date subHighestMtime = (Date)targetPutRes.getMetadata().get(CCouchNamespace.RES_HIGHEST_BLOB_MTIME);
 			if( subHighestMtime != null && (highestMtime == null || subHighestMtime.compareTo(highestMtime) > 0) ) {
 				highestMtime = subHighestMtime;
@@ -440,7 +504,11 @@ public class MetaRepository extends BaseRequestHandler {
 		if( highestMtime != null ) {
 			dirPutRes.putMetadata(CCouchNamespace.RES_HIGHEST_BLOB_MTIME, highestMtime);
 		}
-
+		fullyStored &= MetadataUtil.isEntryTrue( dirPutRes.getMetadata(), CCouchNamespace.RES_TREE_FULLY_STORED, false );
+		
+		String storedDirUri = MetadataUtil.getStoredIdentifier(dirPutRes);
+		if( fullyStored && storedDirUri != null ) markTreeFullyStored( storedDirUri, sector );
+		
 		boolean oldEnough;
 		if( highestMtime == null ) {
 			oldEnough = true; // Meh?
@@ -449,16 +517,13 @@ public class MetaRepository extends BaseRequestHandler {
 			oldEnough = (noNewerThan == null) ? true : highestMtime.before(noNewerThan); 
 		}
 		
-		String storedDirUri = MetadataUtil.getStoredIdentifier(dirPutRes);
-		if( d instanceof WritableDirectory &&
-			MetadataUtil.isEntryTrue(req.getMetadata(),CCouchNamespace.REQ_CREATE_URI_DOT_FILES) &&
-			oldEnough &&
-			storedDirUri != null
-		) {
-			MetadataUtil.saveCcouchUri( (WritableDirectory)d, storedDirUri );
+		if( oldEnough ) {
+			maybeCacheDirectoryUrn( d, storedDirUri, req.getMetadata() );
 		}
-
-		return dirPutRes;
+		
+		BaseResponse res = new BaseResponse(dirPutRes);
+		res.putMetadata( CCouchNamespace.RES_TREE_FULLY_STORED, Boolean.valueOf(fullyStored) );
+		return res;
 	}
 	
 	static String REQ_ANCESTOR_DEPTH_MAP = CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS+"/cachedDepthMap";
@@ -644,7 +709,7 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 		return hash;
 	}
-	
+		
 	/**
 	 * Note that this should only be called by identify(Object,Map,Map)
 	 * if the target is not already an RDFNode, so this function doesn't
@@ -652,23 +717,13 @@ public class MetaRepository extends BaseRequestHandler {
 	 */
 	protected String identifyDirectory( Directory dir, Map options ) {
 		String urn;
-		FileHashCache fac = null;
-		if( dir instanceof File && MetadataUtil.isEntryTrue(options,CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES) ) {
-			fac = getFileHashCache(Config.getIdentificationScheme());
-			if( fac != null ) {
-				urn = fac.getCachedUrn( (File)dir );
-				if( urn != null ) return Config.getRdfSubjectPrefix() + urn;
-			}
+		boolean useCache = dir instanceof File && MetadataUtil.isEntryTrue(options,CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES);  
+		if( useCache ) {
+			urn = getCachedDirectoryUrnFromDatabase( (File)dir );
+			if( urn != null ) return urn;
 		}
-		urn =  identify( new RdfDirectory( (Directory)dir, getTargetRdfifier(false, false, options) ), Collections.EMPTY_MAP, options );
-		if( fac != null && fac.isWritable() ) {
-			String dataUri = UriUtil.stripRdfSubjectPrefix(urn);
-			if( dataUri == null ) {
-				Log.log(Log.EVENT_WARNING, "Expected to strip off an RDF subject URI prefix from "+urn+" to cache dir hash, but there apparently wasn't one");
-			} else {
-				fac.putHashUrn( (File)dir, dataUri );
-			}
-		}
+		urn = identify( new RdfDirectory( (Directory)dir, getTargetRdfifier(false, false, options) ), Collections.EMPTY_MAP, options );
+		maybeCacheDirectoryUrn(dir, urn, options);
 		return urn;
 	}
 	
@@ -740,6 +795,7 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	protected String getCachedString( String cacheName, String valueName ) {
 		SimpleListFile slf = getCacheSlf( cacheName );
+		if( slf == null ) return null;
 		try {
 			byte[] v = slf.get(valueName);
 			if( v != null ) return ValueUtil.getString(v);
@@ -747,6 +803,14 @@ public class MetaRepository extends BaseRequestHandler {
 			Log.log(Log.EVENT_ERROR, "IOError while getting '"+valueName+"' from '"+cacheName+"' cache: "+e.getMessage());
 		}
 		return null;
+	}
+	
+	protected void markTreeFullyStored( String uri, String sector ) {
+		cacheString("fully-cached-trees/"+sector, uri, String.valueOf(new Date().getTime()) );
+	}
+	
+	protected boolean isTreeFullyStored( String uri, String sector ) {
+		return getCachedString("fully-cached-trees/"+sector, uri ) != null;
 	}
 	
 	protected void putFunctionResult( RepoConfig repoConfig, String subIndexName, String key, String value ) {

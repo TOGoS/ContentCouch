@@ -2,7 +2,6 @@ package contentcouch.misc;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,10 +13,7 @@ import togos.mf.api.Response;
 import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import contentcouch.blob.Blob;
-import contentcouch.blob.BlobUtil;
 import contentcouch.date.DateUtil;
-import contentcouch.directory.SimpleDirectory;
-import contentcouch.directory.WritableDirectory;
 import contentcouch.file.FileBlob;
 import contentcouch.framework.TheGetter;
 import contentcouch.rdf.CCouchNamespace;
@@ -227,16 +223,6 @@ public class MetadataUtil {
 		return isEntryTrue(m, key, false);
 	}
 	
-	public static void saveCcouchUri( WritableDirectory dir, String dirUri ) {
-		SimpleDirectory.Entry uriDotFileEntry = new SimpleDirectory.Entry();
-		uriDotFileEntry.target = BlobUtil.getBlob(dirUri);
-		uriDotFileEntry.lastModified = new Date().getTime();
-		uriDotFileEntry.name = ".ccouch-uri";
-		uriDotFileEntry.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
-		uriDotFileEntry.targetSize = ((Blob)uriDotFileEntry.target).getLength();
-		((WritableDirectory)dir).addDirectoryEntry(uriDotFileEntry, Collections.EMPTY_MAP);
-	}
-
 	public static void dereferenceTargetToRequest( Object target, BaseRequest req ) {
 		if( target instanceof Ref ) {
 			String targetSourceUri = ((Ref)target).getTargetUri();

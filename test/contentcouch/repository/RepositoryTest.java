@@ -184,6 +184,10 @@ public class RepositoryTest extends TestCase {
 		storeReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		storeReq.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
 		storeRes = TheGetter.call(storeReq);
+		// TODO: This is invalid; since the thing is not marked as fully stored
+		// (because it's an in-memory repo and SLF files don't work there)
+		// the directory will get re-stored anyway, so the new URI will be up-to-date.
+		// This test should use identify instead of store.
 		String incorrectStoredUri = MetadataUtil.getStoredIdentifier(storeRes);
 		
 		assertEquals( originalStoredUri, incorrectStoredUri );
@@ -209,7 +213,7 @@ public class RepositoryTest extends TestCase {
 		String commitBlobUrn = MetadataUtil.getStoredIdentifier(storeCommitRes);
 		return new BaseRef( CCouchNamespace.RDF_SUBJECT_URI_PREFIX + commitBlobUrn );
 	}
-
+	
 	protected boolean exists( String uri ) {
 		Response res = TheGetter.call( new BaseRequest(RequestVerbs.GET,uri) );
 		switch( res.getStatus() ) { 
