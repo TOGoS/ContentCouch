@@ -632,10 +632,11 @@ public class MetaRepository extends BaseRequestHandler {
 	//// Identify stuff ////
 	
 	protected String identifyBlob( Blob blob, Map options ) {
-		FileHashCache fac = getFileHashCache(Config.getIdentificationScheme());
-		if( !MetadataUtil.isEntryTrue(options, CCouchNamespace.REQ_DONT_CACHE_FILE_HASHES) &&
-				fac != null && blob instanceof FileBlob ) {
-			return fac.getUrn((FileBlob)blob);
+		if( !MetadataUtil.isEntryTrue(options, CCouchNamespace.REQ_DONT_CACHE_FILE_HASHES) ) {
+			FileHashCache fac = getFileHashCache(Config.getIdentificationScheme());
+			if( fac != null && blob instanceof FileBlob ) {
+				return fac.getUrn((FileBlob)blob);
+			}
 		}
 		String hash = Config.getIdentificationScheme().hashToUrn(Config.getIdentificationScheme().getHash(blob));
 		if( blob.getLength() == -1 || blob.getLength() > 4096 ) {
@@ -644,8 +645,34 @@ public class MetaRepository extends BaseRequestHandler {
 		return hash;
 	}
 	
-	protected Response identify( Object content, Map contentMetadata, Map options ) {
-		String id = null;
+	/**
+	 * Note that this should only be called by identify(Object,Map,Map)
+	 * if the target is not already an RDFNode, so this function doesn't
+	 * worry about the 'don't need to do any work to identify this' optimization.  
+	 */
+	protected String identifyDirectory( Directory dir, Map options ) {
+		String urn;
+		FileHashCache fac = null;
+		if( dir instanceof File && MetadataUtil.isEntryTrue(options,CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES) ) {
+			fac = getFileHashCache(Config.getIdentificationScheme());
+			if( fac != null ) {
+				urn = fac.getCachedUrn( (File)dir );
+				if( urn != null ) return Config.getRdfSubjectPrefix() + urn;
+			}
+		}
+		urn =  identify( new RdfDirectory( (Directory)dir, getTargetRdfifier(false, false, options) ), Collections.EMPTY_MAP, options );
+		if( fac != null && fac.isWritable() ) {
+			String dataUri = UriUtil.stripRdfSubjectPrefix(urn);
+			if( dataUri == null ) {
+				Log.log(Log.EVENT_WARNING, "Expected to strip off an RDF subject URI prefix from "+urn+" to cache dir hash, but there apparently wasn't one");
+			} else {
+				fac.putHashUrn( (File)dir, dataUri );
+			}
+		}
+		return urn;
+	}
+	
+	protected String identify( Object content, Map contentMetadata, Map options ) {
 		if( content instanceof RdfNode ) {
 			Object parsedFrom = contentMetadata.get(CCouchNamespace.PARSED_FROM);
 			if( parsedFrom == null ) {
@@ -653,23 +680,20 @@ public class MetaRepository extends BaseRequestHandler {
 				String rdfString = normalizeRdfString( content.toString() );
 				parsedFrom = BlobUtil.getBlob( rdfString );
 			}
-			String parsedFromUri = ValueUtil.getString(identify( parsedFrom, Collections.EMPTY_MAP, options ).getContent());
+			String parsedFromUri = identify( parsedFrom, Collections.EMPTY_MAP, options );
 			// TODO: Make sure repoConfig.dataScheme.wouldHandleUrn(parsedFromUri)?
-			return new BaseResponse(ResponseCodes.NORMAL, Config.getRdfSubjectPrefix() + parsedFromUri, "text/plain");
+			return Config.getRdfSubjectPrefix() + parsedFromUri;
 		} else if( content instanceof Commit ) {
 			return identify( new RdfCommit( (Commit)content, getTargetRdfifier(false, false, options) ), contentMetadata, options );
 		} else if( content instanceof Directory ) {
-			return identify( new RdfDirectory( (Directory)content, getTargetRdfifier(false, false, options) ), contentMetadata, options );
+			return identifyDirectory( (Directory)content, options );
 		} else if( content instanceof Ref && Config.getIdentificationScheme().couldTranslateUrn(((Ref)content).getTargetUri()) ) {
-			id = ((Ref)content).getTargetUri();
+			return ((Ref)content).getTargetUri();
 		} else {
 			content = TheGetter.dereference(content);
 			Blob blob = BlobUtil.getBlob(content, false);
-			if( blob != null ) id = identifyBlob( blob, options );
+			if( blob != null ) return identifyBlob( blob, options );
 		}
-		
-		if( id != null ) return new BaseResponse(ResponseCodes.NORMAL, id, "text/plain");
-		
 		throw new RuntimeException("I don't know how to identify " + (content == null ? "null" : content.getClass().getName()));
 	}
 	
@@ -898,7 +922,7 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 			
 			if( "identify".equals(repoRef.subPath) ) {
-				return identify( MFArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata(), req.getMetadata() );
+				return new BaseResponse( ResponseCodes.NORMAL, identify( MFArgUtil.getPrimaryArgument(req.getContent()), req.getContentMetadata(), req.getMetadata() ), "text/plain" );
 			}
 			
 			if( RequestVerbs.PUT.equals(req.getVerb()) || RequestVerbs.POST.equals(req.getVerb()) ) {
@@ -1075,8 +1099,8 @@ public class MetaRepository extends BaseRequestHandler {
 					if( nested ) {
 						return rdfDir;
 					} else {
-						Response res = identify(rdfDir, Collections.EMPTY_MAP, options);
-						return new BaseRef(ValueUtil.getString(res.getContent()));
+						String id = identify(rdfDir, Collections.EMPTY_MAP, options);
+						return new BaseRef(ValueUtil.getString(id));
 					}
 				} else if( input instanceof Ref ) {
 					return input;

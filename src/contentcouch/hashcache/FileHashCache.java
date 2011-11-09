@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.bitpedia.util.Base32;
 
+import contentcouch.app.Log;
 import contentcouch.contentaddressing.ContentAddressingScheme;
 import contentcouch.contentaddressing.Sha1Scheme;
 import contentcouch.file.FileBlob;
@@ -73,6 +74,10 @@ public class FileHashCache {
 		this.mode = mode;
 	}
 	
+	public boolean isWritable() {
+		return getSlf().isWritable();
+	}
+	
 	protected SimpleListFile getSlf() {
 		if( slf == null ) {
 			try {
@@ -81,7 +86,7 @@ public class FileHashCache {
 				slf.init(65536, 1024*1024);
 			} catch( IOException e ) {
 				if( mode.indexOf('w') != -1 ) {
-					System.err.println("Couldn't open cache file in '" + mode + "' mode, trying again as 'r'");
+					Log.log(Log.EVENT_WARNING,"Couldn't open cache file in '" + mode + "' mode, trying again as 'r'");
 					try { 
 						slf = new SimpleListFile(cacheFile, "r");
 					} catch( IOException ee ) {
@@ -106,6 +111,22 @@ public class FileHashCache {
 		return (e != null && file.lastModified() == e.mtime && file.length() == e.size) ? e : null;
 	}
 	
+	public void putHash( File file, byte[] hash ) {
+		try {
+			Entry e = new Entry();
+			e.mtime = file.lastModified();
+			e.size = file.length();
+			e.hash = hash;
+			getSlf().put(file.getCanonicalPath(), e.toBytes());
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void putHashUrn( File file, String urn ) {
+		putHash( file, dataScheme.urnToHash(urn) );
+	}
+	
 	public byte[] getHash( FileBlob file ) {
 		try {
 			Entry e = getCachedValidEntry(file);
@@ -113,17 +134,27 @@ public class FileHashCache {
 				return e.hash;
 			}
 			byte[] hash = dataScheme.getHash(file);
-			if( getSlf().isWritable() ) {
-				e = new Entry();
-				e.mtime = file.lastModified();
-				e.size = file.length();
-				e.hash = hash;
-				getSlf().put(file.getCanonicalPath(), e.toBytes());
+			if( isWritable() ) {
+				putHash( file, hash );
 			}
 			return hash;
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public byte[] getCachedHash( File file ) {
+		try {
+			Entry e = getCachedValidEntry(file);
+			return e == null ? null : e.hash;
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public String getCachedUrn( File file ) {
+		byte[] hash = getCachedHash(file);
+		return hash == null ? null : dataScheme.hashToUrn(hash);
 	}
 	
 	public String getUrn( FileBlob file ) {

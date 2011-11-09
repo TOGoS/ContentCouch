@@ -301,6 +301,7 @@ public class ContentCouchCommand {
 		public boolean shouldUseCommitTargets = false;
 		public boolean shouldCreateUriDotFiles = false;
 		public boolean shouldUseUriDotFiles = false;
+		public boolean shouldCacheDirectoryHashes = false;
 		public boolean dontCacheFileHashes = false;
 		public int cacheCommitAncestors = 0;
 		public Date shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = null;
@@ -319,13 +320,19 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		public void initrmd( BaseRequest req ) {
-			req.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, storeSector);
-			req.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, cacheSector);
+		public void initRequest( BaseRequest req ) {
+			if( storeSector != null ) req.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, storeSector);
+			if( cacheSector != null ) req.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, cacheSector);
 			if( shouldLinkStored ) req.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-			req.putMetadata(CCouchNamespace.REQ_DIRMERGE_METHOD, dirMergeMethod);
-			req.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, fileMergeMethod);
+			if( dirMergeMethod != null ) req.putMetadata(CCouchNamespace.REQ_DIRMERGE_METHOD, dirMergeMethod);
+			if( fileMergeMethod != null ) req.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, fileMergeMethod);
 			if( dontCacheFileHashes ) req.putMetadata(CCouchNamespace.REQ_DONT_CACHE_FILE_HASHES, Boolean.TRUE);
+			if( shouldCacheDirectoryHashes ) req.putMetadata(CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES, Boolean.TRUE);
+			if( shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan != null ) {
+				req.putMetadata(CCouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN,
+					shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan
+				);
+			}
 		}
 		
 		public boolean handleArguments( String arg, Iterator it ) {
@@ -505,6 +512,8 @@ public class ContentCouchCommand {
 				return 0;
 			} else if( "-dont-cache-file-hashes".equals(arg) ) {
 				opts.dontCacheFileHashes = true;
+			} else if( "-cache-directory-hashes".equals(arg) ) {
+				opts.shouldCacheDirectoryHashes = true;
 			} else if( "-dump-config".equals(arg) ) {
 				dumpConfig = true;
 			} else if( !arg.startsWith("-") || "-".equals(arg) ) {
@@ -527,7 +536,7 @@ public class ContentCouchCommand {
 		for( Iterator i=inputUris.iterator(); i.hasNext(); ) {
 			String input = (String)i.next();
 			BaseRequest getReq = TheGetter.createRequest(RequestVerbs.GET, input);
-			opts.initrmd(getReq);
+			opts.initRequest(getReq);
 			Response getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.NORMAL ) {
 				System.err.println("Couldn't find " + getReq.getResourceName() + ": " + getRes.getStatus() + ": " + getRes.getContent() );
@@ -664,6 +673,8 @@ public class ContentCouchCommand {
 				opts.shouldCreateUriDotFiles = true;
 			} else if( "-use-uri-dot-files".equals(arg) ) {
 				opts.shouldUseUriDotFiles = true;
+			} else if( "-cache-directory-hashes".equals(arg) ) {
+				opts.shouldCacheDirectoryHashes = true;
 			} else if( "-dcudfnt".equals(arg) ) {
 				opts.shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = parseDeltaTime(new Date(), args[++i]);
 			} else if( "-m".equals(arg) ) {
@@ -730,15 +741,13 @@ public class ContentCouchCommand {
 			
 			Object o = getRes.getContent();
 			boolean expectIdentifier = true; 
-			if( o instanceof Directory ) {
-				if( !storeDirs ) {
-					o = new FilterIterator( new DirectoryWalker((Directory)o, followRefs), EntryFilters.BLOBFILTER );
-					getRes = new BaseResponse(ResponseCodes.NORMAL, o);
-					expectIdentifier = false;
-					if( createCommit ) {
-						System.err.println("Cannot create commit when source is a collection");
-						return 1;
-					}
+			if( o instanceof Directory && !storeDirs ) {
+				o = new FilterIterator( new DirectoryWalker((Directory)o, followRefs), EntryFilters.BLOBFILTER );
+				getRes = new BaseResponse(ResponseCodes.NORMAL, o);
+				expectIdentifier = false;
+				if( createCommit ) {
+					System.err.println("Cannot create commit when source is a collection");
+					return 1;
 				}
 			}
 			
@@ -746,15 +755,9 @@ public class ContentCouchCommand {
 			putReq.content = o;
 			putReq.contentMetadata = new HashMap(getRes.getContentMetadata());
 			putReq.contentMetadata.put(CCouchNamespace.SOURCE_URI, sourceUri);
-			if( opts.storeSector != null ) putReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
-			if( opts.cacheSector != null ) putReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
-			if( opts.shouldLinkStored ) putReq.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-			if( opts.shouldCreateUriDotFiles ) putReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
-			if( opts.shouldUseUriDotFiles ) putReq.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
+
+			opts.initRequest( putReq );
 			putReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, CCouchNamespace.REQ_FILEMERGE_IGNORE);
-			putReq.putMetadata(CCouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN,
-				opts.shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan
-			);
 			
 			Response putRes = TheGetter.call(putReq);
 			if( putRes.getStatus() != ResponseCodes.NORMAL ) {
@@ -1081,7 +1084,7 @@ public class ContentCouchCommand {
 		}
 
 		BaseRequest req = new BaseRequest(RequestVerbs.GET, dir);
-		opts.initrmd(req);
+		opts.initRequest(req);
 		Object o = TheGetter.getResponseValue(TheGetter.call(req),req);
 		if( !(o instanceof Directory) ) {
 			System.err.println( dir + " does not point to a Directory (found " + (o == null ? "null" : "a " + o.getClass().getName()) + ")");
@@ -1093,30 +1096,31 @@ public class ContentCouchCommand {
 		return 0;
 	}
 	
-	protected void touch( File f ) {
+	protected void touch( File f, Date mtime ) {
 		if( f.isDirectory() ) {
 			File uriFile = new File(f + "/.ccouch-uri");
 			if( uriFile.exists() ) {
 				Log.log(Log.EVENT_DELETED, uriFile.getPath());
 				uriFile.delete();				
 			}
+			f.setLastModified(mtime.getTime());
 		}
 	}
-	protected void touchParents( File f ) {
+	protected void touchParents( File f, Date mtime ) {
 		f = f.getParentFile();
 		while( f != null ) {
-			touch(f);
+			touch(f, mtime);
 			f = f.getParentFile();
 		}
 	}
-	protected void touchChildren( File f ) {
+	protected void touchChildren( File f, Date mtime ) {
 		if( f.isDirectory() ) {
 			File[] subs = f.listFiles();
 			for( int i=0; i<subs.length; ++i ) {
 				File sub = subs[i];
 				if( sub.isDirectory() ) {
-					touch(sub);
-					touchChildren(sub);
+					touch(sub, mtime);
+					touchChildren(sub, mtime);
 				}
 			}
 		}
@@ -1163,11 +1167,14 @@ public class ContentCouchCommand {
 				continue;
 			}
 			f = f.getAbsoluteFile();
-			touch(f);
-			if( recursive ) touchChildren(f);
-			touchParents(f);				
+			
+			Date mtime = new Date();
+			
+			touch(f, mtime);
+			if( recursive ) touchChildren(f, mtime);
+			touchParents(f, mtime);
 		}
-		return 0;
+		return errorCount;
 	}
 	
 	interface Converter {

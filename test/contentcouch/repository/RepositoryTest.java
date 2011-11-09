@@ -1,7 +1,10 @@
 package contentcouch.repository;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,9 +16,14 @@ import togos.mf.base.BaseRequest;
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.commit.SimpleCommit;
+import contentcouch.contentaddressing.ContentAddressingScheme;
+import contentcouch.contentaddressing.TigerTreeScheme;
+import contentcouch.context.Context;
 import contentcouch.directory.SimpleDirectory;
+import contentcouch.file.FileDirectory;
 import contentcouch.framework.TheGetter;
 import contentcouch.misc.MetadataUtil;
+import contentcouch.misc.UriUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
@@ -270,7 +278,7 @@ public class RepositoryTest extends TestCase {
 			TheGetter.callAndThrowIfNonNormalResponse(putReq);
 			
 			// #0 should always be in there:
-			assertExists( getStoreUri(sector, ((Ref)commitRefs.get(0)).getTargetUri()));
+			assertExists( getStoreUri(sector, ((Ref)commitRefs.get(0)).getTargetUri()) );
 			for( int j=1; j<=followCount; ++j ) {
 				String storeUri = getStoreUri(sector, ((Ref)commitRefs.get(j)).getTargetUri());
 				assertExists( storeUri );
@@ -280,5 +288,43 @@ public class RepositoryTest extends TestCase {
 				assertNotExists( storeUri );
 			}
 		}
+	}
+	
+	public void testDirectoryHashCaching() {
+		ContentAddressingScheme scheme = TigerTreeScheme.getInstance();
+		
+		File testRepoDir = new File("junk/test-repo");
+		File configFile = new File("junk/test-repo/ccouch-config");
+		File hashCacheFile = new File("junk/test-repo/cache/file-"+scheme.getSchemeShortName()+".slf");
+		File dirToIdentify = new File("junk/more-junk" );
+		if( configFile.exists() ) configFile.delete();
+		if( hashCacheFile.exists() ) hashCacheFile.delete();
+		if( !testRepoDir.exists() ) testRepoDir.mkdirs();
+		if( !dirToIdentify.exists() ) dirToIdentify.mkdirs();
+		
+		MetaRepoConfig conf = new MetaRepoConfig();
+		conf.defaultRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_DEFAULT, "file:junk/test-repo/", "test");
+		MetaRepository mr = new MetaRepository(conf);
+		
+		Map options = new HashMap();
+		options.put( CCouchNamespace.CFG_ID_SCHEME, scheme.getSchemeShortName() );
+		options.put( CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES, Boolean.FALSE );
+		Context.setThreadLocalInstance( options );
+		
+		assertNull( mr.getFileHashCache(scheme).getCachedUrn(dirToIdentify) );
+		
+		String dirId = mr.identifyDirectory(new FileDirectory(dirToIdentify), options);
+		String dirDataId = UriUtil.stripRdfSubjectPrefix(dirId);
+		
+		assertNull( mr.getFileHashCache(scheme).getCachedUrn(dirToIdentify) );
+		
+		options.put( CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES, Boolean.TRUE );
+		
+		mr.identifyDirectory(new FileDirectory(dirToIdentify), options);
+		
+		assertNotNull( mr.getFileHashCache(scheme).getCachedUrn(dirToIdentify) );
+		assertEquals( dirDataId, mr.getFileHashCache(scheme).getCachedUrn(dirToIdentify) );
+		
+		// This doesn't test that the cached value was actually used...
 	}
 }

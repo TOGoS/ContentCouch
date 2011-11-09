@@ -62,6 +62,9 @@ public class CCouchNamespace {
 	public static final String REQ_CREATE_URI_DOT_FILES = CC_REQ_NS + "createUriDotFiles";
 	public static final String REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN =
 		CC_REQ_NS + "dontCreateUriDotFilesWhenHighestBlobMtimeGreaterThan";
+	/** Accomplishes the same thing as uri dot files, but uses the same
+	 * filename,mtime -> hash database as used for files. */
+	public static final String REQ_CACHE_DIRECTORY_HASHES = CC_REQ_NS + "cacheDirectoryHashes";
 	
 	public static final String REQ_FILEMERGE_METHOD    = CC_REQ_NS + "fileMergeMethod";
 	public static final String REQ_FILEMERGE_FAIL      = "Fail";
@@ -85,6 +88,7 @@ public class CCouchNamespace {
 	
 	public static final String CFG_RDF_SUBJECT_URI_PREFIX = CFG_NS + "rdfSubjectUriPrefix";
 	public static final String CFG_RDF_DIRECTORY_STYLE = CFG_NS + "directoryStyle";
+	/** The 'short name' of a scheme (see Schemes) */
 	public static final String CFG_ID_SCHEME = CFG_NS + "blobIdentificationScheme";
 	
 	/* Defaults to true */
