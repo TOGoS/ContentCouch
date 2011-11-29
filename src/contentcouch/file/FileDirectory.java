@@ -122,6 +122,7 @@ public class FileDirectory extends File implements WritableDirectory
 		HashSet entries = new HashSet();
 		if( subFiles != null ) for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
+			if( isHidden(subFile) ) continue;
 			if( subFile.getName().startsWith(".") ) continue;
 			if( subFile.isHidden() ) continue;
 			entries.add(new Entry(subFile));
@@ -135,16 +136,33 @@ public class FileDirectory extends File implements WritableDirectory
 		return new Entry(f);
 	}
 	
+	protected boolean isHiddenFilename( String fn ) {
+		return fn.startsWith(".");
+	}
+	
+	protected boolean isHidden( File f ) {
+		return f.isHidden() || isHiddenFilename(f.getName());
+	}
+	
+	protected boolean isHidden( Directory.Entry e ) {
+		return isHiddenFilename(e.getName());
+	}
+	
 	public void addDirectoryEntry( Directory.Entry entry, Map options ) {
 		File f = new File(this.getPath() + "/" + entry.getName());
 		//if( f.exists() ) throw new RuntimeException("Cannot add entry; file already exists at " + this + "/" + entry.getName());
 		Entry e = new Entry(f);
 		e.setTarget(entry.getTarget(), options);
 		e.setTargetLastModified(entry.getLastModified());
+		if( !isHidden(entry) ) {
+			Toucher.touch( this, System.currentTimeMillis(), true, false );
+		}
 	}
 	
 	public void deleteDirectoryEntry( String name, Map options ) {
 		File f = new File(this.getPath() + "/" + name);
+		boolean hidden = isHidden(f);
 		FileUtil.rmdir(f);
+		if( !hidden ) Toucher.touch( this, System.currentTimeMillis(), true, false );
 	}
 }

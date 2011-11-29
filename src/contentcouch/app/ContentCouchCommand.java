@@ -33,6 +33,7 @@ import contentcouch.directory.DirectoryWalker;
 import contentcouch.directory.EntryFilters;
 import contentcouch.directory.FilterIterator;
 import contentcouch.file.FileBlob;
+import contentcouch.file.Toucher;
 import contentcouch.framework.TheGetter;
 import contentcouch.merge.MergeUtil;
 import contentcouch.misc.Base16;
@@ -335,6 +336,7 @@ public class ContentCouchCommand {
 					shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan
 				);
 			}
+			req.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(cacheCommitAncestors));
 		}
 		
 		public boolean handleArguments( String arg, Iterator it ) {
@@ -390,7 +392,6 @@ public class ContentCouchCommand {
 				} else {
 					this.extraLogEvents.add(logLevelStr);
 				}
-				
 			} else {
 				return false;
 			}
@@ -412,7 +413,7 @@ public class ContentCouchCommand {
 		
 		findTarget: while( true ) {
 			BaseRequest getReq = TheGetter.createRequest( RequestVerbs.GET, sourceTargetUri );
-			getReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
+			opts.initRequest(getReq);
 			getRes = TheGetter.call(getReq);
 			if( getRes.getStatus() != ResponseCodes.NORMAL ) {
 				System.err.println("Couldn't get " + sourceUri + ": " + getRes.getContent());
@@ -442,12 +443,7 @@ public class ContentCouchCommand {
 		putReq.contentMetadata = getRes.getContentMetadata();
 		//putReq.putContextVar(SwfNamespace.CTX_CONFIG, metaRepoConfig.config);
 		putReq.putContentMetadata(CCouchNamespace.SOURCE_URI, sourceUri);
-		putReq.putMetadata(CCouchNamespace.REQ_STORE_SECTOR, opts.storeSector);
-		putReq.putMetadata(CCouchNamespace.REQ_CACHE_SECTOR, opts.cacheSector);
-		putReq.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(opts.cacheCommitAncestors));
-		if( opts.shouldLinkStored ) putReq.putMetadata(CCouchNamespace.REQ_HARDLINK_DESIRED, Boolean.TRUE);
-		putReq.putMetadata(CCouchNamespace.REQ_DIRMERGE_METHOD, opts.dirMergeMethod);
-		putReq.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, opts.fileMergeMethod);
+		opts.initRequest(putReq);
 		Response putRes = TheGetter.call(putReq);
 		if( putRes.getStatus() != ResponseCodes.NORMAL ) {
 			System.err.println("Couldn't PUT to " + destUri + ": " + putRes.getContent());
@@ -1102,36 +1098,6 @@ public class ContentCouchCommand {
 		return 0;
 	}
 	
-	protected void touch( File f, Date mtime ) {
-		if( f.isDirectory() ) {
-			File uriFile = new File(f + "/.ccouch-uri");
-			if( uriFile.exists() ) {
-				Log.log(Log.EVENT_DELETED, uriFile.getPath());
-				uriFile.delete();				
-			}
-			f.setLastModified(mtime.getTime());
-		}
-	}
-	protected void touchParents( File f, Date mtime ) {
-		f = f.getParentFile();
-		while( f != null ) {
-			touch(f, mtime);
-			f = f.getParentFile();
-		}
-	}
-	protected void touchChildren( File f, Date mtime ) {
-		if( f.isDirectory() ) {
-			File[] subs = f.listFiles();
-			for( int i=0; i<subs.length; ++i ) {
-				File sub = subs[i];
-				if( sub.isDirectory() ) {
-					touch(sub, mtime);
-					touchChildren(sub, mtime);
-				}
-			}
-		}
-	}
-	
 	public int runTouchCmd( String[] args ) {
 		args = mergeConfiguredArgs("touch", args);
 		boolean recursive = false;
@@ -1176,9 +1142,7 @@ public class ContentCouchCommand {
 			
 			Date mtime = new Date();
 			
-			touch(f, mtime);
-			if( recursive ) touchChildren(f, mtime);
-			touchParents(f, mtime);
+			Toucher.touch( f, mtime.getTime(), true, recursive );
 		}
 		return errorCount;
 	}

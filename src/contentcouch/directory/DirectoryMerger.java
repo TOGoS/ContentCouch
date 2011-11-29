@@ -190,6 +190,19 @@ public class DirectoryMerger {
 	}
 	
 	public void putAll( WritableDirectory destDir, Directory srcDir, String srcUri, String destUri ) {
+		if( MetadataUtil.isEntryTrue(options, CCouchNamespace.REQ_USE_URI_DOT_FILES) ) {
+			Directory.Entry uriDotFileEntry = destDir.getDirectoryEntry(".ccouch-uri");
+			if( uriDotFileEntry != null ) {
+				Object target = uriDotFileEntry.getTarget();
+				if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+				String destCurrentUrn = ValueUtil.getString(target);
+				if( srcUri.equals(destCurrentUrn) ) {
+					// System.err.println(destUri+" already = "+srcUri+"; skipping recursive dir merge!");
+					return;
+				}
+			}
+		}
+		
 		for( Iterator i=srcDir.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
 			Directory.Entry e = (Directory.Entry)i.next();
 			String sourceUri;
