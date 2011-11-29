@@ -16,8 +16,8 @@ import contentcouch.misc.ValueUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
-import contentcouch.value.Ref;
 import contentcouch.value.Directory.Entry;
+import contentcouch.value.Ref;
 
 public class DirectoryMerger {
 	protected static class EqualityCheckResult {

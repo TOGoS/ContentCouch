@@ -109,7 +109,10 @@ public class MetaRepository extends BaseRequestHandler {
 			return "x-ccouch-repo://" + repoName + "/" + subPath;
 		}
 	}
-
+	
+	/** Use this to cache values instead of the SLF for unit tests. */
+	public Map stringCacheOverride;
+	
 	protected String normalizeRdfString( String rdf ) {
 		return rdf.trim()+"\n";
 	}
@@ -179,6 +182,24 @@ public class MetaRepository extends BaseRequestHandler {
 			}
 		}
 	}
+	
+	protected String maybeGetCachedDirectoryUrn( Directory d, Map options ) {
+		String urn = null;
+		if( MetadataUtil.isEntryTrue(options, CCouchNamespace.REQ_USE_URI_DOT_FILES) ) {
+			Directory.Entry uriDotFileEntry = d.getDirectoryEntry(".ccouch-uri");
+			if( uriDotFileEntry != null ) {
+				Object target = uriDotFileEntry.getTarget();
+				if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
+				urn = ValueUtil.getString(target);
+				if( urn != null ) return urn;
+			}
+		}
+		if( d instanceof File && MetadataUtil.isEntryTrue(options, CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES) ) {
+			urn = getCachedDirectoryUrnFromDatabase( (File)d );
+		}
+		return urn;
+	}
+	
 	
 	//// Repository path stuff ////
 	
@@ -430,23 +451,10 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected Response putDataNonRdfDirectory( RepoConfig repoConfig, Request req ) {
-		RdfDirectory rdfDir = new RdfDirectory();
-		
 		Directory d = (Directory)req.getContent();
-		
 		String sector = getRequestedStoreSector(req, repoConfig);
 		
-		String cachedUri = null;
-		if( MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_USE_URI_DOT_FILES) ) {
-			Directory.Entry uriDotFileEntry = d.getDirectoryEntry(".ccouch-uri");
-			if( uriDotFileEntry != null ) {
-				Object target = uriDotFileEntry.getTarget();
-				if( target instanceof Ref ) target = TheGetter.get( ((Ref)target).getTargetUri() );
-				cachedUri = ValueUtil.getString(target);
-			}
-		} else if( d instanceof File && MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES) ) {
-			cachedUri = getCachedDirectoryUrnFromDatabase( (File)d );
-		}
+		String cachedUri = maybeGetCachedDirectoryUrn(d, req.getMetadata());
 		
 		if( sector != null && cachedUri != null && isTreeFullyStored( cachedUri, sector ) ) {
 			BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, cachedUri + "already fully stored - skipping", "text/plain");
@@ -494,6 +502,8 @@ public class MetaRepository extends BaseRequestHandler {
 			if( targetUri == null ) throw new RuntimeException("Inserting entry target returned null");
 			rdfDirectoryEntries.add(new RdfDirectory.Entry(e, new BaseRef(targetUri)));
 		}
+		
+		RdfDirectory rdfDir = new RdfDirectory();
 		rdfDir.setDirectoryEntries(rdfDirectoryEntries);
 		
 		BaseRequest dirPutReq = new BaseRequest();
@@ -716,14 +726,12 @@ public class MetaRepository extends BaseRequestHandler {
 	 * worry about the 'don't need to do any work to identify this' optimization.  
 	 */
 	protected String identifyDirectory( Directory dir, Map options ) {
-		String urn;
-		boolean useCache = dir instanceof File && MetadataUtil.isEntryTrue(options,CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES);  
-		if( useCache ) {
-			urn = getCachedDirectoryUrnFromDatabase( (File)dir );
-			if( urn != null ) return urn;
-		}
+		String urn = maybeGetCachedDirectoryUrn(dir, options);
+		if( urn != null ) return urn;
+		
 		urn = identify( new RdfDirectory( (Directory)dir, getTargetRdfifier(false, false, options) ), Collections.EMPTY_MAP, options );
 		maybeCacheDirectoryUrn(dir, urn, options);
+		
 		return urn;
 	}
 	
@@ -785,6 +793,11 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected void cacheString( String cacheName, String valueName, String value ) {
+		if( stringCacheOverride != null ) {
+			stringCacheOverride.put(cacheName+"/"+valueName, value);
+			return;
+		}
+		
 		SimpleListFile slf = getCacheSlf( cacheName );
 		try {
 			if( slf != null ) slf.put(valueName, ValueUtil.getBytes(value));
@@ -794,6 +807,10 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected String getCachedString( String cacheName, String valueName ) {
+		if( stringCacheOverride != null ) {
+			return stringCacheOverride.get(cacheName+"/"+valueName).toString();
+		}
+		
 		SimpleListFile slf = getCacheSlf( cacheName );
 		if( slf == null ) return null;
 		try {
@@ -871,6 +888,7 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	public MetaRepository( MetaRepoConfig config ) {
 		this.config = config;
+		this.stringCacheOverride = config.stringCacheOverride;
 	}
 	
 	protected RepoConfig lastHitRepoConfig;

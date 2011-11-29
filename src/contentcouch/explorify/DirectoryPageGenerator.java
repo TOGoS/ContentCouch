@@ -16,9 +16,9 @@ import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
+import contentcouch.value.Directory.Entry;
 import contentcouch.value.Ref;
 import contentcouch.value.RelativeRef;
-import contentcouch.value.Directory.Entry;
 import contentcouch.xml.XML;
 
 public class DirectoryPageGenerator extends CCouchExplorerPageGenerator {

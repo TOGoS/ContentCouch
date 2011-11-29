@@ -33,7 +33,7 @@ public abstract class WritableDirectoryTest extends TestCase {
 	public void testAddEntry() {
 		SimpleDirectory.Entry e = new SimpleDirectory.Entry();
 		e.name = "rox";
-		e.lastModified = 12345;
+		e.lastModified = 13000; // Some filesystems only store seconds
 		e.targetSize = hwblob.getLength();
 		e.targetType = CCouchNamespace.TT_SHORTHAND_BLOB;
 		e.target = hwblob;

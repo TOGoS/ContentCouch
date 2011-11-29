@@ -38,6 +38,10 @@ public class RepositoryTest extends TestCase {
 	RepoConfig testRemoteRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_REMOTE, "x-memtemp:/test-remote-repo/", "test-remote-repo");
 	public void setUp() {
 		mrc = new MetaRepoConfig();
+		// Since there's no actual directory, SLF files don't work,
+		// and we need to override the cache thingy in order for tests
+		// that rely on caching working to pass:
+		mrc.stringCacheOverride = new HashMap();
 		TheGetter.globalInstance = mrc.getRequestKernel();
 		mrc.addRepoConfig( testRepoConfig );
 		mrc.addRepoConfig( testRemoteRepoConfig );
@@ -184,10 +188,6 @@ public class RepositoryTest extends TestCase {
 		storeReq.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
 		storeReq.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
 		storeRes = TheGetter.call(storeReq);
-		// TODO: This is invalid; since the thing is not marked as fully stored
-		// (because it's an in-memory repo and SLF files don't work there)
-		// the directory will get re-stored anyway, so the new URI will be up-to-date.
-		// This test should use identify instead of store.
 		String incorrectStoredUri = MetadataUtil.getStoredIdentifier(storeRes);
 		
 		assertEquals( originalStoredUri, incorrectStoredUri );

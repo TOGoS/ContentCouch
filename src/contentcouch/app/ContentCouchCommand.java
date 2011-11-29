@@ -45,8 +45,8 @@ import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfCommit;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
-import contentcouch.repository.RepoConfig;
 import contentcouch.repository.MetaRepository.RepoRef;
+import contentcouch.repository.RepoConfig;
 import contentcouch.stream.InternalStreamRequestHandler;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Commit;
@@ -328,6 +328,8 @@ public class ContentCouchCommand {
 			if( fileMergeMethod != null ) req.putMetadata(CCouchNamespace.REQ_FILEMERGE_METHOD, fileMergeMethod);
 			if( dontCacheFileHashes ) req.putMetadata(CCouchNamespace.REQ_DONT_CACHE_FILE_HASHES, Boolean.TRUE);
 			if( shouldCacheDirectoryHashes ) req.putMetadata(CCouchNamespace.REQ_CACHE_DIRECTORY_HASHES, Boolean.TRUE);
+			if( shouldCreateUriDotFiles ) req.putMetadata(CCouchNamespace.REQ_CREATE_URI_DOT_FILES, Boolean.TRUE);
+			if( shouldUseUriDotFiles ) req.putMetadata(CCouchNamespace.REQ_USE_URI_DOT_FILES, Boolean.TRUE);
 			if( shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan != null ) {
 				req.putMetadata(CCouchNamespace.REQ_DONT_CREATE_URI_DOT_FILES_WHEN_HIGHEST_BLOB_MTIME_GREATER_THAN,
 					shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan
@@ -510,6 +512,10 @@ public class ContentCouchCommand {
 			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
 				System.out.println(getHelpText("id"));
 				return 0;
+			} else if( "-create-uri-dot-files".equals(arg) ) {
+				opts.shouldCreateUriDotFiles = true;
+			} else if( "-use-uri-dot-files".equals(arg) ) {
+				opts.shouldUseUriDotFiles = true;
 			} else if( "-dont-cache-file-hashes".equals(arg) ) {
 				opts.dontCacheFileHashes = true;
 			} else if( "-cache-directory-hashes".equals(arg) ) {

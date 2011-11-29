@@ -5,9 +5,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
-import contentcouch.app.Log;
-
 import togos.service.Service;
+import contentcouch.app.Log;
 
 public class JobService implements Service
 {

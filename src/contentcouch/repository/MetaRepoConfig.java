@@ -35,7 +35,10 @@ public class MetaRepoConfig {
 	public RepoConfig defaultRepoConfig = new RepoConfig();
 	public List localRepoConfigs = new ArrayList();
 	public List remoteRepoConfigs = new ArrayList();
-	public List loadedFromConfigUris = new ArrayList(); 
+	public List loadedFromConfigUris = new ArrayList();
+	// TODO: Have a generic cache object that can be overriden
+	// instead of having special case for 'string cache override'
+	public Map stringCacheOverride = null;
 	
 	public List getDefaultAndLocalRepoConfigs() {
 		ArrayList l = new ArrayList();
