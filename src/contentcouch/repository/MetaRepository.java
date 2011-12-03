@@ -771,7 +771,7 @@ public class MetaRepository extends BaseRequestHandler {
 			try {
 				FileUtil.mkParentDirs(f);
 				slf = new SimpleListFile(f, "rw");
-				slf.init(65536, 1024*1024);
+				slf.initIfEmpty(65536, 1024*1024);
 				slfFiles.put(f.getAbsolutePath(), slf);
 			} catch( IOException e ) {
 				throw new RuntimeException("Couldn't open cache file in 'w' mode", e);

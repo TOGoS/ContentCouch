@@ -83,7 +83,7 @@ public class FileHashCache {
 			try {
 				FileUtil.mkParentDirs(cacheFile);
 				slf = new SimpleListFile(cacheFile, mode);
-				slf.init(65536, 1024*1024);
+				slf.initIfEmpty(65536, 1024*1024);
 			} catch( IOException e ) {
 				if( mode.indexOf('w') != -1 ) {
 					Log.log(Log.EVENT_WARNING,"Couldn't open cache file in '" + mode + "' mode, trying again as 'r'");
