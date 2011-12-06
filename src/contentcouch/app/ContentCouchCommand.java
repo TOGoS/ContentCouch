@@ -2,6 +2,7 @@
 package contentcouch.app;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1189,16 +1190,35 @@ public class ContentCouchCommand {
 			return ValueUtil.getBytes( Base16.encode( input, hexTable ) );
 		}
 	}
+	class URLDecoder implements Converter {
+		public byte[] convert( byte[] input ) {
+			return UriUtil.uriDecodeBytes( input );
+		}
+	}
+	class URLEncoder implements Converter {
+		public byte[] convert( byte[] input ) {
+			return ValueUtil.getBytes( UriUtil.uriEncode( input ) );
+		}
+	}
+	class NullCodec implements Converter {
+		public byte[] convert( byte[] input ) { return input; }
+	}
 	
-	Pattern formatsPattern = Pattern.compile("^-(.+?)-to-(.+)$");	
+	Pattern formatsPattern = Pattern.compile("^-(.+?)-to-(.+)$");
+	Pattern encodePattern = Pattern.compile("^-to-(.+)$");
+	Pattern decodePattern = Pattern.compile("^-from-(.+)$");
 	protected int runConvertCmd( String[] args ) {
 		Boolean showInputs = null;
-		String fromFormat = null;
-		String toFormat = null;
+		String fromFormat = "none";
+		String toFormat = "none";
 		List inputs = new ArrayList();
+		boolean formatsSpecified = false;
+		boolean supressNewline = false;
 		Matcher m;
 		for( int i=0; i<args.length; ++i ) {
-			if( "-show-inputs".equals(args[i]) ) {
+			if( "-n".equals(args[i]) ) {
+				supressNewline = true;
+			} else if( "-show-inputs".equals(args[i]) ) {
 				showInputs = Boolean.TRUE;
 			} else if( "-hide-inputs".equals(args[i]) ) {
 				showInputs = Boolean.FALSE;
@@ -1211,11 +1231,30 @@ public class ContentCouchCommand {
 			} else if( (m = formatsPattern.matcher(args[i])).matches() ) {
 				fromFormat = m.group(1);
 				toFormat = m.group(2);
+				formatsSpecified = true;
+			} else if( (m = encodePattern.matcher(args[i])).matches() ) {
+				toFormat = m.group(1);
+				formatsSpecified = true;
+			} else if( (m = decodePattern.matcher(args[i])).matches() ) {
+				fromFormat = m.group(1);
+				formatsSpecified = true;
+			} else {
+				System.err.println("Unrecognised 'convert' argument: "+args[i]);
+				return 1;
 			}
 		}
 		
+		if( !formatsSpecified ) {
+			System.err.println("Input/output formats not specified.  Use -<from>-to-<to>.");
+			return 1;
+		}
+		
 		Converter decoder;
-		if( "hex".equals(fromFormat) || "base16".equals(fromFormat) ) {
+		if( "none".equals(fromFormat) ) {
+			decoder = new NullCodec();
+		} else if( "url".equals(toFormat) ) {
+			decoder = new URLDecoder();
+		} else if( "hex".equals(fromFormat) || "base16".equals(fromFormat) ) {
 			decoder = new Base16Decoder();
 		} else if( "base32".equals(fromFormat) ) {
 			decoder = new Base32Decoder();
@@ -1225,7 +1264,11 @@ public class ContentCouchCommand {
 		}
 		
 		Converter encoder;
-		if( "hex".equals(toFormat) || "base16".equals(toFormat) ) {
+		if( "none".equals(toFormat) ) {
+			encoder = new NullCodec();
+		} else if( "url".equals(toFormat) ) {
+			encoder = new URLEncoder();
+		} else if( "hex".equals(toFormat) || "base16".equals(toFormat) ) {
 			encoder = new Base16Encoder();
 		} else if( "upper-hex".equals(toFormat) || "upper-base16".equals(toFormat) ) {
 			encoder = new Base16Encoder( Base16.UPPER );
@@ -1239,20 +1282,26 @@ public class ContentCouchCommand {
 		boolean reallyShowInputs = showInputs != null ?
 			showInputs.booleanValue(): inputs.size() > 1;
 		
-		for( Iterator i=inputs.iterator(); i.hasNext(); ) {
-			String in = (String)i.next();
-			byte[] inBytes = ValueUtil.getBytes(in);
-			byte[] midBytes = decoder.convert( inBytes );
-			byte[] outBytes = encoder.convert( midBytes );
-			String out = ValueUtil.getString(outBytes);
-			if( reallyShowInputs ) {
-				System.out.println( in + " -> " + out );
-			} else {
-				System.out.println( out );
+		try {
+			for( Iterator i=inputs.iterator(); i.hasNext(); ) {
+				String in = (String)i.next();
+				byte[] inBytes = ValueUtil.getBytes(in);
+				byte[] midBytes = decoder.convert( inBytes );
+				byte[] outBytes = encoder.convert( midBytes );
+				
+				if( reallyShowInputs ) {
+					System.out.println( in + " -> " );
+				}
+				System.out.write(outBytes);
+				if( !supressNewline ) {
+					System.out.println();
+				}
 			}
+			
+			return 0;
+		} catch( IOException e ) {
+			throw new RuntimeException(e);
 		}
-		
-		return 0;
 	}
 	
 	protected boolean getterInitialized = false;

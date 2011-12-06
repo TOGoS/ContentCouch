@@ -1,10 +1,20 @@
-Usage: ccouch convert [options] -<source-format>-to-<dest-format> <string> [<string> ...]
-Example: ccouch convert -hex-to-base32 48899d2ece6eed6df4cde3ca03116c676c47ae46
+Usage:
+  ccouch convert [options] -<source-format>-to-<dest-format> <input> [<input> ...]
+  ccouch convert [options] -to-<dest-format> <input> [<input>...]
+  ccouch convert [options] -from-<source-format> <input> [<input>...]
+       
+Examples:
+  ccouch convert -hex-to-base32 48899d2ece6eed6df4cde3ca03116c676c47ae46
+  ccouch convert -to-url 'Hello, world!'
 
 Options:
-  -show-inputs   ; display each input string together with its output
-
+  -n             ; do not print a newline after each output
+  -show-inputs   ; always display each input string together with its output
+  -hide-inputs   ; never display inputs even if several are given
+  
 Formats:
+  none      ; no encoding
+  url       ; url percent encoding 
   base16    ; hexadecimal
   hex       ; alias for hexadecimal
   upper-hex ; hex, but with uppercase letters (useful only as output format)
@@ -12,3 +22,6 @@ Formats:
 
 Behavior for decoding invalid characters (such as a "Q" in a hex string)
 is undefined.
+
+By default, inputs are shown before outputs if there is more than one
+specified.

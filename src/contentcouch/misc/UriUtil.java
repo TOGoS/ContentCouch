@@ -115,33 +115,36 @@ public class UriUtil {
 		return uriEncode( text, VALID_CHARS );
 	}
 
-	protected static final int hexValue( char digit ) {
+	protected static final int hexValue( byte digit ) {
 		return digit <= '9' ? digit - '0' : digit <= 'F' ? digit - 'A' + 10 : digit - 'a' + 10;
 	}
 	
-	protected static final int hexValue( char hiDigit, char loDigit ) {
+	protected static final int hexValue( byte hiDigit, byte loDigit ) {
 		return (hexValue(hiDigit) << 4) | hexValue(loDigit);
 	}
 	
-	public static byte[] uriDecodeBytes( String text ) {
-		char[] inchars = text.toCharArray();
+	public static byte[] uriDecodeBytes( byte[] text ) {
 		int escapecount = 0;
-		for( int i=inchars.length-1; i>=0; --i ) {
-			if( inchars[i] == '%' ) ++escapecount;
+		for( int i=text.length-1; i>=0; --i ) {
+			if( text[i] == '%' ) ++escapecount;
 		}
-		byte[] outbytes = new byte[inchars.length - (escapecount<<1)];
+		byte[] outbytes = new byte[text.length - (escapecount<<1)];
 		int inidx=0, outidx=0;
-		while( inidx < inchars.length ) {
-			char c = inchars[inidx++];
+		while( inidx < text.length ) {
+			byte c = text[inidx++];
 			if( c == '%' ) {
-				char hiDigit = inchars[inidx++];
-				char loDigit = inchars[inidx++];
+				byte hiDigit = text[inidx++];
+				byte loDigit = text[inidx++];
 				outbytes[outidx++] = (byte)hexValue(hiDigit, loDigit);
 			} else {
 				outbytes[outidx++] = (byte)c;
 			}
 		}
 		return outbytes;
+	}
+	
+	public static byte[] uriDecodeBytes( String text ) {
+		return uriDecodeBytes( ValueUtil.getBytes(text) );
 	}
 	
 	public static String uriDecode( String text ) {
