@@ -1200,7 +1200,7 @@ public class ContentCouchCommand {
 		for( int i=0; i<args.length; ++i ) {
 			if( "-show-inputs".equals(args[i]) ) {
 				showInputs = Boolean.TRUE;
-			} else if( "-show-inputs".equals(args[i]) ) {
+			} else if( "-hide-inputs".equals(args[i]) ) {
 				showInputs = Boolean.FALSE;
 			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
 				inputs.add( args[i] );
