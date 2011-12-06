@@ -50,6 +50,29 @@ public class MergeUtil {
 		throw new RuntimeException( "Can't get a commit object based on "+ValueUtil.describe(c) );
 	}
 	
+	public static Set getParentCommitUris( String commitUri ) {
+		Commit c = getCommit(commitUri);
+		if( c != null ) {
+			Set parentUris = new HashSet();
+			Object[] parents = c.getParents();
+			for( int i=parents.length-1; i>=0; --i ) {
+				if( parents[i] instanceof Ref ) {
+					parentUris.add( ((Ref)parents[i]).getTargetUri() );
+				}
+			}
+			return parentUris;
+		}
+		return Collections.EMPTY_SET;
+	}
+	
+	public static Set getParentCommitUris( Set commitUris ) {
+		Set byGum = new HashSet();
+		for( Iterator i=commitUris.iterator(); i.hasNext(); ) {
+			byGum.addAll(getParentCommitUris((String)i.next()));
+		}
+		return byGum;
+	}
+	
 	/**
 	 * 
 	 * @param uri1
@@ -89,34 +112,11 @@ public class MergeUtil {
 			return c;
 		}
 		
-		public Set getParentCommitUris( String commitUri ) {
-			Commit c = getCommit(commitUri);
-			if( c != null ) {
-				Set parentUris = new HashSet();
-				Object[] parents = c.getParents();
-				for( int i=parents.length-1; i>=0; --i ) {
-					if( parents[i] instanceof Ref ) {
-						parentUris.add( ((Ref)parents[i]).getTargetUri() );
-					}
-				}
-				return parentUris;
-			}
-			return Collections.EMPTY_SET;
-		}
-		
-		public Set getParentCommitUris( Set commitUris ) {
-			Set byGum = new HashSet();
-			for( Iterator i=commitUris.iterator(); i.hasNext(); ) {
-				byGum.addAll(getParentCommitUris((String)i.next()));
-			}
-			return byGum;
-		}
-		
 		public String findCommonAncestor( String c1Urn, String c2Urn ) {
 			if( c1Urn.equals(c2Urn) ) return c1Urn;
 			
-			Set newParents1 = getParentCommitUris(c1Urn);
-			Set newParents2 = getParentCommitUris(c2Urn);
+			Set newParents1 = MergeUtil.getParentCommitUris(c1Urn);
+			Set newParents2 = MergeUtil.getParentCommitUris(c2Urn);
 			Set ancestors1 = new HashSet();
 			ancestors1.add(c1Urn);
 			Set ancestors2 = new HashSet();

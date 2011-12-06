@@ -13,6 +13,7 @@ import togos.mf.base.BaseRequest;
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.commit.SimpleCommit;
+import contentcouch.context.Context;
 import contentcouch.directory.SimpleDirectory;
 import contentcouch.framework.TheGetter;
 import contentcouch.misc.MetadataUtil;
@@ -46,6 +47,7 @@ public class MergeUtilTest extends TestCase
 		mrc = new MetaRepoConfig();
 		TheGetter.globalInstance = mrc.getRequestKernel();
 		mrc.addRepoConfig(testRepoConfig);
+		Context.setThreadLocalInstance(null);
 	}
 	
 	protected Ref storeCommit(Commit c) {
@@ -121,6 +123,8 @@ public class MergeUtilTest extends TestCase
 		assertFalse( parentRef.getTargetUri().equals(c1Ref.getTargetUri()));
 		assertFalse( parentRef.getTargetUri().equals(c2Ref.getTargetUri()));
 		assertFalse( c1Ref.getTargetUri().equals(c2Ref.getTargetUri()));
+		
+		assertTrue( MergeUtil.getParentCommitUris(c1Ref.getTargetUri()).contains(parentRef.getTargetUri()) );
 		
 		assertEquals( parentRef.getTargetUri(), MergeUtil.findCommonAncestor(c1Ref.getTargetUri(), c2Ref.getTargetUri()) );
 	}
