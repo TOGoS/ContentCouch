@@ -304,6 +304,7 @@ public class ContentCouchCommand {
 		public boolean shouldUseUriDotFiles = false;
 		public boolean shouldCacheDirectoryHashes = false;
 		public boolean dontCacheFileHashes = false;
+		public Boolean shouldShowInputs = null;
 		public int cacheCommitAncestors = 0;
 		public Date shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = null;
 		public String storeSector;
@@ -367,6 +368,7 @@ public class ContentCouchCommand {
 			} else if( "-use-commit-targets".equals(arg) ) {
 				this.shouldUseCommitTargets = true;
 			
+			// Caching options
 			} else if( "-create-uri-dot-files".equals(arg) ) {
 				this.shouldCreateUriDotFiles = true;
 			} else if( "-use-uri-dot-files".equals(arg) ) {
@@ -374,11 +376,18 @@ public class ContentCouchCommand {
 			} else if( "-dont-cache-file-hashes".equals(arg) ) {
 				this.dontCacheFileHashes = true;
 			
+			// Output options
+			} else if( "-q".equals(arg) ) {
+				this.logLevel = Log.LEVEL_QUIET;
+			} else if( "-show-inputs".equals(arg) ) {
+				shouldShowInputs = Boolean.TRUE;
+			} else if( "-hide-inputs".equals(arg) ) {
+				shouldShowInputs = Boolean.FALSE;
+			
+			// Special actions
 			} else if( "-dump-config".equals(arg) ) {
 				this.shouldDumpConfig = true;
 
-			} else if( "-q".equals(arg) ) {
-				this.logLevel = Log.LEVEL_QUIET;
 			} else if( arg.startsWith("-v") ) {
 				String logLevelStr = arg.substring(2);
 				if( logLevelStr.length() == 0 ) {
@@ -398,9 +407,11 @@ public class ContentCouchCommand {
 			
 			return true;
 		}
+		
+		public boolean shouldShowInputs( boolean defaultValue ) {
+			return shouldShowInputs != null ? shouldShowInputs.booleanValue() : defaultValue;
+		}
 	}
-	
-	// TODO: Create option handling classes for each command 
 	
 	//// Shared command routines ////
 	
@@ -498,16 +509,13 @@ public class ContentCouchCommand {
 	public int runIdCmd( String[] args ) {
 		args = mergeConfiguredArgs("id", args);
 		List inputUris = new ArrayList();
-		boolean reportInputs = true;
-		boolean dumpConfig = false;
 		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i<args.length; ++i ) {
 			String arg = args[i];
-			if( "-hide-inputs".equals(arg) ) {
-				reportInputs = false;
-			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
-				System.out.println(getHelpText("id"));
-				return 0;
+			if( "-show-inputs".equals(arg) ) {
+				opts.shouldShowInputs = Boolean.TRUE;
+			} else if( "-hide-inputs".equals(arg) ) {
+				opts.shouldShowInputs = Boolean.FALSE;
 			} else if( "-create-uri-dot-files".equals(arg) ) {
 				opts.shouldCreateUriDotFiles = true;
 			} else if( "-use-uri-dot-files".equals(arg) ) {
@@ -517,7 +525,10 @@ public class ContentCouchCommand {
 			} else if( "-cache-directory-hashes".equals(arg) ) {
 				opts.shouldCacheDirectoryHashes = true;
 			} else if( "-dump-config".equals(arg) ) {
-				dumpConfig = true;
+				opts.shouldDumpConfig = true;
+			} else if( "-?".equals(arg) || "-h".equals(arg) ) {
+				System.out.println(getHelpText("id"));
+				return 0;
 			} else if( !arg.startsWith("-") || "-".equals(arg) ) {
 				inputUris.add(normalizeUri(arg, false, false));
 			} else {
@@ -529,7 +540,7 @@ public class ContentCouchCommand {
 			}
 		}
 		
-		if( dumpConfig ) {
+		if( opts.shouldDumpConfig ) {
 			dumpRepoConfig(metaRepoConfig, System.out, "");
 			return 0;
 		}
@@ -545,7 +556,7 @@ public class ContentCouchCommand {
 				++errorCount;
 			} else {
 				String id = TheGetter.identify( getRes.getContent(), getRes.getContentMetadata(), getReq.getMetadata() );
-				if( reportInputs ) {
+				if( opts.shouldShowInputs( inputUris.size() > 1 ) ) {
 					System.out.println( input + "\t" + id );
 				} else {
 					System.out.println( id );
@@ -648,7 +659,6 @@ public class ContentCouchCommand {
 		boolean storeDirs = true;
 		boolean forceCommit = false;
 		boolean followRefs = false;
-		boolean reportInputs = true;
 		GeneralOptions opts = new GeneralOptions();
 		for( int i=0; i < args.length; ++i ) {
 			String arg = args[i];
@@ -657,8 +667,10 @@ public class ContentCouchCommand {
 				System.err.println(getHelpText("store"));
 				System.err.println();
 				return 1;
+			} else if( "-show-inputs".equals(arg) ) {
+				opts.shouldShowInputs = Boolean.TRUE;
 			} else if( "-hide-inputs".equals(arg) ) {
-				reportInputs = false;
+				opts.shouldShowInputs = Boolean.FALSE;
 			} else if( "-files-only".equals(arg) ) {
 				storeDirs = false;
 			} else if( "-q".equals(arg) ) {
@@ -772,7 +784,7 @@ public class ContentCouchCommand {
 					Log.log(Log.EVENT_ERROR, "Did not recieve identifier after storing " + sourceUri);
 					++errorCount;
 				} else {
-					if( reportInputs ) {
+					if( opts.shouldShowInputs(sourceUris.size() > 1) ) {
 						System.out.println( sourceUri + "\t" + storedUri );
 					} else {
 						System.out.println( storedUri );
@@ -856,7 +868,7 @@ public class ContentCouchCommand {
 
 			String commitUrn = Config.getRdfSubjectPrefix() + commitBlobUrn;
 			
-			if( reportInputs ) {
+			if( opts.shouldShowInputs(sourceUris.size() > 1) ) {
 				System.out.println( "New Commit\t" + commitUrn );
 			} else {
 				System.out.println( commitUrn );
@@ -1180,14 +1192,16 @@ public class ContentCouchCommand {
 	
 	Pattern formatsPattern = Pattern.compile("^-(.+?)-to-(.+)$");	
 	protected int runConvertCmd( String[] args ) {
-		boolean showInputs = false;
+		Boolean showInputs = null;
 		String fromFormat = null;
 		String toFormat = null;
 		List inputs = new ArrayList();
 		Matcher m;
 		for( int i=0; i<args.length; ++i ) {
 			if( "-show-inputs".equals(args[i]) ) {
-				showInputs = true;
+				showInputs = Boolean.TRUE;
+			} else if( "-show-inputs".equals(args[i]) ) {
+				showInputs = Boolean.FALSE;
 			} else if( args[i].length() > 0 && args[i].charAt(0) != '-' ) {
 				inputs.add( args[i] );
 			} else if( "--".equals(args[i]) ) {
@@ -1222,6 +1236,8 @@ public class ContentCouchCommand {
 			return 1;
 		}
 		
+		boolean reallyShowInputs = showInputs != null ?
+			showInputs.booleanValue(): inputs.size() > 1;
 		
 		for( Iterator i=inputs.iterator(); i.hasNext(); ) {
 			String in = (String)i.next();
@@ -1229,7 +1245,7 @@ public class ContentCouchCommand {
 			byte[] midBytes = decoder.convert( inBytes );
 			byte[] outBytes = encoder.convert( midBytes );
 			String out = ValueUtil.getString(outBytes);
-			if( showInputs ) {
+			if( reallyShowInputs ) {
 				System.out.println( in + " -> " + out );
 			} else {
 				System.out.println( out );
