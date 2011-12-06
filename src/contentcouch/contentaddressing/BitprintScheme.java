@@ -5,6 +5,8 @@ import java.util.Arrays;
 import org.bitpedia.util.Base32;
 
 import contentcouch.blob.Blob;
+import contentcouch.digest.BitprintDigest;
+import contentcouch.digest.DigestUtil;
 import contentcouch.rdf.CCouchNamespace;
 
 public class BitprintScheme implements ContentAddressingScheme {
@@ -172,7 +174,7 @@ public class BitprintScheme implements ContentAddressingScheme {
 	
 	/** Return the canonical identifier of the given blob */
 	public byte[] getHash( Blob blob ) {
-		return joinHashes( Sha1Scheme.getInstance().getHash(blob), TigerTreeScheme.getInstance().getHash(blob) );
+		return DigestUtil.digestBlob( blob, new BitprintDigest() );
 	}
 	
 	// Convert to/from RDF value
