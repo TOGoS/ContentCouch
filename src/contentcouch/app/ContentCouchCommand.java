@@ -1,8 +1,10 @@
 // -*- tab-width:4 -*-
 package contentcouch.app;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +28,8 @@ import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import contentcouch.app.Linker.LinkException;
 import contentcouch.app.help.ContentCouchCommandHelp;
+import contentcouch.blob.Blob;
+import contentcouch.blob.BlobInputStream;
 import contentcouch.blob.BlobUtil;
 import contentcouch.commit.SimpleCommit;
 import contentcouch.context.Config;
@@ -961,8 +965,26 @@ public class ContentCouchCommand {
 		//opts.fileMergeMethod = CCouchNamespace.REQ_FILEMERGE_STRICTIG;
 		
 		for( Iterator i=paths.iterator(); i.hasNext(); ) {
-			String uri = normalizeUri((String)i.next(), false, false);
-			copy( uri, "x-ccouch-repo:data", opts );
+			String path = (String)i.next();
+			if( path.startsWith("@") ) {
+				String listUri = normalizeUri(path.substring(1), false, false);
+				Blob b = (Blob)TheGetter.get(listUri);
+				try {
+					BufferedReader br = new BufferedReader(new InputStreamReader(new BlobInputStream(b)));
+					String line;
+					while( (line = br.readLine()) != null ) {
+						line = line.trim();
+						if( line.startsWith("#") ) continue;
+						copy( line, "x-ccouch-repo:data", opts );
+					}
+					br.close();
+				} catch( IOException e ) {
+					throw new RuntimeException(e);
+				}
+			} else {
+				String uri = normalizeUri(path, false, false);
+				copy( uri, "x-ccouch-repo:data", opts );
+			}
 		}
 		
 		return 0;
