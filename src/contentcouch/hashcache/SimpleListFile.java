@@ -131,7 +131,7 @@ public class SimpleListFile {
 	}
 	
 	protected byte[] createIndexData(int numEntries) {
-		byte[] dat = new byte[(numEntries+RESERVED_INDEX_ITEMS)*4 + 4];
+		byte[] dat = new byte[(numEntries+RESERVED_INDEX_ITEMS)*4 + 16*4];
 		intToBytes(numEntries, dat, 0);
 		return dat;
 	}
@@ -516,7 +516,7 @@ public class SimpleListFile {
 	protected byte[] getPairPart( int pairOffset, int partIndex ) throws IOException {
 		int offset = pairOffset + CHUNK_HEADER_LENGTH;
 		int partLength = getIntAt(offset);
-		if( partLength == 0 ) return null;
+		if( partLength == 0 ) return new byte[0];
 		int pi=0;
 		while( pi<partIndex ) {
 			offset += 4;  offset += partLength;
@@ -604,7 +604,7 @@ public class SimpleListFile {
 	 * A very simple (and not secure) hash function found at
 	 * http://www.partow.net/programming/hashfunctions/
 	 */
-	public int hash( byte[] identifier ) {
+	public static int hash( byte[] identifier ) {
 		int b    = 378551;
 		int a    = 63689;
 		int hash = 0;
@@ -617,12 +617,16 @@ public class SimpleListFile {
 		return hash & 0x7FFFFFFF;
 	}
 	
+	public final int indexIndex( byte[] k ) {
+		return hash(k)%indexSize;
+	}
+	
 	public byte[] get( byte[] k ) throws IOException {
-		return get( hash(k)%indexSize, k );
+		return get( indexIndex(k), k );
 	}
 	
 	public void put( byte[] k, byte[] v ) throws IOException {
-		put( hash(k)%indexSize, k, v );
+		put( indexIndex(k), k, v );
 	}
 	
 	public byte[] get( String k ) throws IOException {

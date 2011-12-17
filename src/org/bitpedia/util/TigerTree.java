@@ -28,9 +28,6 @@ public class TigerTree extends MessageDigest {
     /** Buffer offset */
     private int bufferOffset;
 
-    /** Number of bytes hashed until now. */
-    private long byteCount;
-
     /** Internal Tiger MD instance */
     private MessageDigest tiger;
 
@@ -39,7 +36,7 @@ public class TigerTree extends MessageDigest {
 
     /** Blocks handled until now */
     long blockCount;
-    
+
     /**
      * Constructor
      */
@@ -47,7 +44,6 @@ public class TigerTree extends MessageDigest {
         super("tigertree");
         buffer = new byte[BLOCKSIZE];
         bufferOffset = 0;
-        byteCount = 0;
         blockCount = 0;
         nodes = new LinkedList();
         tiger = new Tiger();
@@ -58,7 +54,6 @@ public class TigerTree extends MessageDigest {
     }
 
     protected void engineUpdate(byte in) {
-        byteCount += 1;
         buffer[bufferOffset++] = in;
         if (bufferOffset == BLOCKSIZE) {
             blockUpdate();
@@ -67,8 +62,6 @@ public class TigerTree extends MessageDigest {
     }
 
     protected void engineUpdate(byte[] in, int offset, int length) {
-        byteCount += length;
-
         int remaining;
         while (length >= (remaining = BLOCKSIZE - bufferOffset)) {
             System.arraycopy(in, offset, buffer, bufferOffset, remaining);
@@ -111,7 +104,6 @@ public class TigerTree extends MessageDigest {
 
     protected void engineReset() {
         bufferOffset = 0;
-        byteCount = 0;
         nodes = new LinkedList();
         tiger.reset();
     }
@@ -144,9 +136,6 @@ public class TigerTree extends MessageDigest {
         }
     }
 
-    /**
-     * 
-     */
     protected void composeNodes() {
         byte[] right = (byte[]) nodes.removeLast(); 
         byte[] left = (byte[]) nodes.removeLast();
@@ -155,41 +144,5 @@ public class TigerTree extends MessageDigest {
         tiger.update(left);
         tiger.update(right);
         nodes.add(tiger.digest());
-        
     }
-
-    /**
-     * Public 
-     * @param args
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
-     */
-     /*
-    public static void main(String[] args)
-        throws IOException, NoSuchAlgorithmException {
-        if (args.length < 1) {
-            System.out.println("You must supply a filename.");
-            return;
-        }
-        MessageDigest tt = new TigerTree();
-        FileInputStream fis;
-
-        for (int i = 0; i < args.length; i++) {
-            fis = new FileInputStream(args[i]);
-            int read;
-            byte[] in = new byte[1024];
-            while ((read = fis.read(in)) > -1) {
-                tt.update(in, 0, read);
-            }
-            fis.close();
-            byte[] digest = tt.digest();
-            String hash = new BigInteger(1, digest).toString(16);
-            while (hash.length() < 48) {
-                hash = "0" + hash;
-            }
-            System.out.println("hex:" + hash);
-            System.out.println("b32:" + Base32.encode(digest));
-            tt.reset();
-        }
-    }*/
 }
