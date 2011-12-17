@@ -969,6 +969,10 @@ public class ContentCouchCommand {
 			if( path.startsWith("@") ) {
 				String listUri = normalizeUri(path.substring(1), false, false);
 				Blob b = (Blob)TheGetter.get(listUri);
+				if( b == null ) {
+					System.err.println("Could not find list file: "+listUri);
+					continue;
+				}
 				try {
 					BufferedReader br = new BufferedReader(new InputStreamReader(new BlobInputStream(b)));
 					String line;
