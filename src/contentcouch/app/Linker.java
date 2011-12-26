@@ -55,6 +55,23 @@ public abstract class Linker {
 		}
 	}
 	
+	public static class CpRefLinker extends Linker {
+		public void link( File target, File link ) {
+			try {
+				if( link.exists() ) throw new LinkException(target, link, link.getPath() + " already exists");
+				Process lnProc = Runtime.getRuntime().exec(new String[] {"cp", "--reflink", target.getCanonicalPath(), link.getPath()});
+				int lnProcReturn = lnProc.waitFor();
+				if( !link.exists() ) {
+					throw new LinkException( link, target, "link does not exist after running 'cp --reflink ...', which returned " + lnProcReturn);
+				}
+			} catch( InterruptedException e ) {
+				throw new LinkException( link, target, e );
+			} catch( IOException e ) {
+				throw new LinkException( link, target, e );
+			}
+		}
+	}
+	
 	public static Linker instance;
 	public static Linker getInstance() {
 		if( instance == null ) {
