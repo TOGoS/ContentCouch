@@ -96,6 +96,8 @@ public class CCouchNamespace {
 	/* Should be an integer specifying how many levels of commit ancestors to cache
 	 * when a commit object is pushed into the repository. */
 	public static final String REQ_CACHE_COMMIT_ANCESTORS = CC_REQ_NS + "cacheCommitAncestors";
+	/* If true, a blob/tree is considered fully cached if it is fully cached in any sector. */
+	public static final String REQ_ANY_SECTOR_CACHING     = CC_REQ_NS + "cachedIfInAnySector";
 	
 	//// Response metadata ////
 	

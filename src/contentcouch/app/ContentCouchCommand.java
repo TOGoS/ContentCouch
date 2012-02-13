@@ -311,6 +311,7 @@ public class ContentCouchCommand {
 		public boolean dontCacheFileHashes = false;
 		public Boolean shouldShowInputs = null;
 		public int cacheCommitAncestors = 0;
+		public boolean anySectorCaching = false;
 		public Date shouldntCreateUriDotFilesWhenHighestBlobMtimeGreaterThan = null;
 		public String storeSector;
 		public String cacheSector;
@@ -343,6 +344,7 @@ public class ContentCouchCommand {
 				);
 			}
 			req.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(cacheCommitAncestors));
+			req.putMetadata(CCouchNamespace.REQ_ANY_SECTOR_CACHING, Boolean.TRUE);
 		}
 		
 		public boolean handleArguments( String arg, Iterator it ) {
@@ -357,6 +359,8 @@ public class ContentCouchCommand {
 				this.storeSector = (String)it.next();
 			} else if( "-cache-sector".equals(arg) ) {
 				this.cacheSector = (String)it.next();
+			} else if( "-cached-in-any-sector".equals(arg) ) {
+				this.anySectorCaching = true;
 				
 			// Merging options:
 			} else if( "-file-merge-method".equals(arg) ) {

@@ -323,6 +323,11 @@ public class MetaRepository extends BaseRequestHandler {
 		
 		String filename = repoConfig.storageScheme.hashToFilename(storeHash);
 		String psp = filenameToPostSectorPath(repoConfig, filename);
+		
+		boolean anySectorCaching = ValueUtil.getBoolean( req.getMetadata().get(CCouchNamespace.REQ_ANY_SECTOR_CACHING),true); 
+		if( anySectorCaching && repoConfig.uri.startsWith("file:") ) {
+			// TODO: Check other sectors...ASDFG
+		}
 		String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
 		
 		BaseRequest subReq = new BaseRequest( req, uri );
@@ -402,7 +407,9 @@ public class MetaRepository extends BaseRequestHandler {
 		    } else if( sector == null ) {
 		    	Log.log(Log.EVENT_PERFORMANCE_WARNING, "Can't check for already-fully-stored because no sector was given :<");
 		    } else {
-				if( isTreeFullyStored(treeUri, sector) ) {
+				boolean anySectorCaching = ValueUtil.getBoolean( req.getMetadata().get(CCouchNamespace.REQ_ANY_SECTOR_CACHING),true);
+				
+		    	if( anySectorCaching ? isTreeFullyStored(treeUri) : isTreeFullyStored(treeUri, sector) ) {
 					Log.log(Log.EVENT_SKIPPED_CACHED, treeUri);
 					BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, "Rdf directory and entries already stored", "text/plain");
 					res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, treeUri);
@@ -824,10 +831,15 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	protected void markTreeFullyStored( String uri, String sector ) {
 		cacheString("fully-cached-trees/"+sector, uri, String.valueOf(new Date().getTime()) );
+		cacheString("fully-cached-trees", uri, String.valueOf(new Date().getTime()) );
 	}
 	
 	protected boolean isTreeFullyStored( String uri, String sector ) {
 		return getCachedString("fully-cached-trees/"+sector, uri ) != null;
+	}
+	
+	protected boolean isTreeFullyStored( String uri ) {
+		return getCachedString("fully-cached-trees", uri ) != null;
 	}
 	
 	protected void putFunctionResult( RepoConfig repoConfig, String subIndexName, String key, String value ) {
