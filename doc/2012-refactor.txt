@@ -13,13 +13,13 @@ Features:
   Single, simple Directory object.
   
   Various directory encoders (should all have unit tests!):
-  - old style, rewriting bitprint: to sha1: and x-rdf-subject: to x-parse-rdf:
-  - old style
-  - new style
-  - 2012 style (fix 'entries' business, add newline at end)
-  - Encoder that attempts each of the above, in order, picking
-    the first one for which a blob is already stored, and if none
-    is for any, using the final style.
+  - 'old' style, rewriting bitprint: to sha1: and x-rdf-subject: to x-parse-rdf:
+  - 'old' style
+  - 'new' style
+  - 2012 style (newline at end, maybe changes to entry format)
+  - Encoder that attempts each of the above, in order, picking the
+    first (or maybe last?) one for which a blob is already stored, and
+    if none is for any, using the final style.
   
   New Commit encoder (same as old style but with newline at the end).
   
