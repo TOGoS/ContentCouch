@@ -1,0 +1,56 @@
+It's getting increasingly hard to fix problems with the old system.
+Much code is dedicated to pulling options out of request objects,
+doing different things based on whether the options are set or not,
+throwing exceptions or returning, caching or not based on options,
+yaddah yaddah.
+
+Hence, 2012 refactor!
+
+New package to keep things separated from le olde, le crufte: togos.ccouch
+
+Features:
+
+  Single, simple Directory object.
+  
+  Various directory encoders (should all have unit tests!):
+  - old style, rewriting bitprint: to sha1: and x-rdf-subject: to x-parse-rdf:
+  - old style
+  - new style
+  - 2012 style (fix 'entries' business, add newline at end)
+  - Encoder that attempts each of the above, in order, picking
+    the first one for which a blob is already stored, and if none
+    is for any, using the final style.
+  
+  New Commit encoder (same as old style but with newline at the end).
+  
+  Directory decoder should be able to handle all of the above.
+  
+  New XML/RDF decoding architecture like that used for rules engine.
+  
+  Use SLF2 (get from PicGrid project) for index files.
+  
+  Download system:
+    downloads should be parallelizable
+    should be able to download from 'dumb' repos (http://<repo>/data/<sector>/AA/AABBCCDD)
+    and from smart ones (http://<repo>/N2R?<urn>)
+  
+  Repositories supporting N2R should have some file (ccouch-version?) that can be queried
+  to determine what kinds of operations the repository supports.
+  
+  Each command should be defined in its own class/source file.
+
+Programs:
+
+  purge - remove all copies of a blob from a repository
+    - should have option to overwrite files before deleting
+  cache - 
+    should be able to download blobs and trees, skipping
+    trees that are already entirely cached (1) in a certain
+    sector, or (2) anywhere in the entire repository.
+    Should be able to take a lit of URIs from a file.
+  store -
+    should be able to output a list of stored blobs
+    
+  id, store should respect .ccouch-uri files
+
+All commands should be quiet by default.
