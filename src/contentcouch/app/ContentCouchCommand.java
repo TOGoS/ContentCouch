@@ -344,7 +344,7 @@ public class ContentCouchCommand {
 				);
 			}
 			req.putMetadata(CCouchNamespace.REQ_CACHE_COMMIT_ANCESTORS, new Integer(cacheCommitAncestors));
-			req.putMetadata(CCouchNamespace.REQ_ANY_SECTOR_CACHING, Boolean.TRUE);
+			if( anySectorCaching ) req.putMetadata(CCouchNamespace.REQ_ANY_SECTOR_CACHING, Boolean.TRUE);
 		}
 		
 		public boolean handleArguments( String arg, Iterator it ) {

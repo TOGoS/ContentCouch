@@ -324,10 +324,13 @@ public class MetaRepository extends BaseRequestHandler {
 		String filename = repoConfig.storageScheme.hashToFilename(storeHash);
 		String psp = filenameToPostSectorPath(repoConfig, filename);
 		
+		/*
 		boolean anySectorCaching = ValueUtil.getBoolean( req.getMetadata().get(CCouchNamespace.REQ_ANY_SECTOR_CACHING),true); 
 		if( anySectorCaching && repoConfig.uri.startsWith("file:") ) {
 			// TODO: Check other sectors...ASDFG
 		}
+		*/
+		
 		String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
 		
 		BaseRequest subReq = new BaseRequest( req, uri );
@@ -360,9 +363,10 @@ public class MetaRepository extends BaseRequestHandler {
 		if( sourceUri != null ) {
 			subReq.putContentMetadata(CCouchNamespace.SOURCE_URI, "x-rdfified:" + sourceUri);
 		}
+		
 		Response blobPutRes = putDataBlob( repoConfig, subReq );
 		if( blobPutRes.getStatus() != ResponseCodes.NORMAL ) return blobPutRes;
-
+		
 		String storedUri = (String)blobPutRes.getMetadata().get(CCouchNamespace.RES_STORED_IDENTIFIER);
 		String storedRdfUri = storedUri != null ? Config.getRdfSubjectPrefix()+storedUri : null;
 		boolean blobFullyStored = ValueUtil.getBoolean(blobPutRes.getMetadata().get(CCouchNamespace.RES_TREE_FULLY_STORED),false);
@@ -398,25 +402,24 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Response putDataRdfDirectory( RepoConfig repoConfig, Request req ) {
 		String treeUri = (String)req.getContentMetadata().get(CCouchNamespace.SOURCE_URI);
 		String sector = getRequestedStoreSector(req, repoConfig);
+		boolean anySectorCaching = ValueUtil.getBoolean( req.getMetadata().get(CCouchNamespace.REQ_ANY_SECTOR_CACHING), false );
 
 		boolean attemptToSkipFullyStoredTrees =
 			ValueUtil.getBoolean( req.getMetadata().get(CCouchNamespace.REQ_SKIP_PREVIOUSLY_STORED_DIRS),true);
 		if( attemptToSkipFullyStoredTrees ) {
-		    if( treeUri == null ) {
-		    	Log.log(Log.EVENT_PERFORMANCE_WARNING, "Can't check for already-fully-stored because no SOURCE_URI was given :<");
-		    } else if( sector == null ) {
-		    	Log.log(Log.EVENT_PERFORMANCE_WARNING, "Can't check for already-fully-stored because no sector was given :<");
-		    } else {
-				boolean anySectorCaching = ValueUtil.getBoolean( req.getMetadata().get(CCouchNamespace.REQ_ANY_SECTOR_CACHING),true);
-				
-		    	if( anySectorCaching ? isTreeFullyStored(treeUri) : isTreeFullyStored(treeUri, sector) ) {
+			if( treeUri == null ) {
+				Log.log(Log.EVENT_PERFORMANCE_WARNING, "Can't check for already-fully-stored because no SOURCE_URI was given :<");
+			} else if( sector == null && !anySectorCaching ) {
+				Log.log(Log.EVENT_PERFORMANCE_WARNING, "Can't check for already-fully-stored because no sector was given :<");
+			} else {
+				if( anySectorCaching ? isTreeFullyStored(treeUri) : isTreeFullyStored(treeUri, sector) ) {
 					Log.log(Log.EVENT_SKIPPED_CACHED, treeUri);
 					BaseResponse res = new BaseResponse(ResponseCodes.NORMAL, "Rdf directory and entries already stored", "text/plain");
 					res.putMetadata(CCouchNamespace.RES_STORED_IDENTIFIER, treeUri);
 					res.putMetadata(CCouchNamespace.RES_TREE_FULLY_STORED, Boolean.TRUE);
 					return res;
 				}
-		    }
+			}
 		}
 		
 		boolean fullyStored = true;
@@ -444,7 +447,8 @@ public class MetaRepository extends BaseRequestHandler {
 				if( fullyStored ) {
 					res.putMetadata(CCouchNamespace.RES_TREE_FULLY_STORED, Boolean.TRUE);
 					if( sector != null ) {
-				    	markTreeFullyStored( treeUri, sector );
+						if( anySectorCaching )  markTreeFullyStored( treeUri );
+						else markTreeFullyStored( treeUri, sector );
 					}
 				} else {
 					Log.log(Log.EVENT_PERFORMANCE_WARNING, treeUri+" was not 'fully stored' S:-/");
@@ -829,9 +833,13 @@ public class MetaRepository extends BaseRequestHandler {
 		return null;
 	}
 	
+	protected void markTreeFullyStored( String uri ) {
+		cacheString("fully-cached-trees", uri, String.valueOf(new Date().getTime()) );
+	}
+	
 	protected void markTreeFullyStored( String uri, String sector ) {
 		cacheString("fully-cached-trees/"+sector, uri, String.valueOf(new Date().getTime()) );
-		cacheString("fully-cached-trees", uri, String.valueOf(new Date().getTime()) );
+		markTreeFullyStored( uri );
 	}
 	
 	protected boolean isTreeFullyStored( String uri, String sector ) {
