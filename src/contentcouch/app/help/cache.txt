@@ -4,6 +4,8 @@ Cache options:
   -q            ; show nothing - not even failures
   -link         ; hardlink files from the store instead of copying
   -store-sector <name> ; data subdir to store data (defaults to "remote")
+  -cached-in-any-sector ; don't duplicate data into the target sector
+                          if it's been marked as cached for any sector.
 
 Attempts to cache any objects that are not already in a local repository
 into your cache repository.  Directories, Commits, and Redirects will
