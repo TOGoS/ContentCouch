@@ -1,6 +1,8 @@
 package contentcouch.app.help;
 
-import java.net.URL;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 
 import togos.mf.api.Request;
 import togos.mf.api.RequestVerbs;
@@ -10,20 +12,23 @@ import togos.mf.base.BaseRequest;
 import togos.mf.base.BaseResponse;
 import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
+import contentcouch.stream.StreamUtil;
 
 public class ContentCouchCommandHelp {
-	public static Response getResponse(String name) {
-		URL resourceUrl = ContentCouchCommandHelp.class.getResource(name+".txt");
-		if( resourceUrl == null ) {
-		    return new BaseResponse(ResponseCodes.DOES_NOT_EXIST,
-		       "No such resource: " + name, "text/plain");
+	public static byte[] getData(String name) {
+		InputStream is = ContentCouchCommandHelp.class.getResourceAsStream(name+".txt");
+		if( is == null ) return null;
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
+			StreamUtil.copyInputToOutput( is, os );
+		} catch( IOException e ) {
+			throw new RuntimeException( "Error while trying to read help text, ack!", e );
 		}
-		Request req = new BaseRequest(RequestVerbs.GET, resourceUrl.toString());
-		return TheGetter.call(req);
+		return os.toByteArray();
 	}
 	
 	public static String getString(String name) {
-		String s = ValueUtil.getString(TheGetter.getResponseValue(getResponse(name), name));
+		String s = ValueUtil.getString(getData(name));
 		if( s != null ) s = s.trim();
 		return s;
 	}
