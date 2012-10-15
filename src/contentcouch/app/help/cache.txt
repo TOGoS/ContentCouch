@@ -1,15 +1,22 @@
-Usage: ccouch [general options] cache [options] <urn> <urn> ...
+Usage: ccouch [general options] cache [options] [@]<uri> <uri> ...
 Cache options:
   -v            ; show all URNs being followed
   -q            ; show nothing - not even failures
   -link         ; hardlink files from the store instead of copying
-  -store-sector <name> ; data subdir to store data (defaults to "remote")
+  -store-sector <name>  ; data subdir to store data (defaults to "remote")
   -cached-in-any-sector ; don't duplicate data into the target sector
                           if it's been marked as cached for any sector.
 
-Attempts to cache any objects that are not already in a local repository
-into your cache repository.  Directories, Commits, and Redirects will
-be followed and all referenced objects will be cached.
+Attempts to cache any objects that are not already in a local
+repository into your cache repository.  Directories, Commits, and
+Redirects will be followed and all referenced objects will be cached
+recursively.  (If you do not want that, strip the subject: prefix off
+the URN to cache only the blob.)
 
 By default, URIs that fail to load and ones that are newly cached are
 reported to standard error.
+
+If a URI is prefixed with '@', its target will be read line-by-line
+and non-blank, non-comment lines will be treated as URNs to cache.  In
+this case the URN may actually be '-' to mean standard input, or a
+filename.

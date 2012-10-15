@@ -15,8 +15,9 @@ Sub-commands:
   store <files>         ; store files in the main repo
   relink <files>        ; replace files with hardlinks to the store
   checkout <src> <dest> ; check files out to the filesystem
-  cache <urn> ...       ; cache blobs
+  cache [@]<urn> ...    ; cache objects
   cache-heads ...       ; cache heads from another repository
+  cat [@]<src> ...      ; spew blobs to standard output
   id <files>            ; give URNs for files without storing
   rdfify <dir>          ; print RDF listing of a directory
   check                 ; check repo integrity and delete bad files

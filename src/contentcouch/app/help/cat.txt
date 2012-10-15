@@ -1,0 +1,8 @@
+Usage: ccouch cat [@]<path> ...
+
+Spews the named resources to standard output.  Paths may be URNs, '-'
+(meaning standard input), or filenames.
+
+If a path is prefixed with '@', it will be read line-by-line and
+non-blank, non-comment lines will be treated as URNs of resources to
+spew.  Those lines may themselves begin with '@'.

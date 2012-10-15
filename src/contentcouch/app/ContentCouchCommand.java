@@ -2,6 +2,7 @@
 package contentcouch.app;
 
 import java.io.BufferedReader;
+import java.io.OutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -511,6 +512,85 @@ public class ContentCouchCommand {
 			String sourceUri = normalizeUri((String)i.next(), false, false);
 			
 			errorCount += copy( sourceUri, destUri, opts );
+		}
+		return errorCount;
+	}
+	
+	/**
+	 * Fetches the blob from the given URI.  If the target cannot be
+	 * found or is not a blob, prints an error message to System.err
+	 * and returns null.
+	 */
+	protected Blob fetchBlob( String uri, String role ) {
+		Object blob = TheGetter.get( uri );
+		if( blob == null ) {
+			System.err.println("Error: could not find "+role+" at "+uri);
+			return null;
+		}
+		Blob actuallyABlob = BlobUtil.getBlob(blob);
+		if( actuallyABlob == null ) {
+			System.err.println("Error: "+uri+" does not reference a blob; recieved a "+blob.getClass());
+			return null;
+		}
+		return actuallyABlob;
+	}
+	
+	protected int cat( String path, OutputStream os, String outputName, GeneralOptions opts ) {
+		if( path.startsWith("@") ) {
+			int errorCount = 0;
+			String listUri = normalizeUri(path.substring(1), false, false);
+			Blob listBlob = fetchBlob(listUri, "URI list file");
+			if( listBlob == null ) return 1;
+			try {
+				BufferedReader br = new BufferedReader(new InputStreamReader(new BlobInputStream(listBlob)));
+				String line;
+				while( (line = br.readLine()) != null ) {
+					line = line.trim();
+					if( line.startsWith("#") || line.length() == 0 ) continue;
+					errorCount += cat( line, os, outputName, opts );
+				}
+				br.close();
+			} catch( IOException e ) {
+				throw new RuntimeException(e);
+			}
+			return errorCount;
+		} else {
+			String sourceUri = normalizeUri( path, false, false);
+			Blob source = fetchBlob( sourceUri, "blob" );
+			if( source == null ) return 1;
+			try {
+				BlobUtil.writeBlobToOutputStream( (Blob)source, os );
+			} catch( IOException e ) {
+				System.err.println( "Error writing "+sourceUri+" to "+outputName+": " + e.getMessage() );
+				return 1;
+			}
+			return 0;
+		}
+	}
+	
+	public int runCatCmd( String[] args ) {
+		GeneralOptions opts = new GeneralOptions();
+		BaseArgumentHandler bah = createArgumentHandler("copy");
+		bah.addArgumentHandler( opts );
+		final ArrayList paths = new ArrayList();
+		bah.addArgumentHandler( new ArgumentHandler() {
+			public boolean handleArguments(String current, Iterator rest) {
+				if( current.equals("-") || !current.startsWith("-") ) {
+					paths.add(current);
+					return true;
+				}
+				return false;
+			}
+		});
+		int errorCount = bah.handleAllArguments(args);
+		if( errorCount != 0 ) return errorCount;
+		
+		if( paths.size() == 0 ) {
+			System.err.println("No input URNs specified");
+		}
+		
+		for( Iterator i=paths.iterator(); i.hasNext(); ) {
+			errorCount += cat((String)i.next(), System.out, "standard output", opts);
 		}
 		return errorCount;
 	}
@@ -1406,6 +1486,8 @@ public class ContentCouchCommand {
 			errorCount += dumpRepoConfig( metaRepoConfig, System.out, "  ");
 		} else if( "copy".equals(cmd) || "cp".equals(cmd) ) {
 			errorCount += runCopyCmd( cmdArgs );
+		} else if( "cat".equals(cmd) ) {
+			errorCount += runCatCmd( cmdArgs );
 		} else if( "relink".equals(cmd) ) {
 			errorCount += runRelinkCmd( cmdArgs );
 		} else if( "store".equals(cmd) ) {

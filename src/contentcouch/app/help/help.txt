@@ -2,6 +2,7 @@ Usage: ccouch help <topic>
 Help topics:
   cache-heads
   cache
+  cat
   ccouch
   check
   checkout
