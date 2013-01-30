@@ -55,6 +55,23 @@ public abstract class Linker {
 		}
 	}
 	
+	public static class TryEverythingLinker extends Linker {
+		Linker[] linkers = new Linker[] {
+			new WinLinker(), new UnixLinker()
+		};
+		
+		public void link(File target, File link) {
+			for( int i=0; i<linkers.length; ++i ) {
+				try {
+					linkers[i].link(target, link);
+					return;
+				} catch( LinkException e ) {
+				}
+			}
+			throw new LinkException(link, target, "Link does not exist after trying everything!");
+		}
+	}
+	
 	public static class CpRefLinker extends Linker {
 		public void link( File target, File link ) {
 			try {

@@ -140,6 +140,8 @@ public class MetaRepoConfig {
 				Linker.instance = new Linker.WinLinker();
 			} else if( "cp--reflink".equals(linkerName) ) {
 				Linker.instance = new Linker.CpRefLinker();
+			} else if( "try-everything".equals(linkerName) ) {
+				Linker.instance = new Linker.TryEverythingLinker();
 			} else {
 				throw new RuntimeException("Unrecognised linker: '"+linkerName+"'");
 			}
