@@ -1,8 +1,10 @@
 .src-files.lst
 .settings
-junk*
 installer/ccouch-install.properties
-web/WEB-INF/classes
-web/repo-config
+jar
+junk*
 src.unused
 test.unused
+web/WEB-INF/classes
+web/repo-config
+ContentCouch.jar
