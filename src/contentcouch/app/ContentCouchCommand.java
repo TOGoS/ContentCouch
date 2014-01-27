@@ -318,7 +318,7 @@ public class ContentCouchCommand {
 		public String cacheSector;
 		public String fileMergeMethod = CCouchNamespace.REQ_FILEMERGE_STRICTIG;
 		public String dirMergeMethod = null;
-		public int logLevel = Log.LEVEL_DOWNLOADS;
+		public int logLevel = Log.LEVEL_NORMAL;
 		HashSet extraLogEvents = new HashSet();
 		
 		public void setUpLogging() {
@@ -570,7 +570,7 @@ public class ContentCouchCommand {
 	
 	public int runCatCmd( String[] args ) {
 		GeneralOptions opts = new GeneralOptions();
-		BaseArgumentHandler bah = createArgumentHandler("copy");
+		BaseArgumentHandler bah = createArgumentHandler("cat");
 		bah.addArgumentHandler( opts );
 		final ArrayList paths = new ArrayList();
 		bah.addArgumentHandler( new ArgumentHandler() {
