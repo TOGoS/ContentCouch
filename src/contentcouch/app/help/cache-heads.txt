@@ -1,7 +1,5 @@
 Usage: ccouch [general options] cache-heads [options] <head-uri> ...
 Cache-head options:
-  -v           ; show all exports and skipped files
-  -q           ; show only failures
   -all-remotes ; cache heads from each remote repository
 
 Attempts to cache heads from the given repo/paths into your cache repository.

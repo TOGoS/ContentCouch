@@ -81,6 +81,10 @@ public abstract class Linker {
 				if( !link.exists() ) {
 					throw new LinkException( link, target, "link does not exist after running 'cp --reflink ...', which returned " + lnProcReturn);
 				}
+				if( link.length() != target.length() ) {
+					link.delete();
+					throw new LinkException( link, target, "new file's size does not match that of target.");
+				}
 			} catch( InterruptedException e ) {
 				throw new LinkException( link, target, e );
 			} catch( IOException e ) {

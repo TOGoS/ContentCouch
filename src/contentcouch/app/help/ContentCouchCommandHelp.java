@@ -1,16 +1,9 @@
 package contentcouch.app.help;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
-import togos.mf.api.Request;
-import togos.mf.api.RequestVerbs;
-import togos.mf.api.Response;
-import togos.mf.api.ResponseCodes;
-import togos.mf.base.BaseRequest;
-import togos.mf.base.BaseResponse;
-import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
 import contentcouch.stream.StreamUtil;
 

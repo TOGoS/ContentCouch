@@ -17,7 +17,6 @@ Store options:
                        create one for directories that contain any files
                        modified more recently than the given time (see below)
   -v                 ; verbose - report every path -> urn mapping
-  -q                 ; quiet - show nothing
   -?                 ; display help and exit
 
 Will report <input-uri>\t<identity-uri> on standard out unless -hide-inputs

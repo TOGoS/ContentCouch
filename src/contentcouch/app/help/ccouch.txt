@@ -1,6 +1,7 @@
 ContentCouch, by TOGoS
 
 Usage: ccouch [general options] <sub-command> [command-args]
+
 General options:
   -repo[:<name>] <location>        ; specify the default repository
   -local-repo[:<name>] <location>  ; specify a secondary local repository
@@ -9,6 +10,7 @@ General options:
   -new-style                       ; generate new-style RDF and URNs
   -old-style                       ; generate old-style RDF and URNs
   -linker {ln|fsutil|cp--reflink}  ; force hardlink creation method
+
 Sub-commands:
   help [<subcommand>]   ; show usage instructions
   help help             ; show a list of help topics
@@ -24,6 +26,12 @@ Sub-commands:
   touch                 ; remove directory content URI cache files
   config                ; display the current configuration
   convert               ; utility to convert byte arrays between encodings
+
+Most sub-commands support the following options:
+  -q           ; show only failures, hiding warnings
+  -v           ; show all exports and skipped files
+  -debug       ; be extremely chatty
+
 
 Locations can generally be given as URIs, absolute or remote filesystem paths,
 pseudo-active URIs (see the documentation), or "-" (meaning stdin/out,
