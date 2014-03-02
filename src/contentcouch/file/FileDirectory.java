@@ -74,6 +74,7 @@ public class FileDirectory extends File implements WritableDirectory
 		}
 		
 		public void setTarget(Object value, Map requestMetadata) {
+			assert value != null;
 			if( this.exists() ) {
 				if( !this.delete() ) {
 					if( this.isDirectory() ) {
@@ -90,6 +91,9 @@ public class FileDirectory extends File implements WritableDirectory
 				BaseRequest getReq = new BaseRequest( RequestVerbs.GET, sourceUri );
 				getReq.metadata = requestMetadata;
 				value = TheGetter.getResponseValue(TheGetter.call(getReq), getReq);
+				if( value == null ) {
+					throw new RuntimeException("Couldn't get blob for "+sourceUri);
+				}
 			} else {
 				sourceUri = "x-undefined:source";
 			}
