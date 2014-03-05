@@ -44,8 +44,15 @@ public class FileUtil
 		}
 	}
 	
+	protected static void reallyClose( Closeable c ) {
+		try {
+			c.close();
+		} catch( IOException e ) {
+			// System.err.println("Failed to close some stream.  As if I care.");
+		}
+	}
+	
 	public static void copy( File in, File out ) {
-		
 		FileInputStream is = null;
 		FileOutputStream os = null;
 		try {
@@ -55,12 +62,8 @@ public class FileUtil
 		} catch( IOException e ) {
 			throw new RuntimeException( "Error while copying " + in.getPath() + " to " + out.getPath(), e );
 		} finally {
-			try {
-				if( os != null ) os.close();
-				if( is != null ) is.close();
-			} catch( IOException e ) {
-				// Whatever
-			}
+			reallyClose(os);
+			reallyClose(is);
 		}
 	}
 }
