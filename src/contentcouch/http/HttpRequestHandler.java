@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.NoRouteToHostException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.Date;
 
 import togos.mf.api.Request;
@@ -60,6 +61,10 @@ public class HttpRequestHandler extends BaseRequestHandler {
 				res.putContentMetadata(DcNamespace.DC_FORMAT, urlConn.getContentType());
 			}
 			return res;
+		} catch( UnknownHostException e ) {
+			String mess = "Unknown host " + url.getHost();
+			Log.log(Log.EVENT_WARNING, mess);
+			return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, mess, "text/plain");
 		} catch( NoRouteToHostException e ) {
 			String mess = "No route to host " + url.getHost();
 			Log.log(Log.EVENT_WARNING, mess);
