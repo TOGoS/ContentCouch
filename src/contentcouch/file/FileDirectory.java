@@ -108,7 +108,7 @@ public class FileDirectory extends File implements WritableDirectory
 			if( shouldUseHardlinks ) {
 				BlobUtil.linkBlobToFile(blob, this);
 			} else {
-				BlobUtil.writeBlobToFile(blob, this);
+				BlobUtil.writeBlobToFileAtomically(blob, this);
 			}
 		}
 	}

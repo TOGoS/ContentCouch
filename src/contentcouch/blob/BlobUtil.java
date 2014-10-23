@@ -124,7 +124,8 @@ public class BlobUtil {
 		}
 	}
 	
-	public static void writeBlobToFile( Blob blob, File f ) {
+	// Protected because you should be using the atomic version
+	protected static void writeBlobToFile( Blob blob, File f ) {
 		FileUtil.mkParentDirs(f);
 		try {
 			FileOutputStream fos = new FileOutputStream(f);
@@ -135,6 +136,26 @@ public class BlobUtil {
 			}
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
+		}
+	}
+	
+	public static void writeBlobToFileAtomically( Blob blob, File destFile ) {
+		File destDir = destFile.getParentFile();
+		File tempFile = null;
+		try {
+			tempFile = File.createTempFile("."+destFile.getName(), ".temp", destDir);
+			writeBlobToFile(blob, tempFile);
+			if( !tempFile.renameTo(destFile) ) {
+				throw new RuntimeException("Failed to move '"+tempFile+"' to '"+destFile+"'");
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			if( tempFile != null && tempFile.exists() ) {
+				if( !tempFile.delete() ) {
+					System.err.println("Failed to delete temp file '"+tempFile+"'");
+				}
+			}
 		}
 	}
 
