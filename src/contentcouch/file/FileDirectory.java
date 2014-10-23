@@ -74,7 +74,7 @@ public class FileDirectory extends File implements WritableDirectory
 		}
 		
 		public void setTarget(Object value, Map requestMetadata) {
-			assert value != null;
+			//assert value != null;
 			if( this.exists() ) {
 				if( !this.delete() ) {
 					if( this.isDirectory() ) {
