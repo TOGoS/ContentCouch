@@ -141,6 +141,7 @@ public class BlobUtil {
 	
 	public static void writeBlobToFileAtomically( Blob blob, File destFile ) {
 		File destDir = destFile.getParentFile();
+		FileUtil.mkdirs(destDir);
 		File tempFile = null;
 		try {
 			tempFile = File.createTempFile(".cc-"+destFile.getName()+"-", ".temp", destDir);
