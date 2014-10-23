@@ -143,7 +143,7 @@ public class BlobUtil {
 		File destDir = destFile.getParentFile();
 		File tempFile = null;
 		try {
-			tempFile = File.createTempFile("."+destFile.getName(), ".temp", destDir);
+			tempFile = File.createTempFile(".cc-"+destFile.getName()+"-", ".temp", destDir);
 			writeBlobToFile(blob, tempFile);
 			if( !tempFile.renameTo(destFile) ) {
 				throw new RuntimeException("Failed to move '"+tempFile+"' to '"+destFile+"'");
