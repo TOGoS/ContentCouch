@@ -568,7 +568,7 @@ public class SimpleListFile {
 			if( pc == null ) return null;
 			return getPairValue( pc.offset );
 		} finally {
-			if( lock != null ) lock.release();
+			if( lock != null ) lock.close();
 		}
 	}
 	
@@ -595,7 +595,7 @@ public class SimpleListFile {
 		} finally {
 			if( lock != null ) {
 				raf.getChannel().force(true);
-				lock.release();
+				lock.close();
 			}
 		}
 	}

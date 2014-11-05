@@ -17,6 +17,7 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.DcNamespace;
 import contentcouch.rdf.RdfIO;
+import contentcouch.stream.StreamUtil;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
@@ -59,6 +60,8 @@ public class DirectoryUtil {
 			}
 		} catch( IOException e ) {
 			throw new RuntimeException("I/O error while reading HTML directory listing", e);
+		} finally {
+			StreamUtil.close(r);
 		}
 		return dir;
 	}

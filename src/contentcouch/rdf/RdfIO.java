@@ -275,12 +275,16 @@ public class RdfIO {
 	{
 		File file = new File(filename);
 		FileInputStream fis = new FileInputStream(file);
-		int read = 0;
-		int length = (int)file.length();
-		byte[] content = new byte[length];
-		while( read < length ) {
-			read += fis.read(content, read, length-read );
+		try {
+			int read = 0;
+			int length = (int)file.length();
+			byte[] content = new byte[length];
+			while( read < length ) {
+				read += fis.read(content, read, length-read );
+			}
+			return content;
+		} finally {
+			fis.close();
 		}
-		return content;
 	}	
 }
