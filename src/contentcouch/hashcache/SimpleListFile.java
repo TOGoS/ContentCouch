@@ -568,7 +568,9 @@ public class SimpleListFile {
 			if( pc == null ) return null;
 			return getPairValue( pc.offset );
 		} finally {
-			if( lock != null ) lock.close();
+			// Java 1.4 version of close(), but it's equivalent to release().
+			// Eclipse may complain, but it's alright.
+			if( lock != null ) lock.release();
 		}
 	}
 	
@@ -595,7 +597,9 @@ public class SimpleListFile {
 		} finally {
 			if( lock != null ) {
 				raf.getChannel().force(true);
-				lock.close();
+				// Java 1.4 version of close(), but it's equivalent to release().
+				// Eclipse may complain, but it's alright.
+				lock.release();
 			}
 		}
 	}
