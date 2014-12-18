@@ -6,16 +6,11 @@
 	"classUri": "http://ns.nuke24.net/ContentCouch/Directory",
 	"entries": [
 		{
-			// Let's leave out "classUri" for directory entries.
-			// It's implied to be "http://ns.nuke24.net/ContentCouch/DirectoryEntry".
-			"name": "puppy.jpg",
+			"name": "A Subdirectory",
 			"target": {
-				"classUri": "http://ns.nuke24.net/ContentCouch/Blob",
-				"uri": "urn:bitprint:RMMC6UCNGQHOVMDWUYLIYZ74CAQXDYPK.XV3RIKWP66GYUN7TWWPKH2DSOYUHSXP5QDLPE4A",
-				"fileLength": 315764
+				"classUri": "http://ns.nuke24.net/ContentCouch/Directory",
+				"uri": "x-rdf-subject:urn:bitprint:QMWRICSFPENL7HRTRGC7DA5VZIREYVTG.Z5OAUTQ6R5CYY3KTVIXHELUS5RHENFMC3BLR3ZQ"
 			}
-			"modified": "2014-05-26 01:31:48 GMT",
-			"comment": "OMG cute dog!"
 		},
 		{
 			"name": "Josh.jpg",
@@ -27,11 +22,16 @@
 			"modified": "2014-01-03 16:52:24 GMT"
 		},
 		{
-			"name": "A Subdirectory",
+			// Let's leave out "classUri" for directory entries.
+			// It's implied to be "http://ns.nuke24.net/ContentCouch/DirectoryEntry".
+			"name": "puppy.jpg",
 			"target": {
-				"classUri": "http://ns.nuke24.net/ContentCouch/Directory",
-				"uri": "x-rdf-subject:urn:bitprint:QMWRICSFPENL7HRTRGC7DA5VZIREYVTG.Z5OAUTQ6R5CYY3KTVIXHELUS5RHENFMC3BLR3ZQ"
+				"classUri": "http://ns.nuke24.net/ContentCouch/Blob",
+				"uri": "urn:bitprint:RMMC6UCNGQHOVMDWUYLIYZ74CAQXDYPK.XV3RIKWP66GYUN7TWWPKH2DSOYUHSXP5QDLPE4A",
+				"fileLength": 315764
 			}
+			"modified": "2014-05-26 01:31:48 GMT",
+			"comment": "OMG cute dog!"
 		}
 	]
 }
@@ -49,6 +49,16 @@
 	"creator": "maude-trtd",
 	"description": "Music archive on Maude, 2013-11-11"
 }
+
+## Formatting specifics
+
+Following these ensures that there is a single, 'canonical'
+representation of each object, which I've tried to follow in the
+examples above.
+
+- Directory entries should sorted lexographically
+- Each level of indentation should be a single tab.
+- Files should be terminated by a newline.
 
 ## Notes
 
