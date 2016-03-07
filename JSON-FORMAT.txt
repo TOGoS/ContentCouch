@@ -56,7 +56,7 @@ Following these ensures that there is a single, 'canonical'
 representation of each object, which I've tried to follow in the
 examples above.
 
-- Directory entries should sorted lexographically
+- Directory entries should sorted by their UTF-8 representation
 - Each level of indentation should be a single tab.
 - Files should be terminated by a newline.
 
