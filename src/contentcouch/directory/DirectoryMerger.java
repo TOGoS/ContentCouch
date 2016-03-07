@@ -145,11 +145,14 @@ public class DirectoryMerger {
 	}
 	
 	/** If true, will copy incoming directories into SimpleDirectories instead of adding the given object directly */
-	public boolean copyNewDirectories;
-	public ConflictResolver conflictResolver;
-	protected Map options;
+	protected final boolean copyNewDirectories;
+	protected final ConflictResolver conflictResolver;
+	protected final Map options;
 	
 	public DirectoryMerger( ConflictResolver conflictResolver, Map options ) {
+		if( conflictResolver == null ) throw new RuntimeException("Didn't pass a conflict resolver to DirectoryMerger constructor!");
+		if( options == null ) throw new RuntimeException("Didn't pass options to DirectoryMerger constructor!");
+		
 		this.conflictResolver = conflictResolver;
 		this.copyNewDirectories = MetadataUtil.isEntryTrue(options, CCouchNamespace.REQ_COPY_SOURCE_DIRS);
 		this.options = options;

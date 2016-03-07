@@ -7,9 +7,16 @@ Checkout options:
   -v                 ; verbose - report every file visited
   -?                 ; display help and exit
 
-When merging, unless -replace-existing is given:
+When merging, unless -replace-existing or -keep-existing is given:
 - only files that do not already exist in the destination folder will be
   checked out.
 - If the destination file has the same content as the to-be-checked-out file,
   no action is taken.
 - If the content is different, an error is printed and the program exits.
+
+Unless -merge is specified, checking out a directory onto another directory
+will fail.
+
+In theory -replace-existing and -keep-existing should even allow replacing
+a directory with a file or vice-versa, though this might not actually be
+implemented.  Otherwise, that case is always failure-inducing.

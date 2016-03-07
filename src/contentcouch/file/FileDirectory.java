@@ -11,6 +11,7 @@ import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryMerger;
 import contentcouch.directory.WritableDirectory;
+import contentcouch.directory.DirectoryMerger.RegularConflictResolver;
 import contentcouch.framework.TheGetter;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
@@ -100,7 +101,8 @@ public class FileDirectory extends File implements WritableDirectory
 			
 			if( value instanceof Directory ) {
 				FileUtil.mkdirs(this);
-				new DirectoryMerger( null, requestMetadata ).putAll(getTargetDirectory(), (Directory)value, sourceUri, PathUtil.maybeNormalizeFileUri(getPath()) );
+				final RegularConflictResolver cr = new RegularConflictResolver(requestMetadata);
+				new DirectoryMerger( cr, requestMetadata ).putAll(getTargetDirectory(), (Directory)value, sourceUri, PathUtil.maybeNormalizeFileUri(getPath()) );
 				return;
 			}
 			
