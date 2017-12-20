@@ -30,7 +30,23 @@ public class DirectoryMerger {
 	}
 	
 	public static interface ConflictResolver {
-		public void resolve( WritableDirectory dir, Directory.Entry e1, Directory.Entry e2, String srcUri, String destUri );
+		/**
+		 * Resolves differences (possibly by throwing an error)
+		 * between two directory entries and writes the result to dir
+		 * at entry1's name (entry2's name is ignored)
+		 * @param dir
+		 * @param entry1 the existing entry
+		 * @param entry1Uri URI of the existing entry
+		 * @param entry2 the new entry to be merged into the existing one
+		 * @param entry2Uri URI of the new entry
+		 */
+		public void resolve(
+			WritableDirectory dir,
+			Directory.Entry entry1,
+			String entry1Uri,
+			Directory.Entry entry2,
+			String entry2Uri
+		);
 	};
 	
 	public static class RegularConflictResolver implements ConflictResolver {
@@ -101,7 +117,7 @@ public class DirectoryMerger {
 			}
 		}
 		
-		public void resolve(WritableDirectory dir, Entry e1, Entry e2, String srcUri, String destUri ) {
+		public void resolve(WritableDirectory dir, Entry e1, String e1Uri, Entry e2, String e2Uri ) {
 			int e1tt = CloneUtil.getTargetTypeIndex(e1);
 			int e2tt = CloneUtil.getTargetTypeIndex(e2);
 			if( e1tt == e2tt && e1tt == CloneUtil.CLONE_TARGETTYPE_BLOB ) {
@@ -109,7 +125,7 @@ public class DirectoryMerger {
 					Blob b1 = BlobUtil.getBlob(DirectoryUtil.resolveTarget(e1));
 					Blob b2 = BlobUtil.getBlob(DirectoryUtil.resolveTarget(e2));
 					String[] options = fileMergeMethod.substring(5).split(":");
-					EqualityCheckResult blobEquality = blobsAreEqual(b1, b2, srcUri, destUri);
+					EqualityCheckResult blobEquality = blobsAreEqual(b1, b2, e2Uri, e1Uri);
 					if( blobEquality.equals ) {
 						mergeBlob( dir, e1, e2, options[0], "merge method = " + fileMergeMethod );
 					} else {
@@ -122,13 +138,13 @@ public class DirectoryMerger {
 				if( CCouchNamespace.REQ_DIRMERGE_MERGE.equals(dirMergeMethod) ) {
 					Object t = DirectoryUtil.resolveTarget(e1);
 					if( !(t instanceof WritableDirectory) ) {
-						throw new RuntimeException( "Can't merge into " + e1.getName() + "; not a WritableDirectory" );
+						throw new RuntimeException( "Can't merge into " + e1.getName() + " ("+e1Uri+"); not a WritableDirectory" );
 					}
 					Object s = DirectoryUtil.resolveTarget(e2);
 					if( !(s instanceof Directory) ) {
-						throw new RuntimeException( "Can't merge from " + e2.getName() + "; not a Directory" );
+						throw new RuntimeException( "Can't merge from " + e2.getName() + " ("+e2Uri+"); not a Directory" );
 					}
-					new DirectoryMerger( this, options ).putAll( (WritableDirectory)t, (Directory)s, srcUri, destUri );
+					new DirectoryMerger( this, options ).putAll( (WritableDirectory)t, (Directory)s, e2Uri, e1Uri );
 				} else if( CCouchNamespace.REQ_DIRMERGE_IGNORE.equals(dirMergeMethod) ) {
 				} else if( CCouchNamespace.REQ_DIRMERGE_REPLACE.equals(dirMergeMethod) ) {
 					dir.addDirectoryEntry(e2, options);
@@ -169,14 +185,20 @@ public class DirectoryMerger {
 		);
 	}
 	
-	/** Returns true if something already existed at the destination (whether it was overwritten or not) */
+	/**
+	 * Returns true if something already existed at the destination (whether it was overwritten or not)
+	 * @param WritableDirectory dir directory into which the new object will be put
+	 * @param Directory.Entry newEntry the entry to be added (or merged into an existing one) within dir
+	 * @param String srcUri URI of newEntry
+	 * @param String destUri URI of the entry that will be written to dir
+	 * */
 	public boolean put( WritableDirectory dir, Directory.Entry newEntry, String srcUri, String destUri ) {
 		Directory.Entry existingEntry = dir.getDirectoryEntry(newEntry.getName());
 		if( existingEntry != null ) {
 			if( conflictResolver == null ) {
 				throw new RuntimeException("Cannot resolve merge conflict on " + newEntry.getName() + "; no clonflict resolver supploed");
 			} else {
-				conflictResolver.resolve( dir, existingEntry, newEntry, srcUri, destUri );
+				conflictResolver.resolve( dir, existingEntry, destUri, newEntry, srcUri );
 			}
 			return true;
 		} else {
