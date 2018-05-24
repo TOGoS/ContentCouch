@@ -68,7 +68,13 @@ public class BlobUtil {
 			if( f.exists() && f.isFile() ) {
 				return new FileBlob(f);
 			}
-			if( failOnFailure ) throw new RuntimeException("Don't know how to directory File into a Blob");
+			if( failOnFailure ) {
+				if( !f.exists() ) {
+					throw new RuntimeException("Can't treat non-existent file '"+f+"' as blob");
+				} else {
+					throw new RuntimeException("Can't treat non-regular file '"+f+"' as blob");
+				}
+			}
 			return null;
 		}
 		
