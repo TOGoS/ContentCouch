@@ -32,6 +32,8 @@ public class Log {
 	public static final String EVENT_SKIPPED_CACHED  = "skipped-cached"; // X was skipped due to already being cached
 	public static final String EVENT_DELETED         = "deleted"; // X was kept
 	public static final String EVENT_STORED          = "stored"; // X was stored as Y
+
+	public static final String EVENT_DEBUG_MESSAGE  = "debug-message";
 	
 	public static Map loggers = new HashMap();
 	
@@ -115,6 +117,7 @@ public class Log {
 
 		if( level < LEVEL_DEBUG     ) return;
 		addLogger( EVENT_REQUEST_SUBMITTED, stderrLogger );
+		addLogger( EVENT_DEBUG_MESSAGE, stderrLogger );
 	}
 	
 	public static final void log( String eventName, String[] arguments ) {

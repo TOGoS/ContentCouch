@@ -12,7 +12,10 @@ public class RepoConfig {
 	public String disposition = DISPOSITION_DEFAULT;
 	public String name = "junky-unnamed-repository";
 	/** Path of the root of the repository - should always end with '/' */
-	public String uri = "file:junk-repository/";
+	public String rawUri = "file:junk-repository/";
+	/** URI of repository such that "/"-ending paths will resolve to directories.
+	 * For HTTP URLs, this means wrapping in an active:contentcouch.directoryize URI. */
+	public String directoryizedUri = "file:junk-repository/";
 	public String userStoreSector   = "user";
 	public String remoteCacheSector = "remote";
 	public String activeCacheSector = "active";
@@ -23,7 +26,7 @@ public class RepoConfig {
 	
 	public RepoConfig( String disposition, String uri, String name ) {
 		this.disposition = disposition;
-		this.uri = uri;
+		this.directoryizedUri = this.rawUri = uri;
 		this.name = name;
 	}
 	

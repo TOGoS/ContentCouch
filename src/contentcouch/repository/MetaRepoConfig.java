@@ -77,8 +77,8 @@ public class MetaRepoConfig {
 	public void addRepoConfig( RepoConfig rp ) {
 		if( rp.disposition == RepoConfig.DISPOSITION_DEFAULT ) {
 			if( rp.name != null ) defaultRepoConfig.name = rp.name;
-			if( rp.uri != null ) defaultRepoConfig.uri = rp.uri;
-			String cfgUri = rp.uri + "ccouch-config";
+			if( rp.directoryizedUri != null ) defaultRepoConfig.directoryizedUri = rp.directoryizedUri;
+			String cfgUri = rp.directoryizedUri + "ccouch-config";
 
 			BaseRequest cfgRequest = new BaseRequest(RequestVerbs.GET, cfgUri);
 			Response cfgResponse = TheGetter.call(cfgRequest);
@@ -122,10 +122,10 @@ public class MetaRepoConfig {
 		RepoConfig rp = RepoConfig.parse(arg);
 		if( rp != null ) {
 			++offset;
-			rp.uri = PathUtil.maybeNormalizeFileUri(PathUtil.appendPath(baseUri, args[offset]));
-			if( !rp.uri.endsWith("/") ) rp.uri += "/";
-			if( rp.uri.matches("^https?:.*") ) {
-				rp.uri = "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(rp.uri);
+			rp.rawUri = rp.directoryizedUri = PathUtil.maybeNormalizeFileUri(PathUtil.appendPath(baseUri, args[offset]));
+			if( !rp.directoryizedUri.endsWith("/") ) rp.directoryizedUri += "/";
+			if( rp.directoryizedUri.matches("^https?:.*") ) {
+				rp.directoryizedUri = "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(rp.directoryizedUri);
 			}
 			//System.err.println(basePath + " + " + args[offset] + " = " + path);
 			++offset;

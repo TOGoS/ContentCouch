@@ -6,7 +6,7 @@ ContentCouch.jar: $(shell find src)
 	find src -name '*.java' >.src-files.lst
 	rm -rf web/WEB-INF/classes
 	mkdir -p web/WEB-INF/classes
-	javac -extdirs ext-lib -d "web/WEB-INF/classes" @.src-files.lst -target 1.4 -source 1.4
+	javac -extdirs ext-lib -d "web/WEB-INF/classes" @.src-files.lst -target 6 -source 6
 	cp -a src/* "web/WEB-INF/classes/"
 	rm -rf jar
 	mkdir -p jar/META-INF

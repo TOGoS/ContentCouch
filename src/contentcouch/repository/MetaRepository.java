@@ -130,8 +130,8 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Map fileHashCaches = new HashMap();
 	protected FileHashCache getFileHashCache( ContentAddressingScheme cas ) {
 		FileHashCache fileHashCache = (FileHashCache)fileHashCaches.get(cas.getSchemeShortName());
-		if( fileHashCache == null && config.defaultRepoConfig.uri.startsWith("file:") ) {
-			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.uri + "cache/file-"+cas.getSchemeShortName()+".slf").toString();
+		if( fileHashCache == null && config.defaultRepoConfig.directoryizedUri.startsWith("file:") ) {
+			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.directoryizedUri + "cache/file-"+cas.getSchemeShortName()+".slf").toString();
 			File cacheFile = new File(hashCachePath);
 			fileHashCache = new FileHashCache(cacheFile, cas, "rw");
 			fileHashCaches.put(cas.getSchemeShortName(), fileHashCache);
@@ -213,30 +213,41 @@ public class MetaRepository extends BaseRequestHandler {
 	protected ShortTermCache repoDataSectorUrlCache = new ShortTermCache(60000);
 	
 	protected List getRepoDataSectorUrlsWithCaching( RepoConfig repoConfig ) {
-		List l = (List)repoDataSectorUrlCache.get(repoConfig.uri);
+		List l = (List)repoDataSectorUrlCache.get(repoConfig.directoryizedUri);
 		if( l == null ) {
 			l = getRepoDataSectorUrls( repoConfig );
-			repoDataSectorUrlCache.put( repoConfig.uri, l );
+			repoDataSectorUrlCache.put( repoConfig.directoryizedUri, l );
 		}
 		return l;
 	}
 	
 	protected List getRepoDataSectorUrls( RepoConfig repoConfig ) {
 		ArrayList l = new ArrayList();
-		String dataDirUri = PathUtil.appendPath(repoConfig.uri,"data/");
+		String dataDirUri = PathUtil.appendPath(repoConfig.directoryizedUri,"data/");
 		
 		BaseRequest dirReq = new BaseRequest( RequestVerbs.GET, dataDirUri );
+		Log.log(Log.EVENT_DEBUG_MESSAGE, "Trying to load directory "+dataDirUri);
 		Response dirRes = TheGetter.call(dirReq);
-		if( dirRes.getStatus() != ResponseCodes.NORMAL ) return l;
-		if( !(dirRes.getContent() instanceof Directory) ) {
-			Log.log(Log.EVENT_WARNING, dataDirUri + " exists but is not a directory");
-		}
-		Directory d = (Directory)dirRes.getContent();
-		for( Iterator i=d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
-			Directory.Entry e = (Directory.Entry)i.next();
-			if( CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType()) ) {
-				l.add(PathUtil.appendPath(dataDirUri, e.getName() + "/"));
+		if( dirRes.getStatus() == ResponseCodes.NORMAL ) {
+			if (dirRes.getContent() instanceof Directory) {
+				Directory d = (Directory) dirRes.getContent();
+				for (Iterator i = d.getDirectoryEntrySet().iterator(); i.hasNext(); ) {
+					Directory.Entry e = (Directory.Entry) i.next();
+					if (CCouchNamespace.TT_SHORTHAND_DIRECTORY.equals(e.getTargetType())) {
+						l.add(PathUtil.appendPath(dataDirUri, e.getName() + "/"));
+					}
+				}
+			} else {
+				Log.log(Log.EVENT_WARNING, dataDirUri + " exists but is not a directory");
 			}
+		}
+		Log.log(Log.EVENT_DEBUG_MESSAGE, "About to add /N2R? URL to data sector URLs list for repo "+repoConfig.directoryizedUri +"...");
+		if( repoConfig.rawUri.startsWith("http:") || repoConfig.rawUri.startsWith("https:") ) {
+			String uriResUrl = repoConfig.rawUri.endsWith("uri-res/") ? repoConfig.rawUri : PathUtil.appendPath(repoConfig.rawUri, "uri-res/");
+			l.add(uriResUrl + "N2R?");
+			Log.log(Log.EVENT_DEBUG_MESSAGE, "Added");
+		} else {
+			Log.log(Log.EVENT_DEBUG_MESSAGE, "Skipped because URL didn't look right");
 		}
 		return l;
 	}
@@ -289,13 +300,13 @@ public class MetaRepository extends BaseRequestHandler {
 		if( baseName.length() == 0 ) {
 			baseName = defaultBaseName;
 		}
-		String dirPath = repoConfig.uri + path.substring(0,dLast+1);
+		String dirPath = repoConfig.directoryizedUri + path.substring(0,dLast+1);
 		if( "new".equals(baseName) ) {
 			return dirPath + getNextEntryKey(dirPath); 
 		} else if( "latest".equals(baseName) ) {
 			return dirPath + getHighestEntryKey(dirPath);
 		} else {
-			return repoConfig.uri + path;
+			return repoConfig.directoryizedUri + path;
 		}
 	}
 
@@ -331,7 +342,7 @@ public class MetaRepository extends BaseRequestHandler {
 		}
 		*/
 		
-		String uri = repoConfig.uri + "data/" + sector + "/" + psp; 
+		String uri = repoConfig.directoryizedUri + "data/" + sector + "/" + psp;
 		
 		BaseRequest subReq = new BaseRequest( req, uri );
 		subReq.verb = RequestVerbs.PUT;
@@ -792,12 +803,12 @@ public class MetaRepository extends BaseRequestHandler {
 	}
 	
 	protected synchronized SimpleListFile getSlf( RepoConfig repoConfig, String subPath ) {
-		PathUtil.Path p = PathUtil.parseFilePathOrUri( repoConfig.uri );
+		PathUtil.Path p = PathUtil.parseFilePathOrUri( repoConfig.directoryizedUri);
 		return getSlf( new File(p.toString() + subPath) );
 	}
 	
 	protected SimpleListFile getCacheSlf( String cacheName ) {
-		if( config.defaultRepoConfig.uri.startsWith("file:") ) {
+		if( config.defaultRepoConfig.directoryizedUri.startsWith("file:") ) {
 			return getSlf( config.defaultRepoConfig, "cache/"+cacheName+".slf" );
 		}
 		return null;
@@ -989,7 +1000,18 @@ public class MetaRepository extends BaseRequestHandler {
 	//// Handle requests ////
 	
 	ShortTermCache nonExistentObjects = new ShortTermCache(60000);
-		
+
+	/** Given a data sector URI, generate a URI that might resolve to the blob we seek.
+	 *
+	 * @param dataSectorUri URI of the data sector ("..../data/pictures/") or "...N2R?" URL
+	 * @param blobUrn the URN of the blob, e.g. "urn:bitprint:R4AH5UYZW3UVGYBU7F6UPIXJLVXE7ADM.WQ73OKVJX6AESLOISMSTMJTKD5LTHWWFJTDJNAQ"
+	 * @param psp the 'post sector path', e.g. "R4/R4AH5UYZW3UVGYBU7F6UPIXJLVXE7ADM"
+	 * @return
+	 */
+	protected static String generatePotentialRemoteBlobUri(String dataSectorUri, String blobUrn, String psp) {
+		return dataSectorUri.endsWith("?") ? dataSectorUri + blobUrn : PathUtil.appendPath(dataSectorUri, psp);
+	}
+
 	public Response call( Request req ) {
 		if( "x-ccouch-repo://".equals(req.getResourceName()) ) {
 			// Return a directory listing of all registered repositories
@@ -999,7 +1021,7 @@ public class MetaRepository extends BaseRequestHandler {
 				SimpleDirectory.Entry entry = new SimpleDirectory.Entry();
 				entry.name = repoConfig.name;
 				entry.targetType = CCouchNamespace.TT_SHORTHAND_DIRECTORY;
-				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.uri);
+				entry.target = new BaseRef("x-ccouch-repo:all-repos-dir", entry.name + "/", repoConfig.directoryizedUri);
 				sd.addDirectoryEntry(entry, Collections.EMPTY_MAP);
 			}
 			return new BaseResponse(ResponseCodes.NORMAL, sd);
@@ -1090,9 +1112,9 @@ public class MetaRepository extends BaseRequestHandler {
 					
 					return subRes;
 				} else if( path.equals("files") ) {
-					path = repoConfig.uri + "files";
+					path = repoConfig.directoryizedUri + "files";
 				} else if( path.startsWith("files/") ) {
-					path = repoConfig.uri + path.substring("files/".length());
+					path = repoConfig.directoryizedUri + path.substring("files/".length());
 				} else if( path.startsWith(FUNCTION_RESULT_CACHE_PREFIX) ) {
 					String[] pathParts = repoRef.subPath.substring(FUNCTION_RESULT_CACHE_PREFIX.length()).split("/");
 					String subIndexName, key;
@@ -1133,41 +1155,42 @@ public class MetaRepository extends BaseRequestHandler {
 					List dataSectorUris = getRepoDataSectorUrls(repoConfig);
 					for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
 						String dataSectorUri = (String)si.next();
-						BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
+						BaseRequest subReq = new BaseRequest(req, generatePotentialRemoteBlobUri(dataSectorUri, urn, psp));
 						Response res = TheGetter.call(subReq);
 						if( res.getStatus() == ResponseCodes.NORMAL ) return res;
 					}
 				}
-				
-				// Check most recently hit remote repo
-				lastHit: if( lastHitDataSectorUri != null ) {
-					String psp = urnToPostSectorPath(lastHitRepoConfig, urn);
-					if( psp == null ) break lastHit;
-					
-					BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(lastHitDataSectorUri, psp));
-					Response res = TheGetter.call(subReq);
-					if( res.getStatus() == ResponseCodes.NORMAL ) {
-						try {
-							return maybeCacheBlob(res, req);
-						} catch( HashMismatchException hme ) {
-							logHashMismatch( subReq, hme.dataScheme, hme.expected, hme.calculated );
-						}
-					}
-				}
-				
+
 				// Check all remote repos (unless we are explicitly asked not to)
 				checkRemote: if( !MetadataUtil.isEntryTrue(req.getMetadata(), CCouchNamespace.REQ_LOCAL_REPOS_ONLY)) {
 					if( nonExistentObjects.get(urn) != null ) break checkRemote;
-					
+
+					// Check most recently hit remote repo
+					lastHit: if( lastHitDataSectorUri != null ) {
+						String psp = urnToPostSectorPath(lastHitRepoConfig, urn);
+						if( psp == null ) break lastHit; // TODO: Well, the N2R? URLs might still work.
+
+						BaseRequest subReq = new BaseRequest(req, generatePotentialRemoteBlobUri(lastHitDataSectorUri, urn, psp));
+						Response res = TheGetter.call(subReq);
+						if( res.getStatus() == ResponseCodes.NORMAL ) {
+							try {
+								return maybeCacheBlob(res, req);
+							} catch( HashMismatchException hme ) {
+								logHashMismatch( subReq, hme.dataScheme, hme.expected, hme.calculated );
+							}
+						}
+					}
+
 					for( Iterator i=config.remoteRepoConfigs.iterator(); i.hasNext(); ) {
 						RepoConfig repoConfig = (RepoConfig)i.next();
 						String psp = urnToPostSectorPath(repoConfig, urn);
-						if( psp == null ) continue;
-		
+						if( psp == null ) continue; // TODO: Well, the N2R? URLs might still work.
+
 						List dataSectorUris = getRepoDataSectorUrlsWithCaching(repoConfig);
 						for( Iterator si=dataSectorUris.iterator(); si.hasNext(); ) {
 							String dataSectorUri = (String)si.next();
-							BaseRequest subReq = new BaseRequest(req, PathUtil.appendPath(dataSectorUri, psp));
+							String remoteUri = generatePotentialRemoteBlobUri(dataSectorUri, urn, psp);
+							BaseRequest subReq = new BaseRequest(req, remoteUri);
 							Response res = TheGetter.call(subReq);
 							if( res.getStatus() == ResponseCodes.NORMAL ) {
 								lastHitDataSectorUri = dataSectorUri;

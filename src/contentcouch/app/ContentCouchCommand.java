@@ -164,7 +164,7 @@ public class ContentCouchCommand {
 	
 	protected void printRepoConfig( RepoConfig repoConfig, PrintStream ps, String pfx ) {
 		ps.println(pfx + repoConfig.disposition + " repository " + repoConfig.name );
-		ps.println(pfx + "  " + "URI: " + repoConfig.uri );
+		ps.println(pfx + "  " + "URI: " + repoConfig.directoryizedUri);
 	}
 	
 	protected int dumpRepoConfig( MetaRepoConfig mrc, PrintStream ps, String pfx ) {
@@ -1153,7 +1153,7 @@ public class ContentCouchCommand {
 		}
 		
 		if( checkPaths.size() == 0 ) {
-			checkPaths.add(metaRepoConfig.defaultRepoConfig.uri + "data/");
+			checkPaths.add(metaRepoConfig.defaultRepoConfig.directoryizedUri + "data/");
 		}
 		
 		RepoChecker rc = new RepoChecker();
