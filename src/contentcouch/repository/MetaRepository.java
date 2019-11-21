@@ -223,6 +223,16 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	protected List getRepoDataSectorUrls( RepoConfig repoConfig ) {
 		ArrayList l = new ArrayList();
+
+		if (repoConfig.rawUri.endsWith("uri-res/")) {
+		    String n2rUrl = repoConfig.rawUri + "N2R?";
+		    l.add(n2rUrl);
+		    Log.log(Log.EVENT_DEBUG_MESSAGE,
+			    "Treating "+repoConfig.rawUri+" as N2R-only repo (won't look for other data sectors)");
+		    return l;
+		}
+
+		
 		String dataDirUri = PathUtil.appendPath(repoConfig.directoryizedUri,"data/");
 		
 		BaseRequest dirReq = new BaseRequest( RequestVerbs.GET, dataDirUri );
@@ -241,13 +251,11 @@ public class MetaRepository extends BaseRequestHandler {
 				Log.log(Log.EVENT_WARNING, dataDirUri + " exists but is not a directory");
 			}
 		}
-		Log.log(Log.EVENT_DEBUG_MESSAGE, "About to add /N2R? URL to data sector URLs list for repo "+repoConfig.directoryizedUri +"...");
 		if( repoConfig.rawUri.startsWith("http:") || repoConfig.rawUri.startsWith("https:") ) {
 			String uriResUrl = repoConfig.rawUri.endsWith("uri-res/") ? repoConfig.rawUri : PathUtil.appendPath(repoConfig.rawUri, "uri-res/");
-			l.add(uriResUrl + "N2R?");
-			Log.log(Log.EVENT_DEBUG_MESSAGE, "Added");
-		} else {
-			Log.log(Log.EVENT_DEBUG_MESSAGE, "Skipped because URL didn't look right");
+			String n2rUrl = uriResUrl + "N2R?";
+			l.add(n2rUrl);
+			Log.log(Log.EVENT_DEBUG_MESSAGE, "Added "+n2rUrl+" to data sectors list");
 		}
 		return l;
 	}
