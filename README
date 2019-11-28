@@ -8,7 +8,9 @@ ContentCouch at a basic level.
 
 == Installation ==
 
-* Compile java classes by running build.sh or using Eclipse
+* Either:
+  * Compile java classes by running build.sh or using Eclipse, or
+  * Download ContentCouch.jar by running fetch-jar.bat
 * cd into the 'installler' directory
 * Run install.bat or install.sh
   - this should create a file, 'ccouch-install.properties'
