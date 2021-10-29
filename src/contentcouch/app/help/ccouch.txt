@@ -12,6 +12,7 @@ General options:
   -linker {ln|fsutil|cp--reflink}  ; force hardlink creation method
 
 Sub-commands:
+  --version             ; Show version
   help [<subcommand>]   ; show usage instructions
   help help             ; show a list of help topics
   store <files>         ; store files in the main repo

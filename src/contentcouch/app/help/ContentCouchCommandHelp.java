@@ -21,7 +21,9 @@ public class ContentCouchCommandHelp {
 	}
 	
 	public static String getString(String name) {
-		String s = ValueUtil.getString(getData(name));
+		byte[] data = getData(name);
+		if( data == null ) return null;
+		String s = ValueUtil.getString(data);
 		if( s != null ) s = s.trim();
 		return s;
 	}

@@ -399,9 +399,6 @@ public class ContentCouchCommand {
 			} else if( "-dump-config".equals(arg) ) {
 				this.shouldDumpConfig = true;
 			
-			} else if( "-version".equals(arg) || "--version".equals(arg) ) {
-				System.out.println("ContentCouch "+contentcouch.Versions.CCOUCH_VERSION);
-			
 			} else if( arg.startsWith("-v") ) {
 				String logLevelStr = arg.substring(2);
 				if( logLevelStr.length() == 0 ) {
@@ -1441,8 +1438,11 @@ public class ContentCouchCommand {
 		int i;
 		for( i=0; i<args.length; ) {
 			int ni;
-			if( "-h".equals(args[i]) || "-?".equals(args[i]) ) {
+			if( "-h".equals(args[i]) || "-?".equals(args[i]) || "--help".equals(args[i]) ) {
 				System.out.println(getHelpText());
+				return 0;
+			} else if( "-version".equals(args[i]) || "--version".equals(args[i]) ) {
+				System.out.println("ContentCouch "+contentcouch.Versions.CCOUCH_VERSION);
 				return 0;
 			} else if( (ni = metaRepoConfig.handleArguments(args, i, "./")) > i ) {
 				i = ni;
