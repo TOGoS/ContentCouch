@@ -129,8 +129,6 @@ public class FileDirectory extends File implements WritableDirectory
 		if( subFiles != null ) for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
 			if( isHidden(subFile) ) continue;
-			if( subFile.getName().startsWith(".") ) continue;
-			if( subFile.isHidden() ) continue;
 			entries.add(new Entry(subFile));
 		}
 		return entries;
