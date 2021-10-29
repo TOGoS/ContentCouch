@@ -10,3 +10,4 @@ But there may be some easy clean-up things.
   - This will give a space for non-Java test data, etc.
 - [ ] Unit tests for .ccouchignore stuff
   - Test vectors in src/test-data/...
+- [ ] As of 1.5.1, looks like commit blobs still lack a newline.  Fix that.
