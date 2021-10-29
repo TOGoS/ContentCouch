@@ -1,12 +1,12 @@
 package contentcouch.file;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import togos.mf.api.RequestVerbs;
-import togos.mf.base.BaseRequest;
 import contentcouch.blob.Blob;
 import contentcouch.blob.BlobUtil;
 import contentcouch.directory.DirectoryMerger;
@@ -17,6 +17,45 @@ import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
+import togos.ccouch3.Glob;
+import togos.mf.api.RequestVerbs;
+import togos.mf.base.BaseRequest;
+
+class CCouchIgnoreCache {
+	protected static CCouchIgnoreCache instance = new CCouchIgnoreCache();
+	public static CCouchIgnoreCache getInstance() {
+		return instance;
+	}
+	
+	Map<File,Glob> dirGlobCache = new HashMap<File,Glob>();
+
+	protected Glob readCCouchIgnore(File f, Glob next) throws IOException {
+		if( f == null || !f.exists() ) return next;
+
+		return Glob.load(f, next);
+	}
+	
+	public Glob getCCouchIgnoreForDir(File dir) {
+		if( dir == null ) return null;
+
+		{
+			final Glob cached = this.dirGlobCache.get(dir);
+			if( cached != null ) return cached;
+		}
+		
+		final Glob next = getCCouchIgnoreForDir(dir.getParentFile());
+		final File ignoreFile = new File(dir, ".ccouchignore");
+		final Glob glob;
+		try {
+			glob = readCCouchIgnore(ignoreFile, next);
+		} catch( IOException e ) {
+			// Don't want to accidentally *ignore* our .ccouchignore files!
+			throw new RuntimeException("Failed to load "+ignoreFile, e);
+		}
+		this.dirGlobCache.put(dir, glob);
+		return glob;
+	}
+}
 
 public class FileDirectory extends File implements WritableDirectory
 {
@@ -122,13 +161,36 @@ public class FileDirectory extends File implements WritableDirectory
 	public FileDirectory( File file ) {
 		super(file.getPath());
 	}
+
+	protected static boolean isHiddenFilename( String fn ) {
+		return fn.startsWith(".");
+	}
+	
+	protected static boolean isHidden( File f ) {
+		return f.isHidden() || isHiddenFilename(f.getName());
+	}
+	
+	protected static boolean isHidden( Directory.Entry e ) {
+		return isHiddenFilename(e.getName());
+	}
+
+	protected static boolean shouldIgnore(Glob ignores, File f) {
+		Boolean matchGlobs = Glob.anyMatch(ignores, f, null);
+		if( matchGlobs != null ) return matchGlobs.booleanValue();
+
+		// If the globs didn't explicitly say to keep or ignore it,
+		// Use our default isHidden() logic.
+
+		return isHidden(f);
+	}
 	
 	public Set getDirectoryEntrySet() {
-		File[] subFiles = listFiles();
+		File[] subFiles = this.listFiles();
+		Glob ignores = CCouchIgnoreCache.getInstance().getCCouchIgnoreForDir(this);
 		HashSet entries = new HashSet();
 		if( subFiles != null ) for( int i=0; i<subFiles.length; ++i ) {
 			File subFile = subFiles[i];
-			if( isHidden(subFile) ) continue;
+			if( shouldIgnore(ignores, subFile) ) continue;
 			entries.add(new Entry(subFile));
 		}
 		return entries;
@@ -139,19 +201,7 @@ public class FileDirectory extends File implements WritableDirectory
 		if( !f.exists() ) return null;
 		return new Entry(f);
 	}
-	
-	protected boolean isHiddenFilename( String fn ) {
-		return fn.startsWith(".");
-	}
-	
-	protected boolean isHidden( File f ) {
-		return f.isHidden() || isHiddenFilename(f.getName());
-	}
-	
-	protected boolean isHidden( Directory.Entry e ) {
-		return isHiddenFilename(e.getName());
-	}
-	
+		
 	public void addDirectoryEntry( Directory.Entry entry, Map options ) {
 		File f = new File(this.getPath() + "/" + entry.getName());
 		//if( f.exists() ) throw new RuntimeException("Cannot add entry; file already exists at " + this + "/" + entry.getName());
@@ -165,7 +215,7 @@ public class FileDirectory extends File implements WritableDirectory
 	
 	public void deleteDirectoryEntry( String name, Map options ) {
 		File f = new File(this.getPath() + "/" + name);
-		boolean hidden = isHidden(f);
+		boolean hidden = isHiddenFilename(f.getName());
 		FileUtil.rmdir(f);
 		if( !hidden ) Toucher.touch( this, System.currentTimeMillis(), true, false );
 	}

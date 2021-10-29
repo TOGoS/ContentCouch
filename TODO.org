@@ -1,0 +1,12 @@
+** CCouch TODO
+
+Well, I don't like the whole Request thing around which this whole project is built,
+so I don't want to put anything major in here,
+since I would prefer to put that energy into a less crufty codebase.
+
+But there may be some easy clean-up things.
+
+- [ ] Move source into src/main/java, src/test/java, etc.
+  - This will give a space for non-Java test data, etc.
+- [ ] Unit tests for .ccouchignore stuff
+  - Test vectors in src/test-data/...

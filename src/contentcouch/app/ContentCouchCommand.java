@@ -59,6 +59,7 @@ import contentcouch.value.BaseRef;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
+import contentcouch.Versions;
 
 public class ContentCouchCommand {
 	protected MetaRepoConfig metaRepoConfig = new MetaRepoConfig();
@@ -397,7 +398,10 @@ public class ContentCouchCommand {
 			// Special actions
 			} else if( "-dump-config".equals(arg) ) {
 				this.shouldDumpConfig = true;
-
+			
+			} else if( "-version".equals(arg) || "--version".equals(arg) ) {
+				System.out.println("ContentCouch "+contentcouch.Versions.CCOUCH_VERSION);
+			
 			} else if( arg.startsWith("-v") ) {
 				String logLevelStr = arg.substring(2);
 				if( logLevelStr.length() == 0 ) {
