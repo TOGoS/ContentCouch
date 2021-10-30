@@ -1,0 +1,44 @@
+{
+	"@context": {
+		"entries": {
+			"@id": "http://ns.nuke24.net/ContentCouch/entries",
+			"@container": "@list"
+		},
+		"name": "http://ns.nuke24.net/ContentCouch/name",
+		"target": "http://ns.nuke24.net/ContentCouch/target",
+		"modified": "http://ns.nuke24.net/ContentCouch/modified",
+		"DirectoryEntry": "http://ns.nuke24.net/ContentCouch/DirectoryEntry"
+	},
+	"@type": "http://ns.nuke24.net/ContentCouch/Directory",
+	"entries": [
+		{
+			"@type": "DirectoryEntry",
+			"name": "A Subdirectory",
+			"target": {
+				"@type": "http://ns.nuke24.net/ContentCouch/Directory",
+				"@id": "x-rdf-subject:urn:bitprint:QMWRICSFPENL7HRTRGC7DA5VZIREYVTG.Z5OAUTQ6R5CYY3KTVIXHELUS5RHENFMC3BLR3ZQ"
+			}
+		},
+		{
+			"@type": "DirectoryEntry",
+			"name": "Josh.jpg",
+			"target": {
+				"@type": "http://ns.nuke24.net/ContentCouch/Blob",
+				"@id": "urn:bitprint:FQMXI25FR6BDDL4VCXH3S354FXBQFNWO.D5XJH6LABGRW7STOBRYID7KIQUUQWFHFS4BBCLY",
+				"fileLength": 3109320
+			},
+			"modified": "2014-01-03 16:52:24 GMT"
+		},
+		{
+			"@type": "DirectoryEntry",
+			"name": "puppy.jpg",
+			"target": {
+				"@type": "http://ns.nuke24.net/ContentCouch/Blob",
+				"@id": "urn:bitprint:RMMC6UCNGQHOVMDWUYLIYZ74CAQXDYPK.XV3RIKWP66GYUN7TWWPKH2DSOYUHSXP5QDLPE4A",
+				"fileLength": 315764
+			},
+			"modified": "2014-05-26 01:31:48 GMT",
+			"comment": "OMG cute dog!"
+		}
+	]
+}

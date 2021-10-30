@@ -9,6 +9,10 @@ which provides a conventional way to map JSON-encoded objects to RDF.
 If I decide to make JSON representations of objects,
 I should make sure the representation I choose is compatible with JSON-LD.
 
+You can use [the JSON-LD playground](https://json-ld.org/playground/)
+or [RDFLib](https://github.com/RDFLib/rdflib) (a python library)
+or maybe [JSON-LD lint](https://github.com/mattrglobal/jsonld-lint) (haven't tested) to validate.
+
 
 # Proposal for a simplified RDF serialization format for encoding directories and commits based on JSON
 

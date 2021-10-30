@@ -1,0 +1,10 @@
+<Directory xmlns="http://ns.nuke24.net/ContentCouch/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+	<entries rdf:parseType="Collection">
+		<DirectoryEntry>
+			<name>QCAD</name>
+			<target>
+				<Directory rdf:about="x-rdf-subject:urn:bitprint:KK5JFVRIULKIMY3SRXUA5GXF4G6COCOZ.MOAEITOWRE235XX3FRWC25OEIWFQRACQORBB4KY"/>
+			</target>
+		</DirectoryEntry>
+	</entries>
+</Directory>

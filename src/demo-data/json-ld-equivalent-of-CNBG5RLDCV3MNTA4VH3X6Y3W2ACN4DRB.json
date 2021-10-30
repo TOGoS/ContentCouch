@@ -1,0 +1,15 @@
+{
+	"@type": "http://ns.nuke24.net/ContentCouch/Directory",
+	"http://ns.nuke24.net/ContentCouch/entries": {
+		"@list": [
+			{
+				"@type": "http://ns.nuke24.net/ContentCouch/DirectoryEntry",
+				"http://ns.nuke24.net/ContentCouch/name": "QCAD",
+				"http://ns.nuke24.net/ContentCouch/target": {
+					"@id": "x-rdf-subject:urn:bitprint:KK5JFVRIULKIMY3SRXUA5GXF4G6COCOZ.MOAEITOWRE235XX3FRWC25OEIWFQRACQORBB4KY",
+					"@type": "http://ns.nuke24.net/ContentCouch/Directory"
+				}
+			}
+		]
+	}
+}
