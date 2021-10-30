@@ -1,4 +1,4 @@
-** CCouch TODO
+#+TITLE: ContentCouch TODO list
 
 Well, I don't like the whole Request thing around which this whole project is built,
 so I don't want to put anything major in here,
@@ -6,8 +6,268 @@ since I would prefer to put that energy into a less crufty codebase.
 
 But there may be some easy clean-up things.
 
-- [ ] Move source into src/main/java, src/test/java, etc.
-  - This will give a space for non-Java test data, etc.
 - [ ] Unit tests for .ccouchignore stuff
   - Test vectors in src/test-data/...
 - [ ] As of 1.5.1, looks like commit blobs still lack a newline.  Fix that.
+
+** Older, maybe obsolete TODO items
+
+- [ ] FSIO: Better define FS import/export operations
+  - Unit tests before implementing, plz
+
+- [ ] Implement 'merge' command
+  apply changes between specific trees: ccouch merge <from> <to> <dest>
+  apply changes from common ancestor: ccouch merge <to> <dest>
+    (dest must contain .ccouch-commit-uri file)
+  - dependent on FSIO
+
+- [ ] Get rid of RdfDirectory.TargetRdfifier
+  - Replace with explicit function in MetaRepository to create RdfDirectories
+    - Use from MetaRepository from id/store methods
+    - Needs to understand .ccouch-uri file
+    - Should have options to ignore dot files and hidden files
+      so that this functionality isn't only in FileDirectory.
+  - dependent on FSIO
+
+[De]fleshing:
+  - Support filexxx.ccouch-de files containing
+    <DirectoryEntry>...</DirectoryEntry>
+    in place of actual file.
+  
+  - Option to 'checkout' to create .ccouch-de files for blobs over a certain
+    size
+  
+  - 'reflesh <max-bytes>' command to change max-flesh on a checked-out
+    directory (convert between .ccouch-de files and actual blobs)
+
+  - Commands 'fleshtree' and 'defleshtree' to replace a directory tree
+    with a single directory with only a .ccouch-uri file.
+  
+  - '-max-flesh <bytes>' option to 'checkout', 'copy', and 'fleshtree'
+  
+  - dependent on FSIO
+
+- [ ] Merge changed text files by patching: 
+  http://code.google.com/p/google-diff-match-patch/
+  
+  - dependent on FSIO
+
+- [ ] During caching or checkout, I got this error:
+  Exception in thread "main" java.lang.RuntimeException: Can't merge blobs
+  K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42 into K2MHVMOSX72ANWPNHGR7UBF3NR6BOM42;
+  file merge method = Fail
+  - Cause: blob in repository was corrupted!
+  - Run 'ccouch check' to clean up corrupted blobs, then run cache again.
+    Hopefully a non-corrupt version of the blob is available!
+
+- [ ] 'ccouch store', reports URIs of stored files with slashes escaped.
+- [ ] 'ccouch store' shows all mappings (directory entries), even without -v
+- [ ] 'ccouch store' should accept '-sector' as alias for '-store-sector'
+
+- [ ] Run web servlet in JVM sandbox to ensure bugs in application-level
+  authentication do not allow arbitrary actions by web server.
+
+- [ ] Allow 'pushing' heads and data to remote repos
+   HTTP method:
+    - Push data blobs with SHA-1 - self validation - go into 'untrusted' datastore
+    - Push GPG-signed commits or metadata files - server validates and puts in 'trusted' datastore
+   SSH method: Multiplexed HTTP over SSH?  SPDY over SSH?
+    - Treat the same as /raw requests to the servlet
+    - Add 'userGroups' request metadata containing set of authorizations
+      'anonymous','local-user',etc - could define customer users/groups in the future
+    - Add 'permissions' request metadata containing set of actions
+      user is allowed to do.
+      'write-files', 'read-files', 'add-blobs', 'read-blobs', 'add-heads', etc
+      - This header is determined based on settings and userGroups
+    - File modification requests (usu. POST/PUT)
+      forbidden except for 'local-user' by default.
+      Controlled requests (i.e., issued by a subsystem) may add additional permissions
+   Freenet method:
+    - Allow pushing to freenet-based repos?
+
+- [ ] Handle x-rdfified URIs, since that could be useful.
+
+- [ ] Data format overhaul
+  - Should still support old formats!
+    - options to force writing in old or new format
+    - default to old if sufficient for representing object and if
+      identical RDF blob exists
+    - Unit tests fr1st, plz 
+  - x-parse-rdf: -> x-rdf-subject:
+  - RdfNodes should not be same object as subject
+    - Something like RdfConversion.getRdfSubject( RdfNode ... )
+    - RdfNodes are also refs
+      - e.g., the following would be equivalent:
+        <prop rdf:resource="http://blah"/>
+        <prop><rdf:Description rdf:about="http://blah"/></prop>
+      - would more easily allow metadata in directory entries
+  - new directory entry format:
+    - removes need for 'targetType', 'targetSize' nonsense
+    - modification time is still a property of the entry, not the target
+    - e.g.
+      #+BEGIN_EXAMPLE
+      <DirectoryEntry>
+        <name>a place</name>
+        <target>
+          <Directory rdf:about="x-rdf-subject:..."/>
+        </target>
+      </DirectoryEntry>
+      <DirectoryEntry>
+        <name>a thing</name>
+        <dc:modified>2010-01-15 18:51:38 GMT</dc:modified>
+        <target>
+          <Blob rdf:about="urn:sha1:...">
+            <dc:size>12345</dc:size>
+            <!-- Normally format would not be included, but this shows how -->
+            <!-- arbitrary metadata about the target could be stored here. -->
+            <dc:format>text/awsum</dc:format>
+          </Blob>
+        </target>
+      </DirectoryEntry>
+      #+END_EXAMPLE
+
+- [ ] Allow different content-addressing schemes to be specified for a repository.
+  - One repository should be able to use different schemes at different times.
+  - Probably use separate hash cache files for separate schemes. 
+
+- [ ] Option to skip caching of directories that have already been marked as
+  having their content fully cached.
+
+- [ ] 'store' does not add an updated commit to heads/ when the parent commit
+  (even if not in heads/) would have the same target.
+  - Use separate checks for 'create new commit' (only when target differs
+    from parent's), and 'store updated commit' (only when previous commit
+    in heads/ has different target).
+
+- [ ] Implement changeset merging, 'update' command
+  - CommitUtil.findCommonAncestor( Commit a, Commit b )
+  - CommitUtil.getChangesBetween( Commit old, Commit new )
+  - CommitUtil.applyChanges( changes, WritableDirectoryEntry )
+    - Since a commit target may be a single file, we need to be
+      able to have the the root entry replace itself.
+  - CommitUtil.update( WritableDirectory, Commit current, Commit new )
+
+- [ ] 'check' does not default properly, or it doesn't actually use URIs, only
+  working when given a filesystem path.  It should probably be able to run
+  using arbitrary URIs.
+
+- [ ] RDFify should have option to use alternate RDF writing method for large documents
+  - RDFDirectory objects would not be created - data would be serialized more directly
+  - Would write standard namespaces out first
+  - Non-standard namespace declarations would be included as needed
+  - Would write one element at a time to a stream - no need for buffering 
+
+- [ ] Metadata stores
+  - Any number of metadata stores (similar to how data/ is divided into user-specified 'sectors')
+  - Probably backed by lucene
+  - Active function to return a list of metadata items from a query
+    (has tag X, date < Y, get only the latest 10, sorted by date descending, etc)
+  - Active function to create directory from a list of metadata items,
+    generating entry targets, names, and modification times based on
+    the metadata.
+  - Sub-command to import metadata into datastore from RDF files
+  - Sub-command to export metadata as RDF based on a query
+  - Allow metadata 'documents' to be signed?  Metadata may then be able to take the place of 'heads'.
+
+- [ ] Allow pushing to remote repositories over HTTP
+  - Service to take a list of URIs and return those of blobs not present on the server
+  - On web server, option to allow validated blobs to be pushed to certain sectors
+    - Require SHA-1 to be passed in, and blob must match
+    - Option to only allow RDF blobs in certain sectors
+    - Only allow from [certain] authenticated users
+  - POST .../missing-blob-list with \n-separated urn:sha1:... content
+  - PUT .../data/<sector>;uri=urn:sha1:...
+
+- [ ] RdfNodes ought to read relative URIs as relative to the node's source URI.
+  - I don't think I ever did this.
+  - This is very low priority, since all RDF docs currently used only contain absolute URIs.
+
+** Done
+
+- [X] Fix path decoding in HTTP servlet
+  (HttpServletRequest#getPathInfo decoded %XXes, which I do not want)
+  - Now only need to encode path components *once*
+
+- [X] Replace use of context and config vars with request metadata 
+
+- [X] More friendly URL formats recognised by web interface:
+  /<output-style>?uri=<uri>[&name=<nice-name>][&path=<uriencoded(root-uri)>/<path>/<path>/<nice-name>]
+  /<output-style>/<repo-name>/[<path>[/<path>[/...]]]
+  /<output-style>/<blob-uri>[/<user-friendly-filename>]
+  /<output-style>/<dir-uri>/[<user-friendly-dirnamename>[/<path>]]
+  /<output-style>/<commit-uri>/[<user-friendly-commitname>/target[/<path>]]
+  
+  All <path parts> must be uri encoded.
+  
+  Paths to directory objects must end with '/', or else we need to be
+  very careful to ensure that links to subdirs follow the above formats.
+  
+  Note that commits are treated as directories with the single entry 'target'
+  referring to the commit target.
+  
+- [X] Update documentation
+  - Help given by ccouch id <invalid option> is wrong
+  - README is out of date
+  - doc/ is full of outdated stuff
+    (deleted!  Also moved inline documentation into text files)
+
+- [X] Use internal data for imaging tests, not that bunny .jpg on nuke24.net
+
+- [X] Seems paths being reported by 'store' are still not quite right
+  (missing parts between given path and last segment?)
+  #+BEGIN_EXAMPLE
+	put x-rdfified:file:./01 file:///home/tog/datastore/ccouch/data/user/D6/D6TUSFTYCUWE4WRJCPKMHWOQAAMY6XKS
+	put x-rdfified:file:./2007 file:///home/tog/datastore/ccouch/data/user/RX/RXUIHNFTEBHF3RUMZ4AI7RW3EV2PVIZZ
+	put x-rdfified:file:./08 file:///home/tog/datastore/ccouch/data/user/BS/BSTBMRATPJA6LU2YKUCOUMBOUJU2WIAK
+	put x-rdfified:file:./2008 file:///home/tog/datastore/ccouch/data/user/34/34IQE6IGIPU6S4BFFXCLUZNHE744X26P
+	put x-rdfified:file:./ file:///home/tog/datastore/ccouch/data/user/BK/BKRCYIV4KBRRSQVE3W6EZS62SBYKLQL3
+  #+END_EXAMPLE
+  (fixed with a ", false", I think).
+
+- [X] Create functions to help make photo album pages
+  - Cache results of active functions in the datastore, remembering active:... -> urn:... mapping
+  - Function to create listing of photos referencing thumbnails
+    /process?processor=contentcouch.photoalbum.make-album-page&uri=x-parse-rdf:urn:sha1:OCJIRSUCWLZGHKM5DXHDYQDI5IU6VVTD
+
+- [X] Checkout causes a lot of x-undefined:source URIs to be reported; change to report actual source when possible.
+
+- [X] When comparing files for 'Strict' merge method (which is very useful!),
+  use cached content URNs when they are available (e.g. when source URI is
+  given or the blob is a FilbBlob and URNs are comparable).
+  This used to work but was never re-implemented on RRA branch.
+
+- [X] Remember the repository most recently successfuly downloaded from and
+  download from it first.
+
+- [X] Better logging infrastructure
+  - Don't show 'GET xxx' message unless logging for that is turned on 
+
+- [X] While caching heads, should store heads in cache datastore, not just heads dir
+
+- [X] When downloading blobs from remote repos, if one repo gives a bad blob, try the next repo instead of just dying.
+
+- [X] A single repository should be able to store separately:
+  - data/user   (what the user tells it to store)
+  - data/remote (blobs cached from remote repositories)
+  - data/active (cached function call results)
+  so that users don't have to set up 10 different repositories
+
+- [X] URIs stored in .ccouch-commit-uris should be like x-parse-rdf:urn:sha1:..., not like
+  x-parse-rdf:x-ccouch-head:togos-win/togos-image-archives/latest 
+
+- [X] Use TheGetter to get the generic getter.
+
+- [X] RequestHandlers as a more featurified alternative to Getters
+
+- [X] Centralize path handling
+  - Be able to create a URI to follow a path into any Directory
+  - appendPath('active:xyz', 'ferb/gerb') = 'active:follow-path+source@active:xyz+path@data:,ferb/gerb' 
+  - appendPath('foo/bar', 'ferb/gerb') = 'foo/bar/ferb/gerb'
+  - option to require '/' after last directory or not for path-based URIs
+
+- [X] 'ccouch checkout' with '-cache-sector' doesn't seem to work
+  (request metadata wasn't getting passed in correctly - threaded in through directory mergers
+  and addDirectoryEntry function, which seems a little bit ugly...) 
+
+- [X] Move source into src/main/java, src/test/java, etc.
+  - This will give a space for non-Java test data, etc.
