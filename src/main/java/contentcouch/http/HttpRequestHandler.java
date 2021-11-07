@@ -76,9 +76,15 @@ public class HttpRequestHandler extends BaseRequestHandler {
 		} catch( FileNotFoundException e ) {
 			return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, "File not found: " + req.getResourceName(), "text/plain");
 		} catch( IOException e ) {
-			e.printStackTrace();  // eh
-			String mess = "I/O error reading " + req.getResourceName();
-			Log.log(Log.EVENT_WARNING, mess);
+			String mess = "I/O error reading " + req.getResourceName() + ": " + e.getMessage();
+			if( e.getMessage().startsWith("Server returned HTTP response code: 403") ) {
+				// Maybe worth noting, though in many cases this is expected
+				Log.log(Log.EVENT_WARNING, mess);
+			} else {
+				// Anything else, print out.  Maybe I'll add another rule to ignore it, later.
+				e.printStackTrace();
+				Log.log(Log.EVENT_WARNING, mess);
+			}
 			return new BaseResponse(ResponseCodes.DOES_NOT_EXIST, mess, "text/plain");
 		}
 	}
