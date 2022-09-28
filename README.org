@@ -29,10 +29,9 @@ which is RDF+XML encoded as "[[http://picture-files.nuke24.net/uri-res/raw/urn:b
 *** RDF Schema Documentation
 
 - ~http://ns.nuke24.net/ContentCouch/~ - the primary namespace
-- ~http://ns.nuke24.net/ContentCouch/Blob~ - a finite byte squence, the content of a file.
+- ~http://ns.nuke24.net/ContentCouch/Blob~ - a finite byte squence, i.e. the contents of a file
   - ~http://bitzi.com/xmlns/2002/01/bz-core#fileLength~ - the length of the blob, in bytes
-- ~http://ns.nuke24.net/ContentCouch/Commit~ - a commit object; can point to a target and any number of parent commits.
-  Attributes:
+- ~http://ns.nuke24.net/ContentCouch/Commit~ - a commit object; can point to a target and any number of parent commits
   - ~http://ns.nuke24.net/ContentCouch/description~ - commit message
   - ~http://ns.nuke24.net/ContentCouch/parent~ - a parent commit, corresponding to
     a state of the thing being versioned from which this state was derived.
@@ -41,14 +40,15 @@ which is RDF+XML encoded as "[[http://picture-files.nuke24.net/uri-res/raw/urn:b
     you just have multiple attribute values).
   - ~http://ns.nuke24.net/ContentCouch/target~ - the target of the commit, usually but not necessarily a directory;
     a snapshot of the 'thing being versioned'.  Usually provided as a reference.
-  - ~http://ns.nuke24.net/ContentCouch/targetType~ - deprecated indicator of what is to be found at the target, "Blob" or "Directory"
+  - ~http://ns.nuke24.net/ContentCouch/targetType~ - (deprecated) indicator of what is to be found at the target, "Blob" or "Directory"
   - ~http://purl.org/dc/terms/created~ - creation date of the commit (e.g. "2009-02-25 14:40:39")
   - ~http://purl.org/dc/terms/creator~ - name of the author (e.g. "Fred Q")
 - ~http://ns.nuke24.net/ContentCouch/Directory~ - a directory
   - ~http://ns.nuke24.net/ContentCouch/entries~ - the list of ~DirectoryEntry~ objects
-- ~http://ns.nuke24.net/ContentCouch/DirectoryEntry~ - a directory
+- ~http://ns.nuke24.net/ContentCouch/DirectoryEntry~ - a directory entry
   - ~http://ns.nuke24.net/ContentCouch/name~ - directory entry name, i.e. filename of contained file or subdirectory
   - ~http://ns.nuke24.net/ContentCouch/target~ - content of the directory entry; probably a ~Directory~ or ~Blob~
+  - ~http://ns.nuke24.net/ContentCouch/targetType~ - (deprecated) indicator of what is to be found at the target, "Blob" or "Directory"
   - ~http://purl.org/dc/terms/modified~ - modification time of the file; may be omitted
 
 *** Examples
@@ -113,6 +113,7 @@ Note: DirectoryEntry target attributes, when represented in RDF+XML, may link di
 The latter is redundant, but provides potentially useful information about the target,
 which may be very large, so that it can be considered without having to actually
 download the linked object.
+The deprecated ~targetType~ attribute served this same role for type information in a hackier way.
 
 TODO: Example of a commit object
 
