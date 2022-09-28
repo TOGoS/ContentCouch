@@ -3,6 +3,10 @@
 ContentCouch is a Git-like system designed to store snapshots of files and directories
 for backup/synchronization/sharing purposes.
 
+The model is based on RDF, and is thereby somewhat agnostic to specific data formats
+and URI schemes.  This implementation uses RDF+XML for serializing objects
+and bitprint URIs for referencing blobs.
+
 ** Data model
 
 Like Git, the data model consists of a graph of blobs, trees, and commits, and objects are referenced by hash.
