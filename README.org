@@ -28,11 +28,93 @@ which is RDF+XML encoded as "[[http://picture-files.nuke24.net/uri-res/raw/urn:b
 
 *** RDF Schema Documentation
 
-I suppose this is a thing that should exist, huh?
+- ~http://ns.nuke24.net/ContentCouch/~ - the primary namespace
+- ~http://ns.nuke24.net/ContentCouch/Blob~ - a finite byte squence, the content of a file.
+  - ~http://bitzi.com/xmlns/2002/01/bz-core#fileLength~ - the length of the blob, in bytes
+- ~http://ns.nuke24.net/ContentCouch/Commit~ - a commit object; can point to a target and any number of parent commits.
+  Attributes:
+  - ~http://ns.nuke24.net/ContentCouch/description~ - commit message
+  - ~http://ns.nuke24.net/ContentCouch/parent~ - a parent commit, corresponding to
+    a state of the thing being versioned from which this state was derived.
+    More than one ~parent~ attribute may be present
+    (unlike directory entries, the set of parents is not modeled as a collection;
+    you just have multiple attribute values).
+  - ~http://ns.nuke24.net/ContentCouch/target~ - the target of the commit, usually but not necessarily a directory;
+    a snapshot of the 'thing being versioned'.  Usually provided as a reference.
+  - ~http://ns.nuke24.net/ContentCouch/targetType~ - deprecated indicator of what is to be found at the target, "Blob" or "Directory"
+  - ~http://purl.org/dc/terms/created~ - creation date of the commit (e.g. "2009-02-25 14:40:39")
+  - ~http://purl.org/dc/terms/creator~ - name of the author (e.g. "Fred Q")
+- ~http://ns.nuke24.net/ContentCouch/Directory~ - a directory
+  - ~http://ns.nuke24.net/ContentCouch/entries~ - the list of ~DirectoryEntry~ objects
+- ~http://ns.nuke24.net/ContentCouch/DirectoryEntry~ - a directory
+  - ~http://ns.nuke24.net/ContentCouch/name~ - directory entry name, i.e. filename of contained file or subdirectory
+  - ~http://ns.nuke24.net/ContentCouch/target~ - content of the directory entry; probably a ~Directory~ or ~Blob~
+  - ~http://purl.org/dc/terms/modified~ - modification time of the file; may be omitted
 
 *** Examples
 
-Another thing that would be good to have.
+~urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA~ ([[picture-files.nuke24.net/uri-res/browse/urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA/Mushroom.html][browseable link]])
+describes a directory containing two subdirectories:
+
+#+BEGIN_SRC xml
+<Directory xmlns="http://ns.nuke24.net/ContentCouch/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+	<entries rdf:parseType="Collection">
+		<DirectoryEntry>
+			<name>2009</name>
+			<target>
+				<Directory rdf:about="x-rdf-subject:urn:bitprint:UNYPOT6UW4GQCZH3ZNLWXEDK7ULMEF6Y.YKMAGQZNPTIHD2WYGRTZOO7KAFPOOPAY6R3XICA"/>
+			</target>
+		</DirectoryEntry>
+		<DirectoryEntry>
+			<name>2010</name>
+			<target>
+				<Directory rdf:about="x-rdf-subject:urn:bitprint:7YXK4RQGBCGT5NH6SU7GEWVV2TUMACFN.GA2FOEGTT7YLO6YTV46AHXRMEIVT4B5JVMHIPHQ"/>
+			</target>
+		</DirectoryEntry>
+	</entries>
+</Directory>
+#+END_SRC
+
+A subdirectory of the above, '[[http://picture-files.nuke24.net/uri-res/browse/urn:bitprint:UNYPOT6UW4GQCZH3ZNLWXEDK7ULMEF6Y.YKMAGQZNPTIHD2WYGRTZOO7KAFPOOPAY6R3XICA/2009.html][2009]]', containing two JPEG files:
+
+#+BEGIN_SRC xml
+<Directory xmlns="http://ns.nuke24.net/ContentCouch/" xmlns:bz="http://bitzi.com/xmlns/2002/01/bz-core#" xmlns:dc="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+	<entries rdf:parseType="Collection">
+		<DirectoryEntry>
+			<name>0817-IMG_0233.JPG</name>
+			<target>
+				<Blob rdf:about="urn:bitprint:RO5JL2GVCACEG7MGIK4JATPB6RTWCLFC.INYA5BK64TKIB2B7FEXWBVD56H55FL3ZLF3TGGY">
+					<bz:fileLength>797878</bz:fileLength>
+				</Blob>
+			</target>
+			<dc:modified>2009-08-17 14:45:01 GMT</dc:modified>
+		</DirectoryEntry>
+		<DirectoryEntry>
+			<name>0817-IMG_0236.JPG</name>
+			<target>
+				<Blob rdf:about="urn:bitprint:EQLJSS4FNM4NATV4CZDOISF7YMAVPPWL.GFKPQM5ZQ5FLZRX77PMTBI4RWG4H547MU4JW4OA">
+					<bz:fileLength>651881</bz:fileLength>
+				</Blob>
+			</target>
+			<dc:modified>2009-08-17 14:45:52 GMT</dc:modified>
+		</DirectoryEntry>
+	</entries>
+</Directory>
+#+END_SRC
+
+Note: references to blobs can be made simply with a "urn:bitprint:" URI.
+References to objects described by blobs require the "x-rdf-subject:" prefix
+(in other situations I have simply appended "#" to mean the same thing;
+see my notes on the subject in '[[http://www.nuke24.net/docs/2015/HashURNs.html][Existing standards for hash-based URN schemes]]').
+
+Note: DirectoryEntry target attributes, when represented in RDF+XML, may link directly to the target
+(~<target rdf:resource="urn:WHATEVER"/>~) or provide some metadata
+(~<target><Blob rdf:about="urn:WHATEVER"><bz:fileLength>1234</bz:fileLength></Blob></target>~).
+The latter is redundant, but provides potentially useful information about the target,
+which may be very large, so that it can be considered without having to actually
+download the linked object.
+
+TODO: Example of a commit object
 
 ** Implementation(s)
 
