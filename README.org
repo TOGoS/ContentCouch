@@ -1,0 +1,54 @@
+#+TITLE: ContentCouch README
+
+ContentCouch is a Git-like system designed to store snapshots of files and directories
+for backup/synchronization/sharing purposes.
+
+** Data model
+
+Like Git, the data model consists of a graph of blobs, trees, and commits, and objects are referenced by hash.
+
+Unlike Git:
+- Blobs are stored internally as themselves, optionally by hardlinking
+  - Good for storing large media files, since data can be deduplicated at the filesystem level
+  - Hash of the file = the object ID
+  - Contrast to Git, which adds a small object type + length header, messing up your hashes
+- Data structures are serialized as RDF+XML
+  - Easy to inspect or author with a text editor
+  - Can be extended with arbitrary metadata as desired
+- Objects are referenced by URI
+  - So different URI schemes may be used
+
+To differentiate between a blob and the serialization of a non-blob data structure
+(e.g. the serialization of a ~Directory~ object), URIs of abstract concepts
+are made by prepended "x-rdf-subject:" to the URI of the object's serialized form.
+
+e.g. the URI "x-rdf-subject:urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA"
+refers to a directory containing two subdirectories,
+which is RDF+XML encoded as "[[http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA/Mushroom.html][urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA]]".
+
+*** RDF Schema Documentation
+
+I suppose this is a thing that should exist, huh?
+
+*** Examples
+
+Another thing that would be good to have.
+
+** Implementation(s)
+
+This repository contains the original, still-in-use but not-actively-maintained Java implementation of the system.
+It was created in 2007 targetting JDK 1.4.
+In 2008 I rearchitected the project using a 'resource-oriented' approach.
+Components communicate by making lightweight (no network sockets are involved) REST calls to each other.
+This provides some flexibility and uniformity between internal and external APIs,
+but resulted in logic for anything other than very basic GET/PUT blob calls
+being in kind of weird places, and important information being crammed into Request and Response metadata.
+Lesson learned: it's probably best to keep your functions simple and the call tree shallow.
+
+See also:
+- https://github.com/TOGoS/ContentCouchRepositoryFormat
+- https://github.com/TOGoS/ContentCouch3
+
+** Old documentation
+
+[[./doc/old-README.txt]]
