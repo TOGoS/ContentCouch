@@ -3,9 +3,8 @@
 ContentCouch is a Git-like system designed to store snapshots of files and directories
 for backup/synchronization/sharing purposes.
 
-The model is based on RDF, and is thereby somewhat agnostic to specific data formats
-and URI schemes.  This implementation uses RDF+XML for serializing objects
-and bitprint URIs for referencing blobs.
+The model is based on RDF, and is thereby somewhat agnostic to specific data formats and URI schemes.
+This implementation uses RDF+XML for serializing objects and bitprint URIs for referencing blobs.
 
 ** Data model
 
@@ -23,8 +22,8 @@ Unlike Git:
   - So different URI schemes may be used
 
 To differentiate between a blob and the serialization of a non-blob data structure
-(e.g. the serialization of a ~Directory~ object), URIs of abstract concepts
-are made by prepended "x-rdf-subject:" to the URI of the object's serialized form.
+(e.g. the serialization of a ~Directory~ object),
+URIs of abstract concepts are made by prepending "x-rdf-subject:" to the URI of the object's serialized form.
 
 e.g. the URI "x-rdf-subject:urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA"
 refers to a directory containing two subdirectories,
