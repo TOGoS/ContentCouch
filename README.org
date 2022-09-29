@@ -113,9 +113,11 @@ see my notes on the subject in '[[http://www.nuke24.net/docs/2015/HashURNs.html]
 Note: DirectoryEntry target attributes, when represented in RDF+XML, may link directly to the target
 (~<target rdf:resource="urn:WHATEVER"/>~) or provide some metadata
 (~<target><Blob rdf:about="urn:WHATEVER"><bz:fileLength>1234</bz:fileLength></Blob></target>~).
-The latter is redundant, but provides potentially useful information about the target,
-which may be very large, so that it can be considered without having to actually
-download the linked object.
+The latter is redundant, but provides potentially useful information about the target
+so that it can be considered without having to actually download the linked object,
+which may be large or unavailable.
+e.g. to show a directory listing, one generally would like to see subdirectoriers listed
+differently than files, and for files to at least have their size shown.
 The deprecated ~targetType~ attribute served this same role for type information in a hackier way.
 
 TODO: Example of a commit object
