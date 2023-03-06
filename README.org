@@ -56,7 +56,7 @@ which is RDF+XML encoded as "[[http://picture-files.nuke24.net/uri-res/raw/urn:b
 
 *** Examples
 
-~urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA~ ([[picture-files.nuke24.net/uri-res/browse/urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA/Mushroom.html][browseable link]])
+~urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA~ ([[http://picture-files.nuke24.net/uri-res/browse/urn:bitprint:7ZI4YNKSIYB3OZGVLAUYBBQ4YQZDS5BK.L4LVKJV4XBF7MSXVP7FXLCFN6PXGYKMYERATYQA/Mushroom.html][browseable link]])
 describes a directory containing two subdirectories:
 
 #+BEGIN_SRC xml
