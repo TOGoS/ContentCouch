@@ -2,25 +2,25 @@
 Version: 1.6.4
 JAR: urn:bitprint:GBHPQ6L57CS6EGM2DES5B4QRRDYBX44F.SEIK6HERPX6ZJRUIONGNBP7J2SQVYCQWPINOETA
 Date: 2023-07-18
-  Changes:
-    - No more default 'junk-repository'
-      - `-repo` must be specified for any command that requires a repository,
-        which for now includes `id`
-    - Refactor repository configuration; more `final` and immediate initialization, less mutation
-    - Remove global context - the thread local one must always be set
-    - Minor changes for JDK1.4 compatibility
-  Bugs:
-    - A few unit tests are failing, but they were failing in 1.5.2, also
+Changes:
+  - No more default 'junk-repository'
+    - `-repo` must be specified for any command that requires a repository,
+      which for now includes `id`
+  - Refactor repository configuration; more `final` and immediate initialization, less mutation
+  - Remove global context - the thread local one must always be set
+  - Minor changes for JDK1.4 compatibility
+Bugs:
+  - A few unit tests are failing, but they were failing in 1.5.2, also
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 2021-11-07
-  Changes:
-    - Avoid spamming stderr with stacktraces due to HTTP 403s
+Changes:
+  - Avoid spamming stderr with stacktraces due to HTTP 403s
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.0
 Date: 2021-10-29
-  Features:
-    - Support .ccouchignore files
-  Notes:
-    - This is the first numbered version.  "1.5.0" was pulled out of thin air.
+Features:
+  - Support .ccouchignore files
+Notes:
+  - This is the first numbered version.  "1.5.0" was pulled out of thin air.
 ---------------------------------------------------------------------------------------------------
