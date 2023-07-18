@@ -197,4 +197,15 @@ public class UriUtil {
 	public static boolean isPureContentUri( String uri ) {
 		return CONTENT_URI_PATTERN.matcher(uri).matches();
 	}
+	
+	/**
+	 * Return a variation of the given URI that will resolve to directory objects.
+	 */
+	public static String directoryizeUri(String uri) {
+		if( !uri.endsWith("/") ) uri += "/";
+		if( uri.matches("^https?:.*") ) {
+			uri = "active:contentcouch.directoryize+operand@" + uriEncode(uri);
+		}
+		return uri;
+	}
 }

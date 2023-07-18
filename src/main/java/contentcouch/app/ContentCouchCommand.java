@@ -2,10 +2,10 @@
 package contentcouch.app;
 
 import java.io.BufferedReader;
-import java.io.OutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,11 +22,6 @@ import java.util.regex.Pattern;
 
 import org.bitpedia.util.Base32;
 
-import togos.mf.api.RequestVerbs;
-import togos.mf.api.Response;
-import togos.mf.api.ResponseCodes;
-import togos.mf.base.BaseRequest;
-import togos.mf.base.BaseResponse;
 import contentcouch.app.Linker.LinkException;
 import contentcouch.app.help.ContentCouchCommandHelp;
 import contentcouch.blob.Blob;
@@ -59,7 +54,11 @@ import contentcouch.value.BaseRef;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
-import contentcouch.Versions;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
+import togos.mf.base.BaseRequest;
+import togos.mf.base.BaseResponse;
 
 public class ContentCouchCommand {
 	protected MetaRepoConfig metaRepoConfig = new MetaRepoConfig();
@@ -82,12 +81,6 @@ public class ContentCouchCommand {
 	
 	protected String[] mergeConfiguredArgs( String commandName, String[] commandLineArgs ) {
 		return concat( metaRepoConfig.getCommandArgs(commandName), commandLineArgs );
-	}
-	
-	protected void initGlobalContext() {
-		if( metaRepoConfig != null ) {
-			Context.globalInstance.putAll(metaRepoConfig.config);
-		}
 	}
 	
 	Pattern DELTATIME_PATTERN = Pattern.compile("^(\\+|\\-)(\\d+)(\\w*)$");
@@ -1470,7 +1463,7 @@ public class ContentCouchCommand {
 			cmdArgs[j] = args[i];
 		}
 		
-		initGlobalContext();
+		Context.setThreadLocalInstance(metaRepoConfig.config);
 		
 		int errorCount = 0;
 		if( "help".equals(cmd) ) {

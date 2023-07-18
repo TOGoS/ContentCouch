@@ -38,7 +38,7 @@ public class Glob {
 		
 		String regex;
 		if( glob.startsWith("/") ) {
-			assert relativeTo != null;
+			if(relativeTo == null) throw new RuntimeException("Can't parse glob starting with '/' when relativeTo is null: "+glob);
 			regex = "^"+Pattern.quote(path(relativeTo)+"/");
 			glob = glob.substring(1);
 		} else {
@@ -83,11 +83,12 @@ public class Glob {
 	}
 	
 	public static boolean anyMatch( Glob g, File f ) {
-		return anyMatch(g, f, false);
+		return anyMatch(g, f, Boolean.FALSE).booleanValue();
 	}
 	
 	public static Glob load( File relativeTo, String[] lines, Glob next ) {
-		for( String line : lines ) {
+		for( int i=0; i<lines.length; ++i ) {
+			String line = lines[i];
 			line = line.trim();
 			if( line.startsWith("#") || line.isEmpty() ) continue;
 			next = Glob.parseGlobPattern(relativeTo, line, next);
@@ -97,11 +98,11 @@ public class Glob {
 	
 	public static Glob load( File f, Glob next ) throws IOException {
 		File relativeTo = f.getParentFile();
-		assert relativeTo != null;
+		if(relativeTo == null) throw new RuntimeException("Couldn't determine relativeTo from glob file: "+f);
 		
 		FileReader fr = new FileReader(f);
 		try {
-			@SuppressWarnings("resource")
+			//@SuppressWarnings("resource")
 			BufferedReader br = new BufferedReader(fr);
 			String line;
 			while( (line = br.readLine()) != null ) {

@@ -1,26 +1,19 @@
 package contentcouch.directory;
 
 import java.text.ParseException;
-import java.util.HashMap;
-import java.util.Map;
 
-import junit.framework.TestCase;
 import contentcouch.context.Context;
 import contentcouch.date.DateUtil;
 import contentcouch.rdf.CCouchNamespace;
 import contentcouch.rdf.RdfDirectory;
 import contentcouch.repository.MetaRepoConfig;
 import contentcouch.value.BaseRef;
+import junit.framework.TestCase;
 
 public class RdfDirectoryTest extends TestCase
 {
-	protected void initConfig( Map config ) {
-		MetaRepoConfig.initNewStyleConfig(config);
-	}
-	
 	public void setUp() {
-		initConfig( Context.globalInstance = new HashMap() );
-		Context.setThreadLocalInstance(null);
+		Context.setThreadLocalInstance(MetaRepoConfig.NEW_STYLE_CONFIG);
 	}
 	
 	protected static final String blobEntryString =

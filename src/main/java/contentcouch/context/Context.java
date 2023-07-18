@@ -1,11 +1,8 @@
 package contentcouch.context;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class Context {
-	public static Map globalInstance = new HashMap();
-	
 	protected static ThreadLocal threadLocalInstance = new ThreadLocal();
 	
 	/**
@@ -15,7 +12,7 @@ public class Context {
 	 */
 	public static Map getInstance() {
 		Map inst = (Map)threadLocalInstance.get();
-		if( inst == null ) inst = globalInstance;
+		if( inst == null ) throw new RuntimeException("No context configured on this thread!");
 		return inst;
 	}
 	

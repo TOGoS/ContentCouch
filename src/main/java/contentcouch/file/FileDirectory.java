@@ -27,7 +27,8 @@ class CCouchIgnoreCache {
 		return instance;
 	}
 	
-	Map<File,Glob> dirGlobCache = new HashMap<File,Glob>();
+	/** Map<File,Glob> */
+	Map dirGlobCache = new HashMap();
 
 	protected Glob readCCouchIgnore(File f, Glob next) throws IOException {
 		if( f == null || !f.exists() ) return next;
@@ -39,7 +40,7 @@ class CCouchIgnoreCache {
 		if( dir == null ) return null;
 
 		{
-			final Glob cached = this.dirGlobCache.get(dir);
+			final Glob cached = (Glob)this.dirGlobCache.get(dir);
 			if( cached != null ) return cached;
 		}
 		

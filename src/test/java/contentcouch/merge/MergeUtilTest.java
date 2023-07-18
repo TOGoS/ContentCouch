@@ -2,6 +2,7 @@ package contentcouch.merge;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -42,12 +43,12 @@ public class MergeUtilTest extends TestCase
 	protected static Blob someBlob = BlobUtil.getBlob("Hello, world!");
 	
 	MetaRepoConfig mrc;
-	RepoConfig testRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_LOCAL, "x-memtemp:/test-repo/", "test-repo");
+	RepoConfig testRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_DEFAULT, "test-repo", "x-memtemp:/test-repo/");
 	public void setUp() {
+		Context.setThreadLocalInstance(new HashMap());
 		mrc = new MetaRepoConfig();
 		TheGetter.globalInstance = mrc.getRequestKernel();
 		mrc.addRepoConfig(testRepoConfig);
-		Context.setThreadLocalInstance(null);
 	}
 	
 	protected Ref storeCommit(Commit c) {

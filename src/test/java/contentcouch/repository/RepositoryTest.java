@@ -34,9 +34,10 @@ import contentcouch.value.Ref;
 
 public class RepositoryTest extends TestCase {
 	MetaRepoConfig mrc;
-	RepoConfig testRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_DEFAULT, "x-memtemp:/test-repo/", "test-repo");
-	RepoConfig testRemoteRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_REMOTE, "x-memtemp:/test-remote-repo/", "test-remote-repo");
+	RepoConfig testRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_DEFAULT, "test-repo", "x-memtemp:/test-repo/");
+	RepoConfig testRemoteRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_REMOTE, "test-remote-repo", "x-memtemp:/test-remote-repo/");
 	public void setUp() {
+		Context.setThreadLocalInstance(new HashMap());
 		mrc = new MetaRepoConfig();
 		// Since there's no actual directory, SLF files don't work,
 		// and we need to override the cache thingy in order for tests
@@ -307,7 +308,7 @@ public class RepositoryTest extends TestCase {
 		if( !dirToIdentify.exists() ) dirToIdentify.mkdirs();
 		
 		MetaRepoConfig conf = new MetaRepoConfig();
-		conf.defaultRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_DEFAULT, "file:junk/test-repo/", "test");
+		conf.defaultRepoConfig = new RepoConfig(RepoConfig.DISPOSITION_DEFAULT, "test", "file:junk/test-repo/");
 		MetaRepository mr = new MetaRepository(conf);
 		
 		Map options = new HashMap();

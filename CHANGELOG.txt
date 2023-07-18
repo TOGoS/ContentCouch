@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.?
+Date: 2023-07-18
+  Changes:
+    - No more default 'junk-repository'
+    - Refactor repository configuration; more `final` and immediate initialization, less mutation
+    - Remove global context - the thread local one must always be set
+    - Minor changes for JDK1.4 compatibility
+  Bugs:
+    - A few unit tests are failing
+---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 2021-11-07
   Changes:

@@ -130,7 +130,11 @@ public class MetaRepository extends BaseRequestHandler {
 	protected Map fileHashCaches = new HashMap();
 	protected FileHashCache getFileHashCache( ContentAddressingScheme cas ) {
 		FileHashCache fileHashCache = (FileHashCache)fileHashCaches.get(cas.getSchemeShortName());
-		if( fileHashCache == null && config.defaultRepoConfig.directoryizedUri.startsWith("file:") ) {
+		if(
+			fileHashCache == null &&
+			config.defaultRepoConfig != null &&
+			config.defaultRepoConfig.directoryizedUri.startsWith("file:")
+		) {
 			String hashCachePath = PathUtil.parseFilePathOrUri(config.defaultRepoConfig.directoryizedUri + "cache/file-"+cas.getSchemeShortName()+".slf").toString();
 			File cacheFile = new File(hashCachePath);
 			fileHashCache = new FileHashCache(cacheFile, cas, "rw");

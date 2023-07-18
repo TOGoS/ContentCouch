@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +27,14 @@ import contentcouch.misc.MemTempRequestHandler;
 import contentcouch.misc.UriUtil;
 import contentcouch.path.PathUtil;
 import contentcouch.rdf.CCouchNamespace;
+import contentcouch.repository.RepoConfig.RepoConfigParseResult;
 import contentcouch.stream.InternalStreamRequestHandler;
 
 public class MetaRepoConfig {
 	public Map namedRepoConfigs = new HashMap();
 	public Map cmdArgs = new HashMap();
 	public Map config = new HashMap();
-	public RepoConfig defaultRepoConfig = new RepoConfig();
+	public RepoConfig defaultRepoConfig;
 	public List localRepoConfigs = new ArrayList();
 	public List remoteRepoConfigs = new ArrayList();
 	public List loadedFromConfigUris = new ArrayList();
@@ -76,8 +78,9 @@ public class MetaRepoConfig {
 	
 	public void addRepoConfig( RepoConfig rp ) {
 		if( rp.disposition == RepoConfig.DISPOSITION_DEFAULT ) {
-			if( rp.name != null ) defaultRepoConfig.name = rp.name;
-			if( rp.directoryizedUri != null ) defaultRepoConfig.directoryizedUri = rp.directoryizedUri;
+			defaultRepoConfig = rp;
+			//if( rp.name != null ) defaultRepoConfig.name = rp.name;
+			//if( rp.directoryizedUri != null ) defaultRepoConfig.directoryizedUri = rp.directoryizedUri;
 			String cfgUri = rp.directoryizedUri + "ccouch-config";
 
 			BaseRequest cfgRequest = new BaseRequest(RequestVerbs.GET, cfgUri);
@@ -104,33 +107,33 @@ public class MetaRepoConfig {
 		if( rp.name != null ) namedRepoConfigs.put(rp.name, rp);
 	}
 	
-	public static void initNewStyleConfig( Map config ) {
+	public static final Map NEW_STYLE_CONFIG;
+	static {
+		Map config = new HashMap();
 		config.put(CCouchNamespace.CFG_RDF_DIRECTORY_STYLE, CCouchNamespace.RDF_DIRECTORY_STYLE_NEW);
 		config.put(CCouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX, CCouchNamespace.RDF_SUBJECT_URI_PREFIX);
 		config.put(CCouchNamespace.CFG_ID_SCHEME, "bitprint");
+		NEW_STYLE_CONFIG = Collections.unmodifiableMap(config);
 	}
-
-	public static void initOldStyleConfig( Map config ) {
+	
+	public static final Map OLD_STYLE_CONFIG;
+	static {
+		Map config = new HashMap();
 		config.put(CCouchNamespace.CFG_RDF_DIRECTORY_STYLE, CCouchNamespace.RDF_DIRECTORY_STYLE_OLD);
 		config.put(CCouchNamespace.CFG_RDF_SUBJECT_URI_PREFIX, CCouchNamespace.RDF_SUBJECT_URI_PREFIX_OLD);
 		config.put(CCouchNamespace.CFG_ID_SCHEME, "sha1");
+		OLD_STYLE_CONFIG = Collections.unmodifiableMap(config);
 	}
 	
 	public int handleArguments( String[] args, int offset, String baseUri ) {
 		if( offset >= args.length ) return offset;
 		String arg = args[offset];
-		RepoConfig rp = RepoConfig.parse(arg);
-		if( rp != null ) {
-			++offset;
-			rp.rawUri = rp.directoryizedUri = PathUtil.maybeNormalizeFileUri(PathUtil.appendPath(baseUri, args[offset]));
-			if( !rp.directoryizedUri.endsWith("/") ) rp.directoryizedUri += "/";
-			if( rp.directoryizedUri.matches("^https?:.*") ) {
-				rp.directoryizedUri = "active:contentcouch.directoryize+operand@" + UriUtil.uriEncode(rp.directoryizedUri);
-			}
-			//System.err.println(basePath + " + " + args[offset] + " = " + path);
-			++offset;
-
-			addRepoConfig(rp);
+		RepoConfigParseResult rppr = RepoConfig.parse(args, offset, baseUri);
+		offset = rppr.offset;
+		if( rppr.parseError != null ) {
+			throw new RuntimeException(rppr.parseError+" (at offset "+offset+")");
+		} else if( rppr.repoConfig != null ) {
+			addRepoConfig(rppr.repoConfig);
 		} else if( "-linker".equals(arg) ) {
 			++offset;
 			String linkerName = args[offset];
@@ -158,11 +161,7 @@ public class MetaRepoConfig {
 				throw new RuntimeException(e);
 			}
 		} else if( "-repo-name".equals(arg) ) {
-			++offset;
-			String name = args[offset];
-			++offset;
-			defaultRepoConfig.name = name;
-			namedRepoConfigs.put(name, defaultRepoConfig);
+			throw new RuntimeException("`-repo-name` no longer supported");
 		} else if( "-config".equals(arg) ) {
 			++offset;
 			String key = args[offset];
@@ -171,10 +170,10 @@ public class MetaRepoConfig {
 			config.put(key, value);
 			++offset;
 		} else if( "-old-style".equals(arg) ) {
-			initOldStyleConfig(config);
+			config.putAll(OLD_STYLE_CONFIG);
 			++offset;
 		} else if( "-new-style".equals(arg) ) {
-			initNewStyleConfig(config);
+			config.putAll(NEW_STYLE_CONFIG);
 			++offset;
 		}
 		return offset;

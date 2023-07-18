@@ -14,13 +14,8 @@ import contentcouch.value.BaseRef;
 
 public class OldStyleRdfDirectoryTest extends TestCase
 {
-	protected void initConfig( Map config ) {
-		MetaRepoConfig.initOldStyleConfig(config);
-	}
-	
 	public void setUp() {
-		initConfig( Context.globalInstance = new HashMap() );
-		Context.setThreadLocalInstance(null);
+		Context.setThreadLocalInstance(MetaRepoConfig.OLD_STYLE_CONFIG);
 	}
 	
 	protected static final String blobEntryString =

@@ -1,8 +1,10 @@
 package contentcouch.rdf;
 
 import java.text.ParseException;
+import java.util.HashMap;
 
 import junit.framework.TestCase;
+import contentcouch.context.Context;
 import contentcouch.date.DateUtil;
 import contentcouch.framework.TheGetter;
 import contentcouch.misc.ValueUtil;
@@ -44,6 +46,7 @@ public class RdfInterpreterTest extends TestCase {
 		"</Directory>";
 
 	public void setUp() {
+		Context.setThreadLocalInstance(new HashMap());
 		TheGetter.globalInstance = TheGetter.getBasicCallable();
 	}
 	
