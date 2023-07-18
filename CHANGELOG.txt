@@ -1,13 +1,16 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.6.?
+Version: 1.6.4
+JAR: urn:bitprint:GBHPQ6L57CS6EGM2DES5B4QRRDYBX44F.SEIK6HERPX6ZJRUIONGNBP7J2SQVYCQWPINOETA
 Date: 2023-07-18
   Changes:
     - No more default 'junk-repository'
+      - `-repo` must be specified for any command that requires a repository,
+        which for now includes `id`
     - Refactor repository configuration; more `final` and immediate initialization, less mutation
     - Remove global context - the thread local one must always be set
     - Minor changes for JDK1.4 compatibility
   Bugs:
-    - A few unit tests are failing
+    - A few unit tests are failing, but they were failing in 1.5.2, also
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 2021-11-07

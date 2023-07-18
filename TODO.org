@@ -6,6 +6,8 @@ since I would prefer to put that energy into a less crufty codebase.
 
 But there may be some easy clean-up things.
 
+- [ ] Ensure that unit tests pass as part of build process
+- [ ] Fix whatever is causing SimpleListFileTest and RepositoryTest#testStoreSimpleDirectory to fail
 - [ ] Unit tests for .ccouchignore stuff
   - Test vectors in src/test-data/...
 - [ ] As of 1.5.1, looks like commit blobs still lack a newline.  Fix that.
@@ -271,3 +273,6 @@ But there may be some easy clean-up things.
 
 - [X] Move source into src/main/java, src/test/java, etc.
   - This will give a space for non-Java test data, etc.
+
+- [X] Do not create a repository by default
+  - 'junk-repo' appearing in random directories was a pain in the butt!
