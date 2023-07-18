@@ -8,5 +8,5 @@
 /test.unused
 /web/WEB-INF/classes
 /web/repo-config
-/ContentCouch.jar
+/ContentCouch*.jar
 *~

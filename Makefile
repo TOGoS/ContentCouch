@@ -1,8 +1,9 @@
-all: ContentCouch.jar.urn
+all: ContentCouch-dev.jar
 
 .DELETE_ON_ERROR:
 
-ContentCouch.jar: $(shell find src)
+ContentCouch-dev.jar: $(shell find src)
+	rm -f "$@" # Always remove whatever's there so we don't accidentally clobber an existing file
 	find src/main/java -name '*.java' >.src-files.lst
 	rm -rf web/WEB-INF/classes
 	mkdir -p web/WEB-INF/classes
@@ -13,7 +14,8 @@ ContentCouch.jar: $(shell find src)
 	cd jar && cp -a ../web/WEB-INF/classes/* . && unzip ../ext-lib/togos.mf-latest.jar
 	echo "Manifest-Version: 1.0" >jar/META-INF/MANIFEST.MF
 	echo "Main-Class: contentcouch.app.ContentCouchCommand" >>jar/META-INF/MANIFEST.MF
-	cd jar && zip -r - . >../ContentCouch.jar
+	cd jar && zip -r - . >../"$@"
+	chmod -w "$@"
 
-ContentCouch.jar.urn: ContentCouch.jar
-	java -jar ContentCouch.jar store -sector build ContentCouch.jar >"$@"
+ContentCouch-dev.jar.urn: ContentCouch-dev.jar
+	java -jar ContentCouch-dev.jar store -sector build ContentCouch.jar >"$@"
