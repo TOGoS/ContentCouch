@@ -1419,6 +1419,8 @@ public class ContentCouchCommand {
 	}
 	
 	public int run( String[] args ) {
+		if( Context.getInstance() == null) throw new RuntimeException("Please set Context thread local instance");
+		
 		initializeGetter();
 		
 		if( args.length == 0 ) {
@@ -1517,6 +1519,7 @@ public class ContentCouchCommand {
 	}
 	
 	public static void main( String[] args ) {
+		Context.setThreadLocalInstance(new HashMap());
 		int errorCount = new ContentCouchCommand().run( args );
 		if( errorCount > 0 ) {
 			System.err.println(errorCount + " errors occured");
