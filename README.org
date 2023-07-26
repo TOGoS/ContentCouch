@@ -1,10 +1,14 @@
-#+TITLE: ContentCouch README
+#+TITLE: ContentCouch
 
 ContentCouch is a Git-like system designed to store snapshots of files and directories
 for backup/synchronization/sharing purposes.
 
 The model is based on RDF, and is thereby somewhat agnostic to specific data formats and URI schemes.
 This implementation uses RDF+XML for serializing objects and bitprint URIs for referencing blobs.
+
+The URI schemes and serialization formats are common to several projects.
+See [[https://github.com/TOGoS/ContentCouchRepositoryFormat]] for a more formal specification
+of the on-disk repository format.
 
 ** Data model
 
@@ -135,7 +139,8 @@ Lesson learned: it's probably best to keep your functions simple and the call tr
 
 See also:
 - https://github.com/TOGoS/ContentCouchRepositoryFormat
-- https://github.com/TOGoS/ContentCouch3
+- [[https://github.com/TOGoS/ContentCouch3]]
+- [[https://github.com/TOGoS/PicGrid]]
 
 ** Old documentation
 
