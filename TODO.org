@@ -6,19 +6,29 @@ since I would prefer to put that energy into a less crufty codebase.
 
 But there may be some easy clean-up things.
 
-- [ ] Ensure that unit tests pass as part of build process
-- [ ] Fix whatever is causing SimpleListFileTest and RepositoryTest#testStoreSimpleDirectory to fail
-- [ ] Unit tests for .ccouchignore stuff
-  - Test vectors in src/test-data/...
-- [ ] As of 1.5.1, looks like commit blobs still lack a newline.  Fix that.
-- [ ] ~contentcouch.activefunction.Directoryize~ (combined with the other functions it uses) is somewhat broken
-  in that generated URIs of sub-items are not properly escaped;
-  ~"active:foo+bar@baz/"+quux~ isn't going to work right unless ~quux~ just /happens/
-  to have the right level of escaping applied to it, which it will in simple cases,
-  but not in the case of, for example,
-  ~active:contentcouch.directoryize+operand@http%3A%2F%2Ffs.marvin.nuke24.net%2F~tog%2Fccouch%2Fheads%2Fwsitem-3306.1%2Fbackup%2F2023%2FWSITEM-3323.1%2FUsers%2Fmom%2FDocuments%2FPhoto%20Archive%2F~
-  (I suspect this doesn't work because that "%20" should have been escaped again, but wasn't,
-  since the relative URI parsed from an HTML page was just blindly appended to an ~active:~ URI).
+** TODO Fix: ~java.lang.RuntimeException: config should be followed by a URI argument~
+
+No it shouldn't!
+
+** TODO Ensure that unit tests pass as part of build process
+
+** TODO Fix whatever is causing SimpleListFileTest and RepositoryTest#testStoreSimpleDirectory to fail
+
+** TODO Unit tests for .ccouchignore stuff
+
+Test vectors in src/test-data/...
+
+** TODO As of 1.5.1, looks like commit blobs still lack a newline.  Fix that.
+
+** TODO ~contentcouch.activefunction.Directoryize~ (combined with the other functions it uses) is somewhat broken
+
+in that generated URIs of sub-items are not properly escaped;
+~"active:foo+bar@baz/"+quux~ isn't going to work right unless ~quux~ just /happens/
+to have the right level of escaping applied to it, which it will in simple cases,
+but not in the case of, for example,
+~active:contentcouch.directoryize+operand@http%3A%2F%2Ffs.marvin.nuke24.net%2F~tog%2Fccouch%2Fheads%2Fwsitem-3306.1%2Fbackup%2F2023%2FWSITEM-3323.1%2FUsers%2Fmom%2FDocuments%2FPhoto%20Archive%2F~
+(I suspect this doesn't work because that "%20" should have been escaped again, but wasn't,
+since the relative URI parsed from an HTML page was just blindly appended to an ~active:~ URI).
 
 ** Older, maybe obsolete TODO items
 
