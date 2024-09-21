@@ -10,6 +10,29 @@ But there may be some easy clean-up things.
 
 No it shouldn't!
 
+** TODO Fix: ~id~ mysteriously complains about no repo
+
+#+begin_src
+ccouch id .
+#+end_src
+
+#+begin_example
+Exception in thread "main" contentcouch.framework.err.DoesNotExistException: GET x-ccouch-repo:identify resulted in 404: No default repository to handle x-ccouch-repo:identify
+        at contentcouch.framework.err.AbnormalResponseException.createFor(AbnormalResponseException.java:40)
+        at contentcouch.framework.err.AbnormalResponseException.throwIfNonNormal(AbnormalResponseException.java:51)
+        at contentcouch.framework.TheGetter.throwIfNonNormalResponse(TheGetter.java:112)
+        at contentcouch.framework.TheGetter.getResponseValue(TheGetter.java:139)
+        at contentcouch.framework.TheGetter.getResponseValue(TheGetter.java:143)
+        at contentcouch.framework.TheGetter.identify(TheGetter.java:166)
+        at contentcouch.app.ContentCouchCommand.runIdCmd(ContentCouchCommand.java:641)
+        at contentcouch.app.ContentCouchCommand.run(ContentCouchCommand.java:1503)
+        at contentcouch.app.ContentCouchCommand.main(ContentCouchCommand.java:1523)
+#+end_example
+
+This was after using ~ccouch config dummy-parameter~ showed that I did have a default repository configured.
+
+Maybe ~id~ should work without needing a repository, too.
+
 ** TODO Ensure that unit tests pass as part of build process
 
 ** TODO Fix whatever is causing SimpleListFileTest and RepositoryTest#testStoreSimpleDirectory to fail
