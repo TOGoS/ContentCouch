@@ -16,6 +16,3 @@ ContentCouch-dev.jar: $(shell find src)
 	echo "Main-Class: contentcouch.app.ContentCouchCommand" >>jar/META-INF/MANIFEST.MF
 	cd jar && zip -r - . >../"$@"
 	chmod -w "$@"
-
-ContentCouch-dev.jar.urn: ContentCouch-dev.jar
-	java -jar ContentCouch-dev.jar store -sector build ContentCouch.jar >"$@"
