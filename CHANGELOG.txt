@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.6
+JAR: urn:bitprint:XNC65INQVV4KWDVMWNYUKCMXJ5H7YZOL.J7JGBU4Z3EKEQUAJ753TAYCTB2VIR5OOIPUMT6Q
+Date: 2024-10-18
+Changes:
+  - Deprecate `RdfNode#toString` and replace with `#toXml`; this applies to subclasses
+    like RdfCommit, also
+  - `RdfNode#toXml` assumes you're creating a 'full XML file',
+    and includes a trailing newline accordingly
+Bugs:
+  - Same unit tests failing as before, even after some supposed fixes
+---------------------------------------------------------------------------------------------------
 Version: 1.6.4
 JAR: urn:bitprint:GBHPQ6L57CS6EGM2DES5B4QRRDYBX44F.SEIK6HERPX6ZJRUIONGNBP7J2SQVYCQWPINOETA
 Date: 2023-07-18
