@@ -16,7 +16,7 @@ public class SimpleListFileTest extends TestCase
 	
 	protected byte[] rand( int maxLen ) {
 		int length = r.nextInt(maxLen);
-		byte[] data = new byte[length];
+		final byte[] data = new byte[length];
 		r.nextBytes(data);
 		return data;
 	}
@@ -53,8 +53,14 @@ public class SimpleListFileTest extends TestCase
 		HashMap kv = new HashMap();
 		
 		for( int i=0; i<1024; ++i ) {
-			byte[] k = new byte[]{}; //rand( 128 );
-			byte[] v = rand( 512 );
+			// [2024-10-18] Notes:
+			// Previously was using random keys,
+			// and then always using a zero-length key.
+			// This test had some issues.
+			// Using a two-byte key should work, though,
+			// and yet it still fails sometimes.  Maybe an actual bug.
+			final byte[] k = new byte[] { (byte)(i>>8), (byte)(i>>0) };
+			final byte[] v = rand( 512 );
 			kv.put( k, v );
 			slf.put( k, v );
 			byte[] got = slf.get(k);

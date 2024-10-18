@@ -43,7 +43,7 @@ public class RdfCommit extends RdfNode implements Commit
 		}
 		this.add(CCouchNamespace.TARGET, target);
 	}
-
+	
 	public RdfCommit( Commit c, Function1 targetRdfifier ) {
 		this( c, targetRdfifier, null );
 	}

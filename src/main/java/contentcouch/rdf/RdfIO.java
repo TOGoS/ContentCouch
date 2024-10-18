@@ -19,6 +19,11 @@ import contentcouch.value.Ref;
 import contentcouch.xml.XML;
 
 public class RdfIO {
+	public enum XMLEncodingContext {
+		PIECE,
+		FILE
+	};
+	
 	public static void writeRdfValue( Writer w, Object value, String padding, Map usedNsAbbreviations )
 		throws IOException
 	{
@@ -115,8 +120,9 @@ public class RdfIO {
 		}
 	}
 	
-	public static String xmlEncodeRdf( Object value, String defaultNamespace ) {
+	public static String xmlEncodeRdf( Object value, String defaultNamespace, XMLEncodingContext encodingContext ) {
 		try {
+			Writer outerWriter = new StringWriter();
 			if( value instanceof RdfNode ) {
 				RdfNode desc = (RdfNode)value;
 	
@@ -131,7 +137,7 @@ public class RdfIO {
 				String typeUri = desc.getRdfTypeUri();
 				if( typeUri == null ) typeUri = RdfNamespace.RDF_DESCRIPTION;
 				String nodeName = XML.longToShort(typeUri, CCouchNamespace.standardNsAbbreviations, usedNsAbbreviations);
-				Writer outerWriter = new StringWriter();
+				
 				outerWriter.write( "<" + nodeName );
 				XML.writeXmlns( outerWriter, usedNsAbbreviations );
 				if( desc.getSubjectUri() != null ) {
@@ -145,17 +151,21 @@ public class RdfIO {
 				} else {
 					outerWriter.write( "/>" );
 				}
-				return outerWriter.toString();
 			} else {
-				return XML.xmlEscapeText(value.toString());
+				outerWriter.write(XML.xmlEscapeText(value.toString()));
 			}
+			switch( encodingContext ) {
+			case FILE : outerWriter.write("\n"); break;
+			case PIECE: break;
+			}
+			return outerWriter.toString();
 		} catch( IOException e ) {
 			throw new RuntimeException( "Error while generating xml", e );
 		}
 	}
 	
-	public static String xmlEncodeRdf( Object value ) {
-		return xmlEncodeRdf( value, null );
+	public static String xmlEncodeRdf( Object value, XMLEncodingContext encodingContext ) {
+		return xmlEncodeRdf( value, null, encodingContext );
 	}
 	
 	//// RDF Parsing ////

@@ -22,13 +22,13 @@ public class RdfDirectoryTest extends TestCase
 		"\t<target>\n" +
 		"\t\t<Blob rdf:about=\"urn:sha1:3CL2HWDOYOLPUXLWTKY6PAP63D7VOYZO\"/>\n" +
 		"\t</target>\n" +
-		"</DirectoryEntry>";
+		"</DirectoryEntry>\n";
 	
 	public void testBlobEntry() {
 		BaseRef target = new BaseRef("urn:sha1:3CL2HWDOYOLPUXLWTKY6PAP63D7VOYZO");
 		SimpleDirectory.Entry e = new SimpleDirectory.Entry("foo", target, CCouchNamespace.TT_SHORTHAND_BLOB);
 		RdfDirectory.Entry rdfDE = new RdfDirectory.Entry(e, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
-		assertEquals( blobEntryString, rdfDE.toString() );
+		assertEquals( blobEntryString, rdfDE.toXml() );
 	}
 	
 	protected static final String blobWithSizeEntryString =
@@ -39,14 +39,14 @@ public class RdfDirectoryTest extends TestCase
 		"\t\t\t<bz:fileLength>1234</bz:fileLength>\n" +
 		"\t\t</Blob>\n" +
 		"\t</target>\n" +
-		"</DirectoryEntry>";
+		"</DirectoryEntry>\n";
 	
 	public void testBlobWithSizeEntry() {
 		BaseRef target = new BaseRef("urn:sha1:3CL2HWDOYOLPUXLWTKY6PAP63D7VOYZO");
 		SimpleDirectory.Entry e = new SimpleDirectory.Entry("foo", target, CCouchNamespace.TT_SHORTHAND_BLOB);
 		e.targetSize = 1234;
 		RdfDirectory.Entry rdfDE = new RdfDirectory.Entry(e, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
-		assertEquals( blobWithSizeEntryString, rdfDE.toString() );
+		assertEquals( blobWithSizeEntryString, rdfDE.toXml() );
 	}
 	
 	protected static final String blobWithSizeAndMtimeEntryString =
@@ -58,7 +58,7 @@ public class RdfDirectoryTest extends TestCase
 		"\t\t</Blob>\n" +
 		"\t</target>\n" +
 		"\t<dc:modified>2010-01-01 06:00:32 GMT</dc:modified>\n" +
-		"</DirectoryEntry>";
+		"</DirectoryEntry>\n";
 	
 	public void testBlobWithSizeAndMtimeEntry() throws ParseException {
 		BaseRef target = new BaseRef("urn:sha1:3CL2HWDOYOLPUXLWTKY6PAP63D7VOYZO");
@@ -66,7 +66,7 @@ public class RdfDirectoryTest extends TestCase
 		e.targetSize = 1234;
 		e.lastModified = DateUtil.parseDate("2010-01-01 06:00:32 GMT").getTime();
 		RdfDirectory.Entry rdfDE = new RdfDirectory.Entry(e, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
-		assertEquals( blobWithSizeAndMtimeEntryString, rdfDE.toString() );
+		assertEquals( blobWithSizeAndMtimeEntryString, rdfDE.toXml() );
 	}
 	
 	protected static final String directoryEntryString =
@@ -75,12 +75,12 @@ public class RdfDirectoryTest extends TestCase
 		"\t<target>\n" +
 		"\t\t<Directory rdf:about=\"x-rdf-subject:urn:sha1:AO6BBOUDVIXOV6PEDR7GM536K3WLO6ES\"/>\n" +
 		"\t</target>\n" +
-		"</DirectoryEntry>";
+		"</DirectoryEntry>\n";
 	
 	public void testDirectoryEntry() {
 		BaseRef target = new BaseRef("x-rdf-subject:urn:sha1:AO6BBOUDVIXOV6PEDR7GM536K3WLO6ES");
 		SimpleDirectory.Entry e = new SimpleDirectory.Entry("2010-01", target, CCouchNamespace.TT_SHORTHAND_DIRECTORY);
 		RdfDirectory.Entry rdfDE = new RdfDirectory.Entry(e, RdfDirectory.DEFAULT_TARGET_RDFIFIER);
-		assertEquals( directoryEntryString, rdfDE.toString() );
+		assertEquals( directoryEntryString, rdfDE.toXml() );
 	}
 }

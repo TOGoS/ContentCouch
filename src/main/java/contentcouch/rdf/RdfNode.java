@@ -1,5 +1,6 @@
 package contentcouch.rdf;
 
+import contentcouch.rdf.RdfIO.XMLEncodingContext;
 import contentcouch.value.BaseRef;
 import contentcouch.value.Ref;
 
@@ -36,7 +37,20 @@ public class RdfNode extends MultiMap
 		return subjectUri;
 	}
 	
-	public String toString() {
-		return RdfIO.xmlEncodeRdf(this, CCouchNamespace.CC_NS);
+	@Deprecated
+	public @Override String toString() {
+		throw new RuntimeException("You probably want to use "+getClass()+"#toXml instead of #toString");
+	}
+	
+	
+	/**
+	 * Returns a 'fill XML file' encoding this object.
+	 * If you want to encode it as a piece of a bigger document,
+	 * use RdfIO directly.
+	 * 
+	 * @return String full file of XML (with indentation and a trailing newline) encoding this object as RDF+XML
+	 */
+	public String toXml() {
+		return RdfIO.xmlEncodeRdf(this, CCouchNamespace.CC_NS, XMLEncodingContext.FILE);
 	}
 }

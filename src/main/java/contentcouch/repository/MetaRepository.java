@@ -13,13 +13,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import togos.mf.api.Request;
-import togos.mf.api.RequestVerbs;
-import togos.mf.api.Response;
-import togos.mf.api.ResponseCodes;
-import togos.mf.base.BaseRequest;
-import togos.mf.base.BaseResponse;
-
 import com.eekboom.utils.Strings;
 
 import contentcouch.activefunctions.FollowPath;
@@ -57,6 +50,12 @@ import contentcouch.value.BaseRef;
 import contentcouch.value.Commit;
 import contentcouch.value.Directory;
 import contentcouch.value.Ref;
+import togos.mf.api.Request;
+import togos.mf.api.RequestVerbs;
+import togos.mf.api.Response;
+import togos.mf.api.ResponseCodes;
+import togos.mf.base.BaseRequest;
+import togos.mf.base.BaseResponse;
 
 public class MetaRepository extends BaseRequestHandler {
 	public static class RepoRef {
@@ -112,10 +111,6 @@ public class MetaRepository extends BaseRequestHandler {
 	
 	/** Use this to cache values instead of the SLF for unit tests. */
 	public Map stringCacheOverride;
-	
-	protected String normalizeRdfString( String rdf ) {
-		return rdf.trim()+"\n";
-	}
 	
 	protected String filenameToPostSectorPath( RepoConfig repoConfig, String filename ) {
 		if( filename.length() >= 2 ) {
@@ -380,8 +375,7 @@ public class MetaRepository extends BaseRequestHandler {
 		String sourceUri = (String)req.getContentMetadata().get(CCouchNamespace.SOURCE_URI);
 		BaseRequest subReq = new BaseRequest();
 		subReq.metadata = req.getMetadata();
-		String rdfString = ((RdfNode)req.getContent()).toString();
-		rdfString = normalizeRdfString( rdfString );
+		String rdfString = ((RdfNode)req.getContent()).toXml();
 		subReq.content = parsedFrom != null ? parsedFrom : BlobUtil.getBlob(rdfString);
 		if( sourceUri != null ) {
 			subReq.putContentMetadata(CCouchNamespace.SOURCE_URI, "x-rdfified:" + sourceUri);
@@ -774,7 +768,7 @@ public class MetaRepository extends BaseRequestHandler {
 			Object parsedFrom = contentMetadata.get(CCouchNamespace.PARSED_FROM);
 			if( parsedFrom == null ) {
 				Log.log(Log.EVENT_PERFORMANCE_WARNING, "Blobbifying RDF node just to get content URN");
-				String rdfString = normalizeRdfString( content.toString() );
+				String rdfString = ((RdfNode)content).toXml();
 				parsedFrom = BlobUtil.getBlob( rdfString );
 			}
 			String parsedFromUri = identify( parsedFrom, Collections.EMPTY_MAP, options );

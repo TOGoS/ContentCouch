@@ -934,7 +934,7 @@ public class ContentCouchCommand {
 			// Data already stored, so we don't really need to worry about rdfifying, here
 			RdfCommit rdfCommit = new RdfCommit(commit, metaRepoConfig.getMetaRepository().getTargetRdfifier(false,false,storeCommitReq.getMetadata()));
 			
-			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toString());
+			storeCommitReq.content = BlobUtil.getBlob(rdfCommit.toXml());
 			Response storeCommitRes = TheGetter.call(storeCommitReq);
 			if( storeCommitRes.getStatus() != ResponseCodes.NORMAL ) {
 				Log.log(Log.EVENT_ERROR, "Could not PUT commit to " + dataDestUri + ": " + TheGetter.getResponseErrorSummary(storeCommitRes));
